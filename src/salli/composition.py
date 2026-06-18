@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from salli.adapters.db.session import make_session_factory
 from salli.application.services.agent_service import AgentService
 from salli.application.services.ledger_service import LedgerService
+from salli.application.services.parsing_service import ParsingService
 from salli.application.services.tax_service import TaxService
 from salli.application.unit_of_work import UnitOfWork
 from salli.config import Settings
@@ -19,6 +20,7 @@ class Services:
     ledger: LedgerService
     tax: TaxService
     agent: AgentService
+    parsing: ParsingService
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
@@ -37,5 +39,6 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     ledger = LedgerService(uow_factory)
     tax = TaxService(uow_factory)
     agent = AgentService(ledger, tax, checkpointer=checkpointer)
+    parsing = ParsingService(uow_factory)
 
-    return Services(ledger=ledger, tax=tax, agent=agent)
+    return Services(ledger=ledger, tax=tax, agent=agent, parsing=parsing)

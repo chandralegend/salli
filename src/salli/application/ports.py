@@ -46,6 +46,28 @@ class TaxComputationRepository(ABC):
         ...
 
 
+class StatementRepository(ABC):
+    @abstractmethod
+    async def save_statement(
+        self,
+        user_id: str,
+        statement_id: str,
+        bank: str,
+        period_start: str,
+        period_end: str,
+        transactions: list[Any],
+    ) -> None: ...
+
+    @abstractmethod
+    async def get_pending(self, user_id: str, statement_id: str) -> list[Any]: ...
+
+    @abstractmethod
+    async def get_by_ids(self, user_id: str, ids: list[str]) -> list[Any]: ...
+
+    @abstractmethod
+    async def mark_posted(self, transaction_id: str, entry_id: str) -> None: ...
+
+
 class LLMPort(ABC):
     """
     Single gateway to the LLM — tiering, retries, and usage metering live here.

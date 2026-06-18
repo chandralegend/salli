@@ -1,4 +1,5 @@
 """Unit tests for the return preparation workflow (no LLM calls)."""
+
 from __future__ import annotations
 
 import uuid
@@ -11,8 +12,7 @@ from salli.application.services.agent_service import AgentService
 from salli.application.services.ledger_service import LedgerService
 from salli.application.services.tax_service import TaxService
 from salli.domain.accounting.models import Account, Direction, Posting, StoredJournalEntry
-from salli.domain.agents.return_workflow import ReturnState, _map_to_cages, _finalize
-
+from salli.domain.agents.return_workflow import ReturnState, _finalize, _map_to_cages
 
 # ── Fakes (shared with test_tools.py) ─────────────────────────────────────────
 
@@ -67,15 +67,23 @@ class FakeUoW:
 
 def _make_services(income: Decimal = Decimal("4_000_000")):
     salary_acc = Account(
-        id=str(uuid.uuid4()), user_id="u1",
-        code="4001", name="Employment Income", type="income",
+        id=str(uuid.uuid4()),
+        user_id="u1",
+        code="4001",
+        name="Employment Income",
+        type="income",
     )
     entry = StoredJournalEntry(
-        id=str(uuid.uuid4()), user_id="u1",
-        entry_date="2025-04-01", description="test", source="manual",
+        id=str(uuid.uuid4()),
+        user_id="u1",
+        entry_date="2025-04-01",
+        description="test",
+        source="manual",
         postings=[
             Posting(account_id="bank", direction=Direction.DEBIT, amount=income, currency="LKR"),
-            Posting(account_id=salary_acc.id, direction=Direction.CREDIT, amount=income, currency="LKR"),
+            Posting(
+                account_id=salary_acc.id, direction=Direction.CREDIT, amount=income, currency="LKR"
+            ),
         ],
     )
     ledger_repo = FakeLedgerRepo(entries=[entry], accounts=[salary_acc])
@@ -146,7 +154,8 @@ def test_map_to_cages_no_computation():
 def test_finalize_approved():
     tc = _make_tax_computation()
     state = ReturnState(
-        user_id="u1", year="2025/26",
+        user_id="u1",
+        year="2025/26",
         tax_computation=tc,
         review_decision="approve",
         draft_return={"cage_5a_tax_payable": str(tc.tax_payable)},
@@ -160,7 +169,8 @@ def test_finalize_approved():
 def test_finalize_rejected():
     tc = _make_tax_computation()
     state = ReturnState(
-        user_id="u1", year="2025/26",
+        user_id="u1",
+        year="2025/26",
         tax_computation=tc,
         review_decision="reject",
         draft_return={},
@@ -173,7 +183,8 @@ def test_finalize_rejected():
 def test_finalize_edit_not_approved():
     tc = _make_tax_computation()
     state = ReturnState(
-        user_id="u1", year="2025/26",
+        user_id="u1",
+        year="2025/26",
         tax_computation=tc,
         review_decision="edit",
         draft_return={},

@@ -2,6 +2,7 @@
 Port interfaces — abstract contracts the domain depends on.
 Adapters (in salli/adapters/) implement these; the domain never imports adapters.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -38,12 +39,23 @@ class LedgerRepository(ABC):
 
 class TaxComputationRepository(ABC):
     @abstractmethod
-    async def save(self, user_id: str, computation: Any) -> str:
-        ...
+    async def save(self, user_id: str, computation: Any) -> str: ...
 
     @abstractmethod
-    async def get_latest(self, user_id: str, year: str) -> Any | None:
-        ...
+    async def get_latest(self, user_id: str, year: str) -> Any | None: ...
+
+
+class ReminderRepository(ABC):
+    @abstractmethod
+    async def list_reminders(self, user_id: str, status: str | None = None) -> list[Any]: ...
+
+    @abstractmethod
+    async def create_reminder(
+        self, user_id: str, reminder_id: str, kind: str, due_date: str
+    ) -> None: ...
+
+    @abstractmethod
+    async def mark_done(self, user_id: str, reminder_id: str) -> None: ...
 
 
 class StatementRepository(ABC):
@@ -57,6 +69,9 @@ class StatementRepository(ABC):
         period_end: str,
         transactions: list[Any],
     ) -> None: ...
+
+    @abstractmethod
+    async def get_all_pending(self, user_id: str) -> list[Any]: ...
 
     @abstractmethod
     async def get_pending(self, user_id: str, statement_id: str) -> list[Any]: ...
@@ -102,8 +117,7 @@ class StoragePort(ABC):
         ...
 
     @abstractmethod
-    async def download(self, key: str) -> bytes:
-        ...
+    async def download(self, key: str) -> bytes: ...
 
 
 class FxRatePort(ABC):

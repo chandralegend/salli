@@ -12,15 +12,14 @@ The LLM is NOT invoked in this graph. It is pure Python orchestration.
 The interrupt() gate is where "agent files for you" would slot in when/if
 an IRD filing channel is available; for now it just gates the worksheet.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from decimal import Decimal
 from typing import Any
 
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
-
 
 # ── State ──────────────────────────────────────────────────────────────────────
 
@@ -41,7 +40,7 @@ class ReturnState:
     draft_return: dict[str, Any] = field(default_factory=dict)
 
     # Set by review node
-    review_decision: str = ""   # "approve" | "edit" | "reject"
+    review_decision: str = ""  # "approve" | "edit" | "reject"
 
     # Final output
     worksheet: dict[str, Any] = field(default_factory=dict)
@@ -51,23 +50,17 @@ class ReturnState:
 # ── Nodes ──────────────────────────────────────────────────────────────────────
 
 
-def _gather_node(ledger_svc, tax_svc):
-    async def gather(state: ReturnState) -> dict:
-        from salli.domain.tax.packs.registry import get_pack
-
-        pack = get_pack("LK", state.year)
-        entries = await ledger_svc.get_trial_balance.__self__._uow_factory  # not accessible directly
-        # Re-implement the raw fetch here since LedgerService doesn't expose it directly
-        # We re-use the service's internal UoW factory indirectly by calling get_trial_balance.
-        # For now, collect account list to feed the view.
-        accounts = await ledger_svc.list_accounts(state.user_id)
-        return {"accounts": accounts}
-    return gather
-
-
 async def _gather(state: ReturnState, ledger_svc, tax_svc) -> dict:
+    from salli.domain.tax.packs.registry import get_pack
+
+    pack = get_pack("LK", state.year)
     accounts = await ledger_svc.list_accounts(state.user_id)
-    return {"accounts": accounts}
+    entries = await ledger_svc.get_entries(
+        state.user_id,
+        from_date=pack.period_start,
+        to_date=pack.period_end,
+    )
+    return {"accounts": accounts, "ledger_entries": entries}
 
 
 async def _compute(state: ReturnState, tax_svc) -> dict:
@@ -120,11 +113,13 @@ def _review(state: ReturnState) -> dict:
     In Phase 1 (CLI), the caller reads the interrupt payload and resumes with a Command.
     In Phase 2 (FastAPI), the SSE stream surfaces the __interrupt__ event to the client.
     """
-    decision = interrupt({
-        "draft_return": state.draft_return,
-        "message": "Please review the draft return. Reply with 'approve', 'edit', or 'reject'.",
-        "allowed_decisions": ["approve", "edit", "reject"],
-    })
+    decision = interrupt(
+        {
+            "draft_return": state.draft_return,
+            "message": "Please review the draft return. Reply with 'approve', 'edit', or 'reject'.",
+            "allowed_decisions": ["approve", "edit", "reject"],
+        }
+    )
     return {"review_decision": decision}
 
 

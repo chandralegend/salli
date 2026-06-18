@@ -12,15 +12,15 @@ router = APIRouter(prefix="/entries", tags=["entries"])
 
 class PostingRequest(BaseModel):
     account_id: str
-    direction: int           # 1 = DEBIT, -1 = CREDIT
-    amount: str              # Decimal as string to avoid float
+    direction: int  # 1 = DEBIT, -1 = CREDIT
+    amount: str  # Decimal as string to avoid float
     currency: str = "LKR"
     fx_rate: str = "1"
     fx_rate_source: str | None = None
 
 
 class AddEntryRequest(BaseModel):
-    entry_date: str          # YYYY-MM-DD
+    entry_date: str  # YYYY-MM-DD
     description: str
     source: str = "manual"
     external_ref: str | None = None

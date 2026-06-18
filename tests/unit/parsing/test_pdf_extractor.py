@@ -2,9 +2,8 @@
 Unit tests for the PDF extractor helper functions.
 No real PDF files needed — tests feed structured data directly.
 """
-from decimal import Decimal
 
-import pytest
+from decimal import Decimal
 
 from salli.adapters.parsing.pdf_extractor import (
     _header_map,

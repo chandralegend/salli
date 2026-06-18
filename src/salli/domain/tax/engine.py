@@ -4,6 +4,7 @@ Deterministic tax computation engine.
 Pure function: compute(ledger_view, pack) -> TaxComputation.
 No I/O, no LLM calls, no side effects.
 """
+
 from __future__ import annotations
 
 from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal

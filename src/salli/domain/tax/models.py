@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Optional
 
 
 @dataclass(frozen=True)
 class Band:
     """A single progressive tax band."""
 
-    upto: Optional[Decimal]  # None = unbounded (highest band)
+    upto: Decimal | None  # None = unbounded (highest band)
     rate: Decimal
 
 
@@ -23,7 +22,7 @@ class ForeignServiceIncomeRegime:
 
 @dataclass(frozen=True)
 class FilingCalendar:
-    set_due: str         # "MM-DD" — Self-Employment Tax / first installment
+    set_due: str  # "MM-DD" — Self-Employment Tax / first installment
     installments: list[str] = field(default_factory=list)  # ["MM-DD", ...]
     final_installment_due: str = ""
     return_due: str = ""  # annual return deadline
@@ -39,13 +38,13 @@ class TaxPack:
     country: str
     year: str
     version: str
-    period_start: str       # YYYY-MM-DD
-    period_end: str         # YYYY-MM-DD
+    period_start: str  # YYYY-MM-DD
+    period_end: str  # YYYY-MM-DD
     personal_relief: Decimal
     bands: list[Band]
-    foreign_service_income: Optional[ForeignServiceIncomeRegime]
-    credits: list[str]      # ["APIT", "AIT_INTEREST_10", "FOREIGN_TAX_CREDIT"]
-    rounding: str           # "nearest_rupee" | "truncate_rupee"
+    foreign_service_income: ForeignServiceIncomeRegime | None
+    credits: list[str]  # ["APIT", "AIT_INTEREST_10", "FOREIGN_TAX_CREDIT"]
+    rounding: str  # "nearest_rupee" | "truncate_rupee"
     filing: FilingCalendar
 
 
@@ -55,7 +54,7 @@ class TaxPack:
 @dataclass(frozen=True)
 class BandWorkings:
     from_amount: Decimal
-    to_amount: Optional[Decimal]
+    to_amount: Decimal | None
     rate: Decimal
     taxable_in_band: Decimal
     tax: Decimal
@@ -94,9 +93,9 @@ class LedgerView:
     Built by TaxService from stored postings; passed to compute().
     """
 
-    total_income: Decimal            # all income sources summed
+    total_income: Decimal  # all income sources summed
     foreign_service_income: Decimal  # subset eligible for 15% regime
     apit_withheld: Decimal
     ait_withheld: Decimal
     foreign_tax_paid: Decimal
-    qualifying_payments: Decimal     # donations / QPDs
+    qualifying_payments: Decimal  # donations / QPDs

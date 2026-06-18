@@ -1,4 +1,5 @@
 """Unit tests for LedgerService using in-memory fake repositories."""
+
 from __future__ import annotations
 
 import uuid
@@ -8,8 +9,7 @@ from decimal import Decimal
 import pytest
 
 from salli.application.services.ledger_service import LedgerService
-from salli.domain.accounting.models import Account, Direction, Posting, StoredJournalEntry
-
+from salli.domain.accounting.models import Account, Direction, StoredJournalEntry
 
 # ── In-memory fakes ────────────────────────────────────────────────────────────
 
@@ -125,8 +125,18 @@ async def test_add_balanced_entry():
         description="Salary received",
         source="manual",
         postings_data=[
-            {"account_id": bank_id, "direction": Direction.DEBIT, "amount": Decimal("100000"), "currency": "LKR"},
-            {"account_id": income_id, "direction": Direction.CREDIT, "amount": Decimal("100000"), "currency": "LKR"},
+            {
+                "account_id": bank_id,
+                "direction": Direction.DEBIT,
+                "amount": Decimal("100000"),
+                "currency": "LKR",
+            },
+            {
+                "account_id": income_id,
+                "direction": Direction.CREDIT,
+                "amount": Decimal("100000"),
+                "currency": "LKR",
+            },
         ],
     )
     assert entry_id
@@ -148,8 +158,18 @@ async def test_add_unbalanced_entry_raises():
             description="Broken entry",
             source="manual",
             postings_data=[
-                {"account_id": bank_id, "direction": Direction.DEBIT, "amount": Decimal("100000"), "currency": "LKR"},
-                {"account_id": income_id, "direction": Direction.CREDIT, "amount": Decimal("99999"), "currency": "LKR"},
+                {
+                    "account_id": bank_id,
+                    "direction": Direction.DEBIT,
+                    "amount": Decimal("100000"),
+                    "currency": "LKR",
+                },
+                {
+                    "account_id": income_id,
+                    "direction": Direction.CREDIT,
+                    "amount": Decimal("99999"),
+                    "currency": "LKR",
+                },
             ],
         )
 
@@ -167,8 +187,18 @@ async def test_add_entry_float_amount_raises():
             description="Float disaster",
             source="manual",
             postings_data=[
-                {"account_id": bank_id, "direction": Direction.DEBIT, "amount": 100000.0, "currency": "LKR"},
-                {"account_id": income_id, "direction": Direction.CREDIT, "amount": 100000.0, "currency": "LKR"},
+                {
+                    "account_id": bank_id,
+                    "direction": Direction.DEBIT,
+                    "amount": 100000.0,
+                    "currency": "LKR",
+                },
+                {
+                    "account_id": income_id,
+                    "direction": Direction.CREDIT,
+                    "amount": 100000.0,
+                    "currency": "LKR",
+                },
             ],
         )
 
@@ -180,10 +210,23 @@ async def test_trial_balance_sums_to_zero():
     income_id = await svc.add_account("u1", "4001", "Salary", "income")
 
     await svc.add_entry(
-        "u1", "2025-04-01", "Salary", "manual",
+        "u1",
+        "2025-04-01",
+        "Salary",
+        "manual",
         [
-            {"account_id": bank_id, "direction": Direction.DEBIT, "amount": Decimal("500000"), "currency": "LKR"},
-            {"account_id": income_id, "direction": Direction.CREDIT, "amount": Decimal("500000"), "currency": "LKR"},
+            {
+                "account_id": bank_id,
+                "direction": Direction.DEBIT,
+                "amount": Decimal("500000"),
+                "currency": "LKR",
+            },
+            {
+                "account_id": income_id,
+                "direction": Direction.CREDIT,
+                "amount": Decimal("500000"),
+                "currency": "LKR",
+            },
         ],
     )
 
@@ -200,10 +243,23 @@ async def test_trial_balance_date_filter():
 
     for m in ["01", "03", "06"]:
         await svc.add_entry(
-            "u1", f"2025-{m}-01", f"Month {m}", "manual",
+            "u1",
+            f"2025-{m}-01",
+            f"Month {m}",
+            "manual",
             [
-                {"account_id": bank_id, "direction": Direction.DEBIT, "amount": Decimal("100000"), "currency": "LKR"},
-                {"account_id": income_id, "direction": Direction.CREDIT, "amount": Decimal("100000"), "currency": "LKR"},
+                {
+                    "account_id": bank_id,
+                    "direction": Direction.DEBIT,
+                    "amount": Decimal("100000"),
+                    "currency": "LKR",
+                },
+                {
+                    "account_id": income_id,
+                    "direction": Direction.CREDIT,
+                    "amount": Decimal("100000"),
+                    "currency": "LKR",
+                },
             ],
         )
 
@@ -222,11 +278,29 @@ async def test_multi_posting_entry():
     interest_id = await svc.add_account("u1", "4002", "Interest", "income")
 
     entry_id = await svc.add_entry(
-        "u1", "2025-05-01", "Salary + interest", "manual",
+        "u1",
+        "2025-05-01",
+        "Salary + interest",
+        "manual",
         [
-            {"account_id": bank_id, "direction": Direction.DEBIT, "amount": Decimal("110000"), "currency": "LKR"},
-            {"account_id": salary_id, "direction": Direction.CREDIT, "amount": Decimal("100000"), "currency": "LKR"},
-            {"account_id": interest_id, "direction": Direction.CREDIT, "amount": Decimal("10000"), "currency": "LKR"},
+            {
+                "account_id": bank_id,
+                "direction": Direction.DEBIT,
+                "amount": Decimal("110000"),
+                "currency": "LKR",
+            },
+            {
+                "account_id": salary_id,
+                "direction": Direction.CREDIT,
+                "amount": Decimal("100000"),
+                "currency": "LKR",
+            },
+            {
+                "account_id": interest_id,
+                "direction": Direction.CREDIT,
+                "amount": Decimal("10000"),
+                "currency": "LKR",
+            },
         ],
     )
     assert entry_id

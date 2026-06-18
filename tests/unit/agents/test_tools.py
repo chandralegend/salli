@@ -1,4 +1,5 @@
 """Unit tests for agent tools — verify shape and policy invariants."""
+
 from __future__ import annotations
 
 import uuid
@@ -11,7 +12,6 @@ from salli.application.services.ledger_service import LedgerService
 from salli.application.services.tax_service import TaxService
 from salli.domain.accounting.models import Account, Direction, Posting, StoredJournalEntry
 from salli.domain.agents.tools import make_tools
-
 
 # ── Fake repos (same pattern as service tests) ────────────────────────────────
 
@@ -66,15 +66,23 @@ class FakeUoW:
 
 def _make_services_with_income(income: Decimal = Decimal("3_000_000")):
     salary_acc = Account(
-        id=str(uuid.uuid4()), user_id="u1",
-        code="4001", name="Employment Income", type="income",
+        id=str(uuid.uuid4()),
+        user_id="u1",
+        code="4001",
+        name="Employment Income",
+        type="income",
     )
     entry = StoredJournalEntry(
-        id=str(uuid.uuid4()), user_id="u1",
-        entry_date="2025-04-01", description="test", source="manual",
+        id=str(uuid.uuid4()),
+        user_id="u1",
+        entry_date="2025-04-01",
+        description="test",
+        source="manual",
         postings=[
             Posting(account_id="bank", direction=Direction.DEBIT, amount=income, currency="LKR"),
-            Posting(account_id=salary_acc.id, direction=Direction.CREDIT, amount=income, currency="LKR"),
+            Posting(
+                account_id=salary_acc.id, direction=Direction.CREDIT, amount=income, currency="LKR"
+            ),
         ],
     )
     ledger_repo = FakeLedgerRepo(entries=[entry], accounts=[salary_acc])
@@ -132,7 +140,14 @@ async def test_get_tax_computation_keys():
     get_tax = next(t for t in tools if t.name == "get_tax_computation")
 
     result = await get_tax.ainvoke({"year": "2025/26", "user_id": "u1"})
-    for key in ("year", "pack_version", "gross_income", "taxable_income", "tax_payable", "band_workings"):
+    for key in (
+        "year",
+        "pack_version",
+        "gross_income",
+        "taxable_income",
+        "tax_payable",
+        "band_workings",
+    ):
         assert key in result, f"Missing key: {key}"
 
 

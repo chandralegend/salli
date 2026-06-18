@@ -8,6 +8,7 @@ The LLM never invents amounts — it only assigns accounts from the provided lis
 Transactions where the model is uncertain get confidence < 0.7 and are flagged
 for manual review.
 """
+
 from __future__ import annotations
 
 import json
@@ -57,26 +58,27 @@ async def classify_transactions(
 
     client = anthropic.AsyncAnthropic()
 
-    accounts_json = json.dumps([
-        {"id": a.id, "code": a.code, "name": a.name, "type": a.type}
-        for a in accounts
-    ])
+    accounts_json = json.dumps(
+        [{"id": a.id, "code": a.code, "name": a.name, "type": a.type} for a in accounts]
+    )
 
     results: list[ParsedTransaction] = []
 
     for batch_start in range(0, len(raw_rows), batch_size):
-        batch = raw_rows[batch_start: batch_start + batch_size]
-        txn_json = json.dumps([
-            {
-                "index": batch_start + i,
-                "date": r.date,
-                "description": r.description,
-                "amount": str(r.amount),
-                "credit_flag": r.credit_flag,
-                "bank_ref": r.bank_ref,
-            }
-            for i, r in enumerate(batch)
-        ])
+        batch = raw_rows[batch_start : batch_start + batch_size]
+        txn_json = json.dumps(
+            [
+                {
+                    "index": batch_start + i,
+                    "date": r.date,
+                    "description": r.description,
+                    "amount": str(r.amount),
+                    "credit_flag": r.credit_flag,
+                    "bank_ref": r.bank_ref,
+                }
+                for i, r in enumerate(batch)
+            ]
+        )
 
         prompt = _CLASSIFICATION_PROMPT.format(
             accounts_json=accounts_json,
@@ -84,7 +86,7 @@ async def classify_transactions(
         )
 
         message = await client.messages.create(
-            model="claude-haiku-4-5-20251001",   # fast + cheap for bulk classification
+            model="claude-haiku-4-5-20251001",  # fast + cheap for bulk classification
             max_tokens=4096,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -94,13 +96,15 @@ async def classify_transactions(
 
         for i, row in enumerate(batch):
             clf = classifications.get(batch_start + i, {})
-            results.append(ParsedTransaction(
-                raw=row,
-                debit_account_id=clf.get("debit_account_id", ""),
-                credit_account_id=clf.get("credit_account_id", ""),
-                category=clf.get("category", ""),
-                confidence=float(clf.get("confidence", 0.5)),
-            ))
+            results.append(
+                ParsedTransaction(
+                    raw=row,
+                    debit_account_id=clf.get("debit_account_id", ""),
+                    credit_account_id=clf.get("credit_account_id", ""),
+                    category=clf.get("category", ""),
+                    confidence=float(clf.get("confidence", 0.5)),
+                )
+            )
 
     return results
 

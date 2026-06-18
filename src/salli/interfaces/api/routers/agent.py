@@ -12,6 +12,7 @@ Stream protocol (newline-delimited JSON events):
 Clients resume an interrupted return-preparation workflow by POSTing to
 /agent/resume with the thread_id and the approval decision.
 """
+
 from __future__ import annotations
 
 import json
@@ -48,9 +49,21 @@ async def _stream_agent(
             if event_type == "token":
                 yield _sse({"type": "token", "content": payload})
             elif event_type == "tool_call":
-                yield _sse({"type": "tool_call", "name": payload.get("name"), "input": payload.get("input")})
+                yield _sse(
+                    {
+                        "type": "tool_call",
+                        "name": payload.get("name"),
+                        "input": payload.get("input"),
+                    }
+                )
             elif event_type == "tool_result":
-                yield _sse({"type": "tool_result", "name": payload.get("name"), "output": payload.get("output")})
+                yield _sse(
+                    {
+                        "type": "tool_result",
+                        "name": payload.get("name"),
+                        "output": payload.get("output"),
+                    }
+                )
             elif event_type == "interrupt":
                 yield _sse({"type": "interrupt", "data": payload})
             elif event_type == "done":
@@ -87,7 +100,7 @@ async def chat(body: ChatRequest, user_id: CurrentUser, svc: AppServices):
 
 class ResumeRequest(BaseModel):
     thread_id: str
-    decision: str   # "approve" | "edit" | "reject"
+    decision: str  # "approve" | "edit" | "reject"
     edits: dict | None = None
 
 

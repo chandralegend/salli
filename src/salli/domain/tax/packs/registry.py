@@ -1,4 +1,5 @@
 """Pack registry — maps (country, year) to the canonical TaxPack instance."""
+
 from __future__ import annotations
 
 from salli.domain.tax.models import TaxPack

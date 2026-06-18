@@ -8,9 +8,8 @@ the pack is used in production.
 
 STATUS: pending CA review — figures are based on the Act; treat as draft.
 """
-from decimal import Decimal
 
-import pytest
+from decimal import Decimal
 
 from salli.domain.tax.engine import compute
 from salli.domain.tax.models import LedgerView

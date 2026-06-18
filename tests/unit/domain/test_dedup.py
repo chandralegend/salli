@@ -1,4 +1,5 @@
 """Unit tests for the duplicate detection matcher."""
+
 from salli.domain.dedup.matcher import (
     CandidateTransaction,
     DedupStatus,

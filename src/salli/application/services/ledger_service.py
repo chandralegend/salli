@@ -64,6 +64,15 @@ class LedgerService:
         async with self._uow_factory() as uow:
             return await uow.ledger.save_entry(user_id, entry)
 
+    async def get_entries(
+        self,
+        user_id: str,
+        from_date: str | None = None,
+        to_date: str | None = None,
+    ) -> list[StoredJournalEntry]:
+        async with self._uow_factory() as uow:
+            return await uow.ledger.get_entries(user_id, from_date, to_date)
+
     async def get_trial_balance(
         self,
         user_id: str,

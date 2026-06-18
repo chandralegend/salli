@@ -1,4 +1,5 @@
 """Unit tests for the double-entry accounting domain models and ledger logic."""
+
 from decimal import Decimal
 
 import pytest
@@ -12,7 +13,6 @@ from salli.domain.accounting.ledger import (
     trial_balance,
 )
 from salli.domain.accounting.models import Direction, JournalEntry, Posting, StoredJournalEntry
-
 
 # ── helpers ────────────────────────────────────────────────────────────────────
 
@@ -162,7 +162,7 @@ def test_reversing_entry_restores_balance():
 def test_reversing_entry_flips_directions():
     original = make_stored(salary_entry())
     reversal = build_reversing_entry(original)
-    for orig_p, rev_p in zip(original.postings, reversal.postings):
+    for orig_p, rev_p in zip(original.postings, reversal.postings, strict=True):
         assert orig_p.direction != rev_p.direction
         assert orig_p.account_id == rev_p.account_id
         assert orig_p.amount == rev_p.amount

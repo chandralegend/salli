@@ -9,6 +9,7 @@ Key changes from 2024/25:
 - First band raised from LKR 500,000 to LKR 1,000,000 (6%)
 - 12% bracket eliminated entirely
 """
+
 from decimal import Decimal
 
 from salli.domain.tax.models import (
@@ -54,9 +55,9 @@ LK_2025_26 = TaxPack(
     rounding="nearest_rupee",
     #
     filing=FilingCalendar(
-        set_due="08-15",                                   # SET + 1st installment
+        set_due="08-15",  # SET + 1st installment
         installments=["08-15", "11-15", "02-15", "05-15"],
         final_installment_due="09-30",
-        return_due="11-30",                                # 30 November
+        return_due="11-30",  # 30 November
     ),
 )

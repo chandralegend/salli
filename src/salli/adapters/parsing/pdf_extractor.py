@@ -8,6 +8,7 @@ Handles the two most common Sri Lankan bank statement layouts:
 The extractor is deliberately dumb: it returns raw text rows. The LLM
 classifier (llm_classifier.py) interprets descriptions and assigns accounts.
 """
+
 from __future__ import annotations
 
 import re
@@ -21,14 +22,17 @@ if TYPE_CHECKING:
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 _DATE_PATTERNS = [
-    re.compile(r"(\d{2})[/\-\.](\d{2})[/\-\.](\d{4})"),   # DD/MM/YYYY or DD-MM-YYYY
-    re.compile(r"(\d{4})[/\-\.](\d{2})[/\-\.](\d{2})"),   # YYYY-MM-DD
+    re.compile(r"(\d{2})[/\-\.](\d{2})[/\-\.](\d{4})"),  # DD/MM/YYYY or DD-MM-YYYY
+    re.compile(r"(\d{4})[/\-\.](\d{2})[/\-\.](\d{2})"),  # YYYY-MM-DD
     re.compile(r"(\d{2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{4})", re.I),
 ]
 
-_MONTHS = {m: str(i).zfill(2) for i, m in enumerate(
-    ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], 1
-)}
+_MONTHS = {
+    m: str(i).zfill(2)
+    for i, m in enumerate(
+        ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], 1
+    )
+}
 
 
 def _normalise_date(raw: str) -> str | None:
@@ -132,7 +136,7 @@ def _parse_table(table: list[list[str | None]], page: int) -> list[dict]:
         return []
 
     rows = []
-    for row in table[table.index(header_row) + 1:]:
+    for row in table[table.index(header_row) + 1 :]:
         if row is None:
             continue
         cells = [c or "" for c in row]
@@ -145,8 +149,14 @@ def _parse_table(table: list[list[str | None]], page: int) -> list[dict]:
         if not desc:
             continue
 
-        debit_cell = cells[col_map["debit"]] if "debit" in col_map and col_map["debit"] < len(cells) else ""
-        credit_cell = cells[col_map["credit"]] if "credit" in col_map and col_map["credit"] < len(cells) else ""
+        debit_cell = (
+            cells[col_map["debit"]] if "debit" in col_map and col_map["debit"] < len(cells) else ""
+        )
+        credit_cell = (
+            cells[col_map["credit"]]
+            if "credit" in col_map and col_map["credit"] < len(cells)
+            else ""
+        )
 
         direction = _is_credit(debit_cell, credit_cell)
         if direction is None:
@@ -156,16 +166,22 @@ def _parse_table(table: list[list[str | None]], page: int) -> list[dict]:
         if not amount:
             continue
 
-        ref = cells[col_map["ref"]].strip() if "ref" in col_map and col_map["ref"] < len(cells) else ""
+        ref = (
+            cells[col_map["ref"]].strip()
+            if "ref" in col_map and col_map["ref"] < len(cells)
+            else ""
+        )
 
-        rows.append({
-            "date": date_str,
-            "description": desc,
-            "amount": amount,
-            "credit_flag": direction,
-            "bank_ref": ref,
-            "page": page,
-        })
+        rows.append(
+            {
+                "date": date_str,
+                "description": desc,
+                "amount": amount,
+                "credit_flag": direction,
+                "bank_ref": ref,
+                "page": page,
+            }
+        )
 
     return rows
 
@@ -193,14 +209,18 @@ def _parse_text_lines(text: str, page: int) -> list[dict]:
         if not amount:
             continue
         direction_str = (m.group("dir") or "").upper()
-        credit_flag = direction_str == "CR" if direction_str else True  # default credit if ambiguous
+        credit_flag = (
+            direction_str == "CR" if direction_str else True
+        )  # default credit if ambiguous
 
-        rows.append({
-            "date": date_str,
-            "description": m.group("desc").strip(),
-            "amount": amount,
-            "credit_flag": credit_flag,
-            "bank_ref": "",
-            "page": page,
-        })
+        rows.append(
+            {
+                "date": date_str,
+                "description": m.group("desc").strip(),
+                "amount": amount,
+                "credit_flag": credit_flag,
+                "bank_ref": "",
+                "page": page,
+            }
+        )
     return rows

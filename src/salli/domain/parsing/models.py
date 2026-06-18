@@ -12,6 +12,7 @@ Flow:
 The LLM touches ParsedTransaction only. Numbers come from the raw extractor;
 the LLM assigns accounts and categories.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -25,10 +26,11 @@ class RawRow:
     The extractor guarantees that `amount` is always positive; direction
     is conveyed by `credit_flag` (True = money coming in).
     """
-    date: str           # YYYY-MM-DD (normalised by extractor)
-    description: str    # raw description text from the statement
-    amount: Decimal     # always positive
-    credit_flag: bool   # True = credit (money in), False = debit (money out)
+
+    date: str  # YYYY-MM-DD (normalised by extractor)
+    description: str  # raw description text from the statement
+    amount: Decimal  # always positive
+    credit_flag: bool  # True = credit (money in), False = debit (money out)
     currency: str = "LKR"
     bank_ref: str = ""  # reference / transaction ID from the bank
     source_page: int = 0
@@ -40,19 +42,21 @@ class ParsedTransaction:
     A RawRow enriched by the LLM with account classification.
     Mutable — the user may edit debit_account_id / credit_account_id before posting.
     """
+
     raw: RawRow
-    debit_account_id: str       # account to debit
-    credit_account_id: str      # account to credit
-    category: str = ""          # e.g. "salary", "bank_charge", "transfer"
+    debit_account_id: str  # account to debit
+    credit_account_id: str  # account to credit
+    category: str = ""  # e.g. "salary", "bank_charge", "transfer"
     notes: str = ""
     confidence: float = 1.0
-    dedup_key: str = ""         # SHA-256 idempotency key (filled by dedup module)
+    dedup_key: str = ""  # SHA-256 idempotency key (filled by dedup module)
     dedup_status: str = "pending"  # UNIQUE | EXACT_DUPLICATE | FUZZY_MATCH
 
 
 @dataclass
 class ParseResult:
     """Outcome of parsing one statement file."""
+
     statement_id: str
     bank: str
     period_start: str

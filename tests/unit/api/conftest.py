@@ -4,6 +4,7 @@ API test fixtures.
 Uses httpx.AsyncClient with the FastAPI test transport so no real DB or LLM
 is needed. All services are replaced with async mocks.
 """
+
 from __future__ import annotations
 
 from decimal import Decimal
@@ -13,7 +14,7 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
-from salli.domain.accounting.models import Account, Direction, JournalEntry, Posting
+from salli.domain.accounting.models import Direction
 
 
 @pytest.fixture
@@ -39,9 +40,7 @@ def app(mock_services):
 
 @pytest_asyncio.fixture
 async def client(app):
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
 

@@ -75,17 +75,17 @@ def test_two_bands():
 # Gross = LKR 6,500,000
 # Taxable = 6,500,000 − 1,800,000 = 4,700,000
 # Band 1: 1,000,000 × 6%  = 60,000
-# Band 2: 500,000 × 18% = 90,000
-# Band 3: 500,000 × 24% = 120,000
-# Band 4: 500,000 × 30% = 150,000
-# Band 5: 1,700,000 × 36% = 612,000
-# Total = 1,032,000
+# Band 2: 500,000 × 18%  = 90,000
+# Band 3: 500,000 × 24%  = 120,000
+# Band 4: 500,000 × 30%  = 150,000
+# Band 5: 2,200,000 × 36% = 792,000
+# Total = 1,212,000
 
 
 def test_all_bands():
     result = compute(ledger("6_500_000"), LK_2025_26)
     assert result.taxable_income == Decimal("4_700_000")
-    assert result.tax_payable == Decimal("1_032_000")
+    assert result.tax_payable == Decimal("1_212_000")
 
 
 # ── Case 5: APIT credit reduces payable ───────────────────────────────────────

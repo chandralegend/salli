@@ -12,7 +12,8 @@ build/
 .venv/
 venv/
 .env
-.env.*
+.env.local
+.env.*.local
 
 # uv
 # .python-version is intentionally tracked (pins the Python version for uv)

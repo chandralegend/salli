@@ -1,0 +1,102 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from decimal import Decimal
+from typing import Optional
+
+
+@dataclass(frozen=True)
+class Band:
+    """A single progressive tax band."""
+
+    upto: Optional[Decimal]  # None = unbounded (highest band)
+    rate: Decimal
+
+
+@dataclass(frozen=True)
+class ForeignServiceIncomeRegime:
+    """15% maximum/final tax on employment income remitted via a Sri Lankan bank."""
+
+    max_rate: Decimal
+    requires_bank_remittance: bool = True
+
+
+@dataclass(frozen=True)
+class FilingCalendar:
+    set_due: str         # "MM-DD" — Self-Employment Tax / first installment
+    installments: list[str] = field(default_factory=list)  # ["MM-DD", ...]
+    final_installment_due: str = ""
+    return_due: str = ""  # annual return deadline
+
+
+@dataclass(frozen=True)
+class TaxPack:
+    """
+    All the data needed to compute tax for a single (country, year) combination.
+    The engine is a pure function; the pack is its configuration.
+    """
+
+    country: str
+    year: str
+    version: str
+    period_start: str       # YYYY-MM-DD
+    period_end: str         # YYYY-MM-DD
+    personal_relief: Decimal
+    bands: list[Band]
+    foreign_service_income: Optional[ForeignServiceIncomeRegime]
+    credits: list[str]      # ["APIT", "AIT_INTEREST_10", "FOREIGN_TAX_CREDIT"]
+    rounding: str           # "nearest_rupee" | "truncate_rupee"
+    filing: FilingCalendar
+
+
+# ── computation output ─────────────────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class BandWorkings:
+    from_amount: Decimal
+    to_amount: Optional[Decimal]
+    rate: Decimal
+    taxable_in_band: Decimal
+    tax: Decimal
+
+
+@dataclass(frozen=True)
+class TaxComputation:
+    pack_country: str
+    pack_year: str
+    pack_version: str
+
+    # Inputs (snapshot)
+    gross_income: Decimal
+    personal_relief_applied: Decimal
+    taxable_income: Decimal
+
+    # Band-by-band workings
+    band_workings: list[BandWorkings]
+
+    # Credits
+    tax_before_credits: Decimal
+    apit_credit: Decimal
+    ait_credit: Decimal
+    foreign_tax_credit: Decimal
+    total_credits: Decimal
+
+    # Final
+    tax_payable: Decimal
+    rounding: str
+
+
+@dataclass(frozen=True)
+class LedgerView:
+    """
+    Aggregated view of ledger data needed by the tax engine.
+    Built by TaxService from stored postings; passed to compute().
+    """
+
+    total_income: Decimal            # all income sources summed
+    foreign_service_income: Decimal  # subset eligible for 15% regime
+    apit_withheld: Decimal
+    ait_withheld: Decimal
+    foreign_tax_paid: Decimal
+    qualifying_payments: Decimal     # donations / QPDs

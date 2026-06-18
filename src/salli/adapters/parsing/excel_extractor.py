@@ -12,16 +12,17 @@ from __future__ import annotations
 
 import csv
 import io
+from typing import Any
 
 from salli.adapters.parsing.pdf_extractor import (
-    _header_map,
-    _is_credit,
-    _normalise_date,
-    _parse_amount,
+    header_map,
+    is_credit,
+    normalise_date,
+    parse_amount,
 )
 
 
-def extract_from_excel(data: bytes) -> list[dict]:
+def extract_from_excel(data: bytes) -> list[dict[str, Any]]:
     """
     Extract raw transaction rows from an .xlsx bank statement.
     Returns same dict schema as pdf_extractor: {date, description, amount, credit_flag, bank_ref, page}.
@@ -40,7 +41,7 @@ def extract_from_excel(data: bytes) -> list[dict]:
     return []
 
 
-def extract_from_csv(data: bytes) -> list[dict]:
+def extract_from_csv(data: bytes) -> list[dict[str, Any]]:
     """Extract from CSV; tries UTF-8 then latin-1 encoding."""
     for encoding in ("utf-8-sig", "utf-8", "latin-1"):
         try:
@@ -56,14 +57,14 @@ def extract_from_csv(data: bytes) -> list[dict]:
     return _parse_raw_table(table, page=1)
 
 
-def _parse_sheet(sheet) -> list[dict]:
+def _parse_sheet(sheet) -> list[dict[str, Any]]:
     table = []
     for row in sheet.iter_rows(values_only=True):
         table.append([str(c).strip() if c is not None else "" for c in row])
     return _parse_raw_table(table, page=1)
 
 
-def _parse_raw_table(table: list[list[str]], page: int) -> list[dict]:
+def _parse_raw_table(table: list[list[str]], page: int) -> list[dict[str, Any]]:
     if not table:
         return []
 
@@ -71,7 +72,7 @@ def _parse_raw_table(table: list[list[str]], page: int) -> list[dict]:
     header_idx = None
     col_map: dict[str, int] = {}
     for i, row in enumerate(table):
-        m = _header_map(row)
+        m = header_map(row)
         if "date" in m and "desc" in m:
             header_idx = i
             col_map = m
@@ -85,7 +86,7 @@ def _parse_raw_table(table: list[list[str]], page: int) -> list[dict]:
         if not row or all(c == "" for c in row):
             continue
 
-        date_str = _normalise_date(row[col_map["date"]] if col_map["date"] < len(row) else "")
+        date_str = normalise_date(row[col_map["date"]] if col_map["date"] < len(row) else "")
         if not date_str:
             continue
 
@@ -100,11 +101,11 @@ def _parse_raw_table(table: list[list[str]], page: int) -> list[dict]:
             row[col_map["credit"]] if "credit" in col_map and col_map["credit"] < len(row) else ""
         )
 
-        direction = _is_credit(debit_cell, credit_cell)
+        direction = is_credit(debit_cell, credit_cell)
         if direction is None:
             continue
 
-        amount = _parse_amount(credit_cell if direction else debit_cell)
+        amount = parse_amount(credit_cell if direction else debit_cell)
         if not amount:
             continue
 

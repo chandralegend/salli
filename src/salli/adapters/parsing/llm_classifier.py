@@ -91,7 +91,8 @@ async def classify_transactions(
             messages=[{"role": "user", "content": prompt}],
         )
 
-        raw_text = message.content[0].text.strip()
+        block = message.content[0]
+        raw_text = block.text.strip() if hasattr(block, "text") else ""  # type: ignore[union-attr]
         classifications = _parse_response(raw_text)
 
         for i, row in enumerate(batch):
@@ -109,7 +110,7 @@ async def classify_transactions(
     return results
 
 
-def _parse_response(text: str) -> dict[int, dict]:
+def _parse_response(text: str) -> dict[int, dict[str, Any]]:
     """Parse LLM JSON response; returns {index: classification_dict}."""
     # Strip markdown fences if present
     text = text.strip()

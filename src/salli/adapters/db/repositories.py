@@ -236,13 +236,14 @@ class SQLStatementRepository(StatementRepository):
         period_start: str,
         period_end: str,
         transactions: list[Any],
+        storage_key: str = "",
     ) -> None:
         import uuid as _uuid
 
         orm = StatementORM(
             id=statement_id,
             user_id=user_id,
-            storage_key="",
+            storage_key=storage_key,
             bank=bank,
             period_start=period_start,
             period_end=period_end,
@@ -336,7 +337,7 @@ def _orm_to_parsed(row: ParsedTransactionORM) -> Any:
         bank_ref=j.get("bank_ref", ""),
         currency=j.get("currency", "LKR"),
     )
-    pt = ParsedTransaction(
+    return ParsedTransaction(
         raw=raw,
         debit_account_id=j.get("debit_account_id", ""),
         credit_account_id=j.get("credit_account_id", ""),
@@ -344,9 +345,8 @@ def _orm_to_parsed(row: ParsedTransactionORM) -> Any:
         confidence=float(row.confidence or 0.5),
         dedup_key=row.dedup_key or "",
         dedup_status=row.dedup_status,
+        id=row.id,
     )
-    pt.id = row.id  # type: ignore[attr-defined]
-    return pt
 
 
 # ── ReminderRepository ────────────────────────────────────────────────────────

@@ -47,17 +47,17 @@ class Money:
 
     def __add__(self, other: Self) -> Self:
         self._assert_same_currency(other)
-        return Money(self._minor + other._minor, self._currency)
+        return type(self)(self._minor + other._minor, self._currency)
 
     def __sub__(self, other: Self) -> Self:
         self._assert_same_currency(other)
-        return Money(self._minor - other._minor, self._currency)
+        return type(self)(self._minor - other._minor, self._currency)
 
     def __neg__(self) -> Self:
-        return Money(-self._minor, self._currency)
+        return type(self)(-self._minor, self._currency)
 
     def __abs__(self) -> Self:
-        return Money(abs(self._minor), self._currency)
+        return type(self)(abs(self._minor), self._currency)
 
     # ── comparison ────────────────────────────────────────────────────────────
 

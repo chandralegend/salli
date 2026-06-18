@@ -20,6 +20,7 @@ import uuid
 from collections.abc import Callable
 from typing import Any
 
+from salli.application.ports import StoragePort
 from salli.domain.dedup.matcher import (
     CandidateTransaction,
     DedupStatus,
@@ -30,8 +31,9 @@ from salli.domain.parsing.models import ParsedTransaction, ParseResult, RawRow
 
 
 class ParsingService:
-    def __init__(self, uow_factory: Callable[[], Any]) -> None:
+    def __init__(self, uow_factory: Callable[[], Any], storage: StoragePort | None = None) -> None:
         self._uow_factory = uow_factory
+        self._storage = storage
 
     async def parse_statement(
         self,
@@ -126,8 +128,18 @@ class ParsingService:
             if txn.dedup_key in existing_keys:
                 txn.dedup_status = DedupStatus.EXACT_DUPLICATE.value
 
-        # 6. Persist to DB
+        # 6. Upload raw file to storage (best-effort — parsing proceeds even if storage fails)
         statement_id = str(uuid.uuid4())
+        storage_key = ""
+        if self._storage is not None:
+            try:
+                storage_key = await self._storage.upload(
+                    user_id, f"{statement_id}/{filename}", file_bytes
+                )
+            except Exception:
+                pass
+
+        # 7. Persist to DB
         async with self._uow_factory() as uow:
             await uow.statements.save_statement(
                 user_id=user_id,
@@ -136,6 +148,7 @@ class ParsingService:
                 period_start=period_start,
                 period_end=period_end,
                 transactions=parsed,
+                storage_key=storage_key,
             )
 
         return ParseResult(

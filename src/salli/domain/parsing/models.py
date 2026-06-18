@@ -51,6 +51,7 @@ class ParsedTransaction:
     confidence: float = 1.0
     dedup_key: str = ""  # SHA-256 idempotency key (filled by dedup module)
     dedup_status: str = "pending"  # UNIQUE | EXACT_DUPLICATE | FUZZY_MATCH
+    id: str = ""  # DB primary key, populated after persistence
 
 
 @dataclass

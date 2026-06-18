@@ -5,7 +5,6 @@ Uses the same composition.py the CLI uses — the core never knows which surface
 
 from __future__ import annotations
 
-from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -17,13 +16,14 @@ from salli.config import Settings, get_settings
 _bearer = HTTPBearer(auto_error=True)
 
 
-@lru_cache(maxsize=1)
-def _services(settings: Settings) -> Services:
-    return build_services(settings)
+_services_singleton: Services | None = None
 
 
 def get_services() -> Services:
-    return _services(get_settings())
+    global _services_singleton
+    if _services_singleton is None:
+        _services_singleton = build_services(get_settings())
+    return _services_singleton
 
 
 # ── Auth ───────────────────────────────────────────────────────────────────────

@@ -6,61 +6,61 @@ No real PDF files needed — tests feed structured data directly.
 from decimal import Decimal
 
 from salli.adapters.parsing.pdf_extractor import (
-    _header_map,
-    _is_credit,
-    _normalise_date,
-    _parse_amount,
     _parse_table,
+    header_map,
+    is_credit,
+    normalise_date,
+    parse_amount,
 )
 
 
-def test_normalise_date_dmy_slash():
-    assert _normalise_date("25/04/2025") == "2025-04-25"
+def testnormalise_date_dmy_slash():
+    assert normalise_date("25/04/2025") == "2025-04-25"
 
 
-def test_normalise_date_dmy_dash():
-    assert _normalise_date("01-12-2025") == "2025-12-01"
+def testnormalise_date_dmy_dash():
+    assert normalise_date("01-12-2025") == "2025-12-01"
 
 
-def test_normalise_date_iso():
-    assert _normalise_date("2025-07-15") == "2025-07-15"
+def testnormalise_date_iso():
+    assert normalise_date("2025-07-15") == "2025-07-15"
 
 
-def test_normalise_date_text_month():
-    assert _normalise_date("03 Jan 2026") == "2026-01-03"
+def testnormalise_date_text_month():
+    assert normalise_date("03 Jan 2026") == "2026-01-03"
 
 
-def test_normalise_date_invalid():
-    assert _normalise_date("not a date") is None
+def testnormalise_date_invalid():
+    assert normalise_date("not a date") is None
 
 
-def test_parse_amount_comma():
-    assert _parse_amount("1,234,567.89") == Decimal("1234567.89")
+def testparse_amount_comma():
+    assert parse_amount("1,234,567.89") == Decimal("1234567.89")
 
 
-def test_parse_amount_plain():
-    assert _parse_amount("50000.00") == Decimal("50000.00")
+def testparse_amount_plain():
+    assert parse_amount("50000.00") == Decimal("50000.00")
 
 
-def test_parse_amount_empty():
-    assert _parse_amount("") is None
+def testparse_amount_empty():
+    assert parse_amount("") is None
 
 
-def test_is_credit_only_credit():
-    assert _is_credit("", "50000.00") is True
+def testis_credit_only_credit():
+    assert is_credit("", "50000.00") is True
 
 
-def test_is_credit_only_debit():
-    assert _is_credit("15000.00", "") is False
+def testis_credit_only_debit():
+    assert is_credit("15000.00", "") is False
 
 
-def test_is_credit_both_empty():
-    assert _is_credit("", "") is None
+def testis_credit_both_empty():
+    assert is_credit("", "") is None
 
 
-def test_header_map_standard():
+def testheader_map_standard():
     headers = ["Date", "Description", "Debit", "Credit", "Ref"]
-    m = _header_map(headers)
+    m = header_map(headers)
     assert m["date"] == 0
     assert m["desc"] == 1
     assert m["debit"] == 2
@@ -68,9 +68,9 @@ def test_header_map_standard():
     assert m["ref"] == 4
 
 
-def test_header_map_alternate_names():
+def testheader_map_alternate_names():
     headers = ["Txn Date", "Narration", "Withdrawals", "Deposits", "Cheque No"]
-    m = _header_map(headers)
+    m = header_map(headers)
     assert "date" in m
     assert "desc" in m
     assert "debit" in m

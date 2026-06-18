@@ -13,11 +13,7 @@ from __future__ import annotations
 
 import re
 from decimal import Decimal, InvalidOperation
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    pass
-
+from typing import Any
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -35,7 +31,7 @@ _MONTHS = {
 }
 
 
-def _normalise_date(raw: str) -> str | None:
+def normalise_date(raw: str) -> str | None:
     raw = raw.strip()
     for pat in _DATE_PATTERNS:
         m = pat.search(raw)
@@ -50,7 +46,7 @@ def _normalise_date(raw: str) -> str | None:
     return None
 
 
-def _parse_amount(text: str) -> Decimal | None:
+def parse_amount(text: str) -> Decimal | None:
     clean = re.sub(r"[^\d.]", "", text.replace(",", ""))
     try:
         return Decimal(clean) if clean else None
@@ -58,10 +54,10 @@ def _parse_amount(text: str) -> Decimal | None:
         return None
 
 
-def _is_credit(debit_cell: str, credit_cell: str) -> bool | None:
+def is_credit(debit_cell: str, credit_cell: str) -> bool | None:
     """Given debit and credit column cells, determine direction. Returns None if unclear."""
-    has_debit = bool(debit_cell and debit_cell.strip() and _parse_amount(debit_cell))
-    has_credit = bool(credit_cell and credit_cell.strip() and _parse_amount(credit_cell))
+    has_debit = bool(debit_cell and debit_cell.strip() and parse_amount(debit_cell))
+    has_credit = bool(credit_cell and credit_cell.strip() and parse_amount(credit_cell))
     if has_credit and not has_debit:
         return True
     if has_debit and not has_credit:
@@ -78,7 +74,7 @@ _CREDIT_HEADERS = {"credit", "cr", "deposits", "deposit", "cr amount"}
 _REF_HEADERS = {"ref", "reference", "txn ref", "cheque no", "chq no", "transaction id"}
 
 
-def _header_map(headers: list[str]) -> dict[str, int]:
+def header_map(headers: list[str]) -> dict[str, int]:
     """Return {role: column_index} for a header row."""
     mapping: dict[str, int] = {}
     for i, h in enumerate(headers):
@@ -99,7 +95,7 @@ def _header_map(headers: list[str]) -> dict[str, int]:
 # ── Public extractor ──────────────────────────────────────────────────────────
 
 
-def extract_from_pdf(data: bytes) -> list[dict]:
+def extract_from_pdf(data: bytes) -> list[dict[str, Any]]:
     """
     Extract raw transaction rows from a PDF bank statement.
     Returns a list of dicts: {date, description, amount, credit_flag, bank_ref, page}.
@@ -107,7 +103,7 @@ def extract_from_pdf(data: bytes) -> list[dict]:
     """
     import pdfplumber
 
-    rows: list[dict] = []
+    rows: list[dict[str, Any]] = []
 
     with pdfplumber.open(__import__("io").BytesIO(data)) as pdf:
         for page_num, page in enumerate(pdf.pages, 1):
@@ -122,7 +118,7 @@ def extract_from_pdf(data: bytes) -> list[dict]:
     return rows
 
 
-def _parse_table(table: list[list[str | None]], page: int) -> list[dict]:
+def _parse_table(table: list[list[str | None]], page: int) -> list[dict[str, Any]]:
     if not table:
         return []
 
@@ -131,7 +127,7 @@ def _parse_table(table: list[list[str | None]], page: int) -> list[dict]:
     if header_row is None:
         return []
 
-    col_map = _header_map([c or "" for c in header_row])
+    col_map = header_map([c or "" for c in header_row])
     if "date" not in col_map or "desc" not in col_map:
         return []
 
@@ -141,7 +137,7 @@ def _parse_table(table: list[list[str | None]], page: int) -> list[dict]:
             continue
         cells = [c or "" for c in row]
 
-        date_str = _normalise_date(cells[col_map["date"]] if col_map["date"] < len(cells) else "")
+        date_str = normalise_date(cells[col_map["date"]] if col_map["date"] < len(cells) else "")
         if not date_str:
             continue
 
@@ -158,11 +154,11 @@ def _parse_table(table: list[list[str | None]], page: int) -> list[dict]:
             else ""
         )
 
-        direction = _is_credit(debit_cell, credit_cell)
+        direction = is_credit(debit_cell, credit_cell)
         if direction is None:
             continue
 
-        amount = _parse_amount(credit_cell if direction else debit_cell)
+        amount = parse_amount(credit_cell if direction else debit_cell)
         if not amount:
             continue
 
@@ -196,16 +192,16 @@ _TEXT_ROW = re.compile(
 )
 
 
-def _parse_text_lines(text: str, page: int) -> list[dict]:
+def _parse_text_lines(text: str, page: int) -> list[dict[str, Any]]:
     rows = []
     for line in text.splitlines():
         m = _TEXT_ROW.search(line)
         if not m:
             continue
-        date_str = _normalise_date(m.group("date"))
+        date_str = normalise_date(m.group("date"))
         if not date_str:
             continue
-        amount = _parse_amount(m.group("amount"))
+        amount = parse_amount(m.group("amount"))
         if not amount:
             continue
         direction_str = (m.group("dir") or "").upper()

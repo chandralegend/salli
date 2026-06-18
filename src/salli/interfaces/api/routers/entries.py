@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Literal
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -22,7 +23,7 @@ class PostingRequest(BaseModel):
 class AddEntryRequest(BaseModel):
     entry_date: str  # YYYY-MM-DD
     description: str
-    source: str = "manual"
+    source: Literal["manual", "statement", "sms", "system"] = "manual"
     external_ref: str | None = None
     postings: list[PostingRequest]
 

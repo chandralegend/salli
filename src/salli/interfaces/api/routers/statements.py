@@ -59,7 +59,7 @@ async def upload_statement(
 @router.get("/{statement_id}")
 async def get_pending(statement_id: str, user_id: CurrentUser, svc: AppServices):
     """Return unposted transactions for a statement."""
-    txns = await svc.parsing.get_pending_transactions(user_id, statement_id)
+    txns = await svc.parsing.get_pending(user_id)
     return {"statement_id": statement_id, "transactions": [_txn_dict(t) for t in txns]}
 
 
@@ -75,7 +75,7 @@ async def post_approved(
     svc: AppServices,
 ):
     """Post approved transactions as journal entries."""
-    entry_ids = await svc.parsing.post_approved(user_id, statement_id, body.approved_ids)
+    entry_ids = await svc.parsing.post_approved(user_id, body.approved_ids)
     return {"posted": len(entry_ids), "entry_ids": entry_ids}
 
 

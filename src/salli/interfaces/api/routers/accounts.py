@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -7,11 +9,13 @@ from salli.interfaces.api.deps import AppServices, CurrentUser
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
+AccountTypeStr = Literal["asset", "liability", "equity", "income", "expense"]
+
 
 class AddAccountRequest(BaseModel):
     code: str
     name: str
-    type: str
+    type: AccountTypeStr
     currency: str = "LKR"
     parent_id: str | None = None
 

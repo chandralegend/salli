@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from salli.adapters.db.session import make_session_factory
 from salli.adapters.fx.cbsl import CBSLFxRateAdapter
+from salli.application.ports import StoragePort
 from salli.application.services.agent_service import AgentService
 from salli.application.services.ledger_service import LedgerService
 from salli.application.services.parsing_service import ParsingService
@@ -26,6 +27,7 @@ class Services:
     parsing: ParsingService
     reminders: ReminderService
     fx: CBSLFxRateAdapter
+    storage: StoragePort
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
@@ -41,13 +43,31 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     def uow_factory() -> UnitOfWork:
         return UnitOfWork(session_factory)
 
+    storage = _build_storage(settings)
+
     ledger = LedgerService(uow_factory)
     tax = TaxService(uow_factory)
     agent = AgentService(ledger, tax, checkpointer=checkpointer)
-    parsing = ParsingService(uow_factory)
+    parsing = ParsingService(uow_factory, storage)
     reminders = ReminderService(uow_factory)
     fx = CBSLFxRateAdapter()
 
     return Services(
-        ledger=ledger, tax=tax, agent=agent, parsing=parsing, reminders=reminders, fx=fx
+        ledger=ledger,
+        tax=tax,
+        agent=agent,
+        parsing=parsing,
+        reminders=reminders,
+        fx=fx,
+        storage=storage,
     )
+
+
+def _build_storage(settings: Settings) -> StoragePort:
+    if settings.supabase_url and settings.supabase_service_role_key:
+        from salli.adapters.storage.supabase import SupabaseStorageAdapter
+
+        return SupabaseStorageAdapter(settings.supabase_url, settings.supabase_service_role_key)
+    from salli.adapters.storage.local import LocalStorageAdapter
+
+    return LocalStorageAdapter()

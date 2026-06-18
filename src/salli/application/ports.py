@@ -68,6 +68,7 @@ class StatementRepository(ABC):
         period_start: str,
         period_end: str,
         transactions: list[Any],
+        storage_key: str = "",
     ) -> None: ...
 
     @abstractmethod

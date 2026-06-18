@@ -16,29 +16,29 @@ from typing import Any
 
 
 class AgentService:
-    def __init__(self, ledger_svc, tax_svc, checkpointer=None) -> None:
+    def __init__(self, ledger_svc: Any, tax_svc: Any, checkpointer: Any = None) -> None:
         self._ledger_svc = ledger_svc
         self._tax_svc = tax_svc
         self._checkpointer = checkpointer
-        self._agent = None
-        self._workflow = None
+        self._agent: Any = None
+        self._workflow: Any = None
 
-    def _get_agent(self):
+    def _get_agent(self) -> Any:
         if self._agent is None:
             from salli.domain.agents.tax_agent import build_tax_agent
 
-            self._agent = build_tax_agent(
+            self._agent = build_tax_agent(  # type: ignore[misc]
                 self._ledger_svc,
                 self._tax_svc,
                 checkpointer=self._checkpointer,
             )
         return self._agent
 
-    def _get_workflow(self):
+    def _get_workflow(self) -> Any:
         if self._workflow is None:
             from salli.domain.agents.return_workflow import build_return_workflow
 
-            self._workflow = build_return_workflow(
+            self._workflow = build_return_workflow(  # type: ignore[misc]
                 self._ledger_svc,
                 self._tax_svc,
                 checkpointer=self._checkpointer,

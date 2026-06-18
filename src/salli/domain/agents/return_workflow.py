@@ -50,7 +50,7 @@ class ReturnState:
 # ── Nodes ──────────────────────────────────────────────────────────────────────
 
 
-async def _gather(state: ReturnState, ledger_svc, tax_svc) -> dict:
+async def _gather(state: ReturnState, ledger_svc: Any, tax_svc: Any) -> dict[str, Any]:
     from salli.domain.tax.packs.registry import get_pack
 
     pack = get_pack("LK", state.year)
@@ -63,7 +63,7 @@ async def _gather(state: ReturnState, ledger_svc, tax_svc) -> dict:
     return {"accounts": accounts, "ledger_entries": entries}
 
 
-async def _compute(state: ReturnState, tax_svc) -> dict:
+async def _compute(state: ReturnState, tax_svc: Any) -> dict[str, Any]:
     try:
         computation = await tax_svc.compute_tax(state.user_id, state.year)
         return {"tax_computation": computation}
@@ -71,7 +71,7 @@ async def _compute(state: ReturnState, tax_svc) -> dict:
         return {"error": str(e)}
 
 
-def _map_to_cages(state: ReturnState) -> dict:
+def _map_to_cages(state: ReturnState) -> dict[str, Any]:
     """
     Map the engine's TaxComputation output to RAMIS return cages.
     RAMIS is the IRD's online return system. Cage numbers may change each year;
@@ -107,7 +107,7 @@ def _map_to_cages(state: ReturnState) -> dict:
     return {"draft_return": draft}
 
 
-def _review(state: ReturnState) -> dict:
+def _review(state: ReturnState) -> dict[str, Any]:
     """
     Human-in-the-loop gate. The graph pauses here and surfaces the draft to the user.
     In Phase 1 (CLI), the caller reads the interrupt payload and resumes with a Command.
@@ -123,7 +123,7 @@ def _review(state: ReturnState) -> dict:
     return {"review_decision": decision}
 
 
-def _finalize(state: ReturnState) -> dict:
+def _finalize(state: ReturnState) -> dict[str, Any]:
     if state.review_decision != "approve":
         return {
             "worksheet": {},
@@ -172,19 +172,19 @@ def build_return_workflow(ledger_svc, tax_svc, checkpointer=None):
         checkpointer = MemorySaver()
 
     # Bind services into closures
-    async def gather(state: ReturnState) -> dict:
+    async def gather(state: ReturnState) -> dict[str, Any]:
         return await _gather(state, ledger_svc, tax_svc)
 
-    async def compute(state: ReturnState) -> dict:
+    async def compute(state: ReturnState) -> dict[str, Any]:
         return await _compute(state, tax_svc)
 
-    def map_to_cages(state: ReturnState) -> dict:
+    def map_to_cages(state: ReturnState) -> dict[str, Any]:
         return _map_to_cages(state)
 
-    def review(state: ReturnState) -> dict:
+    def review(state: ReturnState) -> dict[str, Any]:
         return _review(state)
 
-    def finalize(state: ReturnState) -> dict:
+    def finalize(state: ReturnState) -> dict[str, Any]:
         return _finalize(state)
 
     g = StateGraph(ReturnState)

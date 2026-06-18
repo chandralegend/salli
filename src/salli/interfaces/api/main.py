@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 
 from salli.config import get_settings
 from salli.interfaces.api.deps import get_services
-from salli.interfaces.api.routers import accounts, agent, entries, ledger, tax
+from salli.interfaces.api.routers import accounts, agent, entries, ledger, statements, tax
 
 
 @asynccontextmanager
@@ -60,6 +60,7 @@ def create_app() -> FastAPI:
     app.include_router(ledger.router)
     app.include_router(tax.router)
     app.include_router(agent.router)
+    app.include_router(statements.router)
 
     # ── Exception handlers ────────────────────────────────────────────────────
     @app.exception_handler(ValueError)

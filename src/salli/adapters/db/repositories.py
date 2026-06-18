@@ -16,10 +16,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from salli.adapters.db.models import (
     AccountORM,
     JournalEntryORM,
+    ParsedTransactionORM,
     PostingORM,
+    StatementORM,
     TaxComputationORM,
 )
-from salli.application.ports import LedgerRepository, TaxComputationRepository
+from salli.application.ports import LedgerRepository, StatementRepository, TaxComputationRepository
 from salli.domain.accounting.models import (
     Account,
     Direction,
@@ -211,3 +213,119 @@ class SQLTaxComputationRepository(TaxComputationRepository):
             return None
         # Deserialize back — used only for display/reporting, not recomputation.
         return row.result_json  # type: ignore[return-value]
+
+
+# ── StatementRepository ───────────────────────────────────────────────────────
+
+
+class SQLStatementRepository(StatementRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def save_statement(
+        self,
+        user_id: str,
+        statement_id: str,
+        bank: str,
+        period_start: str,
+        period_end: str,
+        transactions: list[Any],
+    ) -> None:
+        import uuid as _uuid
+
+        orm = StatementORM(
+            id=statement_id,
+            user_id=user_id,
+            storage_key="",
+            bank=bank,
+            period_start=period_start,
+            period_end=period_end,
+            status="pending",
+        )
+        self._session.add(orm)
+
+        for txn in transactions:
+            raw = txn.raw
+            pt = ParsedTransactionORM(
+                id=str(_uuid.uuid4()),
+                statement_id=statement_id,
+                raw=f"{raw.date}|{raw.description}|{raw.amount}|{raw.credit_flag}",
+                extracted_json={
+                    "date": raw.date,
+                    "description": raw.description,
+                    "amount": str(raw.amount),
+                    "credit_flag": raw.credit_flag,
+                    "bank_ref": raw.bank_ref,
+                    "debit_account_id": txn.debit_account_id,
+                    "credit_account_id": txn.credit_account_id,
+                    "category": txn.category,
+                    "currency": raw.currency,
+                },
+                confidence=txn.confidence,
+                dedup_key=txn.dedup_key or None,
+                dedup_status=txn.dedup_status,
+            )
+            self._session.add(pt)
+
+    async def get_pending(self, user_id: str, statement_id: str) -> list[Any]:
+        from salli.domain.parsing.models import ParsedTransaction, RawRow
+        from decimal import Decimal
+
+        stmt = (
+            select(ParsedTransactionORM)
+            .join(StatementORM)
+            .where(
+                StatementORM.user_id == user_id,
+                ParsedTransactionORM.statement_id == statement_id,
+                ParsedTransactionORM.posted_entry_id.is_(None),
+            )
+        )
+        result = await self._session.execute(stmt)
+        rows = result.scalars().all()
+        return [_orm_to_parsed(r) for r in rows]
+
+    async def get_by_ids(self, user_id: str, ids: list[str]) -> list[Any]:
+        stmt = (
+            select(ParsedTransactionORM)
+            .join(StatementORM)
+            .where(
+                StatementORM.user_id == user_id,
+                ParsedTransactionORM.id.in_(ids),
+            )
+        )
+        result = await self._session.execute(stmt)
+        return [_orm_to_parsed(r) for r in result.scalars().all()]
+
+    async def mark_posted(self, transaction_id: str, entry_id: str) -> None:
+        stmt = select(ParsedTransactionORM).where(ParsedTransactionORM.id == transaction_id)
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row:
+            row.posted_entry_id = entry_id
+            row.dedup_status = "posted"
+
+
+def _orm_to_parsed(row: ParsedTransactionORM) -> Any:
+    from decimal import Decimal
+    from salli.domain.parsing.models import ParsedTransaction, RawRow
+
+    j = row.extracted_json
+    raw = RawRow(
+        date=j["date"],
+        description=j["description"],
+        amount=Decimal(str(j["amount"])),
+        credit_flag=j["credit_flag"],
+        bank_ref=j.get("bank_ref", ""),
+        currency=j.get("currency", "LKR"),
+    )
+    pt = ParsedTransaction(
+        raw=raw,
+        debit_account_id=j.get("debit_account_id", ""),
+        credit_account_id=j.get("credit_account_id", ""),
+        category=j.get("category", ""),
+        confidence=float(row.confidence or 0.5),
+        dedup_key=row.dedup_key or "",
+        dedup_status=row.dedup_status,
+    )
+    pt.id = row.id  # type: ignore[attr-defined]
+    return pt

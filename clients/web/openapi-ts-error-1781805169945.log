@@ -1,0 +1,11 @@
+[2026-06-18T17:52:49.945Z] Error: Post-processor "Prettier" failed to run: spawnSync prettier ENOENT
+Stack:
+ConfigError: Post-processor "Prettier" failed to run: spawnSync prettier ENOENT
+    at postprocessOutput (file:///home/chandra/Documents/personal/salli/clients/web/node_modules/.pnpm/@hey-api+shared@0.4.8/node_modules/@hey-api/shared/dist/index.mjs:844:27)
+    at createClient$1 (file:///home/chandra/Documents/personal/salli/clients/web/node_modules/.pnpm/@hey-api+openapi-ts@0.98.2_typescript@5.9.3/node_modules/@hey-api/openapi-ts/dist/src-CY0O0cwg.mjs:158:4)
+    at async file:///home/chandra/Documents/personal/salli/clients/web/node_modules/.pnpm/@hey-api+openapi-ts@0.98.2_typescript@5.9.3/node_modules/@hey-api/openapi-ts/dist/src-CY0O0cwg.mjs:212:12
+    at async Promise.all (index 0)
+    at async createClient (file:///home/chandra/Documents/personal/salli/clients/web/node_modules/.pnpm/@hey-api+openapi-ts@0.98.2_typescript@5.9.3/node_modules/@hey-api/openapi-ts/dist/src-CY0O0cwg.mjs:210:21)
+    at async Command.<anonymous> (file:///home/chandra/Documents/personal/salli/clients/web/node_modules/.pnpm/@hey-api+openapi-ts@0.98.2_typescript@5.9.3/node_modules/@hey-api/openapi-ts/dist/run.mjs:35:8)
+    at async Command.parseAsync (file:///home/chandra/Documents/personal/salli/clients/web/node_modules/.pnpm/commander@15.0.0/node_modules/commander/lib/command.js:1113:5)
+    at async runCli (file:///home/chandra/Documents/personal/salli/clients/web/node_modules/.pnpm/@hey-api+openapi-ts@0.98.2_typescript@5.9.3/node_modules/@hey-api/openapi-ts/dist/run.mjs:39:3)

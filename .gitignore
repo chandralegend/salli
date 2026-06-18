@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+.env
+.env.*
+
+# uv
+# .python-version is intentionally tracked (pins the Python version for uv)
+
+# Type checking
+.mypy_cache/
+.pyright/
+.ruff_cache/
+
+# Testing
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Alembic
+# (versions tracked; keep alembic.ini)
+
+# Secrets / local config
+*.local
+secrets/
+
+# Documentation (internal — not for distribution)
+doc/
+
+# Node (clients — added later)
+node_modules/
+.next/
+.expo/

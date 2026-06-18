@@ -2,14 +2,15 @@
 AgentService — use-case orchestration for agent interactions.
 
 Builds and holds the Tax Agent and Return Workflow, exposes:
-  - stream_chat(): streaming Tax Agent conversation
+  - stream_chat(): streaming Tax Agent conversation as typed events
   - prepare_return(): run the return workflow to the review interrupt
   - resume_return(): resume after human decision
+  - get_history(): fetch message history for a thread
 """
 from __future__ import annotations
 
 import uuid
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
 from typing import Any
 
 
@@ -48,31 +49,80 @@ class AgentService:
         user_id: str,
         message: str,
         thread_id: str | None = None,
-    ) -> AsyncIterator[str]:
+    ) -> AsyncIterator[tuple[str, Any]]:
         """
-        Stream a Tax Agent response token by token.
-        thread_id is the conversation session; pass the same ID to continue.
+        Yield (event_type, payload) tuples for SSE:
+          ("token",       str)
+          ("tool_call",   {"name": str, "input": dict})
+          ("tool_result", {"name": str, "output": Any})
+          ("interrupt",   dict)
+          ("done",        None)
         """
         if thread_id is None:
             thread_id = str(uuid.uuid4())
 
         agent = self._get_agent()
-        config = {"configurable": {"thread_id": thread_id}}
+        config = {"configurable": {"thread_id": f"{user_id}:{thread_id}"}}
 
-        async for event in agent.astream(
-            {"messages": [("user", message)]},
-            config=config,
-            stream_mode="messages",
-        ):
-            msg, metadata = event
-            if hasattr(msg, "content") and metadata.get("langgraph_node") == "agent":
-                content = msg.content
-                if isinstance(content, str):
-                    yield content
-                elif isinstance(content, list):
-                    for block in content:
-                        if isinstance(block, dict) and block.get("type") == "text":
-                            yield block["text"]
+        try:
+            async for event in agent.astream_events(
+                {"messages": [("user", message)]},
+                config=config,
+                version="v2",
+            ):
+                kind = event["event"]
+
+                if kind == "on_chat_model_stream":
+                    chunk = event["data"]["chunk"]
+                    content = chunk.content
+                    if isinstance(content, str) and content:
+                        yield ("token", content)
+                    elif isinstance(content, list):
+                        for block in content:
+                            if isinstance(block, dict) and block.get("type") == "text":
+                                text = block.get("text", "")
+                                if text:
+                                    yield ("token", text)
+
+                elif kind == "on_tool_start":
+                    yield ("tool_call", {"name": event.get("name"), "input": event["data"].get("input", {})})
+
+                elif kind == "on_tool_end":
+                    output = event["data"].get("output")
+                    if hasattr(output, "content"):
+                        output = output.content
+                    yield ("tool_result", {"name": event.get("name"), "output": output})
+
+        except Exception as exc:
+            # Surface interrupt payloads from the return workflow when run via stream_chat
+            exc_type = type(exc).__name__
+            if "interrupt" in exc_type.lower() or "GraphInterrupt" in exc_type:
+                yield ("interrupt", {"message": str(exc)})
+            else:
+                raise
+        finally:
+            yield ("done", None)
+
+    async def get_history(
+        self,
+        user_id: str,
+        thread_id: str,
+    ) -> list[dict[str, Any]]:
+        """Return message history for a conversation thread."""
+        agent = self._get_agent()
+        config = {"configurable": {"thread_id": f"{user_id}:{thread_id}"}}
+
+        state = await agent.aget_state(config)
+        messages = []
+        for msg in state.values.get("messages", []):
+            role = "assistant" if msg.__class__.__name__ == "AIMessage" else "user"
+            content = msg.content
+            if isinstance(content, list):
+                content = " ".join(
+                    b.get("text", "") for b in content if isinstance(b, dict) and b.get("type") == "text"
+                )
+            messages.append({"role": role, "content": content})
+        return messages
 
     async def prepare_return(
         self,

@@ -44,14 +44,16 @@ def _build_ledger_view(
                         foreign_service_income += base
 
             elif acc.type == "liability":
+                # DR to a tax-payable liability = employer remitting to IRD on
+                # the employee's behalf (reduces the payable, records withheld tax)
                 if "apit" in name_lower:
-                    if posting.direction == Direction.CREDIT:
+                    if posting.direction == Direction.DEBIT:
                         apit_withheld += base
                 elif "ait" in name_lower:
-                    if posting.direction == Direction.CREDIT:
+                    if posting.direction == Direction.DEBIT:
                         ait_withheld += base
                 elif "foreign tax" in name_lower:
-                    if posting.direction == Direction.CREDIT:
+                    if posting.direction == Direction.DEBIT:
                         foreign_tax_paid += base
 
             elif acc.type == "expense":

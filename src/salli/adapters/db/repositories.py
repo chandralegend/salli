@@ -10,6 +10,7 @@ from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from salli.adapters.db.models import (
@@ -35,7 +36,9 @@ _MINOR_FACTOR = 100  # LKR has 2 decimal places
 
 
 def _posting_to_orm(p: Posting, entry_id: str) -> PostingORM:
-    base_minor = int(p.base_signed * _MINOR_FACTOR)
+    # base_amount_minor is the unsigned FX-converted amount in minor units.
+    # The trigger multiplies by `direction` to get the signed contribution, so
+    # storing p.base_signed here would double-sign credits and break the check.
     return PostingORM(
         entry_id=entry_id,
         account_id=p.account_id,
@@ -44,7 +47,7 @@ def _posting_to_orm(p: Posting, entry_id: str) -> PostingORM:
         currency=p.currency,
         fx_rate=float(p.fx_rate),
         fx_rate_source=p.fx_rate_source,
-        base_amount_minor=base_minor,
+        base_amount_minor=int(p.amount * p.fx_rate * _MINOR_FACTOR),
     )
 
 
@@ -117,6 +120,7 @@ class SQLLedgerRepository(LedgerRepository):
         stmt = (
             select(JournalEntryORM)
             .where(JournalEntryORM.user_id == user_id)
+            .options(selectinload(JournalEntryORM.postings))
             .order_by(JournalEntryORM.entry_date, JournalEntryORM.created_at)
         )
         if from_date:

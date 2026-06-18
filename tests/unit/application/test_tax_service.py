@@ -117,10 +117,11 @@ def test_build_ledger_view_foreign_service_income():
 
 def test_build_ledger_view_apit_credit():
     apit_acc = _make_account("u1", "2100", "APIT Payable", "liability")
-    # Balanced: bank DR 50,000 / APIT Payable CR 50,000 (bank is unknown to view → skipped)
+    # DR APIT Payable = employer has remitted this amount to IRD on our behalf.
+    # The offsetting CR is to bank/income (unknown to view → skipped by _build_ledger_view).
     entry = _make_entry("u1", "2025-04-01", [
-        Posting(account_id="bank-clearing", direction=Direction.DEBIT, amount=Decimal("50_000"), currency="LKR"),
-        Posting(account_id=apit_acc.id, direction=Direction.CREDIT, amount=Decimal("50_000"), currency="LKR"),
+        Posting(account_id=apit_acc.id, direction=Direction.DEBIT, amount=Decimal("50_000"), currency="LKR"),
+        Posting(account_id="income-clearing", direction=Direction.CREDIT, amount=Decimal("50_000"), currency="LKR"),
     ])
     view = _build_ledger_view([entry], [apit_acc])
     assert view.apit_withheld == Decimal("50_000")
@@ -147,11 +148,11 @@ def _make_tax_service_with_income(income: Decimal, apit: Decimal = Decimal(0)):
     ])
     entries = [salary_entry]
 
-    # Entry 2: APIT withheld — separate balanced entry so the model validator passes
+    # Entry 2: APIT withheld — DR APIT Payable (remitted to IRD), CR clearing
     if apit > 0:
         apit_entry = _make_entry("u1", "2025-04-01", [
-            Posting(account_id="bank", direction=Direction.DEBIT, amount=apit, currency="LKR"),
-            Posting(account_id=apit_acc.id, direction=Direction.CREDIT, amount=apit, currency="LKR"),
+            Posting(account_id=apit_acc.id, direction=Direction.DEBIT, amount=apit, currency="LKR"),
+            Posting(account_id="clearing", direction=Direction.CREDIT, amount=apit, currency="LKR"),
         ])
         entries.append(apit_entry)
 

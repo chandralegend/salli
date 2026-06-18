@@ -1,5 +1,10 @@
 import asyncio
+import sys
 from logging.config import fileConfig
+from pathlib import Path
+
+# Ensure src/ is on the path so `salli` is importable during migrations
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from alembic import context
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -8,9 +13,10 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Import adapter ORM models so Alembic can detect them
-# from salli.adapters.db.models import Base  # uncomment when models exist
-target_metadata = None
+# Import all ORM models so Alembic can auto-detect schema changes
+from salli.adapters.db.models import Base  # noqa: E402
+
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:

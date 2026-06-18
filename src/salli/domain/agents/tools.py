@@ -60,9 +60,26 @@ def make_tools(ledger_svc, tax_svc):
         If none exists, compute it now. Numbers here are authoritative;
         narrate them — do NOT recompute or adjust them.
         """
-        result = await tax_svc.get_latest_computation(user_id, year)
-        if result is None:
-            result = await tax_svc.compute_tax(user_id, year)
+        # Always recompute for fresh numbers (also persists the result)
+        result = await tax_svc.compute_tax(user_id, year)
+
+        def _bw(bw: Any) -> dict:
+            if isinstance(bw, dict):
+                return {
+                    "from": str(bw.get("from_amount", "0")),
+                    "to": str(bw["to_amount"]) if bw.get("to_amount") else "∞",
+                    "rate": str(bw.get("rate", "")),
+                    "taxable_in_band": str(bw.get("taxable_in_band", "0")),
+                    "tax": str(bw.get("tax", "0")),
+                }
+            return {
+                "from": str(bw.from_amount),
+                "to": str(bw.to_amount) if bw.to_amount else "∞",
+                "rate": str(bw.rate),
+                "taxable_in_band": str(bw.taxable_in_band),
+                "tax": str(bw.tax),
+            }
+
         return {
             "year": result.pack_year,
             "pack_version": result.pack_version,
@@ -74,16 +91,7 @@ def make_tools(ledger_svc, tax_svc):
             "ait_credit": str(result.ait_credit),
             "foreign_tax_credit": str(result.foreign_tax_credit),
             "tax_payable": str(result.tax_payable),
-            "band_workings": [
-                {
-                    "from": str(bw.from_amount),
-                    "to": str(bw.to_amount) if bw.to_amount else "∞",
-                    "rate": str(bw.rate),
-                    "taxable_in_band": str(bw.taxable_in_band),
-                    "tax": str(bw.tax),
-                }
-                for bw in result.band_workings
-            ],
+            "band_workings": [_bw(bw) for bw in result.band_workings],
         }
 
     @tool

@@ -22,6 +22,13 @@ class Services:
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
+    import os
+
+    # LangChain reads API keys directly from os.environ; pydantic-settings
+    # loads .env into Settings fields but doesn't populate the process env.
+    if settings.anthropic_api_key:
+        os.environ.setdefault("ANTHROPIC_API_KEY", settings.anthropic_api_key)
+
     session_factory = make_session_factory(settings)
 
     def uow_factory() -> UnitOfWork:

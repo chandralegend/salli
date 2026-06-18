@@ -314,8 +314,15 @@ def _run_agent_chat(priming_message: str | None, thread_id: str | None = None):
 
     async def _stream_one(msg: str) -> None:
         console.print("[bold green]Salli:[/bold green] ", end="")
-        async for chunk in svc.agent.stream_chat(user_id, msg, thread_id=thread_id):
-            console.print(chunk, end="")
+        async for event_type, payload in svc.agent.stream_chat(user_id, msg, thread_id=thread_id):
+            if event_type == "token":
+                console.print(payload, end="")
+            elif event_type == "tool_call":
+                console.print(f"\n[dim]  ▸ {payload.get('name')}…[/dim]", end="")
+            elif event_type == "interrupt":
+                console.print(f"\n[yellow]  ⏸ Review required: {payload}[/yellow]")
+            elif event_type in ("done", "error"):
+                break
         console.print()
 
     if priming_message:

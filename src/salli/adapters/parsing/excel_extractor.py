@@ -7,6 +7,7 @@ The extractor handles:
   - Multiple sheets (uses first sheet that looks like a statement)
   - .csv files (treated as single-column Excel via csv module)
 """
+
 from __future__ import annotations
 
 import csv
@@ -80,7 +81,7 @@ def _parse_raw_table(table: list[list[str]], page: int) -> list[dict]:
         return []
 
     rows = []
-    for row in table[header_idx + 1:]:
+    for row in table[header_idx + 1 :]:
         if not row or all(c == "" for c in row):
             continue
 
@@ -92,8 +93,12 @@ def _parse_raw_table(table: list[list[str]], page: int) -> list[dict]:
         if not desc:
             continue
 
-        debit_cell = row[col_map["debit"]] if "debit" in col_map and col_map["debit"] < len(row) else ""
-        credit_cell = row[col_map["credit"]] if "credit" in col_map and col_map["credit"] < len(row) else ""
+        debit_cell = (
+            row[col_map["debit"]] if "debit" in col_map and col_map["debit"] < len(row) else ""
+        )
+        credit_cell = (
+            row[col_map["credit"]] if "credit" in col_map and col_map["credit"] < len(row) else ""
+        )
 
         direction = _is_credit(debit_cell, credit_cell)
         if direction is None:
@@ -105,13 +110,15 @@ def _parse_raw_table(table: list[list[str]], page: int) -> list[dict]:
 
         ref = row[col_map["ref"]].strip() if "ref" in col_map and col_map["ref"] < len(row) else ""
 
-        rows.append({
-            "date": date_str,
-            "description": desc,
-            "amount": amount,
-            "credit_flag": direction,
-            "bank_ref": ref,
-            "page": page,
-        })
+        rows.append(
+            {
+                "date": date_str,
+                "description": desc,
+                "amount": amount,
+                "credit_flag": direction,
+                "bank_ref": ref,
+                "page": page,
+            }
+        )
 
     return rows

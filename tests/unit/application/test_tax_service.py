@@ -1,4 +1,5 @@
 """Unit tests for TaxService using in-memory fakes."""
+
 from __future__ import annotations
 
 import uuid
@@ -10,7 +11,6 @@ import pytest
 from salli.application.services.tax_service import TaxService, _build_ledger_view
 from salli.domain.accounting.models import Account, Direction, Posting, StoredJournalEntry
 from salli.domain.tax.models import TaxComputation
-
 
 # ── In-memory fakes ────────────────────────────────────────────────────────────
 
@@ -95,10 +95,19 @@ def test_build_ledger_view_income_credit():
         amount=Decimal("3_000_000"),
         currency="LKR",
     )
-    entry = _make_entry("u1", "2025-04-01", [
-        Posting(account_id="asset", direction=Direction.DEBIT, amount=Decimal("3_000_000"), currency="LKR"),
-        posting,
-    ])
+    entry = _make_entry(
+        "u1",
+        "2025-04-01",
+        [
+            Posting(
+                account_id="asset",
+                direction=Direction.DEBIT,
+                amount=Decimal("3_000_000"),
+                currency="LKR",
+            ),
+            posting,
+        ],
+    )
     view = _build_ledger_view([entry], [salary_acc])
     assert view.total_income == Decimal("3_000_000")
     assert view.foreign_service_income == Decimal(0)
@@ -106,10 +115,24 @@ def test_build_ledger_view_income_credit():
 
 def test_build_ledger_view_foreign_service_income():
     fsi_acc = _make_account("u1", "FSI001", "Foreign Service Income", "income")
-    entry = _make_entry("u1", "2025-04-01", [
-        Posting(account_id="asset", direction=Direction.DEBIT, amount=Decimal("500_000"), currency="LKR"),
-        Posting(account_id=fsi_acc.id, direction=Direction.CREDIT, amount=Decimal("500_000"), currency="LKR"),
-    ])
+    entry = _make_entry(
+        "u1",
+        "2025-04-01",
+        [
+            Posting(
+                account_id="asset",
+                direction=Direction.DEBIT,
+                amount=Decimal("500_000"),
+                currency="LKR",
+            ),
+            Posting(
+                account_id=fsi_acc.id,
+                direction=Direction.CREDIT,
+                amount=Decimal("500_000"),
+                currency="LKR",
+            ),
+        ],
+    )
     view = _build_ledger_view([entry], [fsi_acc])
     assert view.total_income == Decimal("500_000")
     assert view.foreign_service_income == Decimal("500_000")
@@ -119,10 +142,24 @@ def test_build_ledger_view_apit_credit():
     apit_acc = _make_account("u1", "2100", "APIT Payable", "liability")
     # DR APIT Payable = employer has remitted this amount to IRD on our behalf.
     # The offsetting CR is to bank/income (unknown to view → skipped by _build_ledger_view).
-    entry = _make_entry("u1", "2025-04-01", [
-        Posting(account_id=apit_acc.id, direction=Direction.DEBIT, amount=Decimal("50_000"), currency="LKR"),
-        Posting(account_id="income-clearing", direction=Direction.CREDIT, amount=Decimal("50_000"), currency="LKR"),
-    ])
+    entry = _make_entry(
+        "u1",
+        "2025-04-01",
+        [
+            Posting(
+                account_id=apit_acc.id,
+                direction=Direction.DEBIT,
+                amount=Decimal("50_000"),
+                currency="LKR",
+            ),
+            Posting(
+                account_id="income-clearing",
+                direction=Direction.CREDIT,
+                amount=Decimal("50_000"),
+                currency="LKR",
+            ),
+        ],
+    )
     view = _build_ledger_view([entry], [apit_acc])
     assert view.apit_withheld == Decimal("50_000")
 
@@ -142,18 +179,32 @@ def _make_tax_service_with_income(income: Decimal, apit: Decimal = Decimal(0)):
     apit_acc = _make_account("u1", "2100", "APIT Payable", "liability")
 
     # Entry 1: salary received (bank unknown to view → skipped on DR side)
-    salary_entry = _make_entry("u1", "2025-04-01", [
-        Posting(account_id="bank", direction=Direction.DEBIT, amount=income, currency="LKR"),
-        Posting(account_id=salary_acc.id, direction=Direction.CREDIT, amount=income, currency="LKR"),
-    ])
+    salary_entry = _make_entry(
+        "u1",
+        "2025-04-01",
+        [
+            Posting(account_id="bank", direction=Direction.DEBIT, amount=income, currency="LKR"),
+            Posting(
+                account_id=salary_acc.id, direction=Direction.CREDIT, amount=income, currency="LKR"
+            ),
+        ],
+    )
     entries = [salary_entry]
 
     # Entry 2: APIT withheld — DR APIT Payable (remitted to IRD), CR clearing
     if apit > 0:
-        apit_entry = _make_entry("u1", "2025-04-01", [
-            Posting(account_id=apit_acc.id, direction=Direction.DEBIT, amount=apit, currency="LKR"),
-            Posting(account_id="clearing", direction=Direction.CREDIT, amount=apit, currency="LKR"),
-        ])
+        apit_entry = _make_entry(
+            "u1",
+            "2025-04-01",
+            [
+                Posting(
+                    account_id=apit_acc.id, direction=Direction.DEBIT, amount=apit, currency="LKR"
+                ),
+                Posting(
+                    account_id="clearing", direction=Direction.CREDIT, amount=apit, currency="LKR"
+                ),
+            ],
+        )
         entries.append(apit_entry)
 
     accounts = [salary_acc, apit_acc]

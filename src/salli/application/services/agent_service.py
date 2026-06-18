@@ -7,6 +7,7 @@ Builds and holds the Tax Agent and Return Workflow, exposes:
   - resume_return(): resume after human decision
   - get_history(): fetch message history for a thread
 """
+
 from __future__ import annotations
 
 import uuid
@@ -85,7 +86,10 @@ class AgentService:
                                     yield ("token", text)
 
                 elif kind == "on_tool_start":
-                    yield ("tool_call", {"name": event.get("name"), "input": event["data"].get("input", {})})
+                    yield (
+                        "tool_call",
+                        {"name": event.get("name"), "input": event["data"].get("input", {})},
+                    )
 
                 elif kind == "on_tool_end":
                     output = event["data"].get("output")
@@ -119,7 +123,9 @@ class AgentService:
             content = msg.content
             if isinstance(content, list):
                 content = " ".join(
-                    b.get("text", "") for b in content if isinstance(b, dict) and b.get("type") == "text"
+                    b.get("text", "")
+                    for b in content
+                    if isinstance(b, dict) and b.get("type") == "text"
                 )
             messages.append({"role": role, "content": content})
         return messages
@@ -144,7 +150,11 @@ class AgentService:
             {"user_id": user_id, "year": year},
             config=config,
         )
-        return {"thread_id": thread_id, "draft_return": result.get("draft_return", {}), "state": result}
+        return {
+            "thread_id": thread_id,
+            "draft_return": result.get("draft_return", {}),
+            "state": result,
+        }
 
     async def resume_return(
         self,

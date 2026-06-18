@@ -2,16 +2,15 @@
 Property-based tests for core ledger invariants using Hypothesis.
 These prove the rules hold for arbitrary inputs, not just hand-crafted examples.
 """
+
 from decimal import Decimal
 from typing import Any
 
-import pytest
 from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from salli.domain.accounting.ledger import assert_trial_balance, build_reversing_entry
 from salli.domain.accounting.models import Direction, JournalEntry, Posting, StoredJournalEntry
-
 
 # ── strategies ────────────────────────────────────────────────────────────────
 

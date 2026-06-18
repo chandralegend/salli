@@ -2,14 +2,25 @@
 Unit of work — wraps a single DB transaction.
 Both the CLI and the API use this to ensure all writes in a use-case commit together.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from salli.adapters.db.repositories import SQLLedgerRepository, SQLStatementRepository, SQLTaxComputationRepository
-from salli.application.ports import LedgerRepository, StatementRepository, TaxComputationRepository
+from salli.adapters.db.repositories import (
+    SQLLedgerRepository,
+    SQLReminderRepository,
+    SQLStatementRepository,
+    SQLTaxComputationRepository,
+)
+from salli.application.ports import (
+    LedgerRepository,
+    ReminderRepository,
+    StatementRepository,
+    TaxComputationRepository,
+)
 
 if TYPE_CHECKING:
     pass
@@ -19,6 +30,7 @@ class UnitOfWork:
     ledger: LedgerRepository
     tax_computations: TaxComputationRepository
     statements: StatementRepository
+    reminders: ReminderRepository
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._factory = session_factory
@@ -29,6 +41,7 @@ class UnitOfWork:
         self.ledger = SQLLedgerRepository(self._session)
         self.tax_computations = SQLTaxComputationRepository(self._session)
         self.statements = SQLStatementRepository(self._session)
+        self.reminders = SQLReminderRepository(self._session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

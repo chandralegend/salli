@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_anon_key: str = ""
     supabase_service_role_key: str = ""
+    # JWT secret from Supabase dashboard → Project Settings → API → JWT Secret.
+    # When blank, the API accepts any Bearer token and treats it as the user_id
+    # (dev-only fallback — never deploy without this set).
+    supabase_jwt_secret: str = ""
 
     # LangSmith (optional)
     langsmith_api_key: str = ""

@@ -4,12 +4,13 @@ LLMPort adapter — wraps Anthropic via LangChain.
 This is the single point through which the domain touches the LLM.
 Tiering: fast → haiku-class; strong → sonnet-class.
 """
+
 from __future__ import annotations
 
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 from salli.application.ports import LLMPort
-
 
 _MODEL_TIERS = {
     "fast": "claude-haiku-4-5-20251001",
@@ -39,7 +40,6 @@ class AnthropicLLMAdapter(LLMPort):
         Run structured extraction using Claude tool-use / with_structured_output.
         The JSON schema is enforced by the model — malformed output triggers a retry.
         """
-        from langchain_core.output_parsers import JsonOutputParser
         from langchain_core.prompts import ChatPromptTemplate
 
         model = self._get_model(model_tier)

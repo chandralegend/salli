@@ -13,6 +13,7 @@ Flow:
   User calls post_approved() with the list of approved transaction IDs
   → converts to JournalEntries and posts to ledger
 """
+
 from __future__ import annotations
 
 import uuid
@@ -76,7 +77,8 @@ class ParsingService:
         dedup_results = batch_check(candidates, existing=[], existing_keys=set())
 
         unique_rows = [
-            r for r, dr in zip(raw_rows, dedup_results, strict=False)
+            r
+            for r, dr in zip(raw_rows, dedup_results, strict=False)
             if dr.status != DedupStatus.EXACT_DUPLICATE
         ]
 
@@ -145,17 +147,14 @@ class ParsingService:
             raw_rows=raw_rows,
         )
 
-    async def get_pending_transactions(
-        self, user_id: str, statement_id: str
-    ) -> list[ParsedTransaction]:
-        """Return unposted transactions for a statement."""
+    async def get_pending(self, user_id: str) -> list[ParsedTransaction]:
+        """Return all unposted transactions across all statements for this user."""
         async with self._uow_factory() as uow:
-            return await uow.statements.get_pending(user_id, statement_id)
+            return await uow.statements.get_all_pending(user_id)
 
     async def post_approved(
         self,
         user_id: str,
-        statement_id: str,
         approved_ids: list[str],
     ) -> list[str]:
         """
@@ -165,7 +164,7 @@ class ParsingService:
         from salli.domain.accounting.models import Direction, JournalEntry, Posting
 
         async with self._uow_factory() as uow:
-            txns = await uow.statements.get_by_ids(user_id, approved_ids)
+            txns = await uow.statements.get_by_ids(user_id, list(approved_ids))
             entry_ids = []
 
             for txn in txns:
@@ -209,20 +208,25 @@ def _extract(filename: str, data: bytes) -> list[RawRow]:
 
     if ext == "pdf":
         from salli.adapters.parsing.pdf_extractor import extract_from_pdf
+
         raw = extract_from_pdf(data)
     elif ext in ("xlsx", "xls"):
         from salli.adapters.parsing.excel_extractor import extract_from_excel
+
         raw = extract_from_excel(data)
     elif ext == "csv":
         from salli.adapters.parsing.excel_extractor import extract_from_csv
+
         raw = extract_from_csv(data)
     else:
         # Sniff by magic bytes
         if data[:4] == b"%PDF":
             from salli.adapters.parsing.pdf_extractor import extract_from_pdf
+
             raw = extract_from_pdf(data)
         elif data[:2] in (b"PK", b"\x50\x4b"):  # ZIP = XLSX
             from salli.adapters.parsing.excel_extractor import extract_from_excel
+
             raw = extract_from_excel(data)
         else:
             return []

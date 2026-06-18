@@ -1,4 +1,5 @@
 """Unit tests for the Money value object."""
+
 from decimal import Decimal
 
 import pytest

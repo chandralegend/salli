@@ -2,11 +2,11 @@
 Unit tests for the Excel/CSV extractor.
 Builds in-memory workbooks and CSV bytes — no real files needed.
 """
+
 import io
 from decimal import Decimal
 
 import openpyxl
-import pytest
 
 from salli.adapters.parsing.excel_extractor import extract_from_csv, extract_from_excel
 
@@ -22,11 +22,13 @@ def _make_xlsx(rows: list[list]) -> bytes:
 
 
 def test_extract_from_excel_basic():
-    data = _make_xlsx([
-        ["Date", "Description", "Debit", "Credit"],
-        ["25/04/2025", "Salary", "", "300000.00"],
-        ["30/04/2025", "Electricity", "4500.00", ""],
-    ])
+    data = _make_xlsx(
+        [
+            ["Date", "Description", "Debit", "Credit"],
+            ["25/04/2025", "Salary", "", "300000.00"],
+            ["30/04/2025", "Electricity", "4500.00", ""],
+        ]
+    )
     rows = extract_from_excel(data)
     assert len(rows) == 2
     assert rows[0]["credit_flag"] is True
@@ -42,11 +44,13 @@ def test_extract_from_excel_empty():
 
 
 def test_extract_from_excel_skips_blank_rows():
-    data = _make_xlsx([
-        ["Date", "Description", "Debit", "Credit"],
-        ["", "", "", ""],
-        ["01/06/2025", "Transfer", "1000.00", ""],
-    ])
+    data = _make_xlsx(
+        [
+            ["Date", "Description", "Debit", "Credit"],
+            ["", "", "", ""],
+            ["01/06/2025", "Transfer", "1000.00", ""],
+        ]
+    )
     rows = extract_from_excel(data)
     assert len(rows) == 1
 
@@ -66,9 +70,11 @@ def test_extract_from_csv_latin1():
 
 
 def test_extract_from_excel_with_ref_column():
-    data = _make_xlsx([
-        ["Date", "Narration", "Withdrawals", "Deposits", "Cheque No"],
-        ["01/05/2025", "NEFT Transfer", "", "50000.00", "TXN123"],
-    ])
+    data = _make_xlsx(
+        [
+            ["Date", "Narration", "Withdrawals", "Deposits", "Cheque No"],
+            ["01/05/2025", "NEFT Transfer", "", "50000.00", "TXN123"],
+        ]
+    )
     rows = extract_from_excel(data)
     assert rows[0]["bank_ref"] == "TXN123"

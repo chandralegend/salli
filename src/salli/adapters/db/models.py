@@ -3,10 +3,11 @@ SQLAlchemy ORM models — the adapter layer only.
 Domain models (Pydantic) live in domain/accounting/models.py.
 These are the storage representations; mappers translate between them.
 """
+
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import (
     BigInteger,
@@ -20,10 +21,8 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
-    event,
-    text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -32,7 +31,7 @@ def _uuid() -> str:
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class Base(DeclarativeBase):
@@ -107,9 +106,7 @@ class PostingORM(Base):
     entry_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("journal_entries.id", ondelete="CASCADE"), nullable=False
     )
-    account_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("accounts.id"), nullable=False
-    )
+    account_id: Mapped[str] = mapped_column(String(36), ForeignKey("accounts.id"), nullable=False)
     # +1 = DEBIT, -1 = CREDIT
     direction: Mapped[int] = mapped_column(Integer, nullable=False)
     # Transaction currency amount (minor units, e.g. cents)
@@ -164,9 +161,7 @@ class ParsedTransactionORM(Base):
     extracted_json: Mapped[dict] = mapped_column(JSONB, nullable=False)
     confidence: Mapped[float | None] = mapped_column(Numeric(4, 3), nullable=True)
     dedup_key: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
-    dedup_status: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="pending"
-    )
+    dedup_status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     posted_entry_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("journal_entries.id"), nullable=True
     )
@@ -195,9 +190,7 @@ class TaxComputationORM(Base):
         DateTime(timezone=True), nullable=False, default=_now
     )
 
-    __table_args__ = (
-        Index("ix_tax_computations_user_year", "user_id", "year"),
-    )
+    __table_args__ = (Index("ix_tax_computations_user_year", "user_id", "year"),)
 
 
 # ── Documents ─────────────────────────────────────────────────────────────────

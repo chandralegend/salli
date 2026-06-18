@@ -94,6 +94,4 @@ class Money:
 
     def _assert_same_currency(self, other: Self) -> None:
         if self._currency != other._currency:
-            raise ValueError(
-                f"Currency mismatch: {self._currency} vs {other._currency}"
-            )
+            raise ValueError(f"Currency mismatch: {self._currency} vs {other._currency}")

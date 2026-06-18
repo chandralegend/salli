@@ -6,13 +6,13 @@ return structured data the model can narrate. No tool writes to the ledger or
 submits anything externally. The model MUST NOT emit a tax number unless it came
 from a tool call.
 """
+
 from __future__ import annotations
 
 from decimal import Decimal
 from typing import Annotated, Any
 
 from langchain_core.tools import tool
-
 
 # ── Tool factory (bound to real services at runtime) ───────────────────────────
 
@@ -100,8 +100,13 @@ def make_tools(ledger_svc, tax_svc):
         packs = tax_svc.list_packs()
         return {
             "packs": [
-                {"country": p.country, "year": p.year, "version": p.version,
-                 "period_start": p.period_start, "period_end": p.period_end}
+                {
+                    "country": p.country,
+                    "year": p.year,
+                    "version": p.version,
+                    "period_start": p.period_start,
+                    "period_end": p.period_end,
+                }
                 for p in packs
             ]
         }
@@ -119,7 +124,7 @@ def make_tools(ledger_svc, tax_svc):
 
         pack = get_pack("LK", year)
         if band_index < 0 or band_index >= len(pack.bands):
-            return {"error": f"Band index {band_index} out of range (0–{len(pack.bands)-1})"}
+            return {"error": f"Band index {band_index} out of range (0–{len(pack.bands) - 1})"}
         band = pack.bands[band_index]
         return {
             "band_index": band_index,

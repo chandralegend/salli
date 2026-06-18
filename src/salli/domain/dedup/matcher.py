@@ -7,22 +7,21 @@ Layered strategy (applied in order):
   3. Source priority — bank statement > parsed SMS > manual
   4. Human gate     — ambiguous matches are flagged, never auto-merged
 """
+
 from __future__ import annotations
 
 import hashlib
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date, timedelta
-from decimal import Decimal
+from datetime import date
 from enum import Enum
-from typing import Sequence
 
 from rapidfuzz import fuzz
 
-
 # ── Config ─────────────────────────────────────────────────────────────────────
 
-DATE_WINDOW_DAYS = 3       # ±3 days for cross-source fuzzy matching
+DATE_WINDOW_DAYS = 3  # ±3 days for cross-source fuzzy matching
 SIMILARITY_THRESHOLD = 80  # rapidfuzz score 0-100
 
 SOURCE_PRIORITY: dict[str, int] = {
@@ -40,18 +39,18 @@ SOURCE_PRIORITY: dict[str, int] = {
 class CandidateTransaction:
     id: str
     account_id: str
-    entry_date: str          # YYYY-MM-DD
-    amount_minor: int        # always positive
+    entry_date: str  # YYYY-MM-DD
+    amount_minor: int  # always positive
     currency: str
     description: str
-    source: str              # statement | sms | manual | system
-    bank_ref: str | None = None   # bank-provided transaction ID (authoritative)
+    source: str  # statement | sms | manual | system
+    bank_ref: str | None = None  # bank-provided transaction ID (authoritative)
 
 
 class DedupStatus(str, Enum):
     UNIQUE = "unique"
     EXACT_DUPLICATE = "exact_duplicate"
-    FUZZY_MATCH = "fuzzy_match"     # needs human confirmation
+    FUZZY_MATCH = "fuzzy_match"  # needs human confirmation
     CONFIRMED_DUPLICATE = "confirmed_duplicate"  # human approved the merge
 
 
@@ -59,7 +58,7 @@ class DedupStatus(str, Enum):
 class DedupResult:
     candidate: CandidateTransaction
     status: DedupStatus
-    duplicate_of: str | None = None    # id of the winning transaction
+    duplicate_of: str | None = None  # id of the winning transaction
     similarity_score: float | None = None
 
 

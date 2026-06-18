@@ -2,6 +2,7 @@
 FastAPI dependency providers.
 Uses the same composition.py the CLI uses — the core never knows which surface it's on.
 """
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -34,7 +35,7 @@ def _verify_jwt(token: str, settings: Settings) -> str:
     In development (no SUPABASE_JWT_SECRET set) we accept any non-empty token
     and return it as the user_id so local testing works without Supabase.
     """
-    secret = getattr(settings, "supabase_jwt_secret", "")
+    secret = settings.supabase_jwt_secret
     if not secret:
         # Dev fallback — token IS the user_id
         return token

@@ -5,6 +5,7 @@ Thin HTTP adapter over the same composition root the CLI uses.
 All business logic lives in the application services; this module only wires
 routing, CORS, error handling, and the lifespan startup/shutdown.
 """
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -15,7 +16,16 @@ from fastapi.responses import JSONResponse
 
 from salli.config import get_settings
 from salli.interfaces.api.deps import get_services
-from salli.interfaces.api.routers import accounts, agent, entries, ledger, statements, tax
+from salli.interfaces.api.routers import (
+    accounts,
+    agent,
+    auth,
+    entries,
+    ledger,
+    reminders,
+    statements,
+    tax,
+)
 
 
 @asynccontextmanager
@@ -55,12 +65,14 @@ def create_app() -> FastAPI:
     )
 
     # ── Routers ───────────────────────────────────────────────────────────────
+    app.include_router(auth.router)
     app.include_router(accounts.router)
     app.include_router(entries.router)
     app.include_router(ledger.router)
     app.include_router(tax.router)
     app.include_router(agent.router)
     app.include_router(statements.router)
+    app.include_router(reminders.router)
 
     # ── Exception handlers ────────────────────────────────────────────────────
     @app.exception_handler(ValueError)

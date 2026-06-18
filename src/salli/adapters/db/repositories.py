@@ -2,6 +2,7 @@
 SQLAlchemy repository implementations — concrete adapters for the port interfaces.
 Translate between ORM models and domain models via mappers below.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -10,18 +11,24 @@ from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from salli.adapters.db.models import (
     AccountORM,
     JournalEntryORM,
     ParsedTransactionORM,
     PostingORM,
+    ReminderORM,
     StatementORM,
     TaxComputationORM,
 )
-from salli.application.ports import LedgerRepository, StatementRepository, TaxComputationRepository
+from salli.application.ports import (
+    LedgerRepository,
+    ReminderRepository,
+    StatementRepository,
+    TaxComputationRepository,
+)
 from salli.domain.accounting.models import (
     Account,
     Direction,
@@ -30,7 +37,6 @@ from salli.domain.accounting.models import (
     StoredJournalEntry,
 )
 from salli.domain.tax.models import TaxComputation
-
 
 # ── Mappers ───────────────────────────────────────────────────────────────────
 
@@ -267,9 +273,20 @@ class SQLStatementRepository(StatementRepository):
             )
             self._session.add(pt)
 
+    async def get_all_pending(self, user_id: str) -> list[Any]:
+        stmt = (
+            select(ParsedTransactionORM)
+            .join(StatementORM)
+            .where(
+                StatementORM.user_id == user_id,
+                ParsedTransactionORM.posted_entry_id.is_(None),
+            )
+            .order_by(ParsedTransactionORM.statement_id)
+        )
+        result = await self._session.execute(stmt)
+        return [_orm_to_parsed(r) for r in result.scalars().all()]
+
     async def get_pending(self, user_id: str, statement_id: str) -> list[Any]:
-        from salli.domain.parsing.models import ParsedTransaction, RawRow
-        from decimal import Decimal
 
         stmt = (
             select(ParsedTransactionORM)
@@ -307,6 +324,7 @@ class SQLStatementRepository(StatementRepository):
 
 def _orm_to_parsed(row: ParsedTransactionORM) -> Any:
     from decimal import Decimal
+
     from salli.domain.parsing.models import ParsedTransaction, RawRow
 
     j = row.extracted_json
@@ -329,3 +347,49 @@ def _orm_to_parsed(row: ParsedTransactionORM) -> Any:
     )
     pt.id = row.id  # type: ignore[attr-defined]
     return pt
+
+
+# ── ReminderRepository ────────────────────────────────────────────────────────
+
+
+class SQLReminderRepository(ReminderRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def list_reminders(self, user_id: str, status: str | None = None) -> list[Any]:
+        stmt = select(ReminderORM).where(ReminderORM.user_id == user_id)
+        if status:
+            stmt = stmt.where(ReminderORM.status == status)
+        stmt = stmt.order_by(ReminderORM.due_date)
+        result = await self._session.execute(stmt)
+        return [
+            {
+                "id": r.id,
+                "kind": r.kind,
+                "due_date": r.due_date,
+                "status": r.status,
+            }
+            for r in result.scalars().all()
+        ]
+
+    async def create_reminder(
+        self, user_id: str, reminder_id: str, kind: str, due_date: str
+    ) -> None:
+        self._session.add(
+            ReminderORM(
+                id=reminder_id,
+                user_id=user_id,
+                kind=kind,
+                due_date=due_date,
+                status="pending",
+            )
+        )
+
+    async def mark_done(self, user_id: str, reminder_id: str) -> None:
+        stmt = select(ReminderORM).where(
+            ReminderORM.id == reminder_id, ReminderORM.user_id == user_id
+        )
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row:
+            row.status = "done"

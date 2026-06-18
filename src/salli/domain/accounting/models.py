@@ -61,8 +61,7 @@ class JournalEntry(BaseModel):
         total = sum((p.base_signed for p in self.postings), Decimal(0))
         if total != Decimal(0):
             raise ValueError(
-                f"Journal entry is unbalanced: net base amount = {total} "
-                f"(must be exactly zero)"
+                f"Journal entry is unbalanced: net base amount = {total} (must be exactly zero)"
             )
         return self
 

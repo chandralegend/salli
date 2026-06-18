@@ -2,6 +2,7 @@
 Pure ledger logic: balance queries, trial balance, and reversing-entry construction.
 No I/O — operates on in-memory domain models only.
 """
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -93,12 +94,8 @@ def net_worth(
 ) -> Decimal:
     """Assets − Liabilities."""
     balances = trial_balance(entries)
-    assets = sum(
-        (balances.get(aid, Decimal(0)) for aid in asset_account_ids), Decimal(0)
-    )
-    liabilities = sum(
-        (balances.get(lid, Decimal(0)) for lid in liability_account_ids), Decimal(0)
-    )
+    assets = sum((balances.get(aid, Decimal(0)) for aid in asset_account_ids), Decimal(0))
+    liabilities = sum((balances.get(lid, Decimal(0)) for lid in liability_account_ids), Decimal(0))
     # Assets have debit-normal balances (+), liabilities have credit-normal (-).
     return assets + liabilities  # liabilities are negative, so addition subtracts them
 

@@ -4,10 +4,10 @@ Salli CLI — Phase 1 control surface (Typer + Rich).
 All commands are thin wrappers over application services.
 The CLI and the FastAPI layer share the same services via composition.py.
 """
+
 from __future__ import annotations
 
 import asyncio
-import sys
 
 import typer
 from rich.console import Console
@@ -25,12 +25,14 @@ entry_app = typer.Typer(help="Journal entry commands")
 ledger_app = typer.Typer(help="Ledger reports")
 tax_app = typer.Typer(help="Tax computation and return preparation")
 agent_app = typer.Typer(help="Tax Agent and return preparation")
+parse_app = typer.Typer(help="Bank statement parsing and import")
 
 app.add_typer(accounts_app, name="accounts")
 app.add_typer(entry_app, name="entry")
 app.add_typer(ledger_app, name="ledger")
 app.add_typer(tax_app, name="tax")
 app.add_typer(agent_app, name="agent")
+app.add_typer(parse_app, name="parse")
 
 
 def _services():
@@ -72,7 +74,9 @@ def accounts_add(
     user_id = _require_user()
     valid_types = {"asset", "liability", "equity", "income", "expense"}
     if type not in valid_types:
-        console.print(f"[red]Invalid type '{type}'. Must be one of: {', '.join(sorted(valid_types))}[/red]")
+        console.print(
+            f"[red]Invalid type '{type}'. Must be one of: {', '.join(sorted(valid_types))}[/red]"
+        )
         raise typer.Exit(1)
     account_id = asyncio.run(
         _services().ledger.add_account(user_id, code, name, type, currency)  # type: ignore[arg-type]
@@ -102,12 +106,14 @@ def entry_add(
         for pair in pairs:
             try:
                 account_id, amount_str = pair.rsplit(":", 1)
-                postings.append({
-                    "account_id": account_id.strip(),
-                    "direction": direction,
-                    "amount": Decimal(amount_str.strip()),
-                    "currency": "LKR",
-                })
+                postings.append(
+                    {
+                        "account_id": account_id.strip(),
+                        "direction": direction,
+                        "amount": Decimal(amount_str.strip()),
+                        "currency": "LKR",
+                    }
+                )
             except ValueError:
                 console.print(f"[red]Invalid format '{pair}'. Use ACCOUNT_ID:AMOUNT[/red]")
                 raise typer.Exit(1)
@@ -135,9 +141,7 @@ def trial_balance_cmd(
 ):
     """Print the trial balance (must net to zero)."""
     user_id = _require_user()
-    balances = asyncio.run(
-        _services().ledger.get_trial_balance(user_id, from_date, to_date)
-    )
+    balances = asyncio.run(_services().ledger.get_trial_balance(user_id, from_date, to_date))
     if not balances:
         console.print("[dim]No entries found.[/dim]")
         return
@@ -222,7 +226,6 @@ def tax_prepare_return(
     thread_id: str = typer.Option(None, "--thread-id", help="Resume an existing return thread"),
 ):
     """Run the return preparation workflow (pauses for review before finalizing)."""
-    import json
 
     user_id = _require_user()
     svc = _services()
@@ -243,7 +246,9 @@ def tax_prepare_return(
     if draft.get("note"):
         console.print(f"\n[dim]{draft['note']}[/dim]")
 
-    console.print("\nApprove this draft? [[green]approve[/green]/[yellow]edit[/yellow]/[red]reject[/red]]")
+    console.print(
+        "\nApprove this draft? [[green]approve[/green]/[yellow]edit[/yellow]/[red]reject[/red]]"
+    )
     decision = input("> ").strip().lower()
     if decision not in ("approve", "edit", "reject"):
         decision = "reject"
@@ -282,6 +287,145 @@ def tax_packs():
         )
 
     console.print(table)
+
+
+# ── parse ─────────────────────────────────────────────────────────────────────
+
+
+@parse_app.command("upload")
+def parse_upload(
+    file: str = typer.Argument(..., help="Path to bank statement (PDF, XLSX, or CSV)"),
+    bank: str = typer.Option("unknown", "--bank", help="Bank name hint (e.g. 'ComBank', 'HNB')"),
+):
+    """
+    Parse a bank statement and queue transactions for review.
+
+    Runs PDF/XLSX/CSV extraction, deduplication, and LLM classification.
+    Prints a summary and prompts for immediate inline review.
+    """
+    import pathlib
+
+    user_id = _require_user()
+    path = pathlib.Path(file)
+    if not path.exists():
+        console.print(f"[red]File not found:[/red] {file}")
+        raise typer.Exit(1)
+
+    data = path.read_bytes()
+    filename = path.name
+    svc = _services()
+
+    console.print(f"[dim]Parsing {filename} …[/dim]")
+    result = asyncio.run(svc.parsing.parse_statement(user_id, filename, data, bank))
+
+    console.print(
+        f"\n[bold]Parsed:[/bold] {len(result.transactions)} transactions "
+        f"({result.period_start} → {result.period_end}), "
+        f"{len(result.errors)} error(s)\n"
+    )
+
+    if not result.transactions:
+        console.print("[dim]No transactions found.[/dim]")
+        return
+
+    _interactive_review(user_id, svc, result)
+
+
+def _interactive_review(user_id, svc, result) -> None:
+    """Walk the user through each pending transaction, then post approved ones."""
+    from rich.panel import Panel
+
+    approved_ids: list[str] = []
+    skipped = 0
+
+    for i, txn in enumerate(result.transactions, 1):
+        raw = txn.raw
+        header = f"[{i}/{len(result.transactions)}] {raw.date}  {raw.description[:50]}"
+        amount_str = f"{'CR' if raw.credit_flag else 'DR'} {raw.currency} {raw.amount:,.2f}"
+        dedup = "[yellow]DUPLICATE — skipping[/yellow]" if txn.dedup_status == "duplicate" else ""
+
+        console.print(
+            Panel(
+                f"{amount_str}\n"
+                f"  DR: {txn.debit_account_id or '[dim]—[/dim]'}\n"
+                f"  CR: {txn.credit_account_id or '[dim]—[/dim]'}\n"
+                f"  Confidence: {txn.confidence:.0%}  {dedup}",
+                title=header,
+                border_style="cyan",
+            )
+        )
+
+        if txn.dedup_status == "duplicate":
+            skipped += 1
+            continue
+
+        try:
+            choice = input("  [a]pprove / [s]kip / [q]uit  > ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            console.print("\n[dim]Aborted.[/dim]")
+            break
+
+        if choice in ("q", "quit"):
+            console.print("[dim]Stopped early.[/dim]")
+            break
+        if choice in ("a", "approve", ""):
+            if txn.id:
+                approved_ids.append(txn.id)
+        else:
+            skipped += 1
+
+    if approved_ids:
+        console.print(f"\n[dim]Posting {len(approved_ids)} approved transaction(s)…[/dim]")
+        asyncio.run(svc.parsing.post_approved(user_id, approved_ids))
+        console.print(f"[green]Posted {len(approved_ids)} entries.[/green]")
+    else:
+        console.print("[dim]Nothing posted.[/dim]")
+
+    if skipped:
+        console.print(f"[dim]{skipped} transaction(s) skipped/duplicated.[/dim]")
+
+
+@parse_app.command("pending")
+def parse_pending():
+    """List transactions parsed but not yet posted."""
+    user_id = _require_user()
+    svc = _services()
+    pending = asyncio.run(svc.parsing.get_pending(user_id))
+
+    if not pending:
+        console.print("[dim]No pending transactions.[/dim]")
+        return
+
+    table = Table(title=f"Pending Transactions ({len(pending)})")
+    table.add_column("ID", style="dim")
+    table.add_column("Date")
+    table.add_column("Description")
+    table.add_column("Amount", justify="right")
+    table.add_column("DR account")
+    table.add_column("CR account")
+
+    for txn in pending:
+        raw = txn.raw
+        table.add_row(
+            str(txn.id or "")[:8],
+            raw.date,
+            raw.description[:40],
+            f"{'CR' if raw.credit_flag else 'DR'} {raw.currency} {raw.amount:,.2f}",
+            txn.debit_account_id or "—",
+            txn.credit_account_id or "—",
+        )
+
+    console.print(table)
+
+
+@parse_app.command("post")
+def parse_post(
+    ids: list[str] = typer.Argument(..., help="Transaction IDs to post (space-separated)"),
+):
+    """Post specific approved transactions to the ledger."""
+    user_id = _require_user()
+    asyncio.run(_services().parsing.post_approved(user_id, ids))
+    console.print(f"[green]Posted {len(ids)} transaction(s).[/green]")
 
 
 # ── agent ─────────────────────────────────────────────────────────────────────

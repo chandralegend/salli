@@ -24,11 +24,13 @@ accounts_app = typer.Typer(help="Manage the chart of accounts")
 entry_app = typer.Typer(help="Journal entry commands")
 ledger_app = typer.Typer(help="Ledger reports")
 tax_app = typer.Typer(help="Tax computation and return preparation")
+agent_app = typer.Typer(help="Tax Agent and return preparation")
 
 app.add_typer(accounts_app, name="accounts")
 app.add_typer(entry_app, name="entry")
 app.add_typer(ledger_app, name="ledger")
 app.add_typer(tax_app, name="tax")
+app.add_typer(agent_app, name="agent")
 
 
 def _services():
@@ -210,7 +212,54 @@ def tax_explain(
     year: str = typer.Option("2025/26", "--year"),
 ):
     """Launch the Tax Agent REPL to explain your tax situation."""
-    console.print("[yellow]Tax Agent coming in the agents phase.[/yellow]")
+    # Delegate to agent chat with a priming message
+    _run_agent_chat(f"Please explain my tax situation for the {year} year of assessment.")
+
+
+@tax_app.command("prepare-return")
+def tax_prepare_return(
+    year: str = typer.Option("2025/26", "--year"),
+    thread_id: str = typer.Option(None, "--thread-id", help="Resume an existing return thread"),
+):
+    """Run the return preparation workflow (pauses for review before finalizing)."""
+    import json
+
+    user_id = _require_user()
+    svc = _services()
+
+    async def _run():
+        result = await svc.agent.prepare_return(user_id, year=year, thread_id=thread_id)
+        return result
+
+    result = asyncio.run(_run())
+    draft = result.get("draft_return", {})
+    tid = result.get("thread_id", "")
+
+    console.print(f"\n[bold]Draft Return — {year}[/bold]  (thread: {tid})\n")
+    for cage, value in draft.items():
+        if cage == "note":
+            continue
+        console.print(f"  {cage:<40} {value}")
+    if draft.get("note"):
+        console.print(f"\n[dim]{draft['note']}[/dim]")
+
+    console.print("\nApprove this draft? [[green]approve[/green]/[yellow]edit[/yellow]/[red]reject[/red]]")
+    decision = input("> ").strip().lower()
+    if decision not in ("approve", "edit", "reject"):
+        decision = "reject"
+
+    async def _resume():
+        return await svc.agent.resume_return(tid, decision)
+
+    final = asyncio.run(_resume())
+    if final.get("error"):
+        console.print(f"[yellow]{final['error']}[/yellow]")
+    else:
+        ws = final.get("worksheet", {})
+        console.print("\n[bold green]Return worksheet ready.[/bold green]")
+        console.print(f"  Status: {ws.get('status')}")
+        if ws.get("instructions"):
+            console.print(f"\n{ws['instructions']}")
 
 
 @tax_app.command("packs")
@@ -233,6 +282,57 @@ def tax_packs():
         )
 
     console.print(table)
+
+
+# ── agent ─────────────────────────────────────────────────────────────────────
+
+
+@agent_app.command("chat")
+def agent_chat(
+    thread_id: str = typer.Option(None, "--thread-id", help="Continue a prior conversation"),
+):
+    """
+    Start an interactive Tax Agent REPL (streamed responses).
+    Type 'quit' or press Ctrl-C to exit.
+    """
+    _run_agent_chat(None, thread_id=thread_id)
+
+
+def _run_agent_chat(priming_message: str | None, thread_id: str | None = None):
+    import uuid
+
+    user_id = _require_user()
+    svc = _services()
+
+    if thread_id is None:
+        thread_id = str(uuid.uuid4())
+
+    console.print(
+        f"\n[bold cyan]Salli Tax Agent[/bold cyan]  (thread: {thread_id})\n"
+        "[dim]Type your question. 'quit' to exit.[/dim]\n"
+    )
+
+    async def _stream_one(msg: str) -> None:
+        console.print("[bold green]Salli:[/bold green] ", end="")
+        async for chunk in svc.agent.stream_chat(user_id, msg, thread_id=thread_id):
+            console.print(chunk, end="")
+        console.print()
+
+    if priming_message:
+        asyncio.run(_stream_one(priming_message))
+
+    while True:
+        try:
+            user_input = input("\nYou: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            console.print("\n[dim]Goodbye.[/dim]")
+            break
+        if user_input.lower() in ("quit", "exit", "q"):
+            console.print("[dim]Goodbye.[/dim]")
+            break
+        if not user_input:
+            continue
+        asyncio.run(_stream_one(user_input))
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────

@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from salli.adapters.db.session import make_session_factory
 from salli.adapters.fx.cbsl import CBSLFxRateAdapter
 from salli.application.ports import StoragePort
+from salli.application.services.advisor_service import AdvisorService
 from salli.application.services.agent_service import AgentService
 from salli.application.services.billing_service import BillingService
 from salli.application.services.document_service import DocumentService
@@ -34,6 +35,7 @@ class Services:
     documents: DocumentService
     billing: BillingService
     fi: FiService
+    advisor: AdvisorService
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
@@ -62,6 +64,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     fx = CBSLFxRateAdapter()
     billing = BillingService(uow_factory, billing_port=_build_billing(settings))
     fi = FiService(uow_factory)
+    advisor = AdvisorService(uow_factory, fi, billing, doc_service=documents)
 
     return Services(
         ledger=ledger,
@@ -74,6 +77,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         documents=documents,
         billing=billing,
         fi=fi,
+        advisor=advisor,
     )
 
 

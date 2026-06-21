@@ -16,8 +16,9 @@ from dataclasses import dataclass, field
 # Metric keys (must match UsageCounterORM.metric values)
 METRIC_AGENT_MESSAGES = "agent_messages"
 METRIC_STATEMENT_UPLOADS = "statement_uploads"
+METRIC_ADVISOR_RUNS = "advisor_runs"
 
-METRICS = (METRIC_AGENT_MESSAGES, METRIC_STATEMENT_UPLOADS)
+METRICS = (METRIC_AGENT_MESSAGES, METRIC_STATEMENT_UPLOADS, METRIC_ADVISOR_RUNS)
 
 
 @dataclass(frozen=True)
@@ -37,12 +38,13 @@ PLANS: dict[str, Plan] = {
         name="Free",
         description="Try Salli with a small monthly allowance.",
         monthly_price_usd=0.0,
-        limits={METRIC_AGENT_MESSAGES: 20, METRIC_STATEMENT_UPLOADS: 3},
+        limits={METRIC_AGENT_MESSAGES: 20, METRIC_STATEMENT_UPLOADS: 3, METRIC_ADVISOR_RUNS: 3},
         features=[
             "Ledger & double-entry bookkeeping",
             "Sri Lanka tax engine (unlimited)",
             "20 AI agent messages / month",
             "3 statement uploads / month",
+            "3 wealth-advisor runs / month (manual)",
         ],
     ),
     "plus": Plan(
@@ -50,13 +52,14 @@ PLANS: dict[str, Plan] = {
         name="Plus",
         description="For individuals actively managing their finances and tax.",
         monthly_price_usd=9.0,
-        limits={METRIC_AGENT_MESSAGES: 500, METRIC_STATEMENT_UPLOADS: 50},
+        limits={METRIC_AGENT_MESSAGES: 500, METRIC_STATEMENT_UPLOADS: 50, METRIC_ADVISOR_RUNS: 45},
         paid=True,
         features=[
             "Everything in Free",
             "500 AI agent messages / month",
             "50 statement uploads / month",
             "Web search & document management",
+            "Daily wealth advisor (FI score + recommendations)",
         ],
     ),
     "pro": Plan(
@@ -64,13 +67,14 @@ PLANS: dict[str, Plan] = {
         name="Pro",
         description="For power users and professionals with heavy AI use.",
         monthly_price_usd=29.0,
-        limits={METRIC_AGENT_MESSAGES: 5000, METRIC_STATEMENT_UPLOADS: 500},
+        limits={METRIC_AGENT_MESSAGES: 5000, METRIC_STATEMENT_UPLOADS: 500, METRIC_ADVISOR_RUNS: 150},
         paid=True,
         features=[
             "Everything in Plus",
             "5,000 AI agent messages / month",
             "500 statement uploads / month",
             "Priority model access",
+            "Daily wealth advisor + more runs",
         ],
     ),
 }

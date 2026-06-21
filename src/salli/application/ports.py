@@ -248,6 +248,11 @@ class SubscriptionRepository(ABC):
         """Create or update the user's subscription row."""
         ...
 
+    @abstractmethod
+    async def list_active_paid(self) -> list[dict[str, Any]]:
+        """Active subscriptions on a paid plan (for scheduled jobs)."""
+        ...
+
 
 class UsageRepository(ABC):
     @abstractmethod

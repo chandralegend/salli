@@ -18,6 +18,7 @@ from salli.config import get_settings
 from salli.interfaces.api.deps import get_services
 from salli.interfaces.api.routers import (
     accounts,
+    advisor,
     agent,
     auth,
     billing,
@@ -111,6 +112,7 @@ def create_app() -> FastAPI:
     app.include_router(reminders.router)
     app.include_router(billing.router)
     app.include_router(fi.router)
+    app.include_router(advisor.router)
 
     # ── Exception handlers ────────────────────────────────────────────────────
     @app.exception_handler(ValueError)

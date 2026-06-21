@@ -710,6 +710,15 @@ class SQLSubscriptionRepository(SubscriptionRepository):
                 setattr(row, k, v)
         await self._s.flush()
 
+    async def list_active_paid(self) -> list[dict[str, Any]]:
+        rows = (await self._s.execute(
+            select(SubscriptionORM).where(
+                SubscriptionORM.status.in_(("active", "trialing")),
+                SubscriptionORM.plan != "free",
+            )
+        )).scalars().all()
+        return [_subscription_to_dict(r) for r in rows]
+
 
 class SQLUsageRepository(UsageRepository):
     def __init__(self, session: AsyncSession) -> None:

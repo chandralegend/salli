@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     paddle_price_plus: str = ""
     paddle_price_pro: str = ""
 
+    # Daily Wealth Advisor scheduling (Supabase pg_cron calls the API)
+    cron_secret: str = ""
+    advisor_api_base_url: str = "http://localhost:8000"
+
     # App
     environment: str = "development"
     log_level: str = "INFO"

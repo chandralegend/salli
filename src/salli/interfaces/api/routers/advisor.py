@@ -5,9 +5,15 @@ recommendations. The daily cron endpoint is added in the scheduling phase.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
+import hmac
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Header, HTTPException, status
+from starlette.background import BackgroundTask
+from starlette.responses import JSONResponse
 
 from salli.application.services.billing_service import QuotaExceeded
+from salli.config import Settings, get_settings
 from salli.interfaces.api.deps import AppServices, CurrentEmail, CurrentUser
 
 router = APIRouter(prefix="/advisor", tags=["advisor"])
@@ -59,3 +65,36 @@ async def dismiss_recommendation(
         return await svc.advisor.dismiss_recommendation(user_id, report_id, rec_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+
+
+# ── Daily scheduling (called by Supabase pg_cron, not end users) ──────────────
+
+
+async def _run_due(svc) -> None:
+    """Background: run the advisor for each due paid user; skip those over quota."""
+    due = await svc.advisor.due_users()
+    for sub in due:
+        try:
+            await svc.advisor.run_advisor(sub["user_id"], None, trigger="scheduled")
+        except QuotaExceeded:
+            continue
+        except Exception:
+            continue
+
+
+@router.post("/cron/run-due", status_code=status.HTTP_202_ACCEPTED)
+async def cron_run_due(
+    svc: AppServices,
+    settings: Annotated[Settings, Depends(get_settings)],
+    x_cron_secret: Annotated[str | None, Header()] = None,
+):
+    """Trigger the daily advisor for all due paid users. Auth: X-Cron-Secret header."""
+    secret = settings.cron_secret
+    if not secret or not x_cron_secret or not hmac.compare_digest(x_cron_secret, secret):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid cron secret")
+    due = await svc.advisor.due_users()
+    return JSONResponse(
+        {"due": len(due), "scheduled": True},
+        status_code=status.HTTP_202_ACCEPTED,
+        background=BackgroundTask(_run_due, svc),
+    )

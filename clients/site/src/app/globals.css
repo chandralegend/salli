@@ -94,6 +94,16 @@ h1, h2, h3, h4 {
     0 8px 24px -16px color-mix(in oklch, var(--foreground) 40%, transparent);
 }
 
+/* Dawn sky for the "climb to freedom" scene — warm light, single accent. */
+.journey-sky {
+  background: linear-gradient(
+    180deg,
+    oklch(0.93 0.04 70) 0%,
+    oklch(0.955 0.022 72) 38%,
+    var(--background) 100%
+  );
+}
+
 /* Gentle idle float for the hero illustration. */
 @media (prefers-reduced-motion: no-preference) {
   .float-slow {

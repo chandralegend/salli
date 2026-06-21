@@ -28,19 +28,18 @@ export function AuthShell({
         />
         <div className="relative">
           <Logo className="size-20 rounded-2xl shadow-lg shadow-black/30" />
-          <p className="mt-4 text-base font-semibold">Salli</p>
-          <p className="text-[12px] text-sidebar-foreground/50">Finance &amp; Tax · Sri Lanka</p>
+          <p className="mt-4 text-2xl font-semibold tracking-tight">Salli</p>
+          <p className="text-[15px] text-sidebar-foreground/55">Finance &amp; Tax · Sri Lanka</p>
         </div>
 
-        <div className="relative max-w-sm">
-          <p className="font-ledger text-[34px] leading-tight text-sidebar-foreground">
-            Your books,
+        <div className="relative max-w-md">
+          <p className="font-ledger text-[36px] leading-[1.08] text-sidebar-foreground">
+            STOP GUESSING.
             <br />
-            balanced.
+            START KNOWING.
           </p>
-          <p className="text-[13px] text-sidebar-foreground/60 mt-4 leading-relaxed">
-            Double-entry bookkeeping, a deterministic Sri Lanka tax engine, and an AI
-            assistant that reads your ledger — not the other way around.
+          <p className="text-[15px] text-sidebar-foreground/65 mt-4 leading-relaxed">
+            Track your money. Understand your tax. Build your freedom.
           </p>
         </div>
 
@@ -57,7 +56,10 @@ export function AuthShell({
           {/* mobile wordmark — large, centered */}
           <div className="lg:hidden flex flex-col items-center text-center mb-8">
             <Logo className="size-20 rounded-2xl shadow-lg shadow-black/10" />
-            <span className="font-semibold mt-3">Salli</span>
+            <span className="text-xl font-semibold mt-3">Salli</span>
+            <span className="font-ledger text-[13px] text-muted-foreground mt-1">
+              Stop guessing. Start knowing.
+            </span>
           </div>
 
           <h1 className={cn("text-[24px] font-semibold tracking-[-0.02em] text-foreground")}>

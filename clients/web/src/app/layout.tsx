@@ -18,8 +18,8 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Salli — Personal Finance & Tax",
-  description: "Personal finance and tax preparation for Sri Lanka",
+  title: "Salli — Stop guessing. Start knowing.",
+  description: "Track your money. Understand your tax. Build your freedom.",
 };
 
 export default function RootLayout({

@@ -54,6 +54,15 @@ _MEMORIES = {
     "onboarding_complete": "true",
 }
 
+_GOAL_LABELS = {
+    "financial_independence": "Financial Independence",
+    "retirement": "Retirement",
+    "home": "Buy a home",
+    "emergency_fund": "Emergency fund",
+    "debt_free": "Become debt-free",
+    "wealth_growth": "Grow my wealth",
+}
+
 
 class OnboardingRequest(BaseModel):
     name: str
@@ -63,6 +72,12 @@ class OnboardingRequest(BaseModel):
     employment_type: str = ""             # "permanent" | "contract" | "self_employed" | "other"
     ird_number: str = ""
     income_sources: list[str] = []        # ["employment","freelance","rental","interest","foreign","dividends"]
+    # Goals & motivation (powers the Wealth Advisor)
+    primary_goal: str = ""                # financial_independence | retirement | home | emergency_fund | debt_free | wealth_growth
+    goal_target_amount: float = 0         # optional total target (LKR)
+    goal_target_year: str = ""            # optional YYYY
+    risk_appetite: str = ""               # conservative | balanced | aggressive
+    motivation: str = ""                  # free text — why this matters to them
 
 
 class OnboardingStatusResponse(BaseModel):
@@ -98,9 +113,35 @@ async def complete_onboarding(body: OnboardingRequest, user_id: CurrentUser, svc
         memories["ird_number"] = body.ird_number
     if body.income_sources:
         memories["income_sources"] = ", ".join(body.income_sources)
+    if body.primary_goal:
+        memories["primary_goal"] = body.primary_goal
+    if body.goal_target_amount:
+        memories["goal_target_amount"] = str(body.goal_target_amount)
+    if body.goal_target_year:
+        memories["goal_target_year"] = body.goal_target_year
+    if body.risk_appetite:
+        memories["risk_appetite"] = body.risk_appetite
+    if body.motivation:
+        memories["motivation"] = body.motivation
 
     for slug, value in memories.items():
         await svc.documents.save_memory(user_id, slug=slug, value=value)
+
+    # If they named a concrete target, seed an initial Financial Independence goal.
+    if body.primary_goal and body.goal_target_amount > 0:
+        try:
+            await svc.fi.create_goal(
+                user_id,
+                {
+                    "name": _GOAL_LABELS.get(body.primary_goal, "My goal"),
+                    "kind": body.primary_goal,
+                    "target_amount": body.goal_target_amount,
+                    "target_date": f"{body.goal_target_year}-12-31" if body.goal_target_year else None,
+                    "priority": 1,
+                },
+            )
+        except Exception:
+            pass
 
     # Create accounts — skip any that already exist (unique constraint will catch duplicates)
     accounts_to_create = list(_BASE_ACCOUNTS)

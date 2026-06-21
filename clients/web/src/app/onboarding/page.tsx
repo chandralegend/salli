@@ -20,7 +20,27 @@ interface OnboardingData {
   employment_type: string;
   ird_number: string;
   income_sources: string[];
+  primary_goal: string;
+  goal_target_amount: string;
+  goal_target_year: string;
+  risk_appetite: string;
+  motivation: string;
 }
+
+const GOAL_OPTIONS = [
+  { id: "financial_independence", label: "Financial independence", desc: "Build enough to live off your investments" },
+  { id: "retirement", label: "Comfortable retirement", desc: "Retire without money worries" },
+  { id: "home", label: "Buy a home", desc: "Save toward a property" },
+  { id: "emergency_fund", label: "Emergency fund", desc: "A safety net of 3–6 months" },
+  { id: "debt_free", label: "Become debt-free", desc: "Clear loans and credit" },
+  { id: "wealth_growth", label: "Grow my wealth", desc: "Invest and compound over time" },
+];
+
+const RISK_OPTIONS = [
+  { id: "conservative", label: "Conservative", desc: "Protect capital, steady returns" },
+  { id: "balanced", label: "Balanced", desc: "A mix of safety and growth" },
+  { id: "aggressive", label: "Aggressive", desc: "Maximise growth, accept swings" },
+];
 
 // ── Income source options ────────────────────────────────────────────────────
 
@@ -70,7 +90,7 @@ const BASE_ACCOUNTS = [
   "General Expenses (5000)",
 ];
 
-const STEPS = ["Welcome", "About you", "Work & tax", "Income sources", "Review"];
+const STEPS = ["Welcome", "About you", "Work & tax", "Income sources", "Your goals", "Review"];
 
 // ── Step components ──────────────────────────────────────────────────────────
 
@@ -320,6 +340,109 @@ function IncomeSourcesStep({
   );
 }
 
+function GoalsStep({
+  data,
+  onChange,
+}: {
+  data: OnboardingData;
+  onChange: (updates: Partial<OnboardingData>) => void;
+}) {
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-semibold tracking-tight">Your goals</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Tell us what you&apos;re working toward so the advisor can guide you there.
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-[12px] font-medium">What matters most right now?</Label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {GOAL_OPTIONS.map((opt) => {
+            const selected = data.primary_goal === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => onChange({ primary_goal: opt.id })}
+                className={`text-left px-3 py-2.5 rounded-lg border text-[12px] transition-colors ${
+                  selected ? "border-foreground bg-foreground/5" : "border-border hover:border-foreground/40"
+                }`}
+              >
+                <div className="font-medium text-foreground">{opt.label}</div>
+                <div className="text-muted-foreground mt-0.5">{opt.desc}</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-[12px] font-medium">
+            Target amount <span className="text-muted-foreground font-normal">(LKR, optional)</span>
+          </Label>
+          <Input
+            inputMode="numeric"
+            placeholder="e.g. 25,000,000"
+            value={data.goal_target_amount}
+            onChange={(e) => onChange({ goal_target_amount: e.target.value.replace(/[^0-9.]/g, "") })}
+            className="h-9 text-[13px]"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-[12px] font-medium">
+            By year <span className="text-muted-foreground font-normal">(optional)</span>
+          </Label>
+          <Input
+            inputMode="numeric"
+            placeholder="e.g. 2040"
+            value={data.goal_target_year}
+            onChange={(e) => onChange({ goal_target_year: e.target.value.replace(/[^0-9]/g, "").slice(0, 4) })}
+            className="h-9 text-[13px]"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-[12px] font-medium">How do you feel about investment risk?</Label>
+        <div className="grid grid-cols-3 gap-2">
+          {RISK_OPTIONS.map((opt) => {
+            const selected = data.risk_appetite === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => onChange({ risk_appetite: opt.id })}
+                className={`text-left px-3 py-2.5 rounded-lg border text-[12px] transition-colors ${
+                  selected ? "border-foreground bg-foreground/5 font-medium" : "border-border hover:border-foreground/40"
+                }`}
+              >
+                <div className="font-medium text-foreground">{opt.label}</div>
+                <div className="text-muted-foreground mt-0.5 leading-tight">{opt.desc}</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-[12px] font-medium">
+          What&apos;s your motivation? <span className="text-muted-foreground font-normal">(optional)</span>
+        </Label>
+        <textarea
+          placeholder="e.g. Retire by 50 and travel; give my kids a debt-free start."
+          value={data.motivation}
+          onChange={(e) => onChange({ motivation: e.target.value })}
+          rows={3}
+          className="w-full resize-none rounded-lg border border-border bg-card px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:border-foreground/40"
+        />
+      </div>
+    </div>
+  );
+}
+
 function ReviewStep({ data }: { data: OnboardingData }) {
   const selectedSources = INCOME_SOURCE_OPTIONS.filter((o) =>
     data.income_sources.includes(o.id)
@@ -398,6 +521,11 @@ const DEFAULT_DATA: OnboardingData = {
   employment_type: "",
   ird_number: "",
   income_sources: [],
+  primary_goal: "",
+  goal_target_amount: "",
+  goal_target_year: "",
+  risk_appetite: "",
+  motivation: "",
 };
 
 export default function OnboardingPage() {
@@ -430,13 +558,17 @@ export default function OnboardingPage() {
     setError("");
     try {
       const token = getStoredToken();
+      const payload = {
+        ...data,
+        goal_target_amount: data.goal_target_amount ? Number(data.goal_target_amount) : 0,
+      };
       const res = await fetch(`${API_URL}/onboarding/complete`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -473,7 +605,8 @@ export default function OnboardingPage() {
           {step === 1 && <AboutYouStep data={data} onChange={update} />}
           {step === 2 && <WorkTaxStep data={data} onChange={update} />}
           {step === 3 && <IncomeSourcesStep data={data} onChange={update} />}
-          {step === 4 && <ReviewStep data={data} />}
+          {step === 4 && <GoalsStep data={data} onChange={update} />}
+          {step === 5 && <ReviewStep data={data} />}
 
           {error && (
             <p className="mt-4 text-[12px] text-rose-600 bg-rose-50 rounded-md px-3 py-2 border border-rose-200">

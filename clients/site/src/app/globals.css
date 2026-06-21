@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/* ── Salli "Ledger Paper" tokens (shared with the app) ──────────────────────── */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+:root {
+  --background: oklch(0.976 0.008 75);      /* warm document paper */
+  --foreground: oklch(0.148 0.006 260);     /* warm charcoal */
+  --card: oklch(1 0 0);
+  --primary: oklch(0.598 0.148 46);         /* warm amber */
+  --primary-foreground: oklch(0.99 0 0);
+  --muted: oklch(0.938 0.010 75);
+  --muted-foreground: oklch(0.52 0.008 260);
+  --border: oklch(0.878 0.010 75);
+  --ink: oklch(0.148 0.005 260);            /* dark "ledger cover" */
+  --ink-foreground: oklch(0.86 0.006 260);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+h1, h2, h3, h4 {
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+/* Ledger mono — figures, the wordmark tagline */
+.font-ledger {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Faint ruled-paper, like the inside of a ledger */
+.ledger-paper {
+  background-color: var(--background);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 31px,
+    color-mix(in oklch, var(--foreground) 4%, transparent) 31px,
+    color-mix(in oklch, var(--foreground) 4%, transparent) 32px
+  );
+}
+
+.ledger-cover {
+  background-color: var(--ink);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 27px,
+    rgba(255, 255, 255, 0.05) 27px,
+    rgba(255, 255, 255, 0.05) 28px
+  );
+}
+
+.text-secondary-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted-foreground);
+}

@@ -282,10 +282,13 @@ class AgentService:
         if thread_id is None:
             thread_id = str(uuid.uuid4())
 
+        from salli.domain.agents.tools import set_current_user
+
+        set_current_user(user_id)  # tools read this, never the LLM-supplied id
         await self._ensure_session(user_id, thread_id)
 
         agent = self._get_agent()
-        config = {"configurable": {"thread_id": f"{user_id}:{thread_id}"}}
+        config = {"configurable": {"thread_id": f"{user_id}:{thread_id}", "user_id": user_id}}
         human_msg = await self._build_message_content(user_id, message, file_refs)
 
         async for event in self._stream_events(agent, {"messages": [human_msg]}, config):
@@ -303,8 +306,11 @@ class AgentService:
         """
         from langgraph.types import Command
 
+        from salli.domain.agents.tools import set_current_user
+
+        set_current_user(user_id)
         agent = self._get_agent()
-        config = {"configurable": {"thread_id": f"{user_id}:{thread_id}"}}
+        config = {"configurable": {"thread_id": f"{user_id}:{thread_id}", "user_id": user_id}}
 
         async for event in self._stream_events(agent, Command(resume=decision), config):
             yield event

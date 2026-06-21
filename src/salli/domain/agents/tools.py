@@ -13,10 +13,22 @@ approve or deny the action before it executes. The agent resumes via Command(res
 
 from __future__ import annotations
 
+import contextvars
 from decimal import Decimal
 from typing import Annotated, Any
 
 from langchain_core.tools import tool
+
+# The authenticated user for the current agent run. Set per-request by AgentService
+# before the graph executes, so tools always act on the signed-in user's data —
+# the user_id is NEVER taken from the LLM (correctness + tenant isolation).
+_current_user: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "salli_current_user", default="dev-user"
+)
+
+
+def set_current_user(user_id: str) -> None:
+    _current_user.set(user_id)
 
 
 # ── Read-only tools (re-exported for worker agents) ───────────────────────────
@@ -29,9 +41,9 @@ def make_read_tools(ledger_svc: Any, tax_svc: Any) -> list[Any]:
     async def get_trial_balance(
         from_date: Annotated[str | None, "Start date YYYY-MM-DD"] = None,
         to_date: Annotated[str | None, "End date YYYY-MM-DD"] = None,
-        user_id: Annotated[str, "User ID"] = "dev-user",
     ) -> dict[str, Any]:
         """Return the trial balance (account balances) for the user's ledger."""
+        user_id = _current_user.get()
         balances = await ledger_svc.get_trial_balance(user_id, from_date, to_date)
         return {
             "trial_balance": {k: str(v) for k, v in balances.items()},
@@ -40,9 +52,9 @@ def make_read_tools(ledger_svc: Any, tax_svc: Any) -> list[Any]:
 
     @tool
     async def get_accounts(
-        user_id: Annotated[str, "User ID"] = "dev-user",
     ) -> dict[str, Any]:
         """List all accounts in the user's chart of accounts."""
+        user_id = _current_user.get()
         accounts = await ledger_svc.list_accounts(user_id)
         return {
             "accounts": [
@@ -54,13 +66,13 @@ def make_read_tools(ledger_svc: Any, tax_svc: Any) -> list[Any]:
     @tool
     async def get_tax_computation(
         year: Annotated[str, "Year of assessment, e.g. 2025/26"] = "2025/26",
-        user_id: Annotated[str, "User ID"] = "dev-user",
     ) -> dict[str, Any]:
         """
         Return the latest stored tax computation for the given year.
         If none exists, compute it now. Numbers here are authoritative;
         narrate them — do NOT recompute or adjust them.
         """
+        user_id = _current_user.get()
         result = await tax_svc.compute_tax(user_id, year)
 
         def _bw(bw: Any) -> dict[str, str]:
@@ -176,13 +188,13 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
         content: Annotated[str, "Document content (plain text or markdown)"],
         tags: Annotated[list[str], "Optional list of tags for categorisation"] = [],
         description: Annotated[str | None, "Short description of the document"] = None,
-        user_id: Annotated[str, "User ID"] = "dev-user",
     ) -> dict[str, Any]:
         """
         Save a text document to the user's document store.
         Use this to record notes, summaries, extracted data, or any information
         the user might want to retrieve later. Documents persist across sessions.
         """
+        user_id = _current_user.get()
         doc_id = await doc_svc.save_document(
             user_id,
             title=title,
@@ -197,9 +209,9 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
     @tool
     async def read_document(
         doc_id: Annotated[str, "Document ID returned by save_document or list_documents"],
-        user_id: Annotated[str, "User ID"] = "dev-user",
     ) -> dict[str, Any]:
         """Retrieve a saved document by its ID."""
+        user_id = _current_user.get()
         doc = await doc_svc.get_document(user_id, doc_id)
         if not doc:
             return {"error": f"Document {doc_id} not found"}
@@ -210,7 +222,6 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
         doc_id: Annotated[str, "Document ID to update"],
         title: Annotated[str | None, "New title (leave None to keep current)"] = None,
         content: Annotated[str | None, "New content (leave None to keep current)"] = None,
-        user_id: Annotated[str, "User ID"] = "dev-user",
     ) -> dict[str, Any]:
         """Update the title or content of an existing document."""
         updates: dict[str, Any] = {}
@@ -220,6 +231,7 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
             updates["content"] = content
         if not updates:
             return {"error": "No updates provided"}
+        user_id = _current_user.get()
         await doc_svc.update_document(user_id, doc_id, **updates)
         return {"doc_id": doc_id, "updated": True}
 
@@ -228,9 +240,9 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
         namespace: Annotated[str | None, "Filter by namespace: 'documents' or 'memories'"] = None,
         tags: Annotated[list[str], "Filter by tags"] = [],
         search_query: Annotated[str | None, "Full-text search over title and content"] = None,
-        user_id: Annotated[str, "User ID"] = "dev-user",
     ) -> dict[str, Any]:
         """List saved documents. Filter by namespace, tags, or a search query."""
+        user_id = _current_user.get()
         docs = await doc_svc.list_documents(
             user_id,
             tags=tags or None,
@@ -256,9 +268,9 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
     @tool
     async def delete_document(
         doc_id: Annotated[str, "Document ID to delete"],
-        user_id: Annotated[str, "User ID"] = "dev-user",
     ) -> dict[str, Any]:
         """Permanently delete a document from the user's document store."""
+        user_id = _current_user.get()
         await doc_svc.delete_document(user_id, doc_id)
         return {"doc_id": doc_id, "deleted": True}
 
@@ -268,22 +280,22 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
     async def save_memory(
         slug: Annotated[str, "Unique memory key, e.g. 'accountant_name', 'tax_year_goal'"],
         value: Annotated[str, "Value to store (plain text)"],
-        user_id: Annotated[str, "User ID"] = "dev-user",
     ) -> dict[str, Any]:
         """
         Save or update a named memory. Memories persist across all sessions.
         Use slugs like 'accountant_name', 'tax_notes_2025', 'employer_name'.
         Calling save_memory with the same slug overwrites the previous value.
         """
+        user_id = _current_user.get()
         doc_id = await doc_svc.save_memory(user_id, slug=slug, value=value)
         return {"slug": slug, "saved": True, "doc_id": doc_id}
 
     @tool
     async def get_memory(
         slug: Annotated[str, "Memory key to retrieve"],
-        user_id: Annotated[str, "User ID"] = "dev-user",
     ) -> dict[str, Any]:
         """Retrieve a named memory by its slug key."""
+        user_id = _current_user.get()
         mem = await doc_svc.get_memory(user_id, slug=slug)
         if not mem:
             return {"slug": slug, "found": False}
@@ -291,9 +303,9 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
 
     @tool
     async def list_memories(
-        user_id: Annotated[str, "User ID"] = "dev-user",
     ) -> dict[str, Any]:
         """List all named memories stored for this user."""
+        user_id = _current_user.get()
         mems = await doc_svc.list_memories(user_id)
         return {
             "count": len(mems),
@@ -308,7 +320,6 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
         name: Annotated[str, "Account name, e.g. 'Cash — BOC'"],
         account_type: Annotated[str, "One of: asset, liability, equity, income, expense"],
         currency: Annotated[str, "Currency code, e.g. 'LKR'"] = "LKR",
-        user_id: Annotated[str, "User ID"] = "dev-user",
     ) -> str:
         """
         Create a new account in the chart of accounts.
@@ -334,6 +345,7 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
                 type=account_type,  # type: ignore[arg-type]
                 currency=currency,
             )
+            user_id = _current_user.get()
             acct_id = await ledger_svc.add_account(user_id, account)
             return f"Account created: {name} ({code}), id={acct_id}"
         return "Action cancelled by user."
@@ -342,7 +354,6 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
     async def create_reminder(
         description: Annotated[str, "Reminder description / kind"],
         due_date: Annotated[str, "Due date as YYYY-MM-DD"],
-        user_id: Annotated[str, "User ID"] = "dev-user",
     ) -> str:
         """
         Create a new reminder / deadline.
@@ -373,7 +384,6 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
         credit_account_id: Annotated[str, "Account ID to credit"],
         amount: Annotated[str, "Amount as a decimal string, e.g. '10000.00'"],
         currency: Annotated[str, "Currency code"] = "LKR",
-        user_id: Annotated[str, "User ID"] = "dev-user",
     ) -> str:
         """
         Post a double-entry journal entry to the ledger.
@@ -423,6 +433,7 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
                     ),
                 ],
             )
+            user_id = _current_user.get()
             entry_id = await ledger_svc.add_entry(user_id, entry)
             return f"Journal entry posted: id={entry_id}"
         return "Action cancelled by user."

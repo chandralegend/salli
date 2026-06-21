@@ -38,29 +38,40 @@ export default function Home() {
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <section id="top" className="ledger-paper border-b border-border/60">
-        <Reveal stagger={0.12} className="max-w-6xl mx-auto px-5 py-24 sm:py-32 text-center">
-          <p className="text-secondary-label">Personal finance &amp; tax · Sri Lanka</p>
-          <h1 className="font-ledger text-[40px] sm:text-[64px] leading-[1.04] mt-5 text-foreground">
-            STOP GUESSING.
-            <br />
-            START KNOWING.
-          </h1>
-          <p className="text-[16px] sm:text-[18px] text-muted-foreground mt-6 max-w-xl mx-auto leading-relaxed">
-            Track your money. Understand your tax. Build your freedom — with a real
-            ledger, a Sri Lanka tax engine, and an AI advisor that works from your numbers.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 mt-9">
-            <a href={`${APP}/signup`} className="inline-flex items-center gap-1.5 text-[14px] font-medium px-5 h-11 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-              Get started free <ArrowRight className="size-4" />
-            </a>
-            <a href="#features" className="inline-flex items-center text-[14px] font-medium px-5 h-11 rounded-lg ring-1 ring-foreground/15 bg-card hover:ring-foreground/30 transition">
-              See how it works
-            </a>
-          </div>
-          <p className="text-[12px] text-muted-foreground/70 mt-4 font-ledger">
-            Free to start · No card required
-          </p>
-        </Reveal>
+        <div className="max-w-6xl mx-auto px-5 py-16 sm:py-24 grid lg:grid-cols-2 gap-10 lg:gap-6 items-center">
+          <Reveal stagger={0.12} className="text-center lg:text-left">
+            <p className="text-secondary-label">Personal finance &amp; tax · Sri Lanka</p>
+            <h1 className="font-ledger text-[40px] sm:text-[56px] leading-[1.04] mt-5 text-foreground">
+              STOP GUESSING.
+              <br />
+              START KNOWING.
+            </h1>
+            <p className="text-[16px] sm:text-[18px] text-muted-foreground mt-6 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+              Track your money. Understand your tax. Build your freedom — with a real
+              ledger, a Sri Lanka tax engine, and an AI advisor that works from your numbers.
+            </p>
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mt-9">
+              <a href={`${APP}/signup`} className="inline-flex items-center gap-1.5 text-[14px] font-medium px-5 h-11 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                Get started free <ArrowRight className="size-4" />
+              </a>
+              <a href="#features" className="inline-flex items-center text-[14px] font-medium px-5 h-11 rounded-lg ring-1 ring-foreground/15 bg-card hover:ring-foreground/30 transition">
+                See how it works
+              </a>
+            </div>
+            <p className="text-[12px] text-muted-foreground/70 mt-4 font-ledger">
+              Free to start · No card required
+            </p>
+          </Reveal>
+          <Reveal delay={0.15} className="hidden sm:block">
+            {/* unDraw "Hiking" by Katerina Limpitsouni, recoloured to the brand palette */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/hero-trail.svg"
+              alt="A hiker climbing toward a mountain summit"
+              className="float-slow w-full max-w-md mx-auto"
+            />
+          </Reveal>
+        </div>
       </section>
 
       {/* ── Trust strip ─────────────────────────────────────────────────── */}

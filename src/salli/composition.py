@@ -13,6 +13,7 @@ from salli.application.ports import StoragePort
 from salli.application.services.agent_service import AgentService
 from salli.application.services.billing_service import BillingService
 from salli.application.services.document_service import DocumentService
+from salli.application.services.fi_service import FiService
 from salli.application.services.ledger_service import LedgerService
 from salli.application.services.parsing_service import ParsingService
 from salli.application.services.reminder_service import ReminderService
@@ -32,6 +33,7 @@ class Services:
     storage: StoragePort
     documents: DocumentService
     billing: BillingService
+    fi: FiService
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
@@ -59,6 +61,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     reminders = ReminderService(uow_factory)
     fx = CBSLFxRateAdapter()
     billing = BillingService(uow_factory, billing_port=_build_billing(settings))
+    fi = FiService(uow_factory)
 
     return Services(
         ledger=ledger,
@@ -70,6 +73,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         storage=storage,
         documents=documents,
         billing=billing,
+        fi=fi,
     )
 
 

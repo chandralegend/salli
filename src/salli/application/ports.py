@@ -300,3 +300,54 @@ class BillingPort(ABC):
     def plan_for_price_id(self, price_id: str) -> str:
         """Map a provider price ID to a plan key (falls back to 'free')."""
         ...
+
+
+# ── Financial Independence ───────────────────────────────────────────────────
+
+
+class GoalRepository(ABC):
+    @abstractmethod
+    async def save(self, user_id: str, goal: dict[str, Any]) -> str: ...
+
+    @abstractmethod
+    async def get(self, user_id: str, goal_id: str) -> dict[str, Any] | None: ...
+
+    @abstractmethod
+    async def list(self, user_id: str, active_only: bool = True) -> list[dict[str, Any]]: ...
+
+    @abstractmethod
+    async def update(self, user_id: str, goal_id: str, updates: dict[str, Any]) -> None: ...
+
+    @abstractmethod
+    async def delete(self, user_id: str, goal_id: str) -> None: ...
+
+
+class FiScoreRepository(ABC):
+    @abstractmethod
+    async def save(self, user_id: str, score: dict[str, Any]) -> str: ...
+
+    @abstractmethod
+    async def get_latest(self, user_id: str) -> dict[str, Any] | None: ...
+
+    @abstractmethod
+    async def history(self, user_id: str, limit: int = 90) -> list[dict[str, Any]]: ...
+
+
+class AdvisoryRepository(ABC):
+    @abstractmethod
+    async def save(self, user_id: str, report: dict[str, Any]) -> str: ...
+
+    @abstractmethod
+    async def get(self, user_id: str, report_id: str) -> dict[str, Any] | None: ...
+
+    @abstractmethod
+    async def get_latest(self, user_id: str) -> dict[str, Any] | None: ...
+
+    @abstractmethod
+    async def list(self, user_id: str, limit: int = 30) -> list[dict[str, Any]]: ...
+
+    @abstractmethod
+    async def update_recommendations(self, user_id: str, report_id: str, recommendations: list) -> None: ...
+
+    @abstractmethod
+    async def ran_today(self, user_id: str, day: str) -> bool: ...

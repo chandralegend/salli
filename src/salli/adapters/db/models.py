@@ -353,3 +353,68 @@ class UsageCounterORM(Base):
         UniqueConstraint("user_id", "period", "metric", name="uq_usage_user_period_metric"),
         Index("ix_usage_user", "user_id"),
     )
+
+
+# ── Financial Independence: goals, score snapshots, advisory reports ──────────
+
+
+class GoalORM(Base):
+    __tablename__ = "fi_goals"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    # fi | retirement | home | emergency_fund | debt_free | wealth_growth | custom
+    kind: Mapped[str] = mapped_column(String(40), nullable=False, default="custom")
+    target_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+    current_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+    target_date: Mapped[str | None] = mapped_column(String(10), nullable=True)  # YYYY-MM-DD
+    priority: Mapped[int] = mapped_column(Integer, nullable=False, default=2)  # 1 high … 3 low
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    extra: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+
+    __table_args__ = (Index("ix_fi_goals_user_active", "user_id", "is_active"),)
+
+
+class FiScoreORM(Base):
+    """Snapshot of a computed FI score (history for trend lines)."""
+
+    __tablename__ = "fi_scores"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    score: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)
+    pack_version: Mapped[str] = mapped_column(String(20), nullable=False)
+    inputs_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    result_json: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+
+    __table_args__ = (Index("ix_fi_scores_user_date", "user_id", "created_at"),)
+
+
+class AdvisoryReportORM(Base):
+    """A Wealth Advisor run: summary + structured, actionable recommendations."""
+
+    __tablename__ = "advisory_reports"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    trigger: Mapped[str] = mapped_column(String(20), nullable=False, default="manual")  # manual | scheduled
+    fi_score_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    # list of {id,title,rationale,category,action_type(none|reminder|journal_entry),
+    #          action_params,status(pending|applied|dismissed)}
+    recommendations: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+
+    __table_args__ = (Index("ix_advisory_reports_user_date", "user_id", "created_at"),)

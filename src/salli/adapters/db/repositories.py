@@ -18,8 +18,11 @@ from sqlalchemy.orm import selectinload
 
 from salli.adapters.db.models import (
     AccountORM,
+    AdvisoryReportORM,
     AgentDocumentORM,
     AgentSessionORM,
+    FiScoreORM,
+    GoalORM,
     JournalEntryORM,
     ParsedTransactionORM,
     PostingORM,
@@ -31,8 +34,11 @@ from salli.adapters.db.models import (
     UserProfileORM,
 )
 from salli.application.ports import (
+    AdvisoryRepository,
     AgentDocumentRepository,
     AgentSessionRepository,
+    FiScoreRepository,
+    GoalRepository,
     LedgerRepository,
     ReminderRepository,
     StatementRepository,
@@ -776,3 +782,178 @@ class SQLUserProfileRepository(UserProfileRepository):
             if hasattr(row, k) and v is not None:
                 setattr(row, k, v)
         await self._s.flush()
+
+
+# ── Financial Independence repositories ──────────────────────────────────────
+
+
+def _goal_to_dict(r: GoalORM) -> dict[str, Any]:
+    return {
+        "id": r.id,
+        "user_id": r.user_id,
+        "name": r.name,
+        "kind": r.kind,
+        "target_amount_minor": r.target_amount_minor,
+        "current_amount_minor": r.current_amount_minor,
+        "target_date": r.target_date,
+        "priority": r.priority,
+        "is_active": r.is_active,
+        "extra": r.extra or {},
+        "created_at": r.created_at.isoformat(),
+        "updated_at": r.updated_at.isoformat(),
+    }
+
+
+class SQLGoalRepository(GoalRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def save(self, user_id: str, goal: dict[str, Any]) -> str:
+        gid = goal.get("id") or str(uuid.uuid4())
+        self._s.add(GoalORM(
+            id=gid,
+            user_id=user_id,
+            name=goal["name"],
+            kind=goal.get("kind", "custom"),
+            target_amount_minor=int(goal.get("target_amount_minor", 0)),
+            current_amount_minor=int(goal.get("current_amount_minor", 0)),
+            target_date=goal.get("target_date"),
+            priority=int(goal.get("priority", 2)),
+            is_active=goal.get("is_active", True),
+            extra=goal.get("extra", {}),
+        ))
+        await self._s.flush()
+        return gid
+
+    async def get(self, user_id: str, goal_id: str) -> dict[str, Any] | None:
+        r = (await self._s.execute(
+            select(GoalORM).where(GoalORM.id == goal_id, GoalORM.user_id == user_id)
+        )).scalar_one_or_none()
+        return _goal_to_dict(r) if r else None
+
+    async def list(self, user_id: str, active_only: bool = True) -> list[dict[str, Any]]:
+        stmt = select(GoalORM).where(GoalORM.user_id == user_id)
+        if active_only:
+            stmt = stmt.where(GoalORM.is_active == True)  # noqa: E712
+        stmt = stmt.order_by(GoalORM.priority, GoalORM.created_at)
+        return [_goal_to_dict(r) for r in (await self._s.execute(stmt)).scalars().all()]
+
+    async def update(self, user_id: str, goal_id: str, updates: dict[str, Any]) -> None:
+        r = (await self._s.execute(
+            select(GoalORM).where(GoalORM.id == goal_id, GoalORM.user_id == user_id)
+        )).scalar_one_or_none()
+        if not r:
+            return
+        for k in ("name", "kind", "target_amount_minor", "current_amount_minor",
+                  "target_date", "priority", "is_active", "extra"):
+            if k in updates and updates[k] is not None:
+                setattr(r, k, updates[k])
+        await self._s.flush()
+
+    async def delete(self, user_id: str, goal_id: str) -> None:
+        r = (await self._s.execute(
+            select(GoalORM).where(GoalORM.id == goal_id, GoalORM.user_id == user_id)
+        )).scalar_one_or_none()
+        if r:
+            await self._s.delete(r)
+
+
+class SQLFiScoreRepository(FiScoreRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def save(self, user_id: str, score: dict[str, Any]) -> str:
+        sid = str(uuid.uuid4())
+        self._s.add(FiScoreORM(
+            id=sid,
+            user_id=user_id,
+            score=score["overall_score"],
+            pack_version=score["pack_version"],
+            inputs_hash=score.get("inputs_hash", ""),
+            result_json=score,
+        ))
+        await self._s.flush()
+        return sid
+
+    async def get_latest(self, user_id: str) -> dict[str, Any] | None:
+        r = (await self._s.execute(
+            select(FiScoreORM).where(FiScoreORM.user_id == user_id)
+            .order_by(FiScoreORM.created_at.desc()).limit(1)
+        )).scalar_one_or_none()
+        return r.result_json if r else None
+
+    async def history(self, user_id: str, limit: int = 90) -> list[dict[str, Any]]:
+        rows = (await self._s.execute(
+            select(FiScoreORM).where(FiScoreORM.user_id == user_id)
+            .order_by(FiScoreORM.created_at.desc()).limit(limit)
+        )).scalars().all()
+        return [{"score": float(r.score), "created_at": r.created_at.isoformat()} for r in rows]
+
+
+def _report_to_dict(r: AdvisoryReportORM) -> dict[str, Any]:
+    return {
+        "id": r.id,
+        "user_id": r.user_id,
+        "trigger": r.trigger,
+        "fi_score_id": r.fi_score_id,
+        "summary": r.summary,
+        "recommendations": r.recommendations or [],
+        "created_at": r.created_at.isoformat(),
+    }
+
+
+class SQLAdvisoryRepository(AdvisoryRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def save(self, user_id: str, report: dict[str, Any]) -> str:
+        rid = str(uuid.uuid4())
+        self._s.add(AdvisoryReportORM(
+            id=rid,
+            user_id=user_id,
+            trigger=report.get("trigger", "manual"),
+            fi_score_id=report.get("fi_score_id"),
+            summary=report.get("summary", ""),
+            recommendations=report.get("recommendations", []),
+        ))
+        await self._s.flush()
+        return rid
+
+    async def get(self, user_id: str, report_id: str) -> dict[str, Any] | None:
+        r = (await self._s.execute(
+            select(AdvisoryReportORM).where(
+                AdvisoryReportORM.id == report_id, AdvisoryReportORM.user_id == user_id
+            )
+        )).scalar_one_or_none()
+        return _report_to_dict(r) if r else None
+
+    async def get_latest(self, user_id: str) -> dict[str, Any] | None:
+        r = (await self._s.execute(
+            select(AdvisoryReportORM).where(AdvisoryReportORM.user_id == user_id)
+            .order_by(AdvisoryReportORM.created_at.desc()).limit(1)
+        )).scalar_one_or_none()
+        return _report_to_dict(r) if r else None
+
+    async def list(self, user_id: str, limit: int = 30) -> list[dict[str, Any]]:
+        rows = (await self._s.execute(
+            select(AdvisoryReportORM).where(AdvisoryReportORM.user_id == user_id)
+            .order_by(AdvisoryReportORM.created_at.desc()).limit(limit)
+        )).scalars().all()
+        return [_report_to_dict(r) for r in rows]
+
+    async def update_recommendations(self, user_id: str, report_id: str, recommendations: list) -> None:
+        r = (await self._s.execute(
+            select(AdvisoryReportORM).where(
+                AdvisoryReportORM.id == report_id, AdvisoryReportORM.user_id == user_id
+            )
+        )).scalar_one_or_none()
+        if r:
+            r.recommendations = recommendations
+            await self._s.flush()
+
+    async def ran_today(self, user_id: str, day: str) -> bool:
+        rows = (await self._s.execute(
+            select(AdvisoryReportORM.created_at).where(AdvisoryReportORM.user_id == user_id)
+            .order_by(AdvisoryReportORM.created_at.desc()).limit(1)
+        )).scalar_one_or_none()
+        return rows is not None and rows.isoformat().startswith(day)

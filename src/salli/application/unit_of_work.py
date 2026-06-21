@@ -10,8 +10,11 @@ from typing import TYPE_CHECKING
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from salli.adapters.db.repositories import (
+    SQLAdvisoryRepository,
     SQLAgentDocumentRepository,
     SQLAgentSessionRepository,
+    SQLFiScoreRepository,
+    SQLGoalRepository,
     SQLLedgerRepository,
     SQLReminderRepository,
     SQLStatementRepository,
@@ -21,8 +24,11 @@ from salli.adapters.db.repositories import (
     SQLUserProfileRepository,
 )
 from salli.application.ports import (
+    AdvisoryRepository,
     AgentDocumentRepository,
     AgentSessionRepository,
+    FiScoreRepository,
+    GoalRepository,
     LedgerRepository,
     ReminderRepository,
     StatementRepository,
@@ -46,6 +52,9 @@ class UnitOfWork:
     subscriptions: SubscriptionRepository
     usage: UsageRepository
     user_profiles: UserProfileRepository
+    goals: GoalRepository
+    fi_scores: FiScoreRepository
+    advisories: AdvisoryRepository
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._factory = session_factory
@@ -62,6 +71,9 @@ class UnitOfWork:
         self.subscriptions = SQLSubscriptionRepository(self._session)
         self.usage = SQLUsageRepository(self._session)
         self.user_profiles = SQLUserProfileRepository(self._session)
+        self.goals = SQLGoalRepository(self._session)
+        self.fi_scores = SQLFiScoreRepository(self._session)
+        self.advisories = SQLAdvisoryRepository(self._session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

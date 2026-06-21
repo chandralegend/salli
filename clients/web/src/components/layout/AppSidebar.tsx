@@ -18,6 +18,7 @@ import {
   Plus,
   ChevronDown,
   Trash2,
+  Compass,
 } from "lucide-react";
 import {
   Sidebar,
@@ -53,6 +54,7 @@ const NAV_MAIN = [
   { href: "/ledger", label: "Ledger", icon: BookOpen },
   { href: "/statements", label: "Statements", icon: FileText },
   { href: "/tax", label: "Tax", icon: Calculator },
+  { href: "/financial-independence", label: "Financial Freedom", icon: Compass },
 ];
 
 const NAV_MANAGE = [

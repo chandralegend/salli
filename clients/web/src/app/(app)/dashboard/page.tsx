@@ -9,6 +9,7 @@ import { PostingRow } from "@/components/PostingRow";
 import { DeadlineChip } from "@/components/DeadlineChip";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useTax } from "@/hooks/useTax";
+import { useFiScore } from "@/hooks/useFi";
 import { cn } from "@/lib/utils";
 
 function Amount({ value, className }: { value: string; className?: string }) {
@@ -68,6 +69,36 @@ function StatCard({
             {trend === "up" && <TrendingUp className="size-3 text-emerald-600" />}
             {trend === "down" && <TrendingDown className="size-3 text-rose-600" />}
             {sub && <span>{sub}</span>}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function FiScoreCard() {
+  const { data, isLoading } = useFiScore();
+  return (
+    <Card>
+      <CardContent>
+        <div className="flex items-center justify-between">
+          <p className="text-secondary-label">FI SCORE</p>
+          <Link href="/financial-independence" className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+            Details <ArrowRight className="size-3" />
+          </Link>
+        </div>
+        {isLoading || !data ? (
+          <Skeleton className="h-8 w-24 mt-3" />
+        ) : (
+          <div className="flex items-end gap-3 mt-2">
+            <span className="text-metric text-primary">{Number(data.overall_score).toFixed(0)}</span>
+            <span className="text-[12px] text-muted-foreground mb-1">/ 100 · {data.grade}</span>
+          </div>
+        )}
+        {data && (
+          <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden mt-3">
+            <div className="h-full rounded-full bg-primary transition-[width] duration-500"
+                 style={{ width: `${Number(data.overall_score)}%` }} />
           </div>
         )}
       </CardContent>
@@ -158,6 +189,9 @@ export default function DashboardPage() {
 
         {/* Right column */}
         <div className="flex flex-col gap-3">
+          {/* FI score */}
+          <FiScoreCard />
+
           {/* AI Agent CTA */}
           <Card className="bg-foreground text-background overflow-hidden relative border-0">
             <CardContent className="pt-5 pb-5 relative">

@@ -26,10 +26,12 @@ export function AuthShell({
               "repeating-linear-gradient(to bottom, transparent 0, transparent 27px, #fff 27px, #fff 28px)",
           }}
         />
-        <div className="relative">
+        <div className="relative flex items-center gap-4">
           <Logo className="size-20 rounded-2xl shadow-lg shadow-black/30" />
-          <p className="mt-4 text-2xl font-semibold tracking-tight">Salli</p>
-          <p className="text-[15px] text-sidebar-foreground/55">Finance &amp; Tax · Sri Lanka</p>
+          <div className="leading-tight">
+            <p className="text-2xl font-semibold tracking-tight">Salli</p>
+            <p className="text-[15px] text-sidebar-foreground/55">Finance &amp; Tax · Sri Lanka</p>
+          </div>
         </div>
 
         <div className="relative max-w-md">

@@ -4,6 +4,7 @@
 /node_modules
 /.pnp
 .pnp.*
+.pnpm-store/
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
@@ -39,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# agent tooling caches
+.agents/
+skills-lock.json

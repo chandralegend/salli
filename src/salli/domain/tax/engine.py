@@ -24,25 +24,32 @@ def compute(ledger: LedgerView, pack: TaxPack) -> TaxComputation:
     """
     Compute personal income tax for a single year of assessment.
 
-    Bands apply to taxable income AFTER deducting personal relief.
-    Credits reduce tax_before_credits; tax_payable cannot go below zero.
+    Foreign Service Income (FSI) is taxed at the pack's flat regime rate and
+    excluded from the progressive bands.  Personal relief and QPDs reduce the
+    remaining (regular) taxable income only.  All credits offset the combined
+    tax liability.
     """
     gross = ledger.total_income
 
-    # Personal relief: capped at gross income so it never drives taxable negative.
-    relief_applied = min(pack.personal_relief, gross)
-    taxable = max(Decimal(0), gross - relief_applied)
+    # ── FSI flat tax ──────────────────────────────────────────────────────────
+    fsi = min(ledger.foreign_service_income, gross)  # cap at gross (defensive)
+    regular_income = max(Decimal(0), gross - fsi)
 
-    # Apply qualifying payments / donations (capped to lower of ⅓ taxable or LKR 75,000).
-    # Future: expose as a separate deduction in the pack config.
-    qp_cap = min(
-        taxable / Decimal(3),
-        Decimal("75000"),
-    )
+    if pack.foreign_service_income is not None and fsi > Decimal(0):
+        fsi_tax = _round(fsi * pack.foreign_service_income.max_rate, pack.rounding)
+    else:
+        fsi_tax = Decimal(0)
+
+    # ── Regular income: relief + QPD → bands ─────────────────────────────────
+    relief_applied = min(pack.personal_relief, regular_income)
+    taxable = max(Decimal(0), regular_income - relief_applied)
+
+    # Qualifying payments / donations: capped at min(⅓ of taxable, LKR 75,000)
+    qp_cap = min(taxable / Decimal(3), Decimal("75000"))
     qp_deduction = min(ledger.qualifying_payments, qp_cap)
     taxable = max(Decimal(0), taxable - qp_deduction)
 
-    # Progressive band computation
+    # Progressive band computation (applies to regular taxable income only)
     workings: list[BandWorkings] = []
     remaining = taxable
     prev_upto = Decimal(0)
@@ -69,9 +76,10 @@ def compute(ledger: LedgerView, pack: TaxPack) -> TaxComputation:
         if band.upto is not None:
             prev_upto = band.upto
 
-    tax_before_credits = sum((w.tax for w in workings), Decimal(0))
+    band_tax_total = sum((w.tax for w in workings), Decimal(0))
+    tax_before_credits = band_tax_total + fsi_tax
 
-    # Credits
+    # ── Credits ───────────────────────────────────────────────────────────────
     apit = ledger.apit_withheld
     ait = ledger.ait_withheld
     ftc = ledger.foreign_tax_paid
@@ -87,9 +95,12 @@ def compute(ledger: LedgerView, pack: TaxPack) -> TaxComputation:
         pack_year=pack.year,
         pack_version=pack.version,
         gross_income=gross,
+        foreign_service_income=fsi,
+        regular_income=regular_income,
         personal_relief_applied=relief_applied,
         taxable_income=taxable,
         band_workings=workings,
+        fsi_tax=fsi_tax,
         tax_before_credits=tax_before_credits,
         apit_credit=apit,
         ait_credit=ait,

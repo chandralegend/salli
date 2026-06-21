@@ -1,18 +1,60 @@
-import { Sidebar } from "./Sidebar";
-import { cn } from "@/lib/utils";
+"use client";
+
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "./AppSidebar";
+import { Separator } from "@/components/ui/separator";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
+import { usePathname } from "next/navigation";
+
+const PAGE_LABELS: Record<string, string> = {
+  "/dashboard": "Dashboard",
+  "/ledger": "Ledger",
+  "/statements": "Statements",
+  "/tax": "Tax",
+  "/agent": "AI Agent",
+  "/documents": "Documents",
+  "/reminders": "Reminders",
+  "/settings": "Settings",
+};
 
 interface AppShellProps {
   children: React.ReactNode;
-  className?: string;
 }
 
-export function AppShell({ children, className }: AppShellProps) {
+export function AppShell({ children }: AppShellProps) {
+  const pathname = usePathname();
+  const key = Object.keys(PAGE_LABELS).find(
+    (k) => pathname === k || pathname.startsWith(k + "/")
+  );
+  const pageLabel = key ? PAGE_LABELS[key] : "Salli";
+
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <main className={cn("flex-1 min-w-0 overflow-auto", className)}>
-        {children}
-      </main>
-    </div>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset className="bg-background">
+        {/* Top header bar */}
+        <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border/60 bg-background px-4 sticky top-0 z-10">
+          <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
+          <Separator orientation="vertical" className="mr-2 h-3.5 bg-border/60" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage className="text-[13px] font-medium text-foreground">
+                  {pageLabel}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </header>
+        <main className="flex-1 min-w-0">
+          {children}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

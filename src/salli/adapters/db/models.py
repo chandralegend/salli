@@ -209,6 +209,63 @@ class DocumentORM(Base):
     )
 
 
+# ── Agent documents (document management + agent memory) ──────────────────────
+
+
+class AgentDocumentORM(Base):
+    __tablename__ = "agent_documents"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    storage_key: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    mime_type: Mapped[str] = mapped_column(String(100), nullable=False, default="text/plain")
+    tags: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    # "user_upload" | "agent_created" | "agent_memory"
+    source: Mapped[str] = mapped_column(String(30), nullable=False, default="agent_created")
+    # "documents" | "memories" | "context"
+    namespace: Mapped[str] = mapped_column(String(50), nullable=False, default="documents")
+    # Named key for memories (unique per user+namespace)
+    slug: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "namespace", "slug", name="uq_agent_docs_user_ns_slug"),
+        Index("ix_agent_documents_user_id", "user_id"),
+        Index("ix_agent_documents_namespace", "user_id", "namespace"),
+    )
+
+
+# ── Agent sessions (persistent conversation threads) ─────────────────────────
+
+
+class AgentSessionORM(Base):
+    __tablename__ = "agent_sessions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    thread_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    last_active_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "thread_id", name="uq_agent_sessions_user_thread"),
+        Index("ix_agent_sessions_user_active", "user_id", "last_active_at"),
+    )
+
+
 # ── Reminders ─────────────────────────────────────────────────────────────────
 
 
@@ -218,7 +275,7 @@ class ReminderORM(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     due_date: Mapped[str] = mapped_column(String(10), nullable=False)
-    kind: Mapped[str] = mapped_column(String(50), nullable=False)
+    kind: Mapped[str] = mapped_column(String(500), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now

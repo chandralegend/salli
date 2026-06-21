@@ -9,10 +9,7 @@ interface StatementUploadZoneProps {
   loading?: boolean;
 }
 
-export function StatementUploadZone({
-  onUpload,
-  loading,
-}: StatementUploadZoneProps) {
+export function StatementUploadZone({ onUpload, loading }: StatementUploadZoneProps) {
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -24,21 +21,12 @@ export function StatementUploadZone({
   return (
     <div
       className={cn(
-        "relative border-2 border-dashed rounded-[16px] p-10 flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer",
-        dragging
-          ? "border-primary bg-primary/5"
-          : "border-border hover:border-primary/50 hover:bg-secondary/30"
+        "relative border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer",
+        dragging ? "border-primary bg-muted" : "border-border hover:border-primary/50 hover:bg-muted/50"
       )}
-      onDragOver={(e) => {
-        e.preventDefault();
-        setDragging(true);
-      }}
+      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
       onDragLeave={() => setDragging(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setDragging(false);
-        handleFiles(e.dataTransfer.files);
-      }}
+      onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
       onClick={() => inputRef.current?.click()}
     >
       <input
@@ -49,22 +37,15 @@ export function StatementUploadZone({
         onChange={(e) => handleFiles(e.target.files)}
       />
       {loading ? (
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
       ) : (
-        <Upload
-          className={cn(
-            "w-8 h-8",
-            dragging ? "text-primary" : "text-muted-foreground"
-          )}
-        />
+        <Upload className="w-8 h-8 text-muted-foreground" />
       )}
       <div className="text-center">
-        <p className="text-sm font-medium text-foreground">
+        <p className="text-sm font-medium">
           {loading ? "Parsing statement…" : "Drop your bank statement"}
         </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          PDF, XLSX, or CSV · Any Sri Lankan bank
-        </p>
+        <p className="text-xs text-muted-foreground mt-1">PDF, XLSX, or CSV · Any Sri Lankan bank</p>
       </div>
     </div>
   );

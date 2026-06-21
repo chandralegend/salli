@@ -3,7 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from salli.interfaces.api.deps import AppServices, CurrentUser
@@ -66,6 +66,7 @@ async def list_entries(
             "description": e.description,
             "source": e.source,
             "external_ref": e.external_ref,
+            "reversed_by": e.reversed_by,
             "postings": [
                 {
                     "account_id": p.account_id,
@@ -79,3 +80,12 @@ async def list_entries(
         }
         for e in entries
     ]
+
+
+@router.post("/{entry_id}/reverse", status_code=201)
+async def reverse_entry(entry_id: str, user_id: CurrentUser, svc: AppServices):
+    try:
+        reversing_id = await svc.ledger.reverse_entry(user_id=user_id, entry_id=entry_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"id": reversing_id}

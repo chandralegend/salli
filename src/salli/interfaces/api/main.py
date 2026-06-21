@@ -20,8 +20,10 @@ from salli.interfaces.api.routers import (
     accounts,
     agent,
     auth,
+    documents,
     entries,
     ledger,
+    onboarding,
     reminders,
     statements,
     tax,
@@ -30,11 +32,41 @@ from salli.interfaces.api.routers import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Warm the DB connection pool on startup so the first request isn't slow
+    import logging
+
+    log = logging.getLogger(__name__)
+    settings = get_settings()
+
+    # ── PostgreSQL checkpointer for LangGraph agent conversations ─────────────
+    # Converts asyncpg URL → psycopg3 URL (different drivers, same DB)
+    pg_url = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
+
+    checkpointer_ctx = None
+    try:
+        from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+
+        checkpointer_ctx = AsyncPostgresSaver.from_conn_string(pg_url)
+        checkpointer = await checkpointer_ctx.__aenter__()
+        await checkpointer.setup()  # creates checkpoint tables if not present
+        from salli.interfaces.api.deps import set_checkpointer
+
+        set_checkpointer(checkpointer)
+        log.info("LangGraph PostgreSQL checkpointer initialised")
+    except Exception as exc:
+        log.warning("PostgreSQL checkpointer unavailable (%s) — falling back to in-memory", exc)
+
+    # ── Warm the DB connection pool ───────────────────────────────────────────
     svc = get_services()
-    _ = svc  # triggers _services() lru_cache → make_session_factory()
+    _ = svc
+
     yield
-    # SQLAlchemy async engine disposes itself on GC; nothing explicit needed
+
+    # ── Teardown ──────────────────────────────────────────────────────────────
+    if checkpointer_ctx is not None:
+        try:
+            await checkpointer_ctx.__aexit__(None, None, None)
+        except Exception:
+            pass
 
 
 def create_app() -> FastAPI:
@@ -71,6 +103,8 @@ def create_app() -> FastAPI:
     app.include_router(ledger.router)
     app.include_router(tax.router)
     app.include_router(agent.router)
+    app.include_router(documents.router)
+    app.include_router(onboarding.router)
     app.include_router(statements.router)
     app.include_router(reminders.router)
 

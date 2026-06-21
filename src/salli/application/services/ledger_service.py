@@ -9,6 +9,7 @@ from salli.domain.accounting import ledger as ledger_ops
 from salli.domain.accounting.models import (
     Account,
     AccountType,
+    Direction,
     JournalEntry,
     Posting,
     Source,
@@ -106,3 +107,51 @@ class LedgerService:
         async with self._uow_factory() as uow:
             entries = await uow.ledger.get_entries(user_id)
         return ledger_ops.net_worth(entries, asset_account_ids, liability_account_ids)
+
+    async def update_account(
+        self,
+        user_id: str,
+        account_id: str,
+        code: str,
+        name: str,
+        type: str,
+        currency: str,
+    ) -> None:
+        async with self._uow_factory() as uow:
+            await uow.ledger.update_account(
+                user_id, account_id, code=code, name=name, type=type, currency=currency
+            )
+
+    async def deactivate_account(self, user_id: str, account_id: str) -> None:
+        async with self._uow_factory() as uow:
+            await uow.ledger.deactivate_account(user_id, account_id)
+
+    async def reverse_entry(self, user_id: str, entry_id: str) -> str:
+        """Create a reversing journal entry and mark the original as reversed."""
+        async with self._uow_factory() as uow:
+            original = await uow.ledger.get_entry_by_id(user_id, entry_id)
+            if original is None:
+                raise ValueError(f"Entry {entry_id} not found")
+            if original.reversed_by:
+                raise ValueError("Entry is already reversed")
+
+            reversed_postings = [
+                Posting(
+                    account_id=p.account_id,
+                    direction=Direction(-p.direction.value),
+                    amount=p.amount,
+                    currency=p.currency,
+                    fx_rate=p.fx_rate,
+                    fx_rate_source=p.fx_rate_source,
+                )
+                for p in original.postings
+            ]
+            reversing = JournalEntry(
+                entry_date=original.entry_date,
+                description=f"REVERSAL: {original.description}",
+                source="manual",
+                postings=reversed_postings,
+            )
+            reversing_id = await uow.ledger.save_entry(user_id, reversing)
+            await uow.ledger.set_reversed_by(entry_id, reversing_id)
+        return reversing_id

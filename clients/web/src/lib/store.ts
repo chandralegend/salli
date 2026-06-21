@@ -5,15 +5,15 @@ import { create } from "zustand";
 interface SalliStore {
   token: string | null;
   setToken: (token: string | null) => void;
-  threadId: string;
-  setThreadId: (id: string) => void;
+  onboardingComplete: boolean;
+  setOnboardingComplete: (v: boolean) => void;
 }
 
 export const useSalliStore = create<SalliStore>((set) => ({
   token: null,
   setToken: (token) => set({ token }),
-  threadId: crypto.randomUUID(),
-  setThreadId: (id) => set({ threadId: id }),
+  onboardingComplete: false,
+  setOnboardingComplete: (v) => set({ onboardingComplete: v }),
 }));
 
 export function getStoredToken(): string | null {
@@ -28,4 +28,14 @@ export function setStoredToken(token: string | null): void {
   } else {
     localStorage.removeItem("salli_token");
   }
+}
+
+export function getOnboardingComplete(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("salli_onboarding_complete") === "true";
+}
+
+export function setOnboardingComplete(): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("salli_onboarding_complete", "true");
 }

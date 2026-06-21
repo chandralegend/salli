@@ -17,12 +17,19 @@ _bearer = HTTPBearer(auto_error=True)
 
 
 _services_singleton: Services | None = None
+_checkpointer = None
+
+
+def set_checkpointer(cp) -> None:
+    """Called from the app lifespan before the first request."""
+    global _checkpointer
+    _checkpointer = cp
 
 
 def get_services() -> Services:
     global _services_singleton
     if _services_singleton is None:
-        _services_singleton = build_services(get_settings())
+        _services_singleton = build_services(get_settings(), checkpointer=_checkpointer)
     return _services_singleton
 
 

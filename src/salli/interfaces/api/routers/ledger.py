@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 from fastapi import APIRouter
 
+from salli.domain.accounting import ledger as ledger_ops
 from salli.interfaces.api.deps import AppServices, CurrentUser
 
 router = APIRouter(prefix="/ledger", tags=["ledger"])
@@ -27,12 +30,36 @@ async def income_statement(
     svc: AppServices,
     from_date: str,
     to_date: str,
-    income_accounts: str = "",
-    expense_accounts: str = "",
 ):
-    income_ids = set(income_accounts.split(",")) if income_accounts else set()
-    expense_ids = set(expense_accounts.split(",")) if expense_accounts else set()
-    net = await svc.ledger.get_income_statement(
-        user_id, from_date, to_date, income_ids, expense_ids
+    # Auto-discover income and expense accounts by type
+    accounts = await svc.ledger.list_accounts(user_id)
+    income_ids = {a.id for a in accounts if a.type == "income"}
+    expense_ids = {a.id for a in accounts if a.type == "expense"}
+    account_names = {a.id: a.name for a in accounts}
+
+    entries = await svc.ledger.get_entries(user_id, from_date, to_date)
+    balances = ledger_ops.trial_balance(entries)
+
+    income_breakdown: dict[str, str] = {}
+    expense_breakdown: dict[str, str] = {}
+
+    for acct_id, balance in balances.items():
+        if balance == Decimal(0):
+            continue
+        name = account_names.get(acct_id, acct_id)
+        if acct_id in income_ids:
+            income_breakdown[name] = str(-balance)   # income is credit-normal → negate
+        elif acct_id in expense_ids:
+            expense_breakdown[name] = str(balance)   # expenses are debit-normal → positive
+
+    net = sum(Decimal(v) for v in income_breakdown.values()) - sum(
+        Decimal(v) for v in expense_breakdown.values()
     )
-    return {"from_date": from_date, "to_date": to_date, "net_income": str(net)}
+
+    return {
+        "from_date": from_date,
+        "to_date": to_date,
+        "income": income_breakdown,
+        "expenses": expense_breakdown,
+        "net_income": str(net),
+    }

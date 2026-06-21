@@ -1,32 +1,311 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Loader2, RefreshCw } from "lucide-react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Send, Loader2, Paperclip, X, ArrowDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { AgentMessage } from "@/components/AgentMessage";
-import { streamAgent } from "@/lib/stream-agent";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useQueryClient } from "@tanstack/react-query";
+import { AssistantBubble, UserBubble, type MessagePart, type SubagentPart } from "@/components/AgentMessage";
+import { streamAgent, streamResume, uploadAgentFile, type ApprovalAction } from "@/lib/stream-agent";
 import { getStoredToken } from "@/lib/store";
-import { useSalliStore } from "@/lib/store";
+import { apiFetch } from "@/lib/api-fetch";
 
-type Message = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  streaming?: boolean;
-};
+type ChatMessage =
+  | { id: string; role: "user"; content: string; attachments?: string[] }
+  | { id: string; role: "assistant"; parts: MessagePart[]; streaming: boolean };
+
+const SUGGESTIONS = [
+  "What is my tax payable for YA 2025/26?",
+  "Search for the latest IRD filing deadlines",
+  "Show my account balances",
+  "How does APIT work?",
+];
 
 export default function AgentPage() {
-  const { threadId, setThreadId } = useSalliStore();
-  const [messages, setMessages] = useState<Message[]>([]);
+  return (
+    <Suspense fallback={null}>
+      <AgentChat />
+    </Suspense>
+  );
+}
+
+function AgentChat() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // The active session id lives in the URL (?s=...). For a brand-new chat with no
+  // URL param yet, we use a stable local id and only promote it to the URL once the
+  // user sends the first message — this avoids ever overwriting an existing ?s=.
+  const urlThreadId = searchParams.get("s");
+  const [freshId, setFreshId] = useState(() => crypto.randomUUID());
+  const threadId = urlThreadId ?? freshId;
+  // The thread currently being streamed in THIS view. While a thread is "live"
+  // its in-memory messages are authoritative, so the history effect must not
+  // refetch/wipe it (e.g. when bare /agent is promoted to /agent?s=<freshId> on
+  // first send). Cleared when navigating to a different thread. This is a ref, so
+  // it is stable across React StrictMode's double effect-invoke in dev.
+  const liveThreadRef = useRef<string | null>(null);
+  const queryClient = useQueryClient();
+
+  // Landing on a bare /agent (no ?s=) starts a genuinely new chat — mint a fresh id
+  // so it can't collide with a session id that was just promoted to the URL.
+  useEffect(() => {
+    if (!urlThreadId) setFreshId(crypto.randomUUID());
+  }, [urlThreadId]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const awaitingApprovalRef = useRef<{ msgId: string; partIndex: number } | null>(null);
+  // Scroll state — ref for sync access inside callbacks, state for render
+  const atBottomRef = useRef(true);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
 
+  // Load history for the active session. Keyed only on urlThreadId so first-send
+  // URL promotion is handled by the liveThreadRef guard, not by clearing.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Bare new chat — nothing to load from the server.
+    if (!urlThreadId) {
+      setMessages([]);
+      setStreaming(false);
+      setHistoryLoading(false);
+      return;
+    }
+
+    // The thread we are actively streaming — keep its in-memory messages intact.
+    if (urlThreadId === liveThreadRef.current) return;
+
+    // Genuine navigation to a persisted session: reset and load its history.
+    liveThreadRef.current = null;
+    setMessages([]);
+    setStreaming(false);
+    if (awaitingApprovalRef.current) {
+      abortRef.current?.abort();
+      awaitingApprovalRef.current = null;
+    }
+
+    const token = getStoredToken();
+    if (!token) {
+      setHistoryLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setHistoryLoading(true);
+
+    type HistoryMsg =
+      | { role: "user"; content: string }
+      | { role: "assistant"; parts: MessagePart[] };
+
+    apiFetch<{ messages: HistoryMsg[] }>(
+      "GET",
+      `/agent/history/${urlThreadId}`,
+    )
+      .then(({ messages: history }) => {
+        if (cancelled) return;
+        setMessages(
+          (history ?? []).map((m) =>
+            m.role === "user"
+              ? { id: crypto.randomUUID(), role: "user" as const, content: m.content }
+              : {
+                  id: crypto.randomUUID(),
+                  role: "assistant" as const,
+                  parts: m.parts ?? [],
+                  streaming: false,
+                },
+          ),
+        );
+      })
+      .catch(console.error)
+      .finally(() => { if (!cancelled) setHistoryLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [urlThreadId]);
+
+  // ── Scroll helpers ────────────────────────────────────────────────────────
+
+  function scrollToBottom(smooth = false) {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (smooth) {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    } else {
+      el.scrollTop = el.scrollHeight; // direct — useLayoutEffect guarantees DOM is ready
+    }
+    // Sync button state immediately so it doesn't linger after a programmatic scroll
+    atBottomRef.current = true;
+    setShowScrollBtn(false);
+  }
+
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const near = distFromBottom < 80;
+    atBottomRef.current = near;
+    setShowScrollBtn(!near);
+  }
+
+  function goToBottom() {
+    scrollToBottom(true);
+  }
+
+  // useLayoutEffect: runs after DOM mutations are flushed, so scrollHeight is the true
+  // post-render value — no race with requestAnimationFrame needed
+  useLayoutEffect(() => {
+    if (atBottomRef.current) {
+      scrollToBottom(false);
+    }
   }, [messages]);
+
+  function updateAssistantParts(msgId: string, updater: (parts: MessagePart[]) => MessagePart[]) {
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === msgId && m.role === "assistant"
+          ? { ...m, parts: updater([...m.parts]) }
+          : m
+      )
+    );
+  }
+
+  async function processEventStream(
+    eventIter: AsyncGenerator<import("@/lib/stream-agent").AgentEvent>,
+    msgId: string,
+    parts: MessagePart[],
+    signal: AbortSignal,
+  ) {
+    function getOrCreateTextPart(): Extract<MessagePart, { type: "text" }> {
+      const last = parts[parts.length - 1];
+      if (last && last.type === "text") return last;
+      const newPart: Extract<MessagePart, { type: "text" }> = { type: "text", content: "" };
+      parts.push(newPart);
+      return newPart;
+    }
+
+    function getOrCreateSubagentSection(agentName: string): Extract<MessagePart, { type: "subagent_section" }> {
+      const last = parts[parts.length - 1];
+      if (last && last.type === "subagent_section" && last.agent === agentName && last.active) {
+        return last;
+      }
+      const newSection: Extract<MessagePart, { type: "subagent_section" }> = {
+        type: "subagent_section",
+        agent: agentName,
+        parts: [],
+        active: true,
+      };
+      parts.push(newSection);
+      return newSection;
+    }
+
+    function flushSubagentSection() {
+      const last = parts[parts.length - 1];
+      if (last && last.type === "subagent_section") {
+        last.active = false;
+      }
+    }
+
+    function sync() {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === msgId && m.role === "assistant" ? { ...m, parts: [...parts] } : m
+        )
+      );
+    }
+
+    for await (const event of eventIter) {
+      if (signal.aborted) break;
+
+      if (event.type === "token") {
+        flushSubagentSection();
+        const part = getOrCreateTextPart();
+        part.content += event.content;
+        sync();
+
+      } else if (event.type === "subagent_start") {
+        getOrCreateSubagentSection(event.agent);
+        sync();
+
+      } else if (event.type === "subagent_end") {
+        flushSubagentSection();
+        sync();
+
+      } else if (event.type === "subagent_token") {
+        const section = getOrCreateSubagentSection(event.agent);
+        const lastSubPart = section.parts[section.parts.length - 1];
+        if (lastSubPart && lastSubPart.type === "token") {
+          lastSubPart.content += event.content;
+        } else {
+          section.parts.push({ type: "token", content: event.content });
+        }
+        sync();
+
+      } else if (event.type === "tool_call") {
+        if (event.agent) {
+          const section = getOrCreateSubagentSection(event.agent);
+          const subPart: SubagentPart = { type: "tool_call", name: event.name, input: event.input, done: false };
+          section.parts.push(subPart);
+        } else {
+          parts.push({ type: "tool_call", name: event.name, input: event.input, done: false });
+        }
+        sync();
+
+      } else if (event.type === "tool_result") {
+        if (event.agent) {
+          const section = [...parts].reverse().find(
+            (p) => p.type === "subagent_section" && p.agent === event.agent
+          ) as Extract<MessagePart, { type: "subagent_section" }> | undefined;
+          if (section) {
+            for (let i = section.parts.length - 1; i >= 0; i--) {
+              const p = section.parts[i];
+              if (p.type === "tool_call" && p.name === event.name && !p.done) {
+                p.done = true;
+                p.output = String(event.output ?? "");
+                break;
+              }
+            }
+          }
+        } else {
+          for (let i = parts.length - 1; i >= 0; i--) {
+            const p = parts[i];
+            if (p.type === "tool_call" && p.name === event.name && !p.done) {
+              p.done = true;
+              p.output = String(event.output ?? "");
+              break;
+            }
+          }
+        }
+        sync();
+
+      } else if (event.type === "approval_required") {
+        const approvalPart: Extract<MessagePart, { type: "approval" }> = {
+          type: "approval",
+          action: event.action as ApprovalAction,
+          status: "pending",
+        };
+        parts.push(approvalPart);
+        awaitingApprovalRef.current = { msgId, partIndex: parts.length - 1 };
+        sync();
+        // Stop processing — agent is paused waiting for resume
+        return "awaiting_approval";
+
+      } else if (event.type === "error") {
+        const part = getOrCreateTextPart();
+        part.content += `\n\n_Error: ${event.message}_`;
+        sync();
+        break;
+
+      } else if (event.type === "done") {
+        break;
+      }
+    }
+    return "done";
+  }
 
   const send = useCallback(async () => {
     const text = input.trim();
@@ -34,76 +313,154 @@ export default function AgentPage() {
     const token = getStoredToken();
     if (!token) return;
 
-    const userMsg: Message = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: text,
-    };
+    // Upload any pending files first
+    let fileRefs: string[] = [];
+    const fileNames: string[] = pendingFiles.map((f) => f.name);
+    if (pendingFiles.length > 0) {
+      setUploadingFiles(true);
+      try {
+        const results = await Promise.all(pendingFiles.map((f) => uploadAgentFile(token, f)));
+        fileRefs = results.map((r) => r.file_ref);
+      } catch {
+        // continue without files on upload failure
+      } finally {
+        setUploadingFiles(false);
+        setPendingFiles([]);
+      }
+    }
+
+    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", content: text, attachments: fileNames.length ? fileNames : undefined };
     const assistantId = crypto.randomUUID();
-    const assistantMsg: Message = {
-      id: assistantId,
-      role: "assistant",
-      content: "",
-      streaming: true,
-    };
+    const assistantMsg: ChatMessage = { id: assistantId, role: "assistant", parts: [], streaming: true };
 
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
     setInput("");
     setStreaming(true);
 
+    // Mark this thread as live BEFORE any URL change so the history effect won't
+    // refetch/wipe the messages we're about to stream.
+    liveThreadRef.current = threadId;
+
+    // First message in a brand-new chat: promote the local id into the URL so the
+    // session becomes bookmarkable and survives navigation.
+    if (!urlThreadId) {
+      router.replace(`/agent?s=${threadId}`);
+    }
+
     const controller = new AbortController();
     abortRef.current = controller;
+    const parts: MessagePart[] = [];
 
     try {
-      let accumulated = "";
-      for await (const event of streamAgent(
-        token,
-        text,
-        threadId,
-        controller.signal
-      )) {
-        if (
-          event.type === "token" ||
-          event.type === "text" ||
-          event.type === "content"
-        ) {
-          const chunk = String(event.payload ?? "");
-          accumulated += chunk;
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId
-                ? { ...m, content: accumulated, streaming: true }
-                : m
-            )
-          );
-        } else if (event.type === "done" || event.type === "end") {
-          break;
-        }
-      }
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantId ? { ...m, streaming: false } : m
-        )
+      const result = await processEventStream(
+        streamAgent(token, text, threadId, controller.signal, fileRefs.length ? fileRefs : undefined),
+        assistantId,
+        parts,
+        controller.signal,
       );
+      if (result === "awaiting_approval") return; // keep streaming=true until resume
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
+        const textPart = parts.find((p) => p.type === "text") as Extract<MessagePart, { type: "text" }> | undefined;
+        if (textPart) {
+          textPart.content = textPart.content || "Sorry, something went wrong. Please try again.";
+        } else {
+          parts.push({ type: "text", content: "Sorry, something went wrong. Please try again." });
+        }
         setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantId
-              ? {
-                  ...m,
-                  content:
-                    "Sorry, I encountered an error. Please try again.",
-                  streaming: false,
-                }
-              : m
-          )
+          prev.map((m) => (m.id === assistantId && m.role === "assistant" ? { ...m, parts: [...parts] } : m))
         );
       }
     } finally {
-      setStreaming(false);
+      if (!awaitingApprovalRef.current) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === assistantId && m.role === "assistant" ? { ...m, streaming: false } : m))
+        );
+        setStreaming(false);
+        // Refetch sessions so sidebar title updates after Haiku generates it
+        setTimeout(() => queryClient.invalidateQueries({ queryKey: ["agent-sessions"] }), 1800);
+      }
     }
-  }, [input, streaming, threadId]);
+  }, [input, streaming, threadId, urlThreadId, pendingFiles, queryClient, router]);
+
+  const handleApprove = useCallback(async (msgId: string, partIndex: number) => {
+    const token = getStoredToken();
+    if (!token) return;
+
+    // Mark approved immediately
+    updateAssistantParts(msgId, (parts) => {
+      const p = parts[partIndex];
+      if (p && p.type === "approval") p.status = "approved";
+      return parts;
+    });
+
+    awaitingApprovalRef.current = null;
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    // Find the parts buffer from the message
+    setMessages((prev) => {
+      const msg = prev.find((m) => m.id === msgId && m.role === "assistant");
+      if (!msg || msg.role !== "assistant") return prev;
+      const parts = [...msg.parts];
+
+      (async () => {
+        try {
+          await processEventStream(
+            streamResume(token, threadId, "approved", controller.signal),
+            msgId,
+            parts,
+            controller.signal,
+          );
+        } finally {
+          setMessages((p) =>
+            p.map((m) => (m.id === msgId && m.role === "assistant" ? { ...m, streaming: false } : m))
+          );
+          setStreaming(false);
+        }
+      })();
+
+      return prev;
+    });
+  }, [threadId]);
+
+  const handleDeny = useCallback(async (msgId: string, partIndex: number) => {
+    const token = getStoredToken();
+    if (!token) return;
+
+    updateAssistantParts(msgId, (parts) => {
+      const p = parts[partIndex];
+      if (p && p.type === "approval") p.status = "denied";
+      return parts;
+    });
+
+    awaitingApprovalRef.current = null;
+    const controller = new AbortController();
+
+    setMessages((prev) => {
+      const msg = prev.find((m) => m.id === msgId && m.role === "assistant");
+      if (!msg || msg.role !== "assistant") return prev;
+      const parts = [...msg.parts];
+
+      (async () => {
+        try {
+          await processEventStream(
+            streamResume(token, threadId, "denied", controller.signal),
+            msgId,
+            parts,
+            controller.signal,
+          );
+        } finally {
+          setMessages((p) =>
+            p.map((m) => (m.id === msgId && m.role === "assistant" ? { ...m, streaming: false } : m))
+          );
+          setStreaming(false);
+        }
+      })();
+
+      return prev;
+    });
+  }, [threadId]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -114,104 +471,181 @@ export default function AgentPage() {
 
   function newThread() {
     if (abortRef.current) abortRef.current.abort();
-    setMessages([]);
-    setThreadId(crypto.randomUUID());
     setStreaming(false);
+    setPendingFiles([]);
+    // Navigating changes the URL thread id, which drives the history effect
+    router.push(`/agent?s=${crypto.randomUUID()}`);
+  }
+
+  function removeFile(index: number) {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length > 0) setPendingFiles((prev) => [...prev, ...files]);
+    e.target.value = "";
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
-        <div>
-          <h1 className="text-base font-semibold text-foreground">
-            Tax Agent
-          </h1>
-          <p className="text-xs text-muted-foreground font-mono">{threadId}</p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={newThread}
-          className="border-border text-muted-foreground hover:text-foreground gap-2"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          New thread
-        </Button>
-      </div>
+    <div className="flex flex-col h-[calc(100vh-44px)]">
+      {/* Message list */}
+      <div className="relative flex-1 min-h-0">
+        <div ref={scrollRef} onScroll={handleScroll} className="h-full overflow-y-auto">
+          <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 space-y-6 pb-4">
+            {historyLoading && (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className={`h-12 ${i % 2 === 0 ? "w-3/4" : "w-1/2 ml-auto"}`} />
+                ))}
+              </div>
+            )}
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-4">
-        {messages.length === 0 && (
-          <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 py-20">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-primary text-xl font-semibold font-mono">
-                S
-              </span>
-            </div>
-            <h2 className="text-base font-semibold text-foreground">
-              How can I help with your taxes?
-            </h2>
-            <p className="text-sm text-muted-foreground max-w-sm">
-              Ask about your tax position, available deductions, or how to
-              interpret your IRD return.
-            </p>
-            <div className="flex flex-wrap gap-2 justify-center mt-2">
-              {[
-                "What is my tax payable for YA 2025/26?",
-                "How does APIT work?",
-                "What deductions can I claim?",
-              ].map((q) => (
-                <button
-                  key={q}
-                  onClick={() => setInput(q)}
-                  className="text-xs bg-secondary text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-full border border-border transition-colors"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
+            {!historyLoading && messages.length === 0 && (
+              <div className="flex flex-col items-center text-center gap-5 pt-16">
+                <div className="w-11 h-11 rounded-xl bg-foreground text-background flex items-center justify-center text-base font-bold">
+                  S
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-[15px] font-semibold">How can I help with your finances?</h2>
+                  <p className="text-[13px] text-muted-foreground max-w-sm">
+                    Ask about your tax position, search for IRD updates, analyse documents, or manage your ledger.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {SUGGESTIONS.map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => setInput(q)}
+                      className="text-[12px] border border-border/70 rounded-full px-3.5 py-1.5 text-muted-foreground hover:text-foreground hover:bg-accent hover:border-border transition-colors"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {messages.map((m) => (
+              <div key={m.id} style={{ animation: "msg-in 0.18s ease-out both" }}>
+                {m.role === "user" ? (
+                  <UserBubble content={m.content} attachments={m.attachments} />
+                ) : (
+                  <AssistantBubble
+                    parts={m.parts}
+                    streaming={m.streaming}
+                    onApprove={(partIndex) => handleApprove(m.id, partIndex)}
+                    onDeny={(partIndex) => handleDeny(m.id, partIndex)}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {showScrollBtn && (
+          <div
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10"
+            style={{ animation: "msg-in 0.15s ease-out both" }}
+          >
+            <button
+              onClick={goToBottom}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-foreground text-background text-[12px] font-medium shadow-lg hover:bg-foreground/90 active:scale-95 transition-all"
+            >
+              <ArrowDown className="size-3" />
+              Go to bottom
+            </button>
           </div>
         )}
-        {messages.map((m) => (
-          <AgentMessage
-            key={m.id}
-            role={m.role}
-            content={m.content}
-            streaming={m.streaming}
-          />
-        ))}
-        <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="px-6 py-4 border-t border-border bg-card">
-        <div className="flex items-end gap-3 max-w-3xl mx-auto">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask about your taxes… (Enter to send, Shift+Enter for new line)"
-            className="resize-none bg-secondary border-border min-h-[52px] max-h-32"
-            rows={1}
-            disabled={streaming}
-          />
-          <Button
-            onClick={send}
-            disabled={streaming || !input.trim()}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 h-[52px] w-[52px] p-0 shrink-0"
-          >
-            {streaming ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-          </Button>
+      {/* Centered floating composer */}
+      <div className="px-4 pb-4 pt-2 shrink-0">
+        <div className="max-w-2xl mx-auto">
+          {/* File chips above the box */}
+          {pendingFiles.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2 px-1">
+              {pendingFiles.map((f, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1.5 text-[11px] bg-muted border border-border rounded-full px-2.5 py-0.5 text-foreground/70"
+                >
+                  {f.name}
+                  <button
+                    onClick={() => removeFile(i)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="size-2.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Composer box */}
+          <div className="flex items-end gap-2 bg-card border border-border/70 rounded-2xl shadow-sm px-3 py-2.5 focus-within:border-border transition-colors">
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept=".pdf,.txt,.csv,.png,.jpg,.jpeg,.xlsx"
+              multiple
+              onChange={handleFileChange}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={streaming || uploadingFiles}
+              aria-label="Attach file"
+              className="shrink-0 text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors pb-1"
+            >
+              {uploadingFiles ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Paperclip className="size-4" />
+              )}
+            </button>
+
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask about your finances…"
+              className="resize-none min-h-[36px] max-h-40 text-[13px] py-1.5 border-0 shadow-none focus-visible:ring-0 bg-transparent px-0 flex-1"
+              rows={1}
+              disabled={streaming}
+            />
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={newThread}
+                aria-label="New session"
+                className="text-muted-foreground hover:text-foreground transition-colors pb-0.5"
+                title="New session"
+              >
+                <Plus className="size-4" />
+              </button>
+              <Button
+                onClick={send}
+                disabled={streaming || !input.trim()}
+                size="icon"
+                className="h-8 w-8 rounded-xl"
+                aria-label="Send"
+              >
+                {streaming ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Send className="size-3.5" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <p className="text-[10px] text-muted-foreground/50 text-center mt-2">
+            Numbers from the deterministic engine · Write actions require your approval
+          </p>
         </div>
-        <p className="text-[11px] text-muted-foreground text-center mt-2 max-w-3xl mx-auto">
-          Agent responses are informational only. Tax numbers come from the
-          deterministic engine, not the LLM.
-        </p>
       </div>
     </div>
   );

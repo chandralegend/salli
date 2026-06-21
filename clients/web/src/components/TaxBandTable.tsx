@@ -5,8 +5,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
 
 interface TaxBand {
   band: string;
@@ -21,61 +21,49 @@ interface TaxBandTableProps {
   currency?: string;
 }
 
-export function TaxBandTable({
-  bands,
-  total_tax,
-  currency = "LKR",
-}: TaxBandTableProps) {
+export function TaxBandTable({ bands, total_tax, currency = "LKR" }: TaxBandTableProps) {
   return (
     <Table>
       <TableHeader>
-        <TableRow className="border-border hover:bg-transparent">
-          <TableHead className="text-muted-foreground text-xs font-mono uppercase tracking-wider">
-            Band
+        <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+          <TableHead className="h-9 px-3">
+            <span className="text-secondary-label">Band</span>
           </TableHead>
-          <TableHead className="text-muted-foreground text-xs font-mono uppercase tracking-wider text-right">
-            Rate
+          <TableHead className="h-9 px-3 text-right">
+            <span className="text-secondary-label">Rate</span>
           </TableHead>
-          <TableHead className="text-muted-foreground text-xs font-mono uppercase tracking-wider text-right">
-            Taxable in Band
+          <TableHead className="h-9 px-3 text-right">
+            <span className="text-secondary-label">Taxable in Band</span>
           </TableHead>
-          <TableHead className="text-muted-foreground text-xs font-mono uppercase tracking-wider text-right">
-            Tax
+          <TableHead className="h-9 px-3 text-right">
+            <span className="text-secondary-label">Tax</span>
           </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {bands.map((band, i) => (
-          <TableRow key={i} className="border-border hover:bg-secondary/40">
-            <TableCell className="text-sm text-foreground">{band.band}</TableCell>
-            <TableCell className="font-mono text-sm text-right text-muted-foreground">
-              {band.rate}
-            </TableCell>
-            <TableCell className="font-mono text-sm text-right text-foreground">
+          <TableRow key={i} className="border-b last:border-0">
+            <TableCell className="px-3 py-2.5 text-[13px]">{band.band}</TableCell>
+            <TableCell className="px-3 py-2.5 text-right tabular-nums text-[13px]">{band.rate}</TableCell>
+            <TableCell className="px-3 py-2.5 text-right tabular-nums text-[13px]">
               {currency} {band.taxable_in_band}
             </TableCell>
-            <TableCell className="font-mono text-sm text-right text-foreground">
+            <TableCell className="px-3 py-2.5 text-right tabular-nums text-[13px]">
               {currency} {band.tax}
             </TableCell>
           </TableRow>
         ))}
-        <TableRow className="border-t-2 border-border font-bold hover:bg-secondary/40">
-          <TableCell
-            colSpan={3}
-            className="text-sm font-semibold text-foreground"
-          >
+      </TableBody>
+      <TableFooter>
+        <TableRow className="bg-muted/30 border-t-2">
+          <TableCell colSpan={3} className="px-3 py-2.5 text-[13px] font-semibold">
             Total Tax
           </TableCell>
-          <TableCell
-            className={cn(
-              "font-mono text-sm font-bold text-right",
-              "text-expense"
-            )}
-          >
+          <TableCell className="px-3 py-2.5 text-right tabular-nums text-[13px] font-bold text-primary">
             {currency} {total_tax}
           </TableCell>
         </TableRow>
-      </TableBody>
+      </TableFooter>
     </Table>
   );
 }

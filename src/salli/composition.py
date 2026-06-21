@@ -11,6 +11,7 @@ from salli.adapters.db.session import make_session_factory
 from salli.adapters.fx.cbsl import CBSLFxRateAdapter
 from salli.application.ports import StoragePort
 from salli.application.services.agent_service import AgentService
+from salli.application.services.document_service import DocumentService
 from salli.application.services.ledger_service import LedgerService
 from salli.application.services.parsing_service import ParsingService
 from salli.application.services.reminder_service import ReminderService
@@ -28,6 +29,7 @@ class Services:
     reminders: ReminderService
     fx: CBSLFxRateAdapter
     storage: StoragePort
+    documents: DocumentService
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
@@ -37,6 +39,8 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     # loads .env into Settings fields but doesn't populate the process env.
     if settings.anthropic_api_key:
         os.environ.setdefault("ANTHROPIC_API_KEY", settings.anthropic_api_key)
+    if settings.tavily_api_key:
+        os.environ.setdefault("TAVILY_API_KEY", settings.tavily_api_key)
 
     session_factory = make_session_factory(settings)
 
@@ -47,7 +51,8 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
 
     ledger = LedgerService(uow_factory)
     tax = TaxService(uow_factory)
-    agent = AgentService(ledger, tax, checkpointer=checkpointer)
+    documents = DocumentService(uow_factory, storage)
+    agent = AgentService(ledger, tax, documents, checkpointer=checkpointer, uow_factory=uow_factory)
     parsing = ParsingService(uow_factory, storage)
     reminders = ReminderService(uow_factory)
     fx = CBSLFxRateAdapter()
@@ -60,6 +65,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         reminders=reminders,
         fx=fx,
         storage=storage,
+        documents=documents,
     )
 
 

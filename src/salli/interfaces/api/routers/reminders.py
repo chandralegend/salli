@@ -52,3 +52,8 @@ async def seed_filing_calendar(
 @router.patch("/{reminder_id}/done", status_code=204)
 async def mark_done(reminder_id: str, user_id: CurrentUser, svc: AppServices):
     await svc.reminders.mark_done(user_id, reminder_id)
+
+
+@router.delete("/{reminder_id}", status_code=204)
+async def delete_reminder(reminder_id: str, user_id: CurrentUser, svc: AppServices):
+    await svc.reminders.delete_reminder(user_id, reminder_id)

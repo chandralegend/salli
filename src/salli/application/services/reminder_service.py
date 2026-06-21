@@ -40,6 +40,10 @@ class ReminderService:
         async with self._uow_factory() as uow:
             await uow.reminders.mark_done(user_id, reminder_id)
 
+    async def delete_reminder(self, user_id: str, reminder_id: str) -> None:
+        async with self._uow_factory() as uow:
+            await uow.reminders.delete_reminder(user_id, reminder_id)
+
     async def seed_filing_calendar(self, user_id: str, year: str = "2025/26") -> list[str]:
         """
         Seed the standard IRD filing deadlines for the given year of assessment.

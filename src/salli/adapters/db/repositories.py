@@ -7,15 +7,19 @@ from __future__ import annotations
 
 import hashlib
 import json
+import uuid
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from salli.adapters.db.models import (
     AccountORM,
+    AgentDocumentORM,
+    AgentSessionORM,
     JournalEntryORM,
     ParsedTransactionORM,
     PostingORM,
@@ -24,6 +28,8 @@ from salli.adapters.db.models import (
     TaxComputationORM,
 )
 from salli.application.ports import (
+    AgentDocumentRepository,
+    AgentSessionRepository,
     LedgerRepository,
     ReminderRepository,
     StatementRepository,
@@ -164,6 +170,46 @@ class SQLLedgerRepository(LedgerRepository):
         )
         self._session.add(orm)
         return account_id
+
+    async def get_entry_by_id(self, user_id: str, entry_id: str) -> StoredJournalEntry | None:
+        stmt = (
+            select(JournalEntryORM)
+            .where(JournalEntryORM.id == entry_id, JournalEntryORM.user_id == user_id)
+            .options(selectinload(JournalEntryORM.postings))
+        )
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        return _entry_from_orm(row) if row else None
+
+    async def set_reversed_by(self, entry_id: str, reversing_id: str) -> None:
+        stmt = select(JournalEntryORM).where(JournalEntryORM.id == entry_id)
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row:
+            row.reversed_by = reversing_id
+
+    async def update_account(
+        self, user_id: str, account_id: str, *, code: str, name: str, type: str, currency: str
+    ) -> None:
+        stmt = select(AccountORM).where(
+            AccountORM.id == account_id, AccountORM.user_id == user_id
+        )
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row:
+            row.code = code
+            row.name = name
+            row.type = type
+            row.currency = currency
+
+    async def deactivate_account(self, user_id: str, account_id: str) -> None:
+        stmt = select(AccountORM).where(
+            AccountORM.id == account_id, AccountORM.user_id == user_id
+        )
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row:
+            row.is_active = False
 
 
 # ── TaxComputationRepository ──────────────────────────────────────────────────
@@ -393,3 +439,216 @@ class SQLReminderRepository(ReminderRepository):
         row = result.scalar_one_or_none()
         if row:
             row.status = "done"
+
+    async def delete_reminder(self, user_id: str, reminder_id: str) -> None:
+        stmt = select(ReminderORM).where(
+            ReminderORM.id == reminder_id, ReminderORM.user_id == user_id
+        )
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row:
+            await self._session.delete(row)
+
+
+# ── Agent Documents ────────────────────────────────────────────────────────────
+
+
+def _doc_to_dict(row: AgentDocumentORM) -> dict[str, Any]:
+    return {
+        "id": row.id,
+        "user_id": row.user_id,
+        "title": row.title,
+        "content": row.content,
+        "storage_key": row.storage_key,
+        "mime_type": row.mime_type,
+        "tags": row.tags or [],
+        "source": row.source,
+        "namespace": row.namespace,
+        "slug": row.slug,
+        "description": row.description,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+    }
+
+
+class SQLAgentDocumentRepository(AgentDocumentRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def save(self, user_id: str, doc: dict[str, Any]) -> str:
+        doc_id = doc.get("id") or str(uuid.uuid4())
+        now = datetime.now(UTC)
+        row = AgentDocumentORM(
+            id=doc_id,
+            user_id=user_id,
+            title=doc.get("title", "Untitled"),
+            content=doc.get("content"),
+            storage_key=doc.get("storage_key"),
+            mime_type=doc.get("mime_type", "text/plain"),
+            tags=doc.get("tags", []),
+            source=doc.get("source", "agent_created"),
+            namespace=doc.get("namespace", "documents"),
+            slug=doc.get("slug"),
+            description=doc.get("description"),
+            created_at=now,
+            updated_at=now,
+        )
+        self._session.add(row)
+        return doc_id
+
+    async def get(self, user_id: str, doc_id: str) -> dict[str, Any] | None:
+        stmt = select(AgentDocumentORM).where(
+            AgentDocumentORM.id == doc_id, AgentDocumentORM.user_id == user_id
+        )
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        return _doc_to_dict(row) if row else None
+
+    async def update(self, user_id: str, doc_id: str, updates: dict[str, Any]) -> None:
+        stmt = select(AgentDocumentORM).where(
+            AgentDocumentORM.id == doc_id, AgentDocumentORM.user_id == user_id
+        )
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if not row:
+            return
+        for field in ("title", "content", "storage_key", "mime_type", "tags", "description"):
+            if field in updates:
+                setattr(row, field, updates[field])
+        row.updated_at = datetime.now(UTC)
+
+    async def list(
+        self,
+        user_id: str,
+        tags: list[str] | None = None,
+        namespace: str | None = None,
+        search: str | None = None,
+    ) -> list[dict[str, Any]]:
+        stmt = select(AgentDocumentORM).where(AgentDocumentORM.user_id == user_id)
+        if namespace:
+            stmt = stmt.where(AgentDocumentORM.namespace == namespace)
+        if search:
+            pattern = f"%{search}%"
+            stmt = stmt.where(
+                or_(
+                    AgentDocumentORM.title.ilike(pattern),
+                    AgentDocumentORM.content.ilike(pattern),
+                )
+            )
+        if tags:
+            for tag in tags:
+                stmt = stmt.where(AgentDocumentORM.tags.contains([tag]))
+        stmt = stmt.order_by(AgentDocumentORM.updated_at.desc())
+        result = await self._session.execute(stmt)
+        return [_doc_to_dict(r) for r in result.scalars().all()]
+
+    async def delete(self, user_id: str, doc_id: str) -> None:
+        stmt = select(AgentDocumentORM).where(
+            AgentDocumentORM.id == doc_id, AgentDocumentORM.user_id == user_id
+        )
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row:
+            await self._session.delete(row)
+
+    async def get_by_slug(
+        self, user_id: str, namespace: str, slug: str
+    ) -> dict[str, Any] | None:
+        stmt = select(AgentDocumentORM).where(
+            AgentDocumentORM.user_id == user_id,
+            AgentDocumentORM.namespace == namespace,
+            AgentDocumentORM.slug == slug,
+        )
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        return _doc_to_dict(row) if row else None
+
+    async def upsert_by_slug(
+        self, user_id: str, namespace: str, slug: str, doc: dict[str, Any]
+    ) -> str:
+        existing = await self.get_by_slug(user_id, namespace, slug)
+        if existing:
+            updates = {k: v for k, v in doc.items() if k not in ("id", "user_id", "slug", "namespace")}
+            await self.update(user_id, existing["id"], updates)
+            return existing["id"]
+        return await self.save(
+            user_id,
+            {**doc, "namespace": namespace, "slug": slug, "user_id": user_id},
+        )
+
+
+# ── Agent session repository ──────────────────────────────────────────────────
+
+
+def _session_to_dict(row: AgentSessionORM) -> dict[str, Any]:
+    return {
+        "id": row.id,
+        "user_id": row.user_id,
+        "thread_id": row.thread_id,
+        "title": row.title,
+        "created_at": row.created_at.isoformat(),
+        "last_active_at": row.last_active_at.isoformat(),
+    }
+
+
+class SQLAgentSessionRepository(AgentSessionRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def upsert(self, user_id: str, thread_id: str) -> None:
+        stmt = select(AgentSessionORM).where(
+            AgentSessionORM.user_id == user_id,
+            AgentSessionORM.thread_id == thread_id,
+        )
+        result = await self._s.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row:
+            row.last_active_at = datetime.now(UTC)
+        else:
+            self._s.add(AgentSessionORM(
+                id=str(uuid.uuid4()),
+                user_id=user_id,
+                thread_id=thread_id,
+                last_active_at=datetime.now(UTC),
+            ))
+        await self._s.flush()
+
+    async def set_title(self, user_id: str, thread_id: str, title: str) -> None:
+        stmt = select(AgentSessionORM).where(
+            AgentSessionORM.user_id == user_id,
+            AgentSessionORM.thread_id == thread_id,
+        )
+        result = await self._s.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row and not row.title:
+            row.title = title
+            await self._s.flush()
+
+    async def list(self, user_id: str, limit: int = 50) -> list[dict[str, Any]]:
+        stmt = (
+            select(AgentSessionORM)
+            .where(AgentSessionORM.user_id == user_id)
+            .order_by(AgentSessionORM.last_active_at.desc())
+            .limit(limit)
+        )
+        result = await self._s.execute(stmt)
+        return [_session_to_dict(r) for r in result.scalars().all()]
+
+    async def get(self, user_id: str, thread_id: str) -> dict[str, Any] | None:
+        stmt = select(AgentSessionORM).where(
+            AgentSessionORM.user_id == user_id,
+            AgentSessionORM.thread_id == thread_id,
+        )
+        result = await self._s.execute(stmt)
+        row = result.scalar_one_or_none()
+        return _session_to_dict(row) if row else None
+
+    async def delete(self, user_id: str, thread_id: str) -> None:
+        stmt = select(AgentSessionORM).where(
+            AgentSessionORM.user_id == user_id,
+            AgentSessionORM.thread_id == thread_id,
+        )
+        result = await self._s.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row:
+            await self._s.delete(row)

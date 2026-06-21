@@ -10,12 +10,16 @@ from typing import TYPE_CHECKING
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from salli.adapters.db.repositories import (
+    SQLAgentDocumentRepository,
+    SQLAgentSessionRepository,
     SQLLedgerRepository,
     SQLReminderRepository,
     SQLStatementRepository,
     SQLTaxComputationRepository,
 )
 from salli.application.ports import (
+    AgentDocumentRepository,
+    AgentSessionRepository,
     LedgerRepository,
     ReminderRepository,
     StatementRepository,
@@ -31,6 +35,8 @@ class UnitOfWork:
     tax_computations: TaxComputationRepository
     statements: StatementRepository
     reminders: ReminderRepository
+    agent_documents: AgentDocumentRepository
+    agent_sessions: AgentSessionRepository
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._factory = session_factory
@@ -42,6 +48,8 @@ class UnitOfWork:
         self.tax_computations = SQLTaxComputationRepository(self._session)
         self.statements = SQLStatementRepository(self._session)
         self.reminders = SQLReminderRepository(self._session)
+        self.agent_documents = SQLAgentDocumentRepository(self._session)
+        self.agent_sessions = SQLAgentSessionRepository(self._session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 from logging.config import fileConfig
 from pathlib import Path
@@ -13,6 +14,10 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+# Allow DATABASE_URL env var to override alembic.ini for containerised runs
+if db_url := os.environ.get("DATABASE_URL"):
+    config.set_main_option("sqlalchemy.url", db_url)
+
 # Import all ORM models so Alembic can auto-detect schema changes
 from salli.adapters.db.models import Base  # noqa: E402
 
@@ -26,8 +31,27 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+_EXCLUDED_TABLES = {
+    "checkpoint_blobs",
+    "checkpoint_migrations",
+    "checkpoint_writes",
+    "checkpoints",
+}
+
+
+def _include_object(obj, name, type_, reflected, compare_to):
+    """Exclude external tables (e.g. LangGraph checkpointer) from autogenerate."""
+    if type_ == "table" and name in _EXCLUDED_TABLES:
+        return False
+    return True
+
+
 def do_run_migrations(connection):
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        include_object=_include_object,
+    )
     with context.begin_transaction():
         context.run_migrations()
 

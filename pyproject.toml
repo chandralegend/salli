@@ -21,8 +21,13 @@ dependencies = [
     # Agents
     "langchain>=0.2",
     "langchain-anthropic>=0.1",
+    "langchain-community>=0.3",
     "langgraph>=0.2",
     "langgraph-checkpoint-postgres>=1.0",
+    "langgraph-supervisor>=0.0.31",
+    "psycopg[binary]>=3.1",
+    "psycopg-pool>=3.1",
+    "tavily-python>=0.5",
     # Document parsing
     "pdfplumber>=0.11",
     "pypdf>=4.0",

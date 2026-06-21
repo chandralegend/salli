@@ -68,14 +68,19 @@ class TaxComputation:
 
     # Inputs (snapshot)
     gross_income: Decimal
+    foreign_service_income: Decimal   # subset eligible for the 15% flat regime
+    regular_income: Decimal           # gross_income - foreign_service_income
     personal_relief_applied: Decimal
-    taxable_income: Decimal
+    taxable_income: Decimal           # regular_income after relief & QPD
 
-    # Band-by-band workings
+    # Band-by-band workings (on taxable_income only)
     band_workings: list[BandWorkings]
 
+    # FSI flat tax (separate from bands)
+    fsi_tax: Decimal                  # foreign_service_income × regime rate
+
     # Credits
-    tax_before_credits: Decimal
+    tax_before_credits: Decimal       # band tax + fsi_tax
     apit_credit: Decimal
     ait_credit: Decimal
     foreign_tax_credit: Decimal

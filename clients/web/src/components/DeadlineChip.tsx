@@ -1,5 +1,3 @@
-import { cn } from "@/lib/utils";
-
 interface DeadlineChipProps {
   dueDate: string;
   done?: boolean;
@@ -14,40 +12,37 @@ function getDaysUntil(dateStr: string): number {
 export function DeadlineChip({ dueDate, done }: DeadlineChipProps) {
   const days = getDaysUntil(dueDate);
 
-  const variant = done
-    ? "done"
-    : days < 0
-    ? "overdue"
-    : days <= 14
-    ? "upcoming"
-    : "future";
-
+  if (done) {
+    return (
+      <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground">
+        Done
+      </span>
+    );
+  }
+  if (days < 0) {
+    return (
+      <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-rose-50 text-rose-700">
+        {Math.abs(days)}d overdue
+      </span>
+    );
+  }
+  if (days === 0) {
+    return (
+      <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-primary/12 text-primary">
+        Today
+      </span>
+    );
+  }
+  if (days <= 14) {
+    return (
+      <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 tabular-nums">
+        {days}d
+      </span>
+    );
+  }
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold",
-        variant === "done" && "bg-income/10 text-income",
-        variant === "overdue" && "bg-expense/10 text-expense",
-        variant === "upcoming" && "bg-warning/10 text-warning",
-        variant === "future" && "bg-secondary text-muted-foreground"
-      )}
-    >
-      <span
-        className={cn(
-          "w-1.5 h-1.5 rounded-full",
-          variant === "done" && "bg-income",
-          variant === "overdue" && "bg-expense",
-          variant === "upcoming" && "bg-warning",
-          variant === "future" && "bg-muted-foreground"
-        )}
-      />
-      {done
-        ? "Done"
-        : days < 0
-        ? `${Math.abs(days)}d overdue`
-        : days === 0
-        ? "Today"
-        : `${days}d`}
+    <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground tabular-nums">
+      {days}d
     </span>
   );
 }

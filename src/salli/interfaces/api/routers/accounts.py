@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from salli.interfaces.api.deps import AppServices, CurrentUser
@@ -18,6 +18,13 @@ class AddAccountRequest(BaseModel):
     type: AccountTypeStr
     currency: str = "LKR"
     parent_id: str | None = None
+
+
+class UpdateAccountRequest(BaseModel):
+    code: str
+    name: str
+    type: AccountTypeStr
+    currency: str = "LKR"
 
 
 @router.get("/")
@@ -48,3 +55,23 @@ async def add_account(body: AddAccountRequest, user_id: CurrentUser, svc: AppSer
         parent_id=body.parent_id,
     )
     return {"id": account_id}
+
+
+@router.patch("/{account_id}", status_code=200)
+async def update_account(
+    account_id: str, body: UpdateAccountRequest, user_id: CurrentUser, svc: AppServices
+):
+    await svc.ledger.update_account(
+        user_id=user_id,
+        account_id=account_id,
+        code=body.code,
+        name=body.name,
+        type=body.type,
+        currency=body.currency,
+    )
+    return {"id": account_id}
+
+
+@router.delete("/{account_id}", status_code=204)
+async def deactivate_account(account_id: str, user_id: CurrentUser, svc: AppServices):
+    await svc.ledger.deactivate_account(user_id=user_id, account_id=account_id)

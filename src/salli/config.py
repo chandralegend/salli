@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     langsmith_api_key: str = ""
     langsmith_project: str = "salli"
 
+    # Tavily (web search for agents)
+    tavily_api_key: str = ""
+
     # App
     environment: str = "development"
     log_level: str = "INFO"

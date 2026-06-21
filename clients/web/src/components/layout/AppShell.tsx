@@ -36,7 +36,7 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="bg-background">
+      <SidebarInset className="ledger-paper">
         {/* Top header bar */}
         <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border/60 bg-background px-4 sticky top-0 z-10">
           <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />

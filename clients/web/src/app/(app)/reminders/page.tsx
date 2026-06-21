@@ -142,7 +142,7 @@ export default function RemindersPage() {
     <div className="p-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-[18px] font-semibold tracking-tight">Reminders</h1>
+          <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">Reminders</h1>
           <p className="text-meta mt-0.5">IRD filing deadlines and tax obligations</p>
         </div>
         <div className="flex gap-2">

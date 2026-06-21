@@ -121,7 +121,7 @@ export default function StatementsPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-[18px] font-semibold tracking-tight">Statements</h1>
+        <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">Statements</h1>
         <p className="text-meta mt-0.5">
           Import bank statements, review parsed transactions, and post to the ledger
         </p>

@@ -32,11 +32,12 @@ export function PostingRow({
         {isCredit ? "CR" : "DR"}
       </div>
       <span
-        className={`text-sm font-semibold w-28 text-right shrink-0 tabular-nums ${
+        className={`font-ledger text-[13px] font-medium w-28 text-right shrink-0 ${
           isCredit ? "text-emerald-700" : "text-rose-700"
         }`}
       >
-        {currency} {amount}
+        <span className="text-[0.78em] text-muted-foreground mr-1">{currency}</span>
+        {amount}
       </span>
     </div>
   );

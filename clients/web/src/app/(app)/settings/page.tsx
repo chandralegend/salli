@@ -24,7 +24,7 @@ export default function SettingsPage() {
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight">Settings</h1>
+        <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">Settings</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Account and application preferences</p>
       </div>
 

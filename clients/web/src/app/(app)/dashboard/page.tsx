@@ -9,6 +9,22 @@ import { PostingRow } from "@/components/PostingRow";
 import { DeadlineChip } from "@/components/DeadlineChip";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useTax } from "@/hooks/useTax";
+import { cn } from "@/lib/utils";
+
+function Amount({ value, className }: { value: string; className?: string }) {
+  // Render a "LKR 1,234.00" string with the currency code set quiet and small,
+  // so the figure itself carries the weight — like an amount column in a ledger.
+  const m = value.match(/^([A-Z]{3})\s+(.*)$/);
+  if (!m) return <span className={className}>{value}</span>;
+  return (
+    <span className={className}>
+      <span className="text-[0.62em] font-medium text-muted-foreground mr-1 align-baseline tracking-normal">
+        {m[1]}
+      </span>
+      {m[2]}
+    </span>
+  );
+}
 
 function StatCard({
   label,
@@ -28,29 +44,31 @@ function StatCard({
   accent?: boolean;
 }) {
   return (
-    <Card className={accent ? "ring-primary/30 bg-primary/[0.03]" : ""}>
-      <CardContent className="pt-5 pb-5">
-        <div className="flex items-start justify-between mb-4">
+    <Card
+      className={cn(
+        "transition-shadow duration-200 hover:shadow-[0_1px_12px_rgb(0_0_0/0.04)]",
+        accent && "ring-primary/25 bg-primary/[0.04]",
+      )}
+    >
+      <CardContent>
+        <div className="flex items-center justify-between">
           <p className="text-secondary-label">{label}</p>
-          <div className={`w-7 h-7 rounded-md flex items-center justify-center ${accent ? "bg-primary/12" : "bg-muted"}`}>
-            <Icon className={`size-3.5 ${accent ? "text-primary" : "text-muted-foreground"}`} />
-          </div>
+          <Icon className={cn("size-3.5", accent ? "text-primary" : "text-muted-foreground/45")} />
         </div>
         {loading ? (
-          <Skeleton className="h-8 w-28" />
+          <Skeleton className="h-7 w-28 mt-3" />
         ) : (
-          <>
-            <p className={`text-metric ${accent ? "text-primary" : "text-foreground"}`}>
-              {value}
-            </p>
-            {(sub || trend) && (
-              <div className="flex items-center gap-1.5 mt-1.5">
-                {trend === "up" && <TrendingUp className="size-3 text-emerald-600" />}
-                {trend === "down" && <TrendingDown className="size-3 text-rose-600" />}
-                {sub && <span className="text-meta">{sub}</span>}
-              </div>
-            )}
-          </>
+          <Amount
+            value={value}
+            className={cn("text-metric block mt-3", accent ? "text-primary" : "text-foreground")}
+          />
+        )}
+        {(sub || trend) && (
+          <div className="flex items-center gap-1 mt-2 text-meta">
+            {trend === "up" && <TrendingUp className="size-3 text-emerald-600" />}
+            {trend === "down" && <TrendingDown className="size-3 text-rose-600" />}
+            {sub && <span>{sub}</span>}
+          </div>
         )}
       </CardContent>
     </Card>
@@ -64,12 +82,12 @@ export default function DashboardPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* Page header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-[18px] font-semibold tracking-tight text-foreground">Overview</h1>
-          <p className="text-meta mt-0.5">Assessment Year 2025/26 · Sri Lanka</p>
+          <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">Overview</h1>
+          <p className="text-meta mt-1">Assessment Year 2025/26 · Sri Lanka</p>
         </div>
-        <span className="inline-flex items-center rounded-md bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground font-mono">
+        <span className="inline-flex items-center rounded-md ring-1 ring-foreground/10 bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground font-mono">
           LKR
         </span>
       </div>
@@ -77,8 +95,8 @@ export default function DashboardPage() {
       {/* Metric row — four-up stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="NET WORTH" value={`LKR ${netWorth}`} icon={Wallet} loading={loading} />
-        <StatCard label="INCOME YTD" value={`LKR ${incomeYtd}`} icon={TrendingUp} loading={loading} trend="up" />
-        <StatCard label="EXPENSES YTD" value={`LKR ${expensesYtd}`} icon={TrendingDown} loading={loading} trend="down" />
+        <StatCard label="INCOME YTD" value={`LKR ${incomeYtd}`} icon={TrendingUp} loading={loading} />
+        <StatCard label="EXPENSES YTD" value={`LKR ${expensesYtd}`} icon={TrendingDown} loading={loading} />
         <StatCard
           label="TAX PAYABLE"
           value={latest.data ? `LKR ${latest.data.tax_payable}` : "—"}

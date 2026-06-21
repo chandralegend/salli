@@ -296,7 +296,7 @@ export default function LedgerPage() {
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-[18px] font-semibold tracking-tight">Ledger</h1>
+          <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">Ledger</h1>
           <p className="text-meta mt-0.5">Chart of accounts, journal entries &amp; income statement</p>
         </div>
         <div className="flex gap-2">

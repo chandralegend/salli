@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaxBandTable } from "@/components/TaxBandTable";
+import { MetricCard } from "@/components/MetricCard";
 import { useTax } from "@/hooks/useTax";
 
 function LineItem({
@@ -66,8 +67,8 @@ export default function TaxPage() {
     <div className="p-6 max-w-4xl mx-auto">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Tax</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Sri Lanka individual income tax · YA 2025/26</p>
+          <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">Tax</h1>
+          <p className="text-meta mt-1">Sri Lanka individual income tax · YA 2025/26</p>
         </div>
         {displayResult && (
           <Button variant="outline" size="sm" onClick={handleCompute} disabled={compute.isPending}>
@@ -125,27 +126,25 @@ export default function TaxPage() {
                   { label: "TAXABLE INCOME", value: displayResult.taxable_income },
                   { label: "TAX PAYABLE", value: displayResult.tax_payable, highlight: true },
                 ].map(({ label, value, highlight }) => (
-                  <Card key={label} className={highlight ? "ring-primary/30 bg-primary/[0.03]" : ""}>
-                    <CardContent className="pt-5 pb-5">
-                      <p className="text-secondary-label mb-3">{label}</p>
-                      <p className={`text-metric ${highlight ? "text-primary" : ""}`}>
-                        {displayResult.currency} {value}
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <MetricCard
+                    key={label}
+                    label={label}
+                    value={`${displayResult.currency} ${value}`}
+                    accent={highlight}
+                  />
                 ))}
               </div>
 
               {/* FSI Breakdown (only when FSI exists) */}
               {hasFsi && (
                 <Card>
-                  <CardHeader className="pb-0">
+                  <CardHeader>
                     <CardTitle className="text-sm font-medium flex items-center gap-2">
                       <Globe className="w-4 h-4 text-blue-500" />
                       Foreign Service Income Regime
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-4">
+                  <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <p className="text-[11px] font-medium text-secondary-label mb-3 uppercase tracking-wider">Income Split</p>

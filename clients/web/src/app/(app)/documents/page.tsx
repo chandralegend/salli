@@ -242,7 +242,7 @@ export default function DocumentsPage() {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Documents</h1>
+          <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">Documents</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Files and notes saved by the agent · {docs.length} item{docs.length !== 1 ? "s" : ""}
           </p>

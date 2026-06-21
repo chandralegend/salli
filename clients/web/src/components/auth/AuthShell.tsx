@@ -26,12 +26,10 @@ export function AuthShell({
               "repeating-linear-gradient(to bottom, transparent 0, transparent 27px, #fff 27px, #fff 28px)",
           }}
         />
-        <div className="relative flex items-center gap-2.5">
-          <Logo className="size-8" />
-          <div className="leading-tight">
-            <p className="text-sm font-semibold">Salli</p>
-            <p className="text-[11px] text-sidebar-foreground/50">Finance &amp; Tax · Sri Lanka</p>
-          </div>
+        <div className="relative">
+          <Logo className="size-20 rounded-2xl shadow-lg shadow-black/30" />
+          <p className="mt-4 text-base font-semibold">Salli</p>
+          <p className="text-[12px] text-sidebar-foreground/50">Finance &amp; Tax · Sri Lanka</p>
         </div>
 
         <div className="relative max-w-sm">
@@ -56,10 +54,10 @@ export function AuthShell({
       {/* Form panel — warm paper */}
       <div className="flex items-center justify-center bg-background ledger-paper px-6 py-12">
         <div className="w-full max-w-[360px]">
-          {/* mobile wordmark */}
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <Logo className="size-8" />
-            <span className="font-semibold">Salli</span>
+          {/* mobile wordmark — large, centered */}
+          <div className="lg:hidden flex flex-col items-center text-center mb-8">
+            <Logo className="size-20 rounded-2xl shadow-lg shadow-black/10" />
+            <span className="font-semibold mt-3">Salli</span>
           </div>
 
           <h1 className={cn("text-[24px] font-semibold tracking-[-0.02em] text-foreground")}>

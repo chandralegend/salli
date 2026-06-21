@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Logo } from "@/components/Logo";
 import {
   LayoutDashboard,
   BookOpen,
@@ -115,9 +116,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" render={<Link href="/dashboard" />}>
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shrink-0 text-sm font-bold">
-                S
-              </div>
+              <Logo className="size-8" />
               <div className="flex flex-col gap-0 text-left leading-tight">
                 <span className="truncate text-sm font-semibold text-sidebar-foreground">Salli</span>
                 <span className="truncate text-[11px] text-sidebar-foreground/50">Finance &amp; Tax</span>

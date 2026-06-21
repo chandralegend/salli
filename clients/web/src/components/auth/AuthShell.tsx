@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/Logo";
 
 /**
  * Two-column auth frame: a dark "ledger cover" brand panel (the same charcoal as
@@ -26,9 +27,7 @@ export function AuthShell({
           }}
         />
         <div className="relative flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-            S
-          </div>
+          <Logo className="size-8" />
           <div className="leading-tight">
             <p className="text-sm font-semibold">Salli</p>
             <p className="text-[11px] text-sidebar-foreground/50">Finance &amp; Tax · Sri Lanka</p>
@@ -59,9 +58,7 @@ export function AuthShell({
         <div className="w-full max-w-[360px]">
           {/* mobile wordmark */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-              S
-            </div>
+            <Logo className="size-8" />
             <span className="font-semibold">Salli</span>
           </div>
 

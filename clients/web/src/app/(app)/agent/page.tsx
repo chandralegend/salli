@@ -12,6 +12,7 @@ import { AssistantBubble, UserBubble, type MessagePart, type SubagentPart } from
 import { streamAgent, streamResume, uploadAgentFile, type ApprovalAction } from "@/lib/stream-agent";
 import { getStoredToken } from "@/lib/store";
 import { apiFetch } from "@/lib/api-fetch";
+import { Logo } from "@/components/Logo";
 
 type ChatMessage =
   | { id: string; role: "user"; content: string; attachments?: string[] }
@@ -515,9 +516,7 @@ function AgentChat() {
 
             {!historyLoading && messages.length === 0 && (
               <div className="flex flex-col items-center text-center gap-5 pt-16">
-                <div className="w-11 h-11 rounded-xl bg-foreground text-background flex items-center justify-center text-base font-bold">
-                  S
-                </div>
+                <Logo className="size-11 rounded-xl" />
                 <div className="space-y-1">
                   <h2 className="text-[15px] font-semibold">How can I help with your finances?</h2>
                   <p className="text-[13px] text-muted-foreground max-w-sm">

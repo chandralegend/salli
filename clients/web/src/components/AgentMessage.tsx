@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import { Brain, ChevronDown, Loader2, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ApprovalCard } from "@/components/ApprovalCard";
+import { Logo } from "@/components/Logo";
 import type { ApprovalAction } from "@/lib/stream-agent";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -296,9 +297,7 @@ interface AssistantBubbleProps {
 export function AssistantBubble({ parts, streaming, onApprove, onDeny }: AssistantBubbleProps) {
   return (
     <div className="flex justify-start w-full">
-      <div className="w-6 h-6 rounded-md bg-foreground text-background flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 mr-3">
-        S
-      </div>
+      <Logo className="size-6 rounded-md mt-0.5 mr-3" />
 
       <div className="max-w-[85%] text-[13px] text-foreground min-w-0">
         {parts.map((part, i) => {

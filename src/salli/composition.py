@@ -11,6 +11,7 @@ from salli.adapters.db.session import make_session_factory
 from salli.adapters.fx.cbsl import CBSLFxRateAdapter
 from salli.application.ports import StoragePort
 from salli.application.services.agent_service import AgentService
+from salli.application.services.billing_service import BillingService
 from salli.application.services.document_service import DocumentService
 from salli.application.services.ledger_service import LedgerService
 from salli.application.services.parsing_service import ParsingService
@@ -30,6 +31,7 @@ class Services:
     fx: CBSLFxRateAdapter
     storage: StoragePort
     documents: DocumentService
+    billing: BillingService
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
@@ -56,6 +58,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     parsing = ParsingService(uow_factory, storage)
     reminders = ReminderService(uow_factory)
     fx = CBSLFxRateAdapter()
+    billing = BillingService(uow_factory, billing_port=_build_billing(settings))
 
     return Services(
         ledger=ledger,
@@ -66,6 +69,24 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         fx=fx,
         storage=storage,
         documents=documents,
+        billing=billing,
+    )
+
+
+def _build_billing(settings: Settings):
+    """Return a Paddle adapter when configured, else None (entitlements/metering still work)."""
+    if not settings.paddle_api_key:
+        return None
+    from salli.adapters.billing.paddle import PaddleBillingAdapter
+
+    return PaddleBillingAdapter(
+        api_key=settings.paddle_api_key,
+        webhook_secret=settings.paddle_webhook_secret,
+        environment=settings.paddle_environment,
+        price_map={
+            "plus": settings.paddle_price_plus,
+            "pro": settings.paddle_price_pro,
+        },
     )
 
 

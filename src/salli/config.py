@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     # Tavily (web search for agents)
     tavily_api_key: str = ""
 
+    # Billing — Paddle (Merchant of Record)
+    paddle_api_key: str = ""
+    paddle_webhook_secret: str = ""
+    paddle_environment: str = "sandbox"  # "sandbox" | "production"
+    # Paddle price IDs map a checkout/subscription back to a plan key.
+    paddle_price_plus: str = ""
+    paddle_price_pro: str = ""
+
     # App
     environment: str = "development"
     log_level: str = "INFO"

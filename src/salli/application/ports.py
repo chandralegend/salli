@@ -232,3 +232,71 @@ class AgentDocumentRepository(ABC):
     ) -> str:
         """Insert or update a document keyed by user+namespace+slug. Returns ID."""
         ...
+
+
+# ── Billing ──────────────────────────────────────────────────────────────────
+
+
+class SubscriptionRepository(ABC):
+    @abstractmethod
+    async def get(self, user_id: str) -> dict[str, Any] | None:
+        """Return the user's subscription row, or None (treated as free)."""
+        ...
+
+    @abstractmethod
+    async def upsert(self, user_id: str, fields: dict[str, Any]) -> None:
+        """Create or update the user's subscription row."""
+        ...
+
+
+class UsageRepository(ABC):
+    @abstractmethod
+    async def get_count(self, user_id: str, period: str, metric: str) -> int:
+        """Current count for (user, month, metric); 0 if no row."""
+        ...
+
+    @abstractmethod
+    async def increment(self, user_id: str, period: str, metric: str, by: int = 1) -> int:
+        """Atomically add to the counter (creating the row) and return the new value."""
+        ...
+
+    @abstractmethod
+    async def get_counts(self, user_id: str, period: str) -> dict[str, int]:
+        """All metric counts for the user in the period, keyed by metric."""
+        ...
+
+
+class UserProfileRepository(ABC):
+    @abstractmethod
+    async def get(self, user_id: str) -> dict[str, Any] | None: ...
+
+    @abstractmethod
+    async def upsert(self, user_id: str, fields: dict[str, Any]) -> None: ...
+
+
+class BillingPort(ABC):
+    """Payment-provider boundary (Paddle today). Adapters live in adapters/billing/."""
+
+    @abstractmethod
+    async def create_checkout(
+        self, user_id: str, email: str | None, plan_key: str, customer_id: str | None
+    ) -> dict[str, Any]:
+        """Return data the client needs to open checkout (price id, customer, txn)."""
+        ...
+
+    @abstractmethod
+    async def get_portal_url(self, customer_id: str) -> str:
+        """Return a customer-portal URL for managing/cancelling the subscription."""
+        ...
+
+    @abstractmethod
+    def verify_and_parse_webhook(
+        self, raw_body: bytes, signature: str | None
+    ) -> dict[str, Any] | None:
+        """Verify the webhook signature and return a normalized event, or None if invalid."""
+        ...
+
+    @abstractmethod
+    def plan_for_price_id(self, price_id: str) -> str:
+        """Map a provider price ID to a plan key (falls back to 'free')."""
+        ...

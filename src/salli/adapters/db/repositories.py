@@ -25,7 +25,10 @@ from salli.adapters.db.models import (
     PostingORM,
     ReminderORM,
     StatementORM,
+    SubscriptionORM,
     TaxComputationORM,
+    UsageCounterORM,
+    UserProfileORM,
 )
 from salli.application.ports import (
     AgentDocumentRepository,
@@ -33,7 +36,10 @@ from salli.application.ports import (
     LedgerRepository,
     ReminderRepository,
     StatementRepository,
+    SubscriptionRepository,
     TaxComputationRepository,
+    UsageRepository,
+    UserProfileRepository,
 )
 from salli.domain.accounting.models import (
     Account,
@@ -652,3 +658,121 @@ class SQLAgentSessionRepository(AgentSessionRepository):
         row = result.scalar_one_or_none()
         if row:
             await self._s.delete(row)
+
+
+# ── Billing repositories ──────────────────────────────────────────────────────
+
+
+def _subscription_to_dict(row: SubscriptionORM) -> dict[str, Any]:
+    return {
+        "id": row.id,
+        "user_id": row.user_id,
+        "plan": row.plan,
+        "status": row.status,
+        "provider": row.provider,
+        "provider_customer_id": row.provider_customer_id,
+        "provider_subscription_id": row.provider_subscription_id,
+        "current_period_start": row.current_period_start.isoformat()
+        if row.current_period_start else None,
+        "current_period_end": row.current_period_end.isoformat()
+        if row.current_period_end else None,
+        "cancel_at_period_end": row.cancel_at_period_end,
+    }
+
+
+class SQLSubscriptionRepository(SubscriptionRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def get(self, user_id: str) -> dict[str, Any] | None:
+        result = await self._s.execute(
+            select(SubscriptionORM).where(SubscriptionORM.user_id == user_id)
+        )
+        row = result.scalar_one_or_none()
+        return _subscription_to_dict(row) if row else None
+
+    async def upsert(self, user_id: str, fields: dict[str, Any]) -> None:
+        result = await self._s.execute(
+            select(SubscriptionORM).where(SubscriptionORM.user_id == user_id)
+        )
+        row = result.scalar_one_or_none()
+        if row is None:
+            row = SubscriptionORM(id=str(uuid.uuid4()), user_id=user_id)
+            self._s.add(row)
+        for k, v in fields.items():
+            if hasattr(row, k):
+                setattr(row, k, v)
+        await self._s.flush()
+
+
+class SQLUsageRepository(UsageRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def _row(self, user_id: str, period: str, metric: str) -> UsageCounterORM | None:
+        result = await self._s.execute(
+            select(UsageCounterORM).where(
+                UsageCounterORM.user_id == user_id,
+                UsageCounterORM.period == period,
+                UsageCounterORM.metric == metric,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_count(self, user_id: str, period: str, metric: str) -> int:
+        row = await self._row(user_id, period, metric)
+        return row.count if row else 0
+
+    async def increment(self, user_id: str, period: str, metric: str, by: int = 1) -> int:
+        row = await self._row(user_id, period, metric)
+        if row is None:
+            row = UsageCounterORM(
+                id=str(uuid.uuid4()), user_id=user_id, period=period, metric=metric, count=by
+            )
+            self._s.add(row)
+            await self._s.flush()
+            return by
+        row.count += by
+        await self._s.flush()
+        return row.count
+
+    async def get_counts(self, user_id: str, period: str) -> dict[str, int]:
+        result = await self._s.execute(
+            select(UsageCounterORM).where(
+                UsageCounterORM.user_id == user_id,
+                UsageCounterORM.period == period,
+            )
+        )
+        return {r.metric: r.count for r in result.scalars().all()}
+
+
+class SQLUserProfileRepository(UserProfileRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def get(self, user_id: str) -> dict[str, Any] | None:
+        result = await self._s.execute(
+            select(UserProfileORM).where(UserProfileORM.id == user_id)
+        )
+        row = result.scalar_one_or_none()
+        if not row:
+            return None
+        return {
+            "id": row.id,
+            "email": row.email,
+            "display_name": row.display_name,
+            "paddle_customer_id": row.paddle_customer_id,
+        }
+
+    async def upsert(self, user_id: str, fields: dict[str, Any]) -> None:
+        result = await self._s.execute(
+            select(UserProfileORM).where(UserProfileORM.id == user_id)
+        )
+        row = result.scalar_one_or_none()
+        if row is None:
+            row = UserProfileORM(id=user_id)
+            self._s.add(row)
+        for k, v in fields.items():
+            if hasattr(row, k) and v is not None:
+                setattr(row, k, v)
+        await self._s.flush()

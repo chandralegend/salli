@@ -280,3 +280,76 @@ class ReminderORM(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
     )
+
+
+# ── Billing: user profile, subscription, usage ───────────────────────────────
+
+
+class UserProfileORM(Base):
+    """Identity + billing linkage. `id` is the Supabase auth uid (JWT `sub`)."""
+
+    __tablename__ = "user_profiles"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    email: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    display_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    paddle_customer_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+
+
+class SubscriptionORM(Base):
+    """One row per user. Absence of a row is treated as the free plan."""
+
+    __tablename__ = "subscriptions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    plan: Mapped[str] = mapped_column(String(20), nullable=False, default="free")
+    # active | trialing | past_due | canceled
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
+    provider: Mapped[str] = mapped_column(String(20), nullable=False, default="paddle")
+    provider_customer_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    provider_subscription_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    current_period_start: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    current_period_end: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_subscriptions_user"),
+    )
+
+
+class UsageCounterORM(Base):
+    """Per-user monthly counter for a metered action. period = 'YYYY-MM' (UTC)."""
+
+    __tablename__ = "usage_counters"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    period: Mapped[str] = mapped_column(String(7), nullable=False)  # YYYY-MM
+    # agent_messages | statement_uploads
+    metric: Mapped[str] = mapped_column(String(40), nullable=False)
+    count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "period", "metric", name="uq_usage_user_period_metric"),
+        Index("ix_usage_user", "user_id"),
+    )

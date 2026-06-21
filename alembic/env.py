@@ -40,9 +40,16 @@ _EXCLUDED_TABLES = {
 
 
 def _include_object(obj, name, type_, reflected, compare_to):
-    """Exclude external tables (e.g. LangGraph checkpointer) from autogenerate."""
+    """Exclude external tables (e.g. LangGraph checkpointer) and their indexes
+    from autogenerate, so migrations never try to drop them."""
     if type_ == "table" and name in _EXCLUDED_TABLES:
         return False
+    if type_ == "index":
+        table_name = getattr(getattr(obj, "table", None), "name", None)
+        if table_name in _EXCLUDED_TABLES:
+            return False
+        if name and any(name.startswith(t) for t in _EXCLUDED_TABLES):
+            return False
     return True
 
 

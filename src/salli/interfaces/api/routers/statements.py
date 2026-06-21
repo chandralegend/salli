@@ -11,7 +11,9 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, UploadFile, status
 from pydantic import BaseModel
 
-from salli.interfaces.api.deps import AppServices, CurrentUser
+from salli.application.services.billing_service import QuotaExceeded
+from salli.domain.billing.plans import METRIC_STATEMENT_UPLOADS
+from salli.interfaces.api.deps import AppServices, CurrentEmail, CurrentUser
 
 router = APIRouter(prefix="/statements", tags=["statements"])
 
@@ -20,12 +22,14 @@ router = APIRouter(prefix="/statements", tags=["statements"])
 async def upload_statement(
     file: UploadFile,
     user_id: CurrentUser,
+    email: CurrentEmail,
     svc: AppServices,
     bank: str = "",
 ):
     """
     Parse a bank statement file. Returns the statement_id and extracted transactions.
     Transactions have LLM-assigned accounts and dedup status; review before posting.
+    Counts one statement upload against the user's monthly quota.
     """
     if file.filename is None:
         raise HTTPException(status_code=400, detail="filename required")
@@ -33,6 +37,20 @@ async def upload_statement(
     data = await file.read()
     if len(data) > 10 * 1024 * 1024:  # 10 MB hard cap
         raise HTTPException(status_code=413, detail="File too large (max 10 MB)")
+
+    try:
+        await svc.billing.check_and_increment(user_id, METRIC_STATEMENT_UPLOADS, email)
+    except QuotaExceeded as exc:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail={
+                "error": "quota_exceeded",
+                "metric": exc.metric,
+                "limit": exc.limit,
+                "plan": exc.plan_key,
+                "upgrade": True,
+            },
+        )
 
     result = await svc.parsing.parse_statement(
         user_id=user_id,

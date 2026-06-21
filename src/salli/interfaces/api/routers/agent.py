@@ -22,12 +22,14 @@ from __future__ import annotations
 import json
 from collections.abc import AsyncIterator
 
-from fastapi import APIRouter, UploadFile
+from fastapi import APIRouter, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
 
-from salli.interfaces.api.deps import AppServices, CurrentUser
+from salli.application.services.billing_service import QuotaExceeded
+from salli.domain.billing.plans import METRIC_AGENT_MESSAGES
+from salli.interfaces.api.deps import AppServices, CurrentEmail, CurrentUser
 
 router = APIRouter(prefix="/agent", tags=["agent"])
 
@@ -81,11 +83,27 @@ class ChatRequest(BaseModel):
 
 
 @router.post("/chat")
-async def chat(body: ChatRequest, user_id: CurrentUser, svc: AppServices):
+async def chat(body: ChatRequest, user_id: CurrentUser, email: CurrentEmail, svc: AppServices):
     """
     Stream a manager agent response as Server-Sent Events.
-    After the stream completes a background task generates a session title via Haiku.
+    Counts one agent message against the user's monthly quota before streaming;
+    after the stream completes a background task generates a session title via Haiku.
     """
+    # Quota gate — one increment per user message (not per LLM call)
+    try:
+        await svc.billing.check_and_increment(user_id, METRIC_AGENT_MESSAGES, email)
+    except QuotaExceeded as exc:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail={
+                "error": "quota_exceeded",
+                "metric": exc.metric,
+                "limit": exc.limit,
+                "plan": exc.plan_key,
+                "upgrade": True,
+            },
+        )
+
     ai_acc: list[str] = []
 
     async def _collect(event_iter):

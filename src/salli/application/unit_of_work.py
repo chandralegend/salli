@@ -15,7 +15,10 @@ from salli.adapters.db.repositories import (
     SQLLedgerRepository,
     SQLReminderRepository,
     SQLStatementRepository,
+    SQLSubscriptionRepository,
     SQLTaxComputationRepository,
+    SQLUsageRepository,
+    SQLUserProfileRepository,
 )
 from salli.application.ports import (
     AgentDocumentRepository,
@@ -23,7 +26,10 @@ from salli.application.ports import (
     LedgerRepository,
     ReminderRepository,
     StatementRepository,
+    SubscriptionRepository,
     TaxComputationRepository,
+    UsageRepository,
+    UserProfileRepository,
 )
 
 if TYPE_CHECKING:
@@ -37,6 +43,9 @@ class UnitOfWork:
     reminders: ReminderRepository
     agent_documents: AgentDocumentRepository
     agent_sessions: AgentSessionRepository
+    subscriptions: SubscriptionRepository
+    usage: UsageRepository
+    user_profiles: UserProfileRepository
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._factory = session_factory
@@ -50,6 +59,9 @@ class UnitOfWork:
         self.reminders = SQLReminderRepository(self._session)
         self.agent_documents = SQLAgentDocumentRepository(self._session)
         self.agent_sessions = SQLAgentSessionRepository(self._session)
+        self.subscriptions = SQLSubscriptionRepository(self._session)
+        self.usage = SQLUsageRepository(self._session)
+        self.user_profiles = SQLUserProfileRepository(self._session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

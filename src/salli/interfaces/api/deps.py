@@ -35,24 +35,69 @@ def get_services() -> Services:
 
 # ── Auth ───────────────────────────────────────────────────────────────────────
 
+# JWKS cache for Supabase's asymmetric signing keys (ES256/RS256).
+_jwks_cache: dict[str, object] = {"keys": [], "ts": 0.0}
+_JWKS_TTL = 3600.0
+
+
+def _get_jwks(settings: Settings) -> list[dict]:
+    import time
+
+    import httpx
+
+    now = time.time()
+    if _jwks_cache["keys"] and now - float(_jwks_cache["ts"]) < _JWKS_TTL:  # type: ignore[arg-type]
+        return _jwks_cache["keys"]  # type: ignore[return-value]
+    url = settings.supabase_url.rstrip("/") + "/auth/v1/.well-known/jwks.json"
+    resp = httpx.get(url, timeout=5)
+    resp.raise_for_status()
+    keys = resp.json().get("keys", [])
+    _jwks_cache["keys"] = keys
+    _jwks_cache["ts"] = now
+    return keys
+
 
 def _decode_jwt(token: str, settings: Settings) -> tuple[str, str | None]:
     """
     Verify a Supabase-issued JWT and return (user_id, email).
-    In development (no SUPABASE_JWT_SECRET set) we accept any non-empty token
-    and return it as the user_id so local testing works without Supabase.
+
+    Supports both modern asymmetric tokens (ES256/RS256, verified via the project's
+    JWKS) and legacy HS256 tokens (verified with the shared JWT secret). With no
+    Supabase configured at all, falls back to treating the token as the user_id
+    (local dev-login).
     """
-    secret = settings.supabase_jwt_secret
-    if not secret:
-        # Dev fallback — token IS the user_id, no email
+    # Dev fallback only when Supabase is entirely unconfigured
+    if not settings.supabase_url and not settings.supabase_jwt_secret:
         return token, None
 
     try:
         from jose import jwt
 
-        payload = jwt.decode(
-            token, secret, algorithms=["HS256"], audience="authenticated"
-        )
+        header = jwt.get_unverified_header(token)
+        alg = header.get("alg", "")
+
+        if alg == "HS256":
+            payload = jwt.decode(
+                token, settings.supabase_jwt_secret, algorithms=["HS256"],
+                audience="authenticated",
+            )
+        else:
+            kid = header.get("kid")
+            jwks = _get_jwks(settings)
+            jwk = next((k for k in jwks if k.get("kid") == kid), None)
+            if jwk is None:
+                # Key may have rotated — refresh once
+                _jwks_cache["ts"] = 0.0
+                jwks = _get_jwks(settings)
+                jwk = next((k for k in jwks if k.get("kid") == kid), None)
+            if jwk is None:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Unknown signing key"
+                )
+            payload = jwt.decode(
+                token, jwk, algorithms=[alg], audience="authenticated"
+            )
+
         sub = payload.get("sub")
         if not sub:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")

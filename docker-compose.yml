@@ -24,12 +24,17 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://salli:salli@db:5432/salli
+      # App DB now lives on the local Supabase Postgres (prod parity).
+      # The docker `db` service remains as a dev fallback but is unused.
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@host.docker.internal:54322/postgres
       ENVIRONMENT: development
     command: sh -c "alembic upgrade head && uvicorn salli.interfaces.api.main:app --host 0.0.0.0 --port 8000 --reload"
     depends_on:
       db:
         condition: service_healthy
+    # Reach the local Supabase stack (auth/storage) running on the host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ~/.salli/storage:/root/.salli/storage
       - ./src:/app/src        # hot-reload Python source

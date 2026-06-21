@@ -2,6 +2,10 @@ import {
   BookOpen, Calculator, Bot, Compass, FileText, ShieldCheck,
   ArrowRight, Check,
 } from "lucide-react";
+import { SiteNav } from "@/components/SiteNav";
+import { Reveal } from "@/components/Reveal";
+import { FiScoreCard } from "@/components/FiScoreCard";
+import { JourneyTrail } from "@/components/JourneyTrail";
 
 const APP = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.salli.lk";
 
@@ -30,30 +34,11 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 backdrop-blur-sm bg-background/80 border-b border-border/60">
-        <nav className="max-w-6xl mx-auto px-5 h-14 flex items-center justify-between">
-          <a href="#top" className="flex items-center gap-2.5">
-            <Logo className="size-7" />
-            <span className="font-semibold tracking-tight">Salli</span>
-          </a>
-          <div className="hidden sm:flex items-center gap-7 text-[13px] text-muted-foreground">
-            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-            <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
-          </div>
-          <div className="flex items-center gap-2">
-            <a href={`${APP}/login`} className="text-[13px] px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground transition-colors">
-              Sign in
-            </a>
-            <a href={`${APP}/signup`} className="text-[13px] font-medium px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-              Get started
-            </a>
-          </div>
-        </nav>
-      </header>
+      <SiteNav />
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <section id="top" className="ledger-paper border-b border-border/60">
-        <div className="max-w-6xl mx-auto px-5 py-24 sm:py-32 text-center">
+        <Reveal stagger={0.12} className="max-w-6xl mx-auto px-5 py-24 sm:py-32 text-center">
           <p className="text-secondary-label">Personal finance &amp; tax · Sri Lanka</p>
           <h1 className="font-ledger text-[40px] sm:text-[64px] leading-[1.04] mt-5 text-foreground">
             STOP GUESSING.
@@ -75,7 +60,7 @@ export default function Home() {
           <p className="text-[12px] text-muted-foreground/70 mt-4 font-ledger">
             Free to start · No card required
           </p>
-        </div>
+        </Reveal>
       </section>
 
       {/* ── Trust strip ─────────────────────────────────────────────────── */}
@@ -90,14 +75,14 @@ export default function Home() {
 
       {/* ── Features ────────────────────────────────────────────────────── */}
       <section id="features" className="max-w-6xl mx-auto px-5 py-20 sm:py-28">
-        <div className="max-w-2xl">
+        <Reveal className="max-w-2xl">
           <h2 className="text-[28px] sm:text-[34px] font-semibold">One ledger. Every answer.</h2>
           <p className="text-[15px] text-muted-foreground mt-3 leading-relaxed">
             Salli keeps proper books, computes your tax deterministically, and turns the
             result into clear guidance — so the numbers are trustworthy, not vibes.
           </p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-10">
+        </Reveal>
+        <Reveal stagger={0.08} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-10">
           {FEATURES.map((f) => (
             <div key={f.title} className="rounded-xl bg-card ring-1 ring-foreground/8 p-5 hover:ring-foreground/15 transition">
               <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -107,13 +92,13 @@ export default function Home() {
               <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">{f.body}</p>
             </div>
           ))}
-        </div>
+        </Reveal>
       </section>
 
       {/* ── FI highlight (ledger cover) ─────────────────────────────────── */}
       <section className="ledger-cover text-ink-foreground">
         <div className="max-w-6xl mx-auto px-5 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 items-center">
-          <div>
+          <Reveal>
             <p className="text-secondary-label text-ink-foreground/50">Financial Independence</p>
             <h2 className="text-[30px] sm:text-[38px] font-semibold mt-4 leading-tight">
               Know exactly how close you are to freedom.
@@ -126,31 +111,23 @@ export default function Home() {
             <a href={`${APP}/signup`} className="inline-flex items-center gap-1.5 text-[14px] font-medium px-5 h-11 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors mt-8">
               Check your FI score <ArrowRight className="size-4" />
             </a>
-          </div>
-          <div className="rounded-2xl bg-white/[0.04] ring-1 ring-white/10 p-8 text-center">
-            <p className="text-secondary-label text-ink-foreground/40">Your FI score</p>
-            <p className="font-ledger text-[72px] leading-none mt-3 text-primary">62</p>
-            <p className="text-[13px] text-ink-foreground/60 mt-1">On track</p>
-            <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden mt-5">
-              <div className="h-full rounded-full bg-primary" style={{ width: "62%" }} />
-            </div>
-            <div className="grid grid-cols-2 gap-4 mt-6 text-left">
-              <div><p className="text-secondary-label text-ink-foreground/40">Savings rate</p><p className="font-ledger text-[18px] mt-1">51%</p></div>
-              <div><p className="text-secondary-label text-ink-foreground/40">Projected FI</p><p className="font-ledger text-[18px] mt-1">2041</p></div>
-            </div>
-          </div>
+          </Reveal>
+          <FiScoreCard />
         </div>
       </section>
 
+      {/* ── Journey trail (scroll-controlled) ───────────────────────────── */}
+      <JourneyTrail />
+
       {/* ── Pricing ─────────────────────────────────────────────────────── */}
       <section id="pricing" className="max-w-6xl mx-auto px-5 py-20 sm:py-28">
-        <div className="text-center max-w-xl mx-auto">
+        <Reveal className="text-center max-w-xl mx-auto">
           <h2 className="text-[28px] sm:text-[34px] font-semibold">Simple, honest pricing</h2>
           <p className="text-[15px] text-muted-foreground mt-3">
             Start free. Upgrade when the AI becomes part of your routine. Cancel anytime.
           </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-10 max-w-4xl mx-auto">
+        </Reveal>
+        <Reveal stagger={0.1} className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-10 max-w-4xl mx-auto">
           {PLANS.map((p) => (
             <div key={p.name} className={`rounded-2xl p-6 flex flex-col ${p.highlight ? "bg-card ring-2 ring-primary/40 shadow-sm" : "bg-card ring-1 ring-foreground/8"}`}>
               <div className="flex items-center justify-between">
@@ -172,12 +149,12 @@ export default function Home() {
               </a>
             </div>
           ))}
-        </div>
+        </Reveal>
       </section>
 
       {/* ── Final CTA ───────────────────────────────────────────────────── */}
       <section className="ledger-paper border-t border-border/60">
-        <div className="max-w-6xl mx-auto px-5 py-24 text-center">
+        <Reveal className="max-w-6xl mx-auto px-5 py-24 text-center">
           <h2 className="font-ledger text-[32px] sm:text-[44px] text-foreground">Stop guessing.</h2>
           <p className="text-[15px] text-muted-foreground mt-3 max-w-md mx-auto">
             Take control of your money, your tax, and your path to financial freedom.
@@ -185,7 +162,7 @@ export default function Home() {
           <a href={`${APP}/signup`} className="inline-flex items-center gap-1.5 text-[14px] font-medium px-6 h-11 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors mt-8">
             Get started free <ArrowRight className="size-4" />
           </a>
-        </div>
+        </Reveal>
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}

@@ -15,6 +15,7 @@ Usage:
 from __future__ import annotations
 
 import asyncio
+import os
 import sys
 from decimal import Decimal
 
@@ -22,44 +23,81 @@ import httpx
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-# ── Config ────────────────────────────────────────────────────────────────────
+# ── Config (env-overridable) ──────────────────────────────────────────────────
+# App DB now lives on local Supabase Postgres (host port 54322).
+DB_URL       = os.environ.get("SEED_DB_URL", "postgresql+asyncpg://postgres:postgres@localhost:54322/postgres")
+API          = os.environ.get("SEED_API", "http://localhost:8080")
+SUPABASE_URL = os.environ.get("SEED_SUPABASE_URL", "http://localhost:54321")
+SUPABASE_ANON = os.environ.get(
+    "SEED_SUPABASE_ANON",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0",
+)
+SEED_EMAIL    = os.environ.get("SEED_EMAIL", "founder@salli.lk")
+SEED_PASSWORD = os.environ.get("SEED_PASSWORD", "supersecret123")
 
-DB_URL = "postgresql+asyncpg://salli:salli@localhost:5432/salli"
-API    = "http://localhost:8080"
-TOKEN  = "dev-user"
-HDRS   = {"Authorization": f"Bearer {TOKEN}"}
+# Legacy identity whose data should always be purged on reseed
+LEGACY_USER = "dev-user"
 
 engine  = create_async_engine(DB_URL, echo=False)
 Session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
+def _sub_from_jwt(token: str) -> str:
+    """Decode the `sub` (user_id) from a JWT without verifying."""
+    import base64
+    import json
+
+    payload = token.split(".")[1]
+    payload += "=" * (-len(payload) % 4)
+    return json.loads(base64.urlsafe_b64decode(payload))["sub"]
+
+
+def get_auth() -> tuple[str, str]:
+    """Sign in (creating the user if needed) and return (access_token, user_id)."""
+    with httpx.Client(base_url=SUPABASE_URL, headers={"apikey": SUPABASE_ANON}) as c:
+        r = c.post("/auth/v1/token", params={"grant_type": "password"},
+                   json={"email": SEED_EMAIL, "password": SEED_PASSWORD})
+        if r.status_code != 200:
+            # user may not exist yet — sign them up
+            c.post("/auth/v1/signup", json={"email": SEED_EMAIL, "password": SEED_PASSWORD})
+            r = c.post("/auth/v1/token", params={"grant_type": "password"},
+                       json={"email": SEED_EMAIL, "password": SEED_PASSWORD})
+        r.raise_for_status()
+        token = r.json()["access_token"]
+    return token, _sub_from_jwt(token)
+
+
 # ── DB cleanup ────────────────────────────────────────────────────────────────
 
-async def clear_dev_data() -> None:
-    print("⟳  Clearing existing dev-user data…")
+async def clear_user_data(user_ids: list[str]) -> None:
+    print(f"⟳  Clearing existing data for: {', '.join(user_ids)}…")
     async with Session() as s:
         async with s.begin():
-            # Break self-reference and cross-table FKs before cascade-deletes
-            await s.execute(text(
-                "UPDATE journal_entries SET reversed_by = NULL "
-                "WHERE user_id = 'dev-user'"
-            ))
-            await s.execute(text(
-                "UPDATE parsed_transactions SET posted_entry_id = NULL "
-                "WHERE posted_entry_id IN "
-                "(SELECT id FROM journal_entries WHERE user_id = 'dev-user')"
-            ))
-            # Delete in dependency order
-            await s.execute(text("DELETE FROM tax_computations WHERE user_id = 'dev-user'"))
-            await s.execute(text(
-                "DELETE FROM parsed_transactions WHERE statement_id IN "
-                "(SELECT id FROM statements WHERE user_id = 'dev-user')"
-            ))
-            await s.execute(text("DELETE FROM statements   WHERE user_id = 'dev-user'"))
-            await s.execute(text("DELETE FROM journal_entries WHERE user_id = 'dev-user'"))
-            await s.execute(text("DELETE FROM accounts     WHERE user_id = 'dev-user'"))
-            await s.execute(text("DELETE FROM reminders    WHERE user_id = 'dev-user'"))
-            await s.execute(text("DELETE FROM documents    WHERE user_id = 'dev-user'"))
+            for uid in user_ids:
+                # Break self-reference and cross-table FKs before deletes
+                await s.execute(text(
+                    "UPDATE journal_entries SET reversed_by = NULL WHERE user_id = :u"
+                ), {"u": uid})
+                await s.execute(text(
+                    "UPDATE parsed_transactions SET posted_entry_id = NULL "
+                    "WHERE posted_entry_id IN (SELECT id FROM journal_entries WHERE user_id = :u)"
+                ), {"u": uid})
+                # Delete in dependency order
+                await s.execute(text("DELETE FROM tax_computations WHERE user_id = :u"), {"u": uid})
+                await s.execute(text(
+                    "DELETE FROM parsed_transactions WHERE statement_id IN "
+                    "(SELECT id FROM statements WHERE user_id = :u)"
+                ), {"u": uid})
+                await s.execute(text("DELETE FROM statements      WHERE user_id = :u"), {"u": uid})
+                await s.execute(text("DELETE FROM journal_entries WHERE user_id = :u"), {"u": uid})
+                await s.execute(text("DELETE FROM accounts        WHERE user_id = :u"), {"u": uid})
+                await s.execute(text("DELETE FROM reminders       WHERE user_id = :u"), {"u": uid})
+                await s.execute(text("DELETE FROM documents       WHERE user_id = :u"), {"u": uid})
+                await s.execute(text("DELETE FROM agent_documents WHERE user_id = :u"), {"u": uid})
+                await s.execute(text("DELETE FROM agent_sessions  WHERE user_id = :u"), {"u": uid})
+                # Agent conversation checkpoints are keyed "<user_id>:<thread>"
+                for tbl in ("checkpoint_writes", "checkpoint_blobs", "checkpoints"):
+                    await s.execute(text(f"DELETE FROM {tbl} WHERE thread_id LIKE :p"), {"p": f"{uid}:%"})
     print("✓  Cleared\n")
 
 
@@ -124,8 +162,9 @@ async def remind(client: httpx.AsyncClient, kind: str, due_date: str) -> str:
 
 # ── Main seed ─────────────────────────────────────────────────────────────────
 
-async def seed() -> None:
-    async with httpx.AsyncClient(base_url=API, headers=HDRS, timeout=30.0) as client:
+async def seed(token: str) -> None:
+    headers = {"Authorization": f"Bearer {token}"}
+    async with httpx.AsyncClient(base_url=API, headers=headers, timeout=30.0) as client:
 
         # ── 1. Accounts ───────────────────────────────────────────────────────
         print("── Creating accounts ──────────────────────────────────────────")
@@ -526,8 +565,11 @@ async def seed() -> None:
 
 
 async def main() -> None:
-    await clear_dev_data()
-    await seed()
+    token, user_id = get_auth()
+    print(f"🔑  Seeding as {SEED_EMAIL} (user_id={user_id})\n")
+    # Purge the legacy dev-user data AND any prior data for the seeding account
+    await clear_user_data([LEGACY_USER, user_id])
+    await seed(token)
     await engine.dispose()
 
 

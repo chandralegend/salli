@@ -6,34 +6,37 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Loader2, MailCheck } from "lucide-react";
 import { AuthShell, GoogleIcon, AppleIcon } from "@/components/auth/AuthShell";
 import {
-  useAuth,
-  signInWithPassword,
+  signUpWithPassword,
   signInWithOAuth,
   isSupabaseConfigured,
 } from "@/lib/auth";
 
-export default function LoginPage() {
-  const { login } = useAuth();
+export default function SignupPage() {
   const router = useRouter();
   const supabaseOn = isSupabaseConfigured();
   const [loading, setLoading] = useState(false);
   const [oauthBusy, setOauthBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [sent, setSent] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
     try {
-      await signInWithPassword(email, password);
-      router.replace("/dashboard");
+      const { session } = await signUpWithPassword(email, password);
+      if (session) {
+        router.replace("/onboarding"); // auto-confirmed
+      } else {
+        setSent(true); // needs email confirmation
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign in failed");
+      setError(err instanceof Error ? err.message : "Sign up failed");
     } finally {
       setLoading(false);
     }
@@ -43,20 +46,34 @@ export default function LoginPage() {
     setOauthBusy(provider);
     setError("");
     try {
-      await signInWithOAuth(provider); // redirects away
+      await signInWithOAuth(provider);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign in failed");
+      setError(err instanceof Error ? err.message : "Sign up failed");
       setOauthBusy(null);
     }
   }
 
-  function handleDevLogin() {
-    login("dev-user");
-    router.replace("/dashboard");
+  if (sent) {
+    return (
+      <AuthShell title="Check your inbox" subtitle="One more step to get started.">
+        <div className="flex flex-col items-center text-center gap-4 py-6">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <MailCheck className="size-5 text-primary" />
+          </div>
+          <p className="text-[13px] text-muted-foreground max-w-xs">
+            We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>.
+            Open it to activate your account, then sign in.
+          </p>
+          <Button variant="outline" onClick={() => router.replace("/login")}>
+            Back to sign in
+          </Button>
+        </div>
+      </AuthShell>
+    );
   }
 
   return (
-    <AuthShell title="Welcome back" subtitle="Sign in to your ledger.">
+    <AuthShell title="Create your account" subtitle="Start tracking your finances and tax.">
       {supabaseOn && (
         <div className="space-y-2.5 mb-5">
           <Button
@@ -85,7 +102,7 @@ export default function LoginPage() {
         </div>
       )}
 
-      <form onSubmit={handleLogin} className="space-y-3.5">
+      <form onSubmit={handleSignup} className="space-y-3.5">
         <div className="space-y-1.5">
           <Label className="text-[12px] font-medium">Email</Label>
           <Input
@@ -99,18 +116,14 @@ export default function LoginPage() {
           />
         </div>
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label className="text-[12px] font-medium">Password</Label>
-            <Link href="/forgot-password" className="text-[11px] text-primary hover:underline">
-              Forgot password?
-            </Link>
-          </div>
+          <Label className="text-[12px] font-medium">Password</Label>
           <Input
             type="password"
-            placeholder="••••••••"
+            placeholder="At least 8 characters"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            minLength={8}
             disabled={!supabaseOn}
             className="h-10 text-[13px]"
           />
@@ -124,31 +137,26 @@ export default function LoginPage() {
 
         <Button type="submit" disabled={loading || !supabaseOn} className="w-full h-10">
           {loading && <Loader2 className="size-3.5 mr-2 animate-spin" />}
-          Sign in
+          Create account
         </Button>
       </form>
 
+      {!supabaseOn && (
+        <p className="text-[12px] text-muted-foreground text-center mt-4 bg-muted rounded-md px-3 py-2">
+          Sign up needs Supabase configured. Use{" "}
+          <Link href="/login" className="text-primary font-medium hover:underline">
+            Dev login
+          </Link>{" "}
+          for local testing.
+        </p>
+      )}
+
       <p className="text-[12px] text-muted-foreground text-center mt-5">
-        New to Salli?{" "}
-        <Link href="/signup" className="text-primary font-medium hover:underline">
-          Create an account
+        Already have an account?{" "}
+        <Link href="/login" className="text-primary font-medium hover:underline">
+          Sign in
         </Link>
       </p>
-
-      {!supabaseOn && (
-        <div className="mt-6 border-t border-border/60 pt-4">
-          <Button
-            variant="outline"
-            className="w-full h-9 text-[12px] text-muted-foreground"
-            onClick={handleDevLogin}
-          >
-            Dev login (skip auth)
-          </Button>
-          <p className="text-[11px] text-muted-foreground text-center mt-2">
-            Supabase isn&apos;t configured — using the local dev account.
-          </p>
-        </div>
-      )}
     </AuthShell>
   );
 }

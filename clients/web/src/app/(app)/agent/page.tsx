@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useLayoutEffect, useCallback, Suspense } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Send, Loader2, Paperclip, X, ArrowDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,7 @@ function AgentChat() {
   // Scroll state — ref for sync access inside callbacks, state for render
   const atBottomRef = useRef(true);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [quotaBlocked, setQuotaBlocked] = useState(false);
 
   // Load history for the active session. Keyed only on urlThreadId so first-send
   // URL promotion is handled by the liveThreadRef guard, not by clearing.
@@ -294,6 +296,11 @@ function AgentChat() {
         // Stop processing — agent is paused waiting for resume
         return "awaiting_approval";
 
+      } else if (event.type === "quota_exceeded") {
+        setQuotaBlocked(true);
+        sync();
+        return "quota";
+
       } else if (event.type === "error") {
         const part = getOrCreateTextPart();
         part.content += `\n\n_Error: ${event.message}_`;
@@ -359,6 +366,11 @@ function AgentChat() {
         controller.signal,
       );
       if (result === "awaiting_approval") return; // keep streaming=true until resume
+      if (result === "quota") {
+        // Drop the empty assistant + user bubbles; the banner explains the block.
+        setMessages((prev) => prev.filter((m) => m.id !== assistantId && m.id !== userMsg.id));
+        setInput(text); // restore what they typed
+      }
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
         const textPart = parts.find((p) => p.type === "text") as Extract<MessagePart, { type: "text" }> | undefined;
@@ -562,6 +574,21 @@ function AgentChat() {
       {/* Centered floating composer */}
       <div className="px-4 pb-4 pt-2 shrink-0">
         <div className="max-w-2xl mx-auto">
+          {/* Quota-exceeded notice */}
+          {quotaBlocked && (
+            <div className="flex items-center justify-between gap-3 mb-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5">
+              <p className="text-[12px] text-amber-900">
+                You&apos;ve used all your AI messages this month. Upgrade to keep chatting.
+              </p>
+              <Link
+                href="/settings"
+                className="shrink-0 text-[12px] font-medium bg-foreground text-background rounded-md px-3 py-1.5 hover:bg-foreground/90 transition-colors"
+              >
+                Upgrade
+              </Link>
+            </div>
+          )}
+
           {/* File chips above the box */}
           {pendingFiles.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-2 px-1">

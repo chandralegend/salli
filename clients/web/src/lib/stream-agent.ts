@@ -16,6 +16,7 @@ export type AgentEvent =
   | { type: "subagent_end"; agent: string }
   | { type: "subagent_token"; agent: string; content: string }
   | { type: "interrupt"; data: Record<string, unknown> }
+  | { type: "quota_exceeded"; metric: string; limit: number; plan: string }
   | { type: "error"; message: string }
   | { type: "done" };
 
@@ -79,6 +80,21 @@ export async function* streamAgent(
     throw err;
   }
 
+  if (res.status === 402) {
+    let detail: Record<string, unknown> = {};
+    try {
+      detail = ((await res.json()) as { detail?: Record<string, unknown> }).detail ?? {};
+    } catch {
+      // ignore
+    }
+    yield {
+      type: "quota_exceeded",
+      metric: String(detail.metric ?? "agent_messages"),
+      limit: Number(detail.limit ?? 0),
+      plan: String(detail.plan ?? "free"),
+    };
+    return;
+  }
   if (!res.ok) throw new Error(`Agent error: ${res.status} ${res.statusText}`);
   yield* _readSse(res);
 }

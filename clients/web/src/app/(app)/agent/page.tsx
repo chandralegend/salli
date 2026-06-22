@@ -65,6 +65,13 @@ function AgentChat() {
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const awaitingApprovalRef = useRef<{ msgId: string; partIndex: number } | null>(null);
+  // Mirror of `messages` for reading current parts outside a setState updater,
+  // and a guard so a double-click (or a Strict-Mode double-invoke) can't resume twice.
+  const messagesRef = useRef<ChatMessage[]>([]);
+  const resumingRef = useRef(false);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
   // Scroll state — ref for sync access inside callbacks, state for render
   const atBottomRef = useRef(true);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
@@ -396,84 +403,57 @@ function AgentChat() {
     }
   }, [input, streaming, threadId, urlThreadId, pendingFiles, queryClient, router]);
 
+  const resumeDecision = useCallback(
+    async (msgId: string, partIndex: number, decision: "approved" | "denied") => {
+      const token = getStoredToken();
+      // Guard: ignore repeat clicks / re-entrancy so we never resume the agent twice
+      // (a double resume would run the approved write tool twice).
+      if (!token || resumingRef.current) return;
+      resumingRef.current = true;
+      awaitingApprovalRef.current = null;
+
+      // Seed the streaming buffer from the current message, marking the approval
+      // resolved. processEventStream syncs this buffer to state as events arrive.
+      const msg = messagesRef.current.find((m) => m.id === msgId && m.role === "assistant");
+      const parts: MessagePart[] = msg && msg.role === "assistant" ? [...msg.parts] : [];
+      const ap = parts[partIndex];
+      if (ap && ap.type === "approval") {
+        parts[partIndex] = { ...ap, status: decision };
+      }
+      updateAssistantParts(msgId, (p) => {
+        const part = p[partIndex];
+        if (part && part.type === "approval") part.status = decision;
+        return p;
+      });
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+      setStreaming(true);
+      try {
+        await processEventStream(
+          streamResume(token, threadId, decision, controller.signal),
+          msgId,
+          parts,
+          controller.signal,
+        );
+      } finally {
+        resumingRef.current = false;
+        setMessages((p) =>
+          p.map((m) => (m.id === msgId && m.role === "assistant" ? { ...m, streaming: false } : m)),
+        );
+        setStreaming(false);
+      }
+    },
+    [threadId],
+  );
+
   const handleApprove = useCallback(async (msgId: string, partIndex: number) => {
-    const token = getStoredToken();
-    if (!token) return;
-
-    // Mark approved immediately
-    updateAssistantParts(msgId, (parts) => {
-      const p = parts[partIndex];
-      if (p && p.type === "approval") p.status = "approved";
-      return parts;
-    });
-
-    awaitingApprovalRef.current = null;
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    // Find the parts buffer from the message
-    setMessages((prev) => {
-      const msg = prev.find((m) => m.id === msgId && m.role === "assistant");
-      if (!msg || msg.role !== "assistant") return prev;
-      const parts = [...msg.parts];
-
-      (async () => {
-        try {
-          await processEventStream(
-            streamResume(token, threadId, "approved", controller.signal),
-            msgId,
-            parts,
-            controller.signal,
-          );
-        } finally {
-          setMessages((p) =>
-            p.map((m) => (m.id === msgId && m.role === "assistant" ? { ...m, streaming: false } : m))
-          );
-          setStreaming(false);
-        }
-      })();
-
-      return prev;
-    });
-  }, [threadId]);
+    await resumeDecision(msgId, partIndex, "approved");
+  }, [resumeDecision]);
 
   const handleDeny = useCallback(async (msgId: string, partIndex: number) => {
-    const token = getStoredToken();
-    if (!token) return;
-
-    updateAssistantParts(msgId, (parts) => {
-      const p = parts[partIndex];
-      if (p && p.type === "approval") p.status = "denied";
-      return parts;
-    });
-
-    awaitingApprovalRef.current = null;
-    const controller = new AbortController();
-
-    setMessages((prev) => {
-      const msg = prev.find((m) => m.id === msgId && m.role === "assistant");
-      if (!msg || msg.role !== "assistant") return prev;
-      const parts = [...msg.parts];
-
-      (async () => {
-        try {
-          await processEventStream(
-            streamResume(token, threadId, "denied", controller.signal),
-            msgId,
-            parts,
-            controller.signal,
-          );
-        } finally {
-          setMessages((p) =>
-            p.map((m) => (m.id === msgId && m.role === "assistant" ? { ...m, streaming: false } : m))
-          );
-          setStreaming(false);
-        }
-      })();
-
-      return prev;
-    });
-  }, [threadId]);
+    await resumeDecision(msgId, partIndex, "denied");
+  }, [resumeDecision]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {

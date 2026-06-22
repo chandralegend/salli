@@ -414,29 +414,29 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
         if decision == "approved":
             from decimal import Decimal as D
 
-            from salli.domain.accounting.models import Direction, JournalEntry, Posting
+            from salli.domain.accounting.models import Direction
 
-            entry = JournalEntry(
-                entry_date=entry_date,
-                description=description,
-                source="manual",
-                postings=[
-                    Posting(
-                        account_id=debit_account_id,
-                        direction=Direction.DEBIT,
-                        amount=D(amount),
-                        currency=currency,
-                    ),
-                    Posting(
-                        account_id=credit_account_id,
-                        direction=Direction.CREDIT,
-                        amount=D(amount),
-                        currency=currency,
-                    ),
-                ],
-            )
             user_id = _current_user.get()
-            entry_id = await ledger_svc.add_entry(user_id, entry)
+            postings_data = [
+                {
+                    "account_id": debit_account_id,
+                    "direction": Direction.DEBIT,
+                    "amount": D(amount),
+                    "currency": currency,
+                },
+                {
+                    "account_id": credit_account_id,
+                    "direction": Direction.CREDIT,
+                    "amount": D(amount),
+                    "currency": currency,
+                },
+            ]
+            try:
+                entry_id = await ledger_svc.add_entry(
+                    user_id, entry_date, description, "manual", postings_data
+                )
+            except ValueError as exc:
+                return f"Could not post entry: {exc}"
             return f"Journal entry posted: id={entry_id}"
         return "Action cancelled by user."
 

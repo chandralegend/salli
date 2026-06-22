@@ -20,6 +20,28 @@ from typing import Any
 _WORKER_NODES = {"tax_specialist", "finance_specialist"}
 
 
+async def _pending_interrupt(agent: Any, config: dict[str, Any]) -> Any | None:
+    """
+    Return the value of a pending interrupt() gate, or None.
+
+    langgraph 1.x does not raise GraphInterrupt out of astream_events, nor emit a
+    custom event — when a tool calls interrupt() the graph pauses and the interrupt
+    is recorded in the checkpointed state. We read it back after the stream ends.
+    """
+    try:
+        state = await agent.aget_state(config)
+    except Exception:
+        return None
+
+    interrupts = list(getattr(state, "interrupts", None) or [])
+    if not interrupts:
+        for task in getattr(state, "tasks", None) or []:
+            interrupts.extend(getattr(task, "interrupts", None) or [])
+    if interrupts:
+        return getattr(interrupts[0], "value", interrupts[0])
+    return None
+
+
 def _worker_from_event(event: dict) -> str | None:
     """
     Return the worker name if this LangGraph event originates from a worker agent.
@@ -183,6 +205,13 @@ class AgentService:
 
                 elif kind == "on_custom_event" and event.get("name") == "interrupt":
                     yield ("interrupt", event["data"])
+
+            # langgraph 1.x surfaces interrupt() via the checkpointed state rather
+            # than an exception or custom event. After the stream drains, check for
+            # a pending approval gate and surface it so the client can approve/deny.
+            approval = await _pending_interrupt(agent, config)
+            if approval is not None:
+                yield ("approval_required", approval)
 
         except Exception as exc:
             exc_repr = repr(exc)

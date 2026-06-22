@@ -370,10 +370,12 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
             }
         )
         if decision == "approved":
-            reminder_id = await ledger_svc._uow_factory  # noqa — use reminder_svc
-            # Delegate via ledger_svc.create_reminder if wired, else use doc
-            # For now return success placeholder (wired up fully in agent_service)
-            return f"Reminder '{description}' (due {due_date}) queued for creation."
+            from salli.application.services.reminder_service import ReminderService
+
+            user_id = _current_user.get()
+            reminder_svc = ReminderService(ledger_svc._uow_factory)
+            reminder_id = await reminder_svc.create_reminder(user_id, description, due_date)
+            return f"Reminder created: '{description}' due {due_date}, id={reminder_id}"
         return "Action cancelled by user."
 
     @tool

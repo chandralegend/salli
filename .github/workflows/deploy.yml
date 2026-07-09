@@ -4,7 +4,9 @@ name: Deploy infra (Pulumi)
 # PRs touching infra/ → `pulumi preview` (no changes applied).
 on:
   push:
-    branches: [main]
+    # main → `pulumi up`. deploy/** branches → `pulumi preview` (lets us dry-run
+    # before merging, and works before the workflow exists on the default branch).
+    branches: [main, "deploy/**"]
     paths:
       - "infra/**"
       - "src/**"
@@ -72,10 +74,11 @@ jobs:
       - name: Select / create stack
         run: pulumi stack select --create prod
 
-      - name: Preview (pull request)
-        if: github.event_name == 'pull_request'
+      # Real deploy only on a push to main; everything else is a dry run.
+      - name: Preview (branches / PRs)
+        if: github.ref != 'refs/heads/main'
         run: pulumi preview --stack prod --diff
 
-      - name: Up (main / manual)
-        if: github.event_name != 'pull_request'
+      - name: Up (main)
+        if: github.ref == 'refs/heads/main'
         run: pulumi up --yes --stack prod

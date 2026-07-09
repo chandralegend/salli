@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
+import { PageShell } from "@/components/ui/page-shell";
 import {
   Dialog,
   DialogContent,
@@ -294,7 +295,7 @@ export default function LedgerPage() {
   const [ledgerTab, setLedgerTab] = useState<"accounts" | "entries" | "income">("accounts");
 
   return (
-    <div className="p-8 max-w-[1320px] mx-auto">
+    <PageShell>
       <div className="flex items-end justify-between mb-6 gap-5">
         <div>
           <h1 className="text-[38px] font-black tracking-[-0.05em] leading-[1.1] text-foreground">
@@ -681,6 +682,6 @@ export default function LedgerPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageShell>
   );
 }

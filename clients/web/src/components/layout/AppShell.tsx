@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { AppSidebar } from "./AppSidebar";
 import { ScroogePanel } from "./ScroogePanel";
 import { PageTransition } from "./PageTransition";
-import { BubbleBackground } from "@/components/ui/bubble-background";
 import { useScroogePanel } from "@/lib/store";
 
 interface AppShellProps {
@@ -53,24 +52,13 @@ export function AppShell({ children }: AppShellProps) {
   }, [isOpen]);
 
   return (
-    <BubbleBackground
-      className="flex h-screen overflow-hidden bg-background"
-      colors={{
-        first:  "165,255,185",
-        second: "232,252,133",
-        third:  "0,210,180",
-        fourth: "200,245,160",
-        fifth:  "130,220,200",
-        sixth:  "210,240,180",
-      }}
-    >
-      <div className="relative z-10 flex flex-1 min-w-0 overflow-hidden">
-        <AppSidebar />
-        <main className="flex-1 min-w-0 overflow-hidden">
-          <PageTransition>{children}</PageTransition>
-        </main>
+    <div className="relative flex h-screen overflow-hidden bg-background">
+      <AppSidebar />
+      <main className="flex-1 min-w-0 overflow-hidden">
+        <PageTransition>{children}</PageTransition>
+      </main>
 
-        {isOpen && (
+      {isOpen && (
           <div
             className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center"
             style={{
@@ -108,8 +96,7 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         )}
 
-        <ScroogePanel />
-      </div>
-    </BubbleBackground>
+      <ScroogePanel />
+    </div>
   );
 }

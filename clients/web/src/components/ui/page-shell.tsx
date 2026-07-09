@@ -12,7 +12,7 @@ interface PageShellProps {
 
 export function PageShell({ children, className }: PageShellProps) {
   return (
-    <div className={cn("px-14 py-10 max-w-[1320px] mx-auto", className)}>
+    <div className={cn("px-8 py-7 max-w-[1560px] mx-auto", className)}>
       {children}
     </div>
   );

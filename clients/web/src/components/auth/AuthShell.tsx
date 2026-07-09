@@ -1,4 +1,5 @@
 import { BubbleBackground } from "@/components/ui/bubble-background";
+import { Logo } from "@/components/Logo";
 
 export function AuthShell({
   children,
@@ -27,11 +28,14 @@ export function AuthShell({
         className="w-full max-w-[400px] bg-card rounded-3xl p-10 relative z-10"
         style={{ animation: "fadeUp 0.3s ease" }}
       >
-        {/* Logo */}
-        <span className="text-[26px] font-black tracking-[-0.07em] mb-8 block">
-          <span className="text-[#E8FC85]">s</span>
-          <span className="text-foreground">alli</span>
-        </span>
+        {/* Logo lockup */}
+        <div className="flex items-center gap-2.5 mb-8">
+          <Logo className="size-9 rounded-xl" />
+          <span className="text-[24px] font-black tracking-[-0.07em]">
+            <span className="text-[#E8FC85]">s</span>
+            <span className="text-foreground">alli</span>
+          </span>
+        </div>
 
         <h1 className="text-[26px] font-extrabold tracking-[-0.04em] leading-tight mb-1.5">
           {title}

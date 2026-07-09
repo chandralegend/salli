@@ -7,8 +7,13 @@ import { Menu, X } from "lucide-react";
 const APP = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.salli.lk";
 
 function Logo({ className = "size-7" }: { className?: string }) {
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src="/salli-logo.png" alt="Salli" width={256} height={256} className={`${className} rounded-lg object-cover`} />;
+  // Sinhala rupee glyph "රු" — lime badge (pops on the dark site).
+  return (
+    <svg viewBox="0 0 100 100" className={className} role="img" aria-label="Salli">
+      <rect width="100" height="100" rx="26" fill="#E8FC85" />
+      <text x="50" y="54" textAnchor="middle" dominantBaseline="central" fontSize="46" fontWeight="900" fill="#010001" style={{ letterSpacing: "-0.05em" }}>රු</text>
+    </svg>
+  );
 }
 
 const LINKS = [

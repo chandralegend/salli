@@ -274,6 +274,7 @@ const web = new vercel.Project(
 );
 vercelEnv("web-api-url", web.id, "NEXT_PUBLIC_API_URL", apiUrl);
 vercelEnv("web-app-url", web.id, "NEXT_PUBLIC_APP_URL", appUrl);
+vercelEnv("web-site-url", web.id, "NEXT_PUBLIC_SITE_URL", siteUrl);
 vercelEnv("web-supabase-url", web.id, "NEXT_PUBLIC_SUPABASE_URL", supabaseUrl);
 // The anon key is a public client key (ships in the browser bundle), and Vercel
 // forbids a `sensitive` var from targeting `development`, so keep it non-sensitive.

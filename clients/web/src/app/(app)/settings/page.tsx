@@ -12,6 +12,8 @@ import { UsageMeter } from "@/components/billing/UsageMeter";
 import { UpgradeDialog } from "@/components/billing/UpgradeDialog";
 import { toast } from "sonner";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://salli.lk";
+
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   active:   { bg: "#DCFCE7", color: "#16A34A" },
   trialing: { bg: "#DBEAFE", color: "#2563EB" },
@@ -151,6 +153,20 @@ export default function SettingsPage() {
             Sign out
           </button>
         </CardContainer>
+
+        {/* Legal footer */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, paddingTop: 8, paddingBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 12, color: "var(--muted-foreground)" }}>
+            <a href={`${SITE_URL}/terms`} style={{ color: "inherit" }}>Terms</a>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <a href={`${SITE_URL}/privacy`} style={{ color: "inherit" }}>Privacy</a>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <a href={`${SITE_URL}/security`} style={{ color: "inherit" }}>Security</a>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <a href={`${SITE_URL}/cookies`} style={{ color: "inherit" }}>Cookies</a>
+          </div>
+          <p style={{ fontSize: 11, color: "var(--muted-foreground)", opacity: 0.6 }}>© 2026 Salli. All rights reserved.</p>
+        </div>
 
       </div>
     </PageShell>

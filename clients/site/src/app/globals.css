@@ -158,3 +158,32 @@ body {
   html { scroll-behavior: auto; }
   .marquee-track { animation: none; }
 }
+
+/* Legal page prose (Terms / Privacy / Security / Cookies). */
+.legal-prose h2 {
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
+}
+.legal-prose h2:first-child { margin-top: 0; }
+.legal-prose p {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--muted-foreground);
+  margin-bottom: 1rem;
+}
+.legal-prose ul {
+  margin: 0.75rem 0 1.25rem 1.25rem;
+  list-style: disc;
+}
+.legal-prose li {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--muted-foreground);
+  margin-bottom: 0.5rem;
+}
+.legal-prose strong { color: var(--foreground); font-weight: 700; }
+.legal-prose a { color: #E8FC85; text-decoration: underline; text-underline-offset: 2px; }

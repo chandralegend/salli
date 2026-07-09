@@ -1,12 +1,24 @@
+import { cn } from "@/lib/utils";
+
 const APP = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.salli.lk";
 
 function Logo({ className = "size-7" }: { className?: string }) {
-  // Sinhala rupee glyph "රු" — lime badge (pops on the dark site).
+  // Sinhala rupee glyph "රු" — lime badge (pops on the dark site). Flex-centered
+  // HTML rather than SVG dominant-baseline, which doesn't reliably center this
+  // conjunct across browsers.
   return (
-    <svg viewBox="0 0 100 100" className={className} role="img" aria-label="Salli">
-      <rect width="100" height="100" rx="26" fill="#E8FC85" />
-      <text x="50" y="54" textAnchor="middle" dominantBaseline="central" fontSize="46" fontWeight="900" fill="#010001" style={{ letterSpacing: "-0.05em" }}>රු</text>
-    </svg>
+    <div
+      className={cn(
+        "@container relative shrink-0 select-none overflow-hidden rounded-[26%] bg-[#E8FC85] flex items-center justify-center",
+        className,
+      )}
+      role="img"
+      aria-label="Salli"
+    >
+      <span className="text-[#010001] font-black leading-none text-[48cqw] tracking-[-0.05em]">
+        රු
+      </span>
+    </div>
   );
 }
 
@@ -31,9 +43,10 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   {
     title: "Legal",
     links: [
-      { label: "Privacy", href: "#" },
-      { label: "Terms", href: "#" },
-      { label: "Security", href: "#" },
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
+      { label: "Security", href: "/security" },
+      { label: "Cookies", href: "/cookies" },
     ],
   },
 ];
@@ -77,7 +90,9 @@ export function SiteFooter() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-14 pt-6 border-t border-border">
-          <p className="text-[12px] text-muted-foreground/60 font-ledger">© 2026 Salli · Finance &amp; Tax · Sri Lanka</p>
+          <p className="text-[12px] text-muted-foreground/60 font-ledger">
+            © 2026 Salli · Finance &amp; Tax · Sri Lanka · All rights reserved.
+          </p>
           <p className="text-[12px] text-muted-foreground/60">Built for Sri Lankan taxpayers · YA 2025/26</p>
         </div>
       </div>

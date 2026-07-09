@@ -1,6 +1,8 @@
 import { BubbleBackground } from "@/components/ui/bubble-background";
 import { Logo } from "@/components/Logo";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://salli.lk";
+
 export function AuthShell({
   children,
   title,
@@ -23,26 +25,39 @@ export function AuthShell({
         sixth:  "130,210,190",
       }}
     >
-      {/* Auth card */}
-      <div
-        className="w-full max-w-[400px] bg-card rounded-3xl p-10 relative z-10"
-        style={{ animation: "fadeUp 0.3s ease" }}
-      >
-        {/* Logo lockup */}
-        <div className="flex items-center gap-2.5 mb-8">
-          <Logo className="size-9 rounded-xl" />
-          <span className="text-[24px] font-black tracking-[-0.07em]">
-            <span className="text-[#E8FC85]">s</span>
-            <span className="text-foreground">alli</span>
-          </span>
+      <div className="flex flex-col items-center gap-6 relative z-10">
+        {/* Auth card */}
+        <div
+          className="w-full max-w-[400px] bg-card rounded-3xl p-10"
+          style={{ animation: "fadeUp 0.3s ease" }}
+        >
+          {/* Logo lockup */}
+          <div className="flex items-center gap-2.5 mb-8">
+            <Logo className="size-9 rounded-xl" />
+            <span className="text-[24px] font-black tracking-[-0.07em] text-foreground">
+              salli
+            </span>
+          </div>
+
+          <h1 className="text-[26px] font-extrabold tracking-[-0.04em] leading-tight mb-1.5">
+            {title}
+          </h1>
+          <p className="text-[14px] text-muted-foreground mb-8">{subtitle}</p>
+
+          {children}
         </div>
 
-        <h1 className="text-[26px] font-extrabold tracking-[-0.04em] leading-tight mb-1.5">
-          {title}
-        </h1>
-        <p className="text-[14px] text-muted-foreground mb-8">{subtitle}</p>
-
-        {children}
+        {/* Legal footer */}
+        <div className="flex flex-col items-center gap-1.5 px-4">
+          <div className="flex items-center gap-4 text-[12px] text-white/40">
+            <a href={`${SITE_URL}/terms`} className="hover:text-white/70 transition-colors">Terms</a>
+            <span className="text-white/20">·</span>
+            <a href={`${SITE_URL}/privacy`} className="hover:text-white/70 transition-colors">Privacy</a>
+            <span className="text-white/20">·</span>
+            <a href={`${SITE_URL}/security`} className="hover:text-white/70 transition-colors">Security</a>
+          </div>
+          <p className="text-[11px] text-white/25 font-ledger">© 2026 Salli. All rights reserved.</p>
+        </div>
       </div>
     </BubbleBackground>
   );

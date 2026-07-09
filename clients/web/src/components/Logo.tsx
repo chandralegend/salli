@@ -2,30 +2,25 @@ import { cn } from "@/lib/utils";
 
 /**
  * The Salli brand mark — the Sinhala rupee glyph "රු" in lime on an ink badge.
- * Rendered as an SVG so it scales cleanly to whatever size the className sets
- * (no raster PNG). Matches the sidebar badge.
+ * Rendered as a flex-centered HTML glyph rather than SVG text: SVG's
+ * dominant-baseline centers on the font's em-box, not the glyph's visual
+ * bounds, which left this Sinhala conjunct sitting off-center in the square.
+ * Sized via container query units (cqw) so any `size-*` className scales the
+ * glyph proportionally with no per-instance tuning.
  */
 export function Logo({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 100 100"
-      className={cn("select-none shrink-0", className)}
+    <div
+      className={cn(
+        "@container relative shrink-0 select-none overflow-hidden rounded-[26%] bg-[#010001] flex items-center justify-center",
+        className,
+      )}
       role="img"
       aria-label="Salli"
     >
-      <rect width="100" height="100" rx="26" fill="#010001" />
-      <text
-        x="50"
-        y="54"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontSize="46"
-        fontWeight="900"
-        fill="#E8FC85"
-        style={{ letterSpacing: "-0.05em", fontFamily: "var(--font-dm-sans), system-ui, sans-serif" }}
-      >
+      <span className="text-[#E8FC85] font-black leading-none text-[48cqw] tracking-[-0.05em]">
         රු
-      </text>
-    </svg>
+      </span>
+    </div>
   );
 }

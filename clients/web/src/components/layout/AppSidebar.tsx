@@ -97,9 +97,9 @@ export function AppSidebar() {
       {/* Logo badge */}
       <Link
         href="/dashboard"
-        className="w-[52px] bg-[#010001] rounded-[22px] flex items-center justify-center cursor-pointer flex-shrink-0 shadow-[0_4px_16px_rgba(0,0,0,0.18),0_1px_4px_rgba(0,0,0,0.10)] py-2.5"
+        className="@container w-[52px] aspect-square bg-[#010001] rounded-[22px] flex items-center justify-center cursor-pointer flex-shrink-0 shadow-[0_4px_16px_rgba(0,0,0,0.18),0_1px_4px_rgba(0,0,0,0.10)]"
       >
-        <span className="text-[20px] font-black text-[#E8FC85] tracking-[-0.05em]">
+        <span className="text-[#E8FC85] font-black leading-none text-[48cqw] tracking-[-0.05em]">
           රු
         </span>
       </Link>

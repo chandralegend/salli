@@ -66,7 +66,7 @@ export default function DashboardPage() {
   const fiComponents = fiData?.components ?? [];
 
   return (
-    <PageShell>
+    <PageShell center>
       <PageHeader
         title="Overview"
         subtitle={`${today} · Assessment Year 2025/26 · Sri Lanka · LKR`}

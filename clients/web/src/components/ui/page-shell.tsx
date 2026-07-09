@@ -8,9 +8,24 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface PageShellProps {
   children: React.ReactNode;
   className?: string;
+  /**
+   * Vertically center the content within the scroll area when it's shorter than
+   * the viewport. Auto margins collapse to 0 when content overflows, so tall
+   * pages still scroll from the top.
+   */
+  center?: boolean;
 }
 
-export function PageShell({ children, className }: PageShellProps) {
+export function PageShell({ children, className, center }: PageShellProps) {
+  if (center) {
+    return (
+      <div className="min-h-full flex flex-col">
+        <div className={cn("m-auto w-full px-8 py-7 max-w-[1560px]", className)}>
+          {children}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className={cn("px-8 py-7 max-w-[1560px] mx-auto", className)}>
       {children}

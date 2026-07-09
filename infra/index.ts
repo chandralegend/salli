@@ -114,9 +114,8 @@ const project = new supabase.Project(
     organizationId: supabaseOrgId,
     databasePassword: supabaseDbPassword,
     region: supabaseRegion,
-    // The API authenticates users with the anon/service-role JWT keys, so keep
-    // the legacy key set enabled.
-    legacyApiKeysEnabled: true,
+    // NOTE: legacy anon/service-role JWT keys are enabled by default; explicitly
+    // setting `legacyApiKeysEnabled: true` errors ("already enabled"), so we omit it.
   },
   { provider: sbProvider },
 );

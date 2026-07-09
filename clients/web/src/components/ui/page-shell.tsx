@@ -10,13 +10,13 @@ interface PageShellProps {
   className?: string;
   /**
    * Vertically center the content within the scroll area when it's shorter than
-   * the viewport. Auto margins collapse to 0 when content overflows, so tall
-   * pages still scroll from the top.
+   * the viewport (default). Auto margins collapse to 0 when content overflows,
+   * so tall pages still scroll from the top. Pass `center={false}` to top-align.
    */
   center?: boolean;
 }
 
-export function PageShell({ children, className, center }: PageShellProps) {
+export function PageShell({ children, className, center = true }: PageShellProps) {
   if (center) {
     return (
       <div className="min-h-full flex flex-col">

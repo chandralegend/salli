@@ -140,15 +140,38 @@ const databaseUrl = pulumi.secret(
 // ─────────────────────────────────────────────────────────────────────────────
 // Public URLs (used to cross-wire CORS + client env)
 // ─────────────────────────────────────────────────────────────────────────────
-const appUrl = appDomain ? `https://${appDomain}` : `https://${webName}.vercel.app`;
-const siteUrl = siteDomain ? `https://${siteDomain}` : `https://${siteName}.vercel.app`;
-const apiUrl = apiDomain ? `https://${apiDomain}` : `https://${apiName}.onrender.com`;
+// Vercel assigns `<name>-<account-slug>.vercel.app`, which we can't derive from
+// the name alone — so allow an explicit full-URL override in config. Falls back
+// to a custom domain, then the (best-guess) default host.
+const appUrl = cfg.get("appUrl") || (appDomain ? `https://${appDomain}` : `https://${webName}.vercel.app`);
+const siteUrl = cfg.get("siteUrl") || (siteDomain ? `https://${siteDomain}` : `https://${siteName}.vercel.app`);
+const apiUrl = cfg.get("apiUrl") || (apiDomain ? `https://${apiDomain}` : `https://${apiName}.onrender.com`);
 
 // config.py parses ALLOWED_ORIGINS as a JSON list. Include the vercel.app
 // defaults and any custom domains so it works before and after DNS.
 const allowedOrigins = JSON.stringify([
   ...new Set([appUrl, siteUrl, `https://${webName}.vercel.app`, `https://${siteName}.vercel.app`]),
 ]);
+
+// Supabase Auth URL config — without this, OAuth logins redirect to the default
+// http://localhost:3000. site_url is where auth redirects land; uri_allow_list
+// whitelists the redirect targets (wildcards allowed).
+new supabase.Settings(
+  "salli-auth",
+  {
+    projectRef: project.id,
+    auth: JSON.stringify({
+      site_url: appUrl,
+      uri_allow_list: [
+        appUrl,
+        `${appUrl}/**`,
+        "http://localhost:3000/**",
+        "http://localhost:3002/**",
+      ].join(","),
+    }),
+  },
+  { provider: sbProvider, dependsOn: [project] },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Render — FastAPI backend (Docker; migrations run via the Dockerfile CMD)

@@ -15,7 +15,12 @@ config:
   salli:renderRegion: singapore
   salli:renderPlan: free                      # free (sleeps) | starter | standard …
 
-  # ── Custom domains (leave blank until DNS is ready; wire later) ─────────────
+  # ── Public URLs — Vercel assigns <name>-<account-slug>.vercel.app, so set the
+  #    real ones explicitly. Swap to the custom domains once DNS is wired. ──────
+  salli:appUrl: https://salli-web-chandra-irugalbandaras-projects.vercel.app
+  salli:siteUrl: https://salli-site-chandra-irugalbandaras-projects.vercel.app
+
+  # Custom domains (leave blank until DNS is ready; wire later)
   salli:appDomain: ""                         # e.g. app.salli.lk
   salli:siteDomain: ""                        # e.g. salli.lk
   salli:apiDomain: ""                         # e.g. api.salli.lk

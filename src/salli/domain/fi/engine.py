@@ -17,8 +17,17 @@ The 0–100 score is a weighted blend of the five component scores.
 from __future__ import annotations
 
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
 
-from salli.domain.fi.models import FiComponent, FinancialSnapshot, FiPack, FiScore
+from salli.domain.fi.models import (
+    FiComponent,
+    FinancialSnapshot,
+    FiPack,
+    FireStrategy,
+    FiScore,
+    ProjectionPoint,
+    SurplusBreakdown,
+)
 
 _HUNDRED = Decimal(100)
 _MAX_PROJECTION_YEARS = 100
@@ -73,7 +82,9 @@ def compute(snapshot: FinancialSnapshot, pack: FiPack) -> FiScore:
     progress_clamped = max(Decimal(0), min(Decimal(1), progress))
     ef_months = (snapshot.liquid_savings / expenses) if expenses > 0 else Decimal(0)
     debt_ratio = (
-        snapshot.total_liabilities / snapshot.total_assets if snapshot.total_assets > 0 else Decimal(0)
+        snapshot.total_liabilities / snapshot.total_assets
+        if snapshot.total_assets > 0
+        else Decimal(0)
     )
 
     # ── Component scores (0..100) ──────────────────────────────────────────────
@@ -84,20 +95,25 @@ def compute(snapshot: FinancialSnapshot, pack: FiPack) -> FiScore:
     debt_score = _clamp((Decimal(1) - debt_ratio) * _HUNDRED)
 
     comp_defs = [
-        ("savings_rate", "Savings rate", sr_score,
-         f"Saving {_q2(savings_rate * 100)}% of income"),
-        ("emergency_fund", "Emergency fund", ef_score,
-         f"{_q2(ef_months)} of {pack.emergency_fund_target_months} months covered"),
-        ("fi_progress", "Progress to FI", fi_score_c,
-         f"{_q2(progress * 100)}% of your FI number"),
-        ("debt", "Debt load", debt_score,
-         f"Liabilities are {_q2(debt_ratio * 100)}% of assets"),
+        ("savings_rate", "Savings rate", sr_score, f"Saving {_q2(savings_rate * 100)}% of income"),
+        (
+            "emergency_fund",
+            "Emergency fund",
+            ef_score,
+            f"{_q2(ef_months)} of {pack.emergency_fund_target_months} months covered",
+        ),
+        ("fi_progress", "Progress to FI", fi_score_c, f"{_q2(progress * 100)}% of your FI number"),
+        ("debt", "Debt load", debt_score, f"Liabilities are {_q2(debt_ratio * 100)}% of assets"),
     ]
     if snapshot.goal_progress is not None:
         goal_score = _clamp(snapshot.goal_progress * _HUNDRED)
         comp_defs.append(
-            ("goals", "Goal progress", goal_score,
-             f"{_q2(snapshot.goal_progress * 100)}% toward your goals")
+            (
+                "goals",
+                "Goal progress",
+                goal_score,
+                f"{_q2(snapshot.goal_progress * 100)}% toward your goals",
+            )
         )
 
     # Effective weights: drop missing components (e.g. goals) and renormalise.
@@ -108,7 +124,9 @@ def compute(snapshot: FinancialSnapshot, pack: FiPack) -> FiScore:
     for key, label, score, detail in comp_defs:
         w = raw[key] / total_w
         overall += score * w
-        components.append(FiComponent(key=key, label=label, score=_q2(score), weight=_q2(w), detail=detail))
+        components.append(
+            FiComponent(key=key, label=label, score=_q2(score), weight=_q2(w), detail=detail)
+        )
 
     overall = _q2(_clamp(overall))
     projected_years = _years_to_fi(net_worth, fi_number, surplus * 12, pack.expected_real_return)
@@ -130,4 +148,95 @@ def compute(snapshot: FinancialSnapshot, pack: FiPack) -> FiScore:
         projected_fi_years=projected_years,
         currency=snapshot.currency,
         components=components,
+    )
+
+
+def project_portfolio(
+    snapshot: FinancialSnapshot,
+    strategy: FireStrategy,
+    horizon_years: int = 15,
+) -> list[ProjectionPoint]:  # noqa: E501
+    """FV formula projections for three return scenarios."""
+    starting = snapshot.liquid_savings + snapshot.investments
+    monthly_contribution = snapshot.monthly_income - snapshot.monthly_expenses
+
+    scenarios = [
+        ("conservative", strategy.return_conservative),
+        ("base", strategy.return_base),
+        ("growth", strategy.return_growth),
+    ]
+
+    points: list[ProjectionPoint] = [
+        ProjectionPoint(year=0, conservative=starting, base=starting, growth=starting)
+    ]
+
+    values = {name: starting for name, _ in scenarios}
+    for year in range(1, horizon_years + 1):
+        yearly = {}
+        for name, annual_rate in scenarios:
+            r = annual_rate / Decimal(12)
+            pv = values[name]
+            # Compound for 12 months with monthly contributions
+            if r == 0:
+                fv = pv + monthly_contribution * 12
+            else:
+                fv = pv * (1 + r) ** 12 + monthly_contribution * ((1 + r) ** 12 - 1) / r
+            yearly[name] = max(Decimal(0), fv)
+        values = yearly
+        points.append(
+            ProjectionPoint(
+                year=year,
+                conservative=_q2(values["conservative"]),
+                base=_q2(values["base"]),
+                growth=_q2(values["growth"]),
+            )
+        )
+
+    return points
+
+
+def compute_surplus_breakdown(
+    entries: list[Any],
+    accounts: list[Any],
+    months: int = 12,
+) -> SurplusBreakdown:
+    """Group income and expenses by account name from trailing-N-month entries."""
+    from salli.domain.accounting.models import Direction
+
+    acc_map = {a.id: a for a in accounts}
+    income_by_source: dict[str, Decimal] = {}
+    expense_by_category: dict[str, Decimal] = {}
+
+    for entry in entries:
+        for p in entry.postings:
+            acc = acc_map.get(p.account_id)
+            if acc is None:
+                continue
+            amount = abs(p.base_signed)
+            if acc.type == "income" and p.direction == Direction.CREDIT:
+                income_by_source[acc.name] = income_by_source.get(acc.name, Decimal(0)) + amount
+            elif acc.type == "expense" and p.direction == Direction.DEBIT:
+                expense_by_category[acc.name] = (
+                    expense_by_category.get(acc.name, Decimal(0)) + amount
+                )
+
+    m = Decimal(months)
+    income_monthly = {k: _q2(v / m) for k, v in income_by_source.items()}
+    expense_monthly = {k: _q2(v / m) for k, v in expense_by_category.items()}
+
+    gross_income = sum(income_monthly.values(), Decimal(0))
+    gross_expenses = sum(expense_monthly.values(), Decimal(0))
+    surplus = gross_income - gross_expenses
+    savings_rate = (surplus / gross_income) if gross_income > 0 else Decimal(0)
+
+    # Keep only top 6 expense categories by amount
+    top_expenses = dict(sorted(expense_monthly.items(), key=lambda x: x[1], reverse=True)[:6])
+
+    return SurplusBreakdown(
+        income_by_source=income_monthly,
+        expense_by_category=top_expenses,
+        gross_monthly_income=_q2(gross_income),
+        gross_monthly_expenses=_q2(gross_expenses),
+        monthly_surplus=_q2(surplus),
+        savings_rate=_q2(savings_rate),
     )

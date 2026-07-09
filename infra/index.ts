@@ -1,0 +1,263 @@
+/**
+ * Salli infrastructure — Supabase · Render · Vercel
+ * ==================================================
+ * Applied ONLY from GitHub Actions (see .github/workflows/deploy.yml).
+ * State lives in Pulumi Cloud.
+ *
+ * Secrets come from the CI environment (GitHub Actions → repo secrets), NOT from
+ * `pulumi config set`, so nothing sensitive is ever committed or set locally.
+ * Non-secret settings live in Pulumi.prod.yaml.
+ *
+ * FIRST DEPLOY is two-pass because Supabase's JWT secret can't be read until the
+ * project exists:
+ *   Pass 1 — leave SUPABASE_JWT_SECRET unset. Pulumi creates the project; the API
+ *            comes up in its dev-auth fallback.
+ *   Pass 2 — copy the project's JWT secret (Dashboard → Settings → API → JWT
+ *            Secret) into the SUPABASE_JWT_SECRET GitHub secret and re-run.
+ * The anon/service-role keys ARE fetched automatically via getApikeys.
+ *
+ * The Supabase + Render providers are the official Terraform providers, bridged
+ * into Pulumi. Their generated SDKs live in sdks/ (committed) and are wired as
+ * file: dependencies in package.json.
+ */
+
+import * as pulumi from "@pulumi/pulumi";
+import * as supabase from "@pulumi/supabase";
+import * as render from "@pulumi/render";
+import * as vercel from "@pulumiverse/vercel";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Config (non-secret, from Pulumi.prod.yaml)
+// ─────────────────────────────────────────────────────────────────────────────
+const cfg = new pulumi.Config("salli");
+const stack = pulumi.getStack();
+
+const githubRepo = cfg.require("githubRepo"); // "chandralegend/salli"
+const branch = cfg.get("branch") ?? "main";
+
+const supabaseOrgId = cfg.require("supabaseOrgId"); // organization slug
+const supabaseRegion = cfg.get("supabaseRegion") ?? "ap-southeast-1";
+// Session-mode pooler host (IPv4). Override if Supabase assigns a different
+// pooler cluster (check Dashboard → Settings → Database → Connection pooling).
+const poolerHost =
+  cfg.get("supabasePoolerHost") ?? `aws-0-${supabaseRegion}.pooler.supabase.com`;
+
+const renderOwnerId = cfg.require("renderOwnerId");
+const renderRegion = cfg.get("renderRegion") ?? "singapore";
+const renderPlan = cfg.get("renderPlan") ?? "starter";
+
+// Custom domains — blank until DNS is wired. When set they take precedence over
+// the default *.vercel.app / *.onrender.com hostnames.
+const appDomain = cfg.get("appDomain") ?? "";
+const siteDomain = cfg.get("siteDomain") ?? "";
+const apiDomain = cfg.get("apiDomain") ?? "";
+
+const apiName = stack === "prod" ? "salli-api" : `salli-api-${stack}`;
+const webName = stack === "prod" ? "salli-web" : `salli-web-${stack}`;
+const siteName = stack === "prod" ? "salli-site" : `salli-site-${stack}`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Secrets (from CI env → GitHub secrets)
+// ─────────────────────────────────────────────────────────────────────────────
+function reqEnv(name: string): pulumi.Output<string> {
+  const v = process.env[name];
+  if (!v) {
+    throw new Error(
+      `Missing required env var ${name}. Set it as a GitHub Actions repo secret ` +
+        `and map it in .github/workflows/deploy.yml.`,
+    );
+  }
+  return pulumi.secret(v);
+}
+function optEnv(name: string, fallback = ""): string {
+  return process.env[name] ?? fallback;
+}
+
+const supabaseDbPassword = reqEnv("SUPABASE_DB_PASSWORD");
+const anthropicApiKey = reqEnv("ANTHROPIC_API_KEY");
+
+// Pass-2 secret — empty on the first run (API uses dev-auth fallback until set).
+const supabaseJwtSecret = optEnv("SUPABASE_JWT_SECRET");
+
+// Optional integrations — forwarded only when present.
+const cronSecret = optEnv("CRON_SECRET");
+const tavilyApiKey = optEnv("TAVILY_API_KEY");
+const langsmithApiKey = optEnv("LANGSMITH_API_KEY");
+const paddleApiKey = optEnv("PADDLE_API_KEY");
+const paddleWebhookSecret = optEnv("PADDLE_WEBHOOK_SECRET");
+const paddleEnvironment = optEnv("PADDLE_ENVIRONMENT", "sandbox");
+const paddlePricePlus = optEnv("PADDLE_PRICE_PLUS");
+const paddlePricePro = optEnv("PADDLE_PRICE_PRO");
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Providers (auth via env: SUPABASE_ACCESS_TOKEN, VERCEL_API_TOKEN, RENDER_API_KEY)
+// ─────────────────────────────────────────────────────────────────────────────
+const sbProvider = new supabase.Provider("supabase", {
+  accessToken: reqEnv("SUPABASE_ACCESS_TOKEN"),
+});
+const vercelProvider = new vercel.Provider("vercel", {
+  apiToken: reqEnv("VERCEL_API_TOKEN"),
+  team: new pulumi.Config("vercel").get("team"),
+});
+const renderProvider = new render.Provider("render", {
+  apiKey: reqEnv("RENDER_API_KEY"),
+  ownerId: renderOwnerId,
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Supabase — project (+ legacy JWT keys the backend verifies against)
+// ─────────────────────────────────────────────────────────────────────────────
+const project = new supabase.Project(
+  "salli",
+  {
+    name: `salli-${stack}`,
+    organizationId: supabaseOrgId,
+    databasePassword: supabaseDbPassword,
+    region: supabaseRegion,
+    // The API authenticates users with the anon/service-role JWT keys, so keep
+    // the legacy key set enabled.
+    legacyApiKeysEnabled: true,
+  },
+  { provider: sbProvider },
+);
+
+const projectRef = project.id;
+const supabaseUrl = pulumi.interpolate`https://${projectRef}.supabase.co`;
+
+// anon + service-role keys (data source keyed on the project ref)
+const apiKeys = supabase.getApikeysOutput(
+  { projectRef },
+  { provider: sbProvider },
+);
+const supabaseAnonKey = pulumi.secret(apiKeys.anonKey);
+const supabaseServiceKey = pulumi.secret(apiKeys.serviceRoleKey);
+
+// Session-mode pooler URL — IPv4 + prepared-statement-safe, right for a
+// long-running server and for running Alembic migrations at container start.
+const databaseUrl = pulumi.secret(
+  pulumi.interpolate`postgresql+asyncpg://postgres.${projectRef}:${supabaseDbPassword}@${poolerHost}:5432/postgres`,
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Public URLs (used to cross-wire CORS + client env)
+// ─────────────────────────────────────────────────────────────────────────────
+const appUrl = appDomain ? `https://${appDomain}` : `https://${webName}.vercel.app`;
+const siteUrl = siteDomain ? `https://${siteDomain}` : `https://${siteName}.vercel.app`;
+const apiUrl = apiDomain ? `https://${apiDomain}` : `https://${apiName}.onrender.com`;
+
+// config.py parses ALLOWED_ORIGINS as a JSON list. Include the vercel.app
+// defaults and any custom domains so it works before and after DNS.
+const allowedOrigins = JSON.stringify([
+  ...new Set([appUrl, siteUrl, `https://${webName}.vercel.app`, `https://${siteName}.vercel.app`]),
+]);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Render — FastAPI backend (Docker; migrations run via the Dockerfile CMD)
+// ─────────────────────────────────────────────────────────────────────────────
+const apiEnv: Record<string, pulumi.Input<string>> = {
+  ENVIRONMENT: "production",
+  LOG_LEVEL: "INFO",
+  BASE_CURRENCY: "LKR",
+  DATABASE_URL: databaseUrl,
+  ANTHROPIC_API_KEY: anthropicApiKey,
+  SUPABASE_URL: supabaseUrl,
+  SUPABASE_ANON_KEY: supabaseAnonKey,
+  SUPABASE_SERVICE_ROLE_KEY: supabaseServiceKey,
+  ALLOWED_ORIGINS: allowedOrigins,
+  ADVISOR_API_BASE_URL: apiUrl,
+  PADDLE_ENVIRONMENT: paddleEnvironment,
+};
+if (supabaseJwtSecret) apiEnv.SUPABASE_JWT_SECRET = pulumi.secret(supabaseJwtSecret);
+if (cronSecret) apiEnv.CRON_SECRET = pulumi.secret(cronSecret);
+if (tavilyApiKey) apiEnv.TAVILY_API_KEY = pulumi.secret(tavilyApiKey);
+if (langsmithApiKey) apiEnv.LANGSMITH_API_KEY = pulumi.secret(langsmithApiKey);
+if (paddleApiKey) apiEnv.PADDLE_API_KEY = pulumi.secret(paddleApiKey);
+if (paddleWebhookSecret) apiEnv.PADDLE_WEBHOOK_SECRET = pulumi.secret(paddleWebhookSecret);
+if (paddlePricePlus) apiEnv.PADDLE_PRICE_PLUS = paddlePricePlus;
+if (paddlePricePro) apiEnv.PADDLE_PRICE_PRO = paddlePricePro;
+
+const apiEnvVars = pulumi
+  .output(apiEnv)
+  .apply((e) => Object.fromEntries(Object.entries(e).map(([k, v]) => [k, { value: v }])));
+
+const api = new render.WebService(
+  apiName,
+  {
+    name: apiName,
+    plan: renderPlan, // "starter" recommended; "free" sleeps (see DEPLOY.md)
+    region: renderRegion,
+    runtimeSource: {
+      docker: {
+        repoUrl: `https://github.com/${githubRepo}`,
+        branch,
+        dockerfilePath: "./Dockerfile.api",
+        context: ".",
+        autoDeploy: true,
+      },
+    },
+    healthCheckPath: "/healthz",
+    envVars: apiEnvVars,
+  },
+  { provider: renderProvider, dependsOn: [project] },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Vercel — web app + marketing site (build on git push; monorepo-aware)
+// ─────────────────────────────────────────────────────────────────────────────
+function vercelEnv(
+  name: string,
+  projectId: pulumi.Input<string>,
+  key: string,
+  value: pulumi.Input<string>,
+  sensitive = false,
+) {
+  return new vercel.ProjectEnvironmentVariable(
+    name,
+    { projectId, key, value, targets: ["production", "preview", "development"], sensitive },
+    { provider: vercelProvider },
+  );
+}
+
+// Marketing site (clients/site → salli.lk later)
+const site = new vercel.Project(
+  siteName,
+  {
+    name: siteName,
+    framework: "nextjs",
+    rootDirectory: "clients/site",
+    gitRepository: { type: "github", repo: githubRepo, productionBranch: branch },
+    // Skip a rebuild when the change didn't touch this app's directory.
+    ignoreCommand: "git diff --quiet HEAD^ HEAD -- clients/site",
+  },
+  { provider: vercelProvider },
+);
+vercelEnv("site-app-url", site.id, "NEXT_PUBLIC_APP_URL", appUrl);
+
+// SaaS web app (clients/web → app.salli.lk later)
+const web = new vercel.Project(
+  webName,
+  {
+    name: webName,
+    framework: "nextjs",
+    rootDirectory: "clients/web",
+    gitRepository: { type: "github", repo: githubRepo, productionBranch: branch },
+    ignoreCommand: "git diff --quiet HEAD^ HEAD -- clients/web",
+  },
+  { provider: vercelProvider },
+);
+vercelEnv("web-api-url", web.id, "NEXT_PUBLIC_API_URL", apiUrl);
+vercelEnv("web-app-url", web.id, "NEXT_PUBLIC_APP_URL", appUrl);
+vercelEnv("web-supabase-url", web.id, "NEXT_PUBLIC_SUPABASE_URL", supabaseUrl);
+vercelEnv("web-supabase-anon", web.id, "NEXT_PUBLIC_SUPABASE_ANON_KEY", supabaseAnonKey, true);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Outputs
+// ─────────────────────────────────────────────────────────────────────────────
+export const supabaseProjectRef = projectRef;
+export const supabaseApiUrl = supabaseUrl;
+export const renderApiUrl = apiUrl;
+export const renderServiceId = api.id;
+export const vercelWebProjectId = web.id;
+export const vercelSiteProjectId = site.id;
+export const appUrlOut = appUrl;
+export const siteUrlOut = siteUrl;

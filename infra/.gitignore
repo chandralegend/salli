@@ -1,0 +1,7 @@
+node_modules/
+bin/
+.pulumi/
+# Note: sdks/ (generated bridged provider SDKs for Supabase + Render) ARE committed
+# so CI is deterministic and needs no `pulumi package add`. Regenerate with:
+#   pulumi package add terraform-provider supabase/supabase
+#   pulumi package add terraform-provider render-oss/render

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Plus, Pencil, Trash2, RotateCcw } from "lucide-react";
+import { Pencil, Trash2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -39,7 +39,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLedger, type Account } from "@/hooks/useLedger";
 
 const ACCOUNT_TYPES = ["asset", "liability", "equity", "income", "expense"] as const;
@@ -292,32 +291,58 @@ export default function LedgerPage() {
 
   const entriesList = (entries.data ?? []) as JournalEntry[];
 
+  const [ledgerTab, setLedgerTab] = useState<"accounts" | "entries" | "income">("accounts");
+
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-start justify-between mb-6">
+    <div className="p-8 max-w-[1320px] mx-auto">
+      <div className="flex items-end justify-between mb-6 gap-5">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">Ledger</h1>
-          <p className="text-meta mt-0.5">Chart of accounts, journal entries &amp; income statement</p>
+          <h1 className="text-[38px] font-black tracking-[-0.05em] leading-[1.1] text-foreground">
+            Ledger
+          </h1>
+          <p className="text-[13px] text-muted-foreground mt-2 font-medium">
+            Double-entry accounting · YA 2025/26
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setEntryOpen(true)}>
-            <Plus className="w-4 h-4 mr-1.5" /> New Entry
-          </Button>
-          <Button size="sm" onClick={() => setAcctOpen(true)}>
-            <Plus className="w-4 h-4 mr-1.5" /> Add Account
-          </Button>
+          <button
+            onClick={() => setAcctOpen(true)}
+            className="px-5 py-2.5 border border-border rounded-full bg-card text-foreground text-[13.5px] font-bold hover:bg-muted transition-colors"
+          >
+            + Account
+          </button>
+          <button
+            onClick={() => setEntryOpen(true)}
+            className="px-5 py-2.5 bg-foreground text-background rounded-full text-[13.5px] font-bold hover:bg-foreground/85 transition-colors"
+          >
+            + Entry
+          </button>
         </div>
       </div>
 
-      <Tabs defaultValue="accounts">
-        <TabsList className="mb-4">
-          <TabsTrigger value="accounts">Chart of Accounts</TabsTrigger>
-          <TabsTrigger value="entries">Journal Entries</TabsTrigger>
-          <TabsTrigger value="income">Income Statement</TabsTrigger>
-        </TabsList>
+      <div className="inline-flex bg-muted rounded-full p-1 gap-0.5 mb-5">
+        <button
+          onClick={() => setLedgerTab("accounts")}
+          className={`px-4 py-1.5 rounded-full text-[13.5px] font-semibold transition-colors ${ledgerTab === "accounts" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          Chart of Accounts
+        </button>
+        <button
+          onClick={() => setLedgerTab("entries")}
+          className={`px-4 py-1.5 rounded-full text-[13.5px] font-semibold transition-colors ${ledgerTab === "entries" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          Journal Entries
+        </button>
+        <button
+          onClick={() => setLedgerTab("income")}
+          className={`px-4 py-1.5 rounded-full text-[13.5px] font-semibold transition-colors ${ledgerTab === "income" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          Income Statement
+        </button>
+      </div>
 
         {/* ── Accounts ── */}
-        <TabsContent value="accounts">
+        {ledgerTab === "accounts" && (<>
           <Card className="overflow-hidden">
             <DataTable
               columns={accountColumns}
@@ -334,10 +359,10 @@ export default function LedgerPage() {
               }
             />
           </Card>
-        </TabsContent>
+        </>)}
 
         {/* ── Journal Entries ── */}
-        <TabsContent value="entries">
+        {ledgerTab === "entries" && (<>
           <Card className="overflow-hidden">
             <DataTable
               columns={entryColumns}
@@ -357,10 +382,10 @@ export default function LedgerPage() {
               }
             />
           </Card>
-        </TabsContent>
+        </>)}
 
         {/* ── Income Statement ── */}
-        <TabsContent value="income">
+        {ledgerTab === "income" && (<>
           {incomeStatement.isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[0, 1].map((i) => (
@@ -384,8 +409,8 @@ export default function LedgerPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Income */}
                 <Card className="overflow-hidden">
-                  <div className="px-4 py-2.5 border-b bg-emerald-50/60">
-                    <p className="text-[12px] font-semibold text-emerald-800 uppercase tracking-wider">Income</p>
+                  <div className="px-4 py-2.5 border-b">
+                    <p className="text-[11px] font-bold text-[#7DA6A9] uppercase tracking-[0.1em]">Income</p>
                   </div>
                   <Table>
                     <TableBody>
@@ -396,21 +421,29 @@ export default function LedgerPage() {
                       ) : (
                         Object.entries(incomeStatement.data.income ?? {}).map(([k, v]) => (
                           <TableRow key={k} className="border-b last:border-0">
-                            <TableCell className="text-[13px] px-4 py-2.5">{k}</TableCell>
-                            <TableCell className="text-right tabular-nums text-emerald-700 font-medium text-[13px] px-4 py-2.5">
-                              LKR {fmt(v as string | number)}
+                            <TableCell className="text-[13px] px-4 py-2.5 text-foreground">{k}</TableCell>
+                            <TableCell className="text-right tabular-nums font-medium text-[13px] px-4 py-2.5 text-foreground font-mono">
+                              {fmt(v as string | number)}
                             </TableCell>
                           </TableRow>
                         ))
                       )}
                     </TableBody>
                   </Table>
+                  {Object.entries(incomeStatement.data.income ?? {}).length > 0 && (
+                    <div className="mx-3 mb-3 px-4 py-2.5 flex items-center justify-between bg-[#A5FFB9] rounded-xl">
+                      <p className="text-[13px] font-bold text-[#010001]">Total Income</p>
+                      <p className="text-[13px] font-bold tabular-nums text-[#010001] font-mono">
+                        {fmt(Object.values(incomeStatement.data.income ?? {}).reduce((s, v) => s + Number(v), 0))}
+                      </p>
+                    </div>
+                  )}
                 </Card>
 
                 {/* Expenses */}
                 <Card className="overflow-hidden">
-                  <div className="px-4 py-2.5 border-b bg-rose-50/60">
-                    <p className="text-[12px] font-semibold text-rose-800 uppercase tracking-wider">Expenses</p>
+                  <div className="px-4 py-2.5 border-b">
+                    <p className="text-[11px] font-bold text-rose-500 uppercase tracking-[0.1em]">Expenses</p>
                   </div>
                   <Table>
                     <TableBody>
@@ -421,31 +454,36 @@ export default function LedgerPage() {
                       ) : (
                         Object.entries(incomeStatement.data.expenses ?? {}).map(([k, v]) => (
                           <TableRow key={k} className="border-b last:border-0">
-                            <TableCell className="text-[13px] px-4 py-2.5">{k}</TableCell>
-                            <TableCell className="text-right tabular-nums text-rose-700 font-medium text-[13px] px-4 py-2.5">
-                              LKR {fmt(v as string | number)}
+                            <TableCell className="text-[13px] px-4 py-2.5 text-foreground">{k}</TableCell>
+                            <TableCell className="text-right tabular-nums font-medium text-[13px] px-4 py-2.5 text-foreground font-mono">
+                              {fmt(v as string | number)}
                             </TableCell>
                           </TableRow>
                         ))
                       )}
                     </TableBody>
                   </Table>
+                  {Object.entries(incomeStatement.data.expenses ?? {}).length > 0 && (
+                    <div className="mx-3 mb-3 px-4 py-2.5 flex items-center justify-between bg-rose-100 rounded-xl">
+                      <p className="text-[13px] font-bold text-rose-900">Total Expenses</p>
+                      <p className="text-[13px] font-bold tabular-nums text-rose-900 font-mono">
+                        {fmt(Object.values(incomeStatement.data.expenses ?? {}).reduce((s, v) => s + Number(v), 0))}
+                      </p>
+                    </div>
+                  )}
                 </Card>
               </div>
 
               {/* Net Income summary bar */}
-              <Card className="overflow-hidden">
-                <div className="px-4 py-3.5 flex items-center justify-between">
-                  <p className="text-[13px] font-semibold">Net Income</p>
-                  <p className={`text-[18px] font-bold tabular-nums tracking-tight ${Number(incomeStatement.data.net_income) >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
-                    LKR {fmt(incomeStatement.data.net_income)}
-                  </p>
-                </div>
-              </Card>
+              <div className="rounded-2xl bg-[#010001] px-5 py-4 flex items-center justify-between">
+                <p className="text-[13px] font-semibold text-[#F0EEE8]/60">Net Income</p>
+                <p className="text-[22px] font-black tabular-nums tracking-tight text-[#E8FC85] font-mono">
+                  {fmt(incomeStatement.data.net_income)}
+                </p>
+              </div>
             </div>
           )}
-        </TabsContent>
-      </Tabs>
+        </>)}
 
       {/* ── Add Account Dialog ── */}
       <Dialog open={acctOpen} onOpenChange={setAcctOpen}>

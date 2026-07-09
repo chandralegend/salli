@@ -54,9 +54,7 @@ class DocumentService:
             uow: UnitOfWork
             return await uow.agent_documents.get(user_id, doc_id)
 
-    async def update_document(
-        self, user_id: str, doc_id: str, **updates: Any
-    ) -> None:
+    async def update_document(self, user_id: str, doc_id: str, **updates: Any) -> None:
         async with self._uow_factory() as uow:
             uow: UnitOfWork
             await uow.agent_documents.update(user_id, doc_id, updates)
@@ -141,9 +139,7 @@ class DocumentService:
             "mime_type": mime_type,
         }
 
-    async def get_file_as_base64(
-        self, user_id: str, doc_id: str
-    ) -> tuple[str, str] | None:
+    async def get_file_as_base64(self, user_id: str, doc_id: str) -> tuple[str, str] | None:
         """Return (base64_data, mime_type) for a stored file, or None."""
         doc = await self.get_document(user_id, doc_id)
         if not doc or not doc.get("storage_key"):

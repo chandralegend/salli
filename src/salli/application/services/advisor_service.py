@@ -12,7 +12,6 @@ import datetime
 import uuid
 from typing import Any
 
-from salli.application.services.billing_service import QuotaExceeded
 from salli.domain.agents import advisor as advisor_llm
 from salli.domain.billing.plans import METRIC_ADVISOR_RUNS
 
@@ -41,6 +40,9 @@ class AdvisorService:
         goals = await self._fi.list_goals(user_id)
         profile = await self._gather_profile(user_id)
         rates = await self._research_rates()
+        fire_strategy = await self._fi.get_strategy(user_id)
+        fire_projections = await self._fi.get_projections(user_id)
+        surplus = await self._fi.get_surplus_breakdown(user_id)
 
         context = {
             "currency": score.get("currency", "LKR"),
@@ -59,8 +61,36 @@ class AdvisorService:
                 "projected_fi_date": score.get("projected_fi_date"),
                 "components": score.get("components"),
             },
+            "fire_strategy": {
+                "fire_style": fire_strategy.get("fire_style"),
+                "swr": fire_strategy.get("swr"),
+                "return_conservative": fire_strategy.get("return_conservative"),
+                "return_base": fire_strategy.get("return_base"),
+                "return_growth": fire_strategy.get("return_growth"),
+                "target_age": fire_strategy.get("target_age"),
+                "target_monthly_expenses": fire_strategy.get("target_monthly_expenses"),
+                "buckets": fire_strategy.get("buckets", []),
+                "theories_applied": fire_strategy.get("theories_applied", []),
+                "version": fire_strategy.get("version"),
+                "created_at": fire_strategy.get("created_at"),
+            }
+            if fire_strategy
+            else None,
+            "fire_projections": {
+                "fi_number": fire_projections.get("fi_number"),
+                "current_portfolio": fire_projections.get("current_portfolio"),
+                "fire_year_conservative": fire_projections.get("fire_year_conservative"),
+                "fire_year_base": fire_projections.get("fire_year_base"),
+                "fire_year_growth": fire_projections.get("fire_year_growth"),
+            },
+            "surplus_breakdown": {
+                "income_by_source": surplus.get("income_by_source", {}),
+                "expense_by_category": surplus.get("expense_by_category", {}),
+                "monthly_surplus": surplus.get("monthly_surplus"),
+                "savings_rate": surplus.get("savings_rate"),
+            },
             "goals": goals,
-            "profile": profile,   # primary_goal, motivation, risk_appetite, target year/amount
+            "profile": profile,  # primary_goal, motivation, risk_appetite, target year/amount
             "current_rates_research": rates,
         }
 
@@ -73,6 +103,7 @@ class AdvisorService:
                 "rationale": r.rationale,
                 "category": r.category,
                 "priority": r.priority,
+                "bucket_key": r.bucket_key,
                 "action_type": r.action.type,
                 "action_params": {
                     "label": r.action.label,
@@ -87,6 +118,7 @@ class AdvisorService:
             "trigger": trigger,
             "fi_score_id": None,
             "summary": advice.summary,
+            "fire_tier_assessment": advice.fire_tier_assessment,
             "recommendations": recommendations,
         }
         async with self._uow_factory() as uow:
@@ -97,7 +129,13 @@ class AdvisorService:
     async def _gather_profile(self, user_id: str) -> dict[str, Any]:
         if not self._doc:
             return {}
-        keys = ("primary_goal", "motivation", "risk_appetite", "goal_target_amount", "goal_target_year")
+        keys = (
+            "primary_goal",
+            "motivation",
+            "risk_appetite",
+            "goal_target_amount",
+            "goal_target_year",
+        )
         out: dict[str, Any] = {}
         for k in keys:
             mem = await self._doc.get_memory(user_id, k)
@@ -134,7 +172,9 @@ class AdvisorService:
 
     # ── Act on a recommendation (user approval) ──────────────────────────────────
 
-    async def apply_recommendation(self, user_id: str, report_id: str, rec_id: str) -> dict[str, Any]:
+    async def apply_recommendation(
+        self, user_id: str, report_id: str, rec_id: str
+    ) -> dict[str, Any]:
         async with self._uow_factory() as uow:
             report = await uow.advisories.get(user_id, report_id)
             if not report:
@@ -155,7 +195,9 @@ class AdvisorService:
             await uow.advisories.update_recommendations(user_id, report_id, recs)
         return {"id": rec_id, "status": "applied"}
 
-    async def dismiss_recommendation(self, user_id: str, report_id: str, rec_id: str) -> dict[str, Any]:
+    async def dismiss_recommendation(
+        self, user_id: str, report_id: str, rec_id: str
+    ) -> dict[str, Any]:
         async with self._uow_factory() as uow:
             report = await uow.advisories.get(user_id, report_id)
             if not report:

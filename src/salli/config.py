@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     cron_secret: str = ""
     advisor_api_base_url: str = "http://localhost:8000"
 
+    # CORS — comma-separated list of allowed origins in production.
+    # Defaults cover app + marketing site; override via ALLOWED_ORIGINS env var.
+    allowed_origins: list[str] = ["https://app.salli.lk", "https://salli.lk"]
+
     # App
     environment: str = "development"
     log_level: str = "INFO"

@@ -1,42 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Calculator, Loader2, AlertTriangle, RefreshCw, Globe } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, RefreshCw, Globe, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TaxBandTable } from "@/components/TaxBandTable";
-import { MetricCard } from "@/components/MetricCard";
 import { useTax } from "@/hooks/useTax";
+import { PageShell, PageHeader, PillButton, BentoTile, CardContainer } from "@/components/ui/page-shell";
 
-function LineItem({
-  label,
-  value,
-  currency,
-  indent = false,
-  bold = false,
-  positive = false,
-  negative = false,
-  divider = false,
-}: {
-  label: string;
-  value: string;
-  currency: string;
-  indent?: boolean;
-  bold?: boolean;
-  positive?: boolean;
-  negative?: boolean;
-  divider?: boolean;
-}) {
-  return (
-    <div className={`flex items-center justify-between py-2 ${divider ? "border-t mt-1 pt-3" : "border-b last:border-0"} ${indent ? "pl-4" : ""}`}>
-      <p className={`text-[13px] ${bold ? "font-semibold" : "text-muted-foreground"}`}>{label}</p>
-      <p className={`font-mono text-[13px] tabular-nums ${bold ? "font-bold" : ""} ${positive ? "text-emerald-700" : ""} ${negative ? "text-rose-600" : ""}`}>
-        {negative ? "−" : ""}{currency} {value}
-      </p>
-    </div>
-  );
+function parse(s: string) {
+  return parseFloat(s.replace(/,/g, "")) || 0;
 }
 
 export default function TaxPage() {
@@ -44,234 +15,295 @@ export default function TaxPage() {
   const [result, setResult] = useState<typeof compute.data>(undefined);
   const displayResult = result ?? compute.data ?? latest.data ?? null;
 
-  const hasFsi = displayResult && parseFloat(displayResult.foreign_service_income.replace(/,/g, "")) > 0;
+  const hasFsi = displayResult && parse(displayResult.foreign_service_income) > 0;
 
   async function handleCompute() {
     const r = await compute.mutateAsync(undefined);
     setResult(r);
   }
 
+  const effectiveRate = displayResult
+    ? ((parse(displayResult.tax_payable) / parse(displayResult.gross_income)) * 100).toFixed(1)
+    : null;
+
   if (latest.isLoading) {
     return (
-      <div className="p-6 max-w-4xl mx-auto">
-        <Skeleton className="h-8 w-32 mb-2" />
-        <Skeleton className="h-4 w-48 mb-6" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24" />)}
+      <PageShell>
+        <Skeleton className="h-12 w-48 mb-2" />
+        <Skeleton className="h-4 w-64 mb-8" />
+        <div className="grid grid-cols-4 gap-3">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
+          <Skeleton className="col-span-2 h-80 rounded-2xl" />
+          <Skeleton className="h-80 rounded-2xl" />
+          <Skeleton className="h-80 rounded-2xl" />
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">Tax</h1>
-          <p className="text-meta mt-1">Sri Lanka individual income tax · YA 2025/26</p>
+    <PageShell>
+      <PageHeader
+        title="Tax"
+        subtitle="Sri Lanka individual income tax · Assessment Year 2025/26 · IRD"
+        className="mb-8"
+        actions={
+          displayResult ? (
+            <PillButton onClick={handleCompute} disabled={compute.isPending} variant="secondary">
+              {compute.isPending ? <Loader2 className="inline w-4 h-4 animate-spin mr-1.5" /> : <RefreshCw className="inline w-4 h-4 mr-1.5" />}
+              Recompute
+            </PillButton>
+          ) : undefined
+        }
+      />
+
+      {/* Empty state */}
+      {!displayResult && (
+        <div className="flex justify-center items-center min-h-[480px]">
+          <div className="text-center max-w-[460px]">
+            <div className="w-20 h-20 bg-[#E8FC85] rounded-[24px] flex items-center justify-center mx-auto mb-7">
+              <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="#010001" strokeWidth="2">
+                <line x1="30" y1="6" x2="6" y2="30" />
+                <circle cx="9" cy="9" r="4" />
+                <circle cx="27" cy="27" r="4" />
+              </svg>
+            </div>
+            <h2 className="text-[26px] font-black tracking-[-0.04em] mb-2 text-foreground">Compute your tax</h2>
+            <p className="text-[14px] text-muted-foreground leading-[1.7] mb-3">
+              Salli&apos;s deterministic rules engine — not the AI — computes your liability from your ledger data.
+            </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-[14px] px-4 py-3.5 text-[13px] text-amber-800 text-left mb-7 leading-relaxed">
+              Planning estimate only. Consult a registered tax agent before filing with the IRD.
+            </div>
+            <button
+              onClick={handleCompute}
+              disabled={compute.isPending}
+              className="px-9 py-[14px] bg-[#010001] text-white border-none rounded-full text-[15px] font-extrabold cursor-pointer hover:bg-[#1a1a1a] transition-colors disabled:opacity-50 flex items-center gap-2 mx-auto"
+            >
+              {compute.isPending && <Loader2 className="size-4 animate-spin" />}
+              Compute Tax
+            </button>
+            {compute.error && (
+              <p className="text-[12px] text-rose-600 mt-3">{String(compute.error)}</p>
+            )}
+          </div>
         </div>
-        {displayResult && (
-          <Button variant="outline" size="sm" onClick={handleCompute} disabled={compute.isPending}>
-            {compute.isPending ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1.5" />}
-            Recompute
-          </Button>
-        )}
-      </div>
+      )}
 
-      <Tabs defaultValue="compute">
-        <TabsList className="mb-6">
-          <TabsTrigger value="compute">Computation</TabsTrigger>
-          <TabsTrigger value="credits">Credits</TabsTrigger>
-          <TabsTrigger value="bands">Tax Bands</TabsTrigger>
-        </TabsList>
+      {/* Computed: 4-column bento grid */}
+      {displayResult && (
+        <div className="grid grid-cols-4 gap-3">
 
-        <TabsContent value="compute">
-          {!displayResult ? (
-            <Card className="max-w-md">
-              <CardContent className="p-10 flex flex-col items-center gap-4 text-center">
-                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Calculator className="w-7 h-7 text-primary" />
+          {/* ── Row 1: 4 metric tiles ── */}
+
+          <BentoTile
+            variant="mint"
+            label="Gross Income"
+            sub={hasFsi ? "Employment + FSI + Other" : "Employment + Other"}
+            value={displayResult.gross_income}
+            badge={displayResult.currency}
+          />
+
+          <BentoTile
+            variant="teal"
+            label="Personal Relief"
+            sub="Statutory deduction"
+            value={`(${displayResult.personal_relief})`}
+            badge={`${displayResult.currency} deducted`}
+          />
+
+          <BentoTile
+            variant="card"
+            label="Taxable Income"
+            sub="After all reliefs"
+            value={displayResult.taxable_income}
+            badge={displayResult.currency}
+          />
+
+          <BentoTile
+            variant="lime"
+            label="Tax Payable"
+            sub="Net · due Jul 31, 2025"
+            value={displayResult.tax_payable}
+            badge={effectiveRate ? `${effectiveRate}% effective rate` : undefined}
+          />
+
+          {/* ── Row 2 ── */}
+
+          {/* Computation workings — cols 1-2 */}
+          <div className="col-span-2 bg-card rounded-[20px] p-[26px]">
+            <div className="text-[14px] font-extrabold tracking-[-0.02em] mb-5">Computation</div>
+            <div className="flex flex-col">
+              {/* Income sources */}
+              {hasFsi && (
+                <>
+                  <Row label="Regular Income" value={displayResult.regular_income} currency={displayResult.currency} />
+                  <Row label="Foreign Service Income" value={displayResult.foreign_service_income} currency={displayResult.currency} />
+                </>
+              )}
+              <Row label="Gross Income" value={displayResult.gross_income} currency={displayResult.currency} strong thick />
+              <Row label="Less: Personal Relief" value={`(${displayResult.personal_relief})`} currency={displayResult.currency} green />
+              <Row label="Taxable Income" value={displayResult.taxable_income} currency={displayResult.currency} strong />
+              <Row label="Tax on progressive bands" value={displayResult.total_tax} currency={displayResult.currency} />
+              {parse(displayResult.credits.apit) > 0 && (
+                <Row label="Less: APIT Credit" value={`(${displayResult.credits.apit})`} currency={displayResult.currency} green />
+              )}
+              {parse(displayResult.credits.ait) > 0 && (
+                <Row label="Less: AIT Credit" value={`(${displayResult.credits.ait})`} currency={displayResult.currency} green />
+              )}
+              {parse(displayResult.credits.ftc) > 0 && (
+                <Row label="Less: FTC" value={`(${displayResult.credits.ftc})`} currency={displayResult.currency} green />
+              )}
+            </div>
+            {/* Net Tax Payable — lime row */}
+            <div className="flex justify-between items-center px-[18px] py-[14px] bg-[#E8FC85] rounded-[14px] mt-4">
+              <span className="text-[14px] font-black text-[#010001]">Net Tax Payable</span>
+              <span className="text-[14px] font-black text-[#010001] font-mono tabular-nums">
+                {displayResult.tax_payable} {displayResult.currency}
+              </span>
+            </div>
+          </div>
+
+          {/* Credits — col 3, dark */}
+          <div className="bg-[#010001] rounded-[20px] p-[26px]">
+            <div className="text-[14px] font-extrabold text-white mb-5">Credits Applied</div>
+            <div className="flex flex-col gap-2.5">
+              <CreditItem
+                label="APIT"
+                sub="Advance Personal Income Tax withheld by employer"
+                value={displayResult.credits.apit}
+                currency={displayResult.currency}
+                active={parse(displayResult.credits.apit) > 0}
+              />
+              <CreditItem
+                label="AIT"
+                sub="Advance Income Tax on interest income"
+                value={displayResult.credits.ait}
+                currency={displayResult.currency}
+                active={parse(displayResult.credits.ait) > 0}
+              />
+              <CreditItem
+                label="FTC"
+                sub="Foreign Tax Credit"
+                value={displayResult.credits.ftc}
+                currency={displayResult.currency}
+                active={parse(displayResult.credits.ftc) > 0}
+              />
+            </div>
+            <div className="flex justify-between items-center px-4 py-[14px] bg-[#E8FC85] rounded-[14px] mt-4">
+              <span className="text-[14px] font-black text-[#010001]">Net Payable</span>
+              <span className="text-[14px] font-black text-[#010001] font-mono tabular-nums">{displayResult.tax_payable}</span>
+            </div>
+          </div>
+
+          {/* Progressive Bands — col 4 */}
+          <div className="bg-card rounded-[20px] p-[26px]">
+            <div className="text-[14px] font-extrabold tracking-[-0.02em] mb-5">Progressive Bands</div>
+            <div className="flex flex-col gap-1.5">
+              {displayResult.bands.map((b, i) => {
+                const active = parse(b.taxable_in_band) > 0;
+                return (
+                  <div
+                    key={i}
+                    className="flex justify-between items-center px-3 py-2.5 rounded-[10px]"
+                    style={{ background: active ? "#D5E9EA" : "var(--muted)" }}
+                  >
+                    <div>
+                      <div className={`text-[12px] font-bold ${active ? "text-[#010001]" : "text-foreground"}`}>{b.band}</div>
+                      <div className={`text-[11px] mt-0.5 ${active ? "text-black/45" : "text-muted-foreground"}`}>
+                        {parse(b.taxable_in_band) > 0 ? `${displayResult.currency} ${b.taxable_in_band} in band` : "Nil band"}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`text-[13px] font-extrabold ${active ? "text-[#010001]" : "text-muted-foreground"}`}>{b.rate}</div>
+                      <div className={`text-[11px] ${active ? "text-black/45" : "text-muted-foreground"}`}>
+                        {parse(b.tax) > 0 ? b.tax : "—"}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {/* Total row */}
+              <div className="flex justify-between items-center px-3 py-2.5 bg-[#E8FC85] rounded-[10px] mt-1">
+                <span className="text-[13px] font-black text-[#010001]">Total</span>
+                <span className="text-[13px] font-black text-[#010001] font-mono tabular-nums">{displayResult.total_tax}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Row 3: Disclaimer — full width ── */}
+          <div className="col-span-4 flex items-center gap-2.5 px-[18px] py-3 bg-amber-50 border border-amber-200 rounded-[14px]">
+            <AlertTriangle className="size-[15px] text-amber-700 shrink-0" />
+            <span className="text-[13px] text-amber-800 leading-relaxed">
+              Planning estimate only. Numbers from the deterministic rules engine — the AI never computes tax.
+              Consult a registered tax agent before filing with the IRD.
+            </span>
+          </div>
+
+          {/* FSI breakdown — only if FSI exists */}
+          {hasFsi && (
+            <div className="col-span-4 bg-card rounded-[20px] p-[26px]">
+              <div className="flex items-center gap-2 mb-5">
+                <Globe className="size-4 text-blue-500" />
+                <div className="text-[14px] font-extrabold tracking-[-0.02em]">Foreign Service Income Regime</div>
+                <span className="text-[11px] text-muted-foreground ml-1">15% final tax — remitted via a licensed Sri Lankan bank</span>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.08em] mb-3">Income Split</p>
+                  <Row label="Total gross income" value={displayResult.gross_income} currency={displayResult.currency} />
+                  <Row label="Regular income (progressive bands)" value={displayResult.regular_income} currency={displayResult.currency} />
+                  <Row label="Foreign service income (15% flat)" value={displayResult.foreign_service_income} currency={displayResult.currency} />
                 </div>
                 <div>
-                  <h2 className="font-semibold">Compute Your Tax</h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Uses your ledger data with the LK 2025/26 tax pack to compute your liability.
-                  </p>
+                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.08em] mb-3">Tax Computation</p>
+                  <Row label="FSI tax at 15% flat" value={displayResult.fsi_tax} currency={displayResult.currency} />
+                  <Row label="Tax before credits" value={displayResult.total_tax} currency={displayResult.currency} strong />
                 </div>
-                <Button onClick={handleCompute} disabled={compute.isPending} className="w-full">
-                  {compute.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Compute Tax
-                </Button>
-                {compute.error && (
-                  <p className="text-sm text-destructive">{String(compute.error)}</p>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {/* Disclaimer */}
-              <div className="flex items-start gap-3 bg-primary/8 border border-primary/20 rounded-lg px-4 py-3">
-                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary" />
-                <p className="text-[12px] leading-relaxed text-foreground/70">
-                  Indicative only — not formal tax advice. Verify with a qualified tax professional before filing.
-                  {" "}YA {displayResult.year}
-                </p>
               </div>
-
-              {/* Summary cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {[
-                  { label: "GROSS INCOME", value: displayResult.gross_income },
-                  { label: "PERSONAL RELIEF", value: displayResult.personal_relief },
-                  { label: "TAXABLE INCOME", value: displayResult.taxable_income },
-                  { label: "TAX PAYABLE", value: displayResult.tax_payable, highlight: true },
-                ].map(({ label, value, highlight }) => (
-                  <MetricCard
-                    key={label}
-                    label={label}
-                    value={`${displayResult.currency} ${value}`}
-                    accent={highlight}
-                  />
-                ))}
-              </div>
-
-              {/* FSI Breakdown (only when FSI exists) */}
-              {hasFsi && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-blue-500" />
-                      Foreign Service Income Regime
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <p className="text-[11px] font-medium text-secondary-label mb-3 uppercase tracking-wider">Income Split</p>
-                        <LineItem label="Total gross income" value={displayResult.gross_income} currency={displayResult.currency} />
-                        <LineItem label="Regular income (progressive bands)" value={displayResult.regular_income} currency={displayResult.currency} indent />
-                        <LineItem label="Foreign service income (15% flat)" value={displayResult.foreign_service_income} currency={displayResult.currency} indent />
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-medium text-secondary-label mb-3 uppercase tracking-wider">Tax Computation</p>
-                        <LineItem label="Band tax on regular income" value={
-                          (parseFloat(displayResult.total_tax.replace(/,/g, "")) - parseFloat(displayResult.fsi_tax.replace(/,/g, ""))).toLocaleString("en-LK", { minimumFractionDigits: 2 })
-                        } currency={displayResult.currency} />
-                        <LineItem label="FSI tax at 15% flat" value={displayResult.fsi_tax} currency={displayResult.currency} />
-                        <LineItem label="Tax before credits" value={displayResult.total_tax} currency={displayResult.currency} bold divider />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           )}
-        </TabsContent>
+        </div>
+      )}
+    </PageShell>
+  );
+}
 
-        <TabsContent value="credits">
-          {!displayResult ? (
-            <Card className="p-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                Run a computation first to see your tax credits.
-              </p>
-              <Button className="mt-4" onClick={handleCompute} disabled={compute.isPending}>
-                {compute.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Compute Tax
-              </Button>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Credits Applied</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <LineItem label="APIT (Tax Withheld at Source)" value={displayResult.credits.apit} currency={displayResult.currency} />
-                  <LineItem label="AIT (Advanced Income Tax on Interest)" value={displayResult.credits.ait} currency={displayResult.currency} />
-                  <LineItem label="FTC (Foreign Tax Credit)" value={displayResult.credits.ftc} currency={displayResult.currency} />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Liability Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <LineItem label="Tax Before Credits" value={displayResult.total_tax} currency={displayResult.currency} />
-                  <LineItem label="Total Credits" value={
-                    [displayResult.credits.apit, displayResult.credits.ait, displayResult.credits.ftc]
-                      .reduce((s, v) => s + parseFloat(v.replace(/,/g, "")), 0)
-                      .toLocaleString("en-LK", { minimumFractionDigits: 2 })
-                  } currency={displayResult.currency} negative />
-                  <div className="flex items-center justify-between pt-3 mt-1 border-t">
-                    <p className="text-[13px] font-semibold">Net Tax Payable</p>
-                    <p className="font-bold font-mono tabular-nums text-primary">
-                      {displayResult.currency} {displayResult.tax_payable}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </TabsContent>
+// ── Sub-components ────────────────────────────────────────────────────────────
 
-        <TabsContent value="bands">
-          {!displayResult ? (
-            <Card className="p-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                Run a computation first to see tax band breakdown.
-              </p>
-              <Button className="mt-4" onClick={handleCompute} disabled={compute.isPending}>
-                {compute.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Compute Tax
-              </Button>
-            </Card>
-          ) : (
-            <div className="flex flex-col gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">
-                    Progressive Band Workings — YA {displayResult.year}
-                  </CardTitle>
-                  <p className="text-[12px] text-muted-foreground">
-                    Applied to regular taxable income of {displayResult.currency} {displayResult.taxable_income} (excludes FSI)
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <TaxBandTable
-                    bands={displayResult.bands}
-                    total_tax={
-                      (parseFloat(displayResult.total_tax.replace(/,/g, "")) - parseFloat(displayResult.fsi_tax.replace(/,/g, "")))
-                        .toLocaleString("en-LK", { minimumFractionDigits: 2 })
-                    }
-                    currency={displayResult.currency}
-                  />
-                </CardContent>
-              </Card>
+function Row({
+  label, value, currency, strong = false, green = false, thick = false,
+}: {
+  label: string; value: string; currency: string;
+  strong?: boolean; green?: boolean; thick?: boolean;
+}) {
+  return (
+    <div className={`flex justify-between py-[11px] ${thick ? "border-b-2 border-foreground" : "border-b border-border"} last:border-0`}>
+      <span className={`text-[13.5px] ${strong ? "font-extrabold text-foreground" : "text-muted-foreground"}`}>{label}</span>
+      <span className={`text-[13.5px] font-bold tabular-nums font-mono ${green ? "text-emerald-600" : "text-foreground"}`}>
+        {value}
+      </span>
+    </div>
+  );
+}
 
-              {hasFsi && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-blue-500" />
-                      Foreign Service Income Tax
-                    </CardTitle>
-                    <p className="text-[12px] text-muted-foreground">
-                      15% final tax — remitted via a licensed Sri Lankan bank
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col gap-0">
-                      <LineItem label="Foreign service income" value={displayResult.foreign_service_income} currency={displayResult.currency} />
-                      <LineItem label="Rate" value="15%" currency="" />
-                      <LineItem label="FSI tax" value={displayResult.fsi_tax} currency={displayResult.currency} bold divider />
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+function CreditItem({
+  label, sub, value, currency, active,
+}: {
+  label: string; sub: string; value: string; currency: string; active: boolean;
+}) {
+  return (
+    <div
+      className="px-4 py-3.5 rounded-[14px]"
+      style={{ background: active ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)", opacity: active ? 1 : 0.5 }}
+    >
+      <div className="flex justify-between items-start mb-1">
+        <span className="text-[13.5px] font-bold text-white">{label}</span>
+        <span className={`text-[13.5px] font-extrabold tabular-nums font-mono ${active ? "text-[#E8FC85]" : "text-white/35"}`}>
+          {active ? `(${value})` : "—"}
+        </span>
+      </div>
+      <div className="text-[11.5px] text-white/38 leading-tight">{sub}</div>
     </div>
   );
 }

@@ -7,8 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
-  --font-heading: var(--font-inter);
+  --font-sans: var(--font-dm-sans);
+  --font-heading: var(--font-dm-sans);
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -46,103 +46,113 @@
 }
 
 :root {
-  /* === SALLI DESIGN SYSTEM — LEDGER PAPER ===
-     Canvas: warm document paper
-     Sidebar: dark ledger cover (Anthropic-style)
-     Primary: warm amber — official, authoritative
-  */
+  /* === SALLI DESIGN SYSTEM === */
 
   /* Surfaces */
-  --background: oklch(0.976 0.008 75);      /* warm off-white — document paper */
-  --foreground: oklch(0.148 0.006 260);     /* warm charcoal */
+  --background: #F1F7F7;      /* light teal-white canvas */
+  --foreground: #010001;       /* near-black text */
 
-  --card: oklch(1 0 0);                     /* pure white cards float on warm canvas */
-  --card-foreground: oklch(0.148 0.006 260);
+  --card: #FFFFFF;
+  --card-foreground: #010001;
 
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.148 0.006 260);
+  --popover: #FFFFFF;
+  --popover-foreground: #010001;
 
-  /* Primary — warm amber/terracotta, not blue */
-  --primary: oklch(0.598 0.148 46);
-  --primary-foreground: oklch(0.99 0 0);
+  /* Primary — black in light mode (buttons, interactive) */
+  --primary: #010001;
+  --primary-foreground: #FFFFFF;
 
   /* Secondary */
-  --secondary: oklch(0.938 0.010 75);
-  --secondary-foreground: oklch(0.25 0.006 260);
+  --secondary: #E4EFEF;
+  --secondary-foreground: #010001;
 
-  /* Muted */
-  --muted: oklch(0.938 0.010 75);
-  --muted-foreground: oklch(0.52 0.008 260);
+  /* Muted — input backgrounds, subdued surfaces */
+  --muted: #E4EFEF;
+  --muted-foreground: #7DA6A9;
 
-  /* Accent — warm hover */
-  --accent: oklch(0.946 0.012 75);
-  --accent-foreground: oklch(0.148 0.006 260);
+  /* Accent — hover states */
+  --accent: #E4EFEF;
+  --accent-foreground: #010001;
 
   /* Semantic */
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: #DC2626;
 
-  /* Borders — warm, whisper-quiet */
-  --border: oklch(0.878 0.010 75);
-  --input: oklch(0.878 0.010 75);
-  --ring: oklch(0.598 0.148 46);
+  /* Borders */
+  --border: #D5E9EA;
+  --input: #D5E9EA;
+  --ring: #7DA6A9;
 
   /* Radius */
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 
-  /* Sidebar — dark ledger cover, Anthropic-style */
-  --sidebar: oklch(0.148 0.005 260);        /* near-black charcoal */
-  --sidebar-foreground: oklch(0.86 0.006 260);
-  --sidebar-primary: oklch(0.688 0.14 46);  /* warm amber in dark */
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.218 0.006 260); /* dark hover */
-  --sidebar-accent-foreground: oklch(0.92 0.005 260);
-  --sidebar-border: oklch(1 0 0 / 0.08);   /* ghost border on dark */
-  --sidebar-ring: oklch(0.688 0.14 46);
+  /* Sidebar — uses page background (sidebar is transparent/same as bg) */
+  --sidebar: #F1F7F7;
+  --sidebar-foreground: #010001;
+  --sidebar-primary: #010001;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: rgba(0,0,0,0.06);
+  --sidebar-accent-foreground: #010001;
+  --sidebar-border: #D5E9EA;
+  --sidebar-ring: #7DA6A9;
 
   /* Charts */
-  --chart-1: oklch(0.598 0.148 46);   /* primary amber */
-  --chart-2: oklch(0.550 0.140 185);  /* teal */
-  --chart-3: oklch(0.620 0.130 145);  /* green */
-  --chart-4: oklch(0.680 0.165 30);   /* orange */
-  --chart-5: oklch(0.480 0.155 280);  /* indigo */
+  --chart-1: #010001;
+  --chart-2: #7DA6A9;
+  --chart-3: #A5FFB9;
+  --chart-4: #E8FC85;
+  --chart-5: #D5E9EA;
+
+  /* === Salli brand accent tokens === */
+  --salli-lime: #E8FC85;       /* lime yellow — primary accent in dark */
+  --salli-mint: #A5FFB9;       /* mint green tile */
+  --salli-teal: #D5E9EA;       /* teal tile */
+  --salli-dark: #010001;       /* near-black */
+  --salli-muted: #7DA6A9;      /* teal-gray muted text */
 }
 
 .dark {
-  --background: oklch(0.148 0.005 260);
-  --foreground: oklch(0.946 0.005 75);
+  --background: #111110;
+  --foreground: #F0EEE8;
 
-  --card: oklch(0.185 0.008 260);
-  --card-foreground: oklch(0.946 0.005 75);
+  --card: #1C1C1A;
+  --card-foreground: #F0EEE8;
 
-  --popover: oklch(0.185 0.008 260);
-  --popover-foreground: oklch(0.946 0.005 75);
+  --popover: #1C1C1A;
+  --popover-foreground: #F0EEE8;
 
-  --primary: oklch(0.700 0.148 46);
-  --primary-foreground: oklch(0.148 0.005 260);
+  /* Primary — lime accent in dark mode */
+  --primary: #E8FC85;
+  --primary-foreground: #010001;
 
-  --secondary: oklch(0.220 0.008 260);
-  --secondary-foreground: oklch(0.946 0.005 75);
+  --secondary: #242422;
+  --secondary-foreground: #F0EEE8;
 
-  --muted: oklch(0.220 0.008 260);
-  --muted-foreground: oklch(0.65 0.007 260);
+  --muted: #242422;
+  --muted-foreground: #7DA6A9;
 
-  --accent: oklch(0.220 0.008 260);
-  --accent-foreground: oklch(0.946 0.005 75);
+  --accent: #242422;
+  --accent-foreground: #F0EEE8;
 
-  --destructive: oklch(0.704 0.191 22.216);
+  --destructive: #EF4444;
 
-  --border: oklch(1 0 0 / 0.10);
-  --input: oklch(1 0 0 / 0.15);
-  --ring: oklch(0.700 0.148 46);
+  --border: #2E2E2C;
+  --input: #2E2E2C;
+  --ring: #7DA6A9;
 
-  --sidebar: oklch(0.115 0.005 260);
-  --sidebar-foreground: oklch(0.86 0.006 260);
-  --sidebar-primary: oklch(0.700 0.148 46);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.180 0.006 260);
-  --sidebar-accent-foreground: oklch(0.92 0.005 260);
-  --sidebar-border: oklch(1 0 0 / 0.08);
-  --sidebar-ring: oklch(0.700 0.148 46);
+  --sidebar: #111110;
+  --sidebar-foreground: #F0EEE8;
+  --sidebar-primary: #E8FC85;
+  --sidebar-primary-foreground: #010001;
+  --sidebar-accent: rgba(255,255,255,0.06);
+  --sidebar-accent-foreground: #F0EEE8;
+  --sidebar-border: #2E2E2C;
+  --sidebar-ring: #7DA6A9;
+
+  --chart-1: #E8FC85;
+  --chart-2: #7DA6A9;
+  --chart-3: #A5FFB9;
+  --chart-4: #F59E0B;
+  --chart-5: #D5E9EA;
 }
 
 @layer base {
@@ -162,26 +172,33 @@
     line-height: 1.5714;
   }
 
-  /* Balanced headings, no orphans on body text */
   h1, h2, h3, h4, h5, h6 {
     text-wrap: balance;
-    letter-spacing: -0.018em;
+    letter-spacing: -0.03em;
   }
 
   p {
     text-wrap: pretty;
   }
 
-  /* Financial data always tabular */
   .tabular-nums,
   [data-slot="metric"],
   td,
   th {
     font-variant-numeric: tabular-nums;
   }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 8px;
+  }
 }
 
-/* ── Agent chat animations ────────────────────────────────────────────────── */
+/* ── Agent chat animations ─────────────────────────────────────────────────── */
 
 @keyframes msg-in {
   from { opacity: 0; transform: translateY(6px); }
@@ -198,8 +215,17 @@
   to   { opacity: 1; }
 }
 
+@keyframes slideR {
+  from { transform: translateX(110%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 @layer components {
-  /* Type hierarchy — four tiers via weight+colour, not size alone */
   .text-primary-label {
     @apply text-sm font-semibold text-foreground;
   }
@@ -210,30 +236,36 @@
     @apply text-xs text-muted-foreground;
   }
 
-  /* Metric hero — the focal element in stat cards.
-     Set in the ledger mono so figures read as book entries, not marketing stats. */
   .text-metric {
     @apply text-[26px] font-mono font-medium tabular-nums leading-none;
     letter-spacing: -0.02em;
   }
 
-  /* Every monetary figure / code / date — the accountant's hand */
   .font-ledger {
     @apply font-mono tabular-nums;
     letter-spacing: -0.01em;
   }
 
-  /* Faint ruled-paper behind the floating cards — the ledger showing through.
-     Sits only on the warm paper canvas; white cards cover it where content lives. */
-  .ledger-paper {
-    background-color: var(--background);
-    background-image: repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 31px,
-      color-mix(in oklch, var(--foreground) 4%, transparent) 31px,
-      color-mix(in oklch, var(--foreground) 4%, transparent) 32px
-    );
-    background-position: 0 0;
-  }
+  /* Bento tile colour helpers */
+  .tile-lime  { background: #E8FC85; }
+  .tile-mint  { background: #A5FFB9; }
+  .tile-teal  { background: #D5E9EA; }
+  .tile-dark  { background: #010001; }
+}
+
+@keyframes bubble-move-vertical {
+  0%   { transform: translateY(-50%); }
+  50%  { transform: translateY(50%);  }
+  100% { transform: translateY(-50%); }
+}
+
+@keyframes bubble-move-horizontal {
+  0%   { transform: translateX(-50%) translateY(-10%); }
+  50%  { transform: translateX(50%)  translateY(10%);  }
+  100% { transform: translateX(-50%) translateY(-10%); }
+}
+
+@keyframes bubble-move-circle {
+  0%   { transform: rotate(0deg)   translate(-15%, -15%) rotate(0deg);   }
+  100% { transform: rotate(360deg) translate(-15%, -15%) rotate(-360deg); }
 }

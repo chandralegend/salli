@@ -220,9 +220,7 @@ class AgentDocumentRepository(ABC):
         ...
 
     @abstractmethod
-    async def get_by_slug(
-        self, user_id: str, namespace: str, slug: str
-    ) -> dict[str, Any] | None:
+    async def get_by_slug(self, user_id: str, namespace: str, slug: str) -> dict[str, Any] | None:
         """Return a document by its user+namespace+slug key."""
         ...
 
@@ -348,11 +346,15 @@ class AdvisoryRepository(ABC):
     @abstractmethod
     async def get_latest(self, user_id: str) -> dict[str, Any] | None: ...
 
+
+class FireStrategyRepository(ABC):
     @abstractmethod
-    async def list(self, user_id: str, limit: int = 30) -> list[dict[str, Any]]: ...
+    async def get_latest(self, user_id: str) -> dict[str, Any] | None: ...
 
     @abstractmethod
-    async def update_recommendations(self, user_id: str, report_id: str, recommendations: list) -> None: ...
+    async def save(self, user_id: str, strategy: dict[str, Any]) -> int:
+        """Persist a new strategy version and return the version number."""
+        ...
 
     @abstractmethod
-    async def ran_today(self, user_id: str, day: str) -> bool: ...
+    async def get_history(self, user_id: str) -> list[dict[str, Any]]: ...

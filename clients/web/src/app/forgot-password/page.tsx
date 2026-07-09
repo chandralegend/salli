@@ -2,9 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Loader2, MailCheck } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { sendPasswordReset, isSupabaseConfigured } from "@/lib/auth";
@@ -31,46 +28,50 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthShell title="Reset password" subtitle="We'll email you a reset link.">
+    <AuthShell title="Reset password" subtitle="We'll send a link to your email.">
       {sent ? (
         <div className="flex flex-col items-center text-center gap-4 py-6">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <MailCheck className="size-5 text-primary" />
+          <div className="w-14 h-14 rounded-2xl bg-[#E8FC85] flex items-center justify-center">
+            <MailCheck className="size-6 text-[#010001]" />
           </div>
-          <p className="text-[13px] text-muted-foreground max-w-xs">
+          <p className="text-[13px] text-muted-foreground max-w-xs leading-relaxed">
             If an account exists for{" "}
-            <span className="font-medium text-foreground">{email}</span>, a reset link is on its way.
+            <span className="font-semibold text-foreground">{email}</span>, a reset link is on its way.
           </p>
-          <Button variant="outline" render={<Link href="/login" />}>
-            Back to sign in
-          </Button>
+          <Link
+            href="/login"
+            className="border border-border rounded-full px-5 py-2.5 text-[13.5px] font-bold text-foreground hover:bg-muted transition-colors"
+          >
+            ← Back to sign in
+          </Link>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-3.5">
-          <div className="space-y-1.5">
-            <Label className="text-[12px] font-medium">Email</Label>
-            <Input
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={!supabaseOn}
-              className="h-10 text-[13px]"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <input
+            type="email"
+            placeholder="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={!supabaseOn}
+            className="w-full px-4 py-3 border-[1.5px] border-border rounded-[14px] text-[14px] font-normal text-foreground bg-muted outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground disabled:opacity-50"
+          />
           {error && (
-            <p className="text-[12px] text-rose-600 bg-rose-50 rounded-md px-3 py-2 border border-rose-200">
+            <p className="text-[12px] text-rose-600 bg-rose-50 rounded-xl px-3 py-2.5 border border-rose-200">
               {error}
             </p>
           )}
-          <Button type="submit" disabled={loading || !supabaseOn} className="w-full h-10">
-            {loading && <Loader2 className="size-3.5 mr-2 animate-spin" />}
+          <button
+            type="submit"
+            disabled={loading || !supabaseOn}
+            className="w-full py-[14px] bg-[#010001] text-white border-none rounded-full text-[15px] font-bold cursor-pointer hover:bg-[#1a1a1a] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mt-1"
+          >
+            {loading && <Loader2 className="size-4 animate-spin" />}
             Send reset link
-          </Button>
-          <p className="text-[12px] text-muted-foreground text-center pt-1">
-            <Link href="/login" className="text-primary font-medium hover:underline">
-              Back to sign in
+          </button>
+          <p className="text-[13.5px] text-muted-foreground text-center">
+            <Link href="/login" className="text-foreground font-bold hover:underline">
+              ← Back to sign in
             </Link>
           </p>
         </form>

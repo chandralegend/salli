@@ -1,0 +1,17 @@
+{
+  "name": "salli-infra",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Salli infrastructure — Supabase, Render, Vercel (Pulumi/TypeScript)",
+  "main": "index.ts",
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "@pulumi/pulumi": "^3.150.0",
+    "@pulumi/render": "file:sdks/render",
+    "@pulumi/supabase": "file:sdks/supabase",
+    "@pulumiverse/vercel": "^5.3.1"
+  }
+}

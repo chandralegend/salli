@@ -13,9 +13,9 @@ from salli.domain.fi.models import FiPack
 
 DEFAULT_V1 = FiPack(
     version="1.0.0",
-    safe_withdrawal_rate=Decimal("0.04"),     # 4% rule → FI number = 25× annual expenses
+    safe_withdrawal_rate=Decimal("0.04"),  # 4% rule → FI number = 25× annual expenses
     emergency_fund_target_months=6,
-    expected_real_return=Decimal("0.05"),     # 5% real annual return for projections
+    expected_real_return=Decimal("0.05"),  # 5% real annual return for projections
     savings_rate_for_full_score=Decimal("0.50"),  # saving 50%+ of income scores full marks
     weights={
         "savings_rate": Decimal("0.25"),

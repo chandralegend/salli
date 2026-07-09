@@ -79,16 +79,16 @@ export function FiScoreCard() {
   );
 
   return (
-    <div ref={ref} className="rounded-2xl bg-white/[0.04] ring-1 ring-white/10 p-8 text-center">
+    <div ref={ref} className="rounded-[28px] bg-white/[0.04] ring-1 ring-white/10 p-8 text-center">
       <p className="text-secondary-label text-ink-foreground/40">Your FI score</p>
-      <p ref={scoreRef} className="font-ledger text-[72px] leading-none mt-3 text-primary tabular-nums">
+      <p ref={scoreRef} className="font-ledger text-[72px] leading-none mt-3 text-[#E8FC85] tabular-nums">
         0
       </p>
       <p className="text-[13px] text-ink-foreground/60 mt-1">On track</p>
       <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden mt-5">
         <div
           ref={barRef}
-          className="h-full origin-left rounded-full bg-primary"
+          className="h-full origin-left rounded-full bg-[#E8FC85]"
           style={{ width: `${SCORE}%`, transform: "scaleX(0)" }}
         />
       </div>

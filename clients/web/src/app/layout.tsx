@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
-import { Inter, IBM_Plex_Mono } from "next/font/google";
+import { DM_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-const inter = Inter({
-  variable: "--font-inter",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
 
-// The ledger hand — every figure, date, and code is set in this mono so the
-// numbers column up like an accountant's book.
 const plexMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
   subsets: ["latin"],
@@ -28,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${plexMono.variable} h-full`} suppressHydrationWarning>
+    <html lang="en" className={`${dmSans.variable} ${plexMono.variable} h-full`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
         <Providers>
           <TooltipProvider>{children}</TooltipProvider>

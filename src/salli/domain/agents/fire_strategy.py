@@ -1,0 +1,127 @@
+"""
+FIRE Strategy LLM agent — generates a personalised AI FireStrategy.
+
+The model receives the user's actual ledger data, applies the seven FIRE
+theories, and returns a structured FireStrategy. It NEVER computes money;
+all figures are passed in from the deterministic engine and ledger.
+"""
+
+from __future__ import annotations
+
+import json
+from typing import Any, Literal
+
+from pydantic import BaseModel, Field
+
+FIRE_SYSTEM_PROMPT = """You are Salli's FIRE Strategy Architect — a deep-thinking financial independence advisor
+specialising in Sri Lanka, with expertise in international FIRE literature.
+
+You will analyse a user's REAL financial data (from their ledger) and produce a personalised
+FIRE strategy using these seven foundational theories:
+
+1. **Trinity Study / 4% Rule**: Derive the safe withdrawal rate (SWR) based on the user's
+   situation. Standard SWR is 4% (25x expenses), but FatFIRE users with conservative needs
+   may use 3.5%, and those with aggressive growth plans may use 4.5%.
+
+2. **Barbell Strategy**: Create two poles — ultra-safe (emergency + bonds/FDs) and
+   high-growth (equities/business) — avoid the mushy middle. The size of each pole depends
+   on the user's risk appetite and income stability.
+
+3. **Three-Bucket System**: Organise into Liquidity (emergency, 1-2y expenses), Stability
+   (medium-term, bonds/FDs), and Growth (long-term, equities). Adapt bucket sizes to the
+   user's timeline and income.
+
+4. **Pay Yourself First**: Design the allocation buckets in automation order — emergency
+   bucket first, then stability, then growth. Monthly contributions flow in this sequence.
+
+5. **JL Collins Simple Path**: Favour low-cost index funds for the growth bucket. In Sri Lanka
+   context, suggest CSE index funds (ASPI), unit trusts, and for the international portion,
+   USD-denominated index ETFs via a foreign account.
+
+6. **Currency Diversification**: If the user has foreign income (FSI) or multi-currency
+   accounts, create a dedicated foreign currency / hedge bucket. LKR depreciation risk is
+   real — weight this bucket appropriately.
+
+7. **FIRE Tier Classification**: Classify the user:
+   - LeanFIRE: savings rate < 30%, living lean
+   - Standard FIRE: savings rate 30-50%
+   - FatFIRE: savings rate ≥ 50%, or high income with comfort-first lifestyle
+   - CoastFIRE: user wants to stop contributing but let investments compound
+
+Generate allocation buckets appropriate to this user — not a generic template. The bucket
+count, names, and target percentages should reflect their actual financial profile.
+
+Rules:
+- Target percentages across all buckets must sum to 100%
+- All figures you reference MUST come from the data provided — never invent or estimate
+- Be specific: reference actual account types, income sources, and amounts from the data
+- If re-running, reference what has changed and what stays the same
+- The ai_rationale should be detailed markdown (300-500 words) explaining the full strategy
+- Do NOT use emojis"""
+
+
+class BucketSchema(BaseModel):
+    key: str = Field(description="Unique key, snake_case, e.g. 'emergency_moat'")
+    name: str = Field(description="Display name, e.g. 'Emergency Moat'")
+    target_pct: float = Field(description="0.0-1.0, fraction of monthly surplus to route here")
+    description: str = Field(
+        description="1-2 sentences explaining this bucket and what to invest in"
+    )
+    color: str = Field(description="One of: emerald, blue, amber, violet, rose, teal, orange")
+
+
+class FireStrategySchema(BaseModel):
+    fire_style: Literal["lean", "standard", "fat", "coast"] = Field(
+        description="FIRE tier classification"
+    )
+    swr: float = Field(description="Safe withdrawal rate, e.g. 0.04 for 4%")
+    return_conservative: float = Field(
+        description="Conservative annual return assumption, e.g. 0.06"
+    )
+    return_base: float = Field(description="Base annual return assumption, e.g. 0.10")
+    return_growth: float = Field(description="Growth annual return assumption, e.g. 0.14")
+    target_monthly_expenses: float | None = Field(
+        default=None,
+        description="Target monthly expenses at retirement; null = use current actuals",
+    )
+    target_age: int | None = Field(default=None, description="Target retirement age, or null")
+    buckets: list[BucketSchema] = Field(
+        description="AI-generated allocation buckets; target_pct must sum to 1.0"
+    )
+    ai_rationale: str = Field(
+        description="Detailed markdown explanation of the strategy (300-500 words)"
+    )
+    theories_applied: list[str] = Field(
+        description="List of theory names applied, e.g. ['Trinity Study', 'Barbell']"
+    )
+
+
+async def generate_strategy(context: dict[str, Any]) -> FireStrategySchema:
+    from langchain_anthropic import ChatAnthropic
+    from langchain_core.messages import HumanMessage, SystemMessage
+
+    model = ChatAnthropic(
+        model="claude-sonnet-4-6",
+        temperature=0.3,
+        max_tokens=8000,
+    )
+    structured = model.with_structured_output(FireStrategySchema)
+    payload = json.dumps(context, indent=2, default=str)
+
+    is_refresh = bool(context.get("previous_strategy"))
+    task = (
+        "Review the user's current strategy and update it based on what has changed. "
+        "Preserve decisions that are still sound. Clearly explain in ai_rationale what changed and why."
+        if is_refresh
+        else "Generate a comprehensive, personalised FIRE strategy for this user based on their actual financial data."
+    )
+
+    result = await structured.ainvoke(
+        [
+            SystemMessage(content=FIRE_SYSTEM_PROMPT),
+            HumanMessage(
+                content=f"Here is the user's financial profile:\n\n{payload}\n\nTask: {task}"
+            ),
+        ]
+    )
+    return result  # type: ignore[return-value]

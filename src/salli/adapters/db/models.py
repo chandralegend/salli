@@ -329,9 +329,7 @@ class SubscriptionORM(Base):
         DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
     )
 
-    __table_args__ = (
-        UniqueConstraint("user_id", name="uq_subscriptions_user"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", name="uq_subscriptions_user"),)
 
 
 class UsageCounterORM(Base):
@@ -400,6 +398,22 @@ class FiScoreORM(Base):
     __table_args__ = (Index("ix_fi_scores_user_date", "user_id", "created_at"),)
 
 
+class FireStrategyORM(Base):
+    """Versioned AI-generated FIRE strategy for a user."""
+
+    __tablename__ = "fire_strategies"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    strategy: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+
+    __table_args__ = (Index("ix_fire_strategies_user_version", "user_id", "version"),)
+
+
 class AdvisoryReportORM(Base):
     """A Wealth Advisor run: summary + structured, actionable recommendations."""
 
@@ -407,7 +421,9 @@ class AdvisoryReportORM(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
-    trigger: Mapped[str] = mapped_column(String(20), nullable=False, default="manual")  # manual | scheduled
+    trigger: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="manual"
+    )  # manual | scheduled
     fi_score_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
     # list of {id,title,rationale,category,action_type(none|reminder|journal_entry),

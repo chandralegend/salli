@@ -34,6 +34,10 @@ SUPABASE_ANON = os.environ.get(
 )
 SEED_EMAIL    = os.environ.get("SEED_EMAIL", "founder@salli.lk")
 SEED_PASSWORD = os.environ.get("SEED_PASSWORD", "supersecret123")
+# When set, skip Supabase auth entirely and use this as both token and user_id.
+# Required when running without a local Supabase stack (the API dev fallback
+# accepts any Bearer value as the user_id when SUPABASE_URL/JWT_SECRET are empty).
+SEED_TOKEN = os.environ.get("SEED_TOKEN", "")
 
 # Legacy identity whose data should always be purged on reseed
 LEGACY_USER = "dev-user"
@@ -565,8 +569,12 @@ async def seed(token: str) -> None:
 
 
 async def main() -> None:
-    token, user_id = get_auth()
-    print(f"🔑  Seeding as {SEED_EMAIL} (user_id={user_id})\n")
+    if SEED_TOKEN:
+        token, user_id = SEED_TOKEN, SEED_TOKEN
+        print(f"🔑  Seeding in dev mode (user_id={user_id})\n")
+    else:
+        token, user_id = get_auth()
+        print(f"🔑  Seeding as {SEED_EMAIL} (user_id={user_id})\n")
     # Purge the legacy dev-user data AND any prior data for the seeding account
     await clear_user_data([LEGACY_USER, user_id])
     await seed(token)

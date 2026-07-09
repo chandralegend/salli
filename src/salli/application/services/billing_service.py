@@ -69,13 +69,15 @@ class BillingService:
         for metric in METRICS:
             used = counts.get(metric, 0)
             limit = plan.limits.get(metric, 0)
-            usage.append({
-                "metric": metric,
-                "used": used,
-                "limit": limit,
-                "remaining": max(0, limit - used),
-                "resets_at": resets_at,
-            })
+            usage.append(
+                {
+                    "metric": metric,
+                    "used": used,
+                    "limit": limit,
+                    "remaining": max(0, limit - used),
+                    "resets_at": resets_at,
+                }
+            )
         return {
             "plan": plan.key,
             "plan_name": plan.name,
@@ -102,20 +104,24 @@ class BillingService:
     def get_plans(self) -> list[dict[str, Any]]:
         out = []
         for p in plan_registry.PLANS.values():
-            out.append({
-                "key": p.key,
-                "name": p.name,
-                "description": p.description,
-                "monthly_price_usd": p.monthly_price_usd,
-                "limits": p.limits,
-                "features": p.features,
-                "paid": p.paid,
-            })
+            out.append(
+                {
+                    "key": p.key,
+                    "name": p.name,
+                    "description": p.description,
+                    "monthly_price_usd": p.monthly_price_usd,
+                    "limits": p.limits,
+                    "features": p.features,
+                    "paid": p.paid,
+                }
+            )
         return out
 
     # ── Provider (Paddle) ─────────────────────────────────────────────────────
 
-    async def create_checkout(self, user_id: str, email: str | None, plan_key: str) -> dict[str, Any]:
+    async def create_checkout(
+        self, user_id: str, email: str | None, plan_key: str
+    ) -> dict[str, Any]:
         if self._billing is None:
             raise RuntimeError("Billing provider not configured")
         sub = await self._ensure_user(user_id, email)
@@ -134,7 +140,9 @@ class BillingService:
             raise RuntimeError("No billing customer for this user yet")
         return await self._billing.get_portal_url(customer_id)
 
-    def verify_and_parse_webhook(self, raw_body: bytes, signature: str | None) -> dict[str, Any] | None:
+    def verify_and_parse_webhook(
+        self, raw_body: bytes, signature: str | None
+    ) -> dict[str, Any] | None:
         if self._billing is None:
             return None
         return self._billing.verify_and_parse_webhook(raw_body, signature)

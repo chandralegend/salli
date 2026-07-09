@@ -53,3 +53,8 @@ doc/
 node_modules/
 .next/
 .expo/
+
+# Claude Code — commit launch.json (shared dev preview config); keep local out
+.claude/settings.local.json
+.agents/
+.pulumi/

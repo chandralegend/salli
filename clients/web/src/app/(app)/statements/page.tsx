@@ -97,7 +97,7 @@ export default function StatementsPage() {
 
   if (posted) {
     return (
-      <div className="p-6 max-w-2xl mx-auto">
+      <div className="p-8 max-w-[1320px] mx-auto">
         <Card>
           <div className="p-12 flex flex-col items-center gap-4 text-center">
             <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center">
@@ -119,12 +119,16 @@ export default function StatementsPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">Statements</h1>
-        <p className="text-meta mt-0.5">
-          Import bank statements, review parsed transactions, and post to the ledger
-        </p>
+    <div className="p-8 max-w-[1320px] mx-auto">
+      <div className="flex items-end justify-between mb-6 gap-5">
+        <div>
+          <h1 className="text-[38px] font-black tracking-[-0.05em] leading-[1.1] text-foreground">
+            Statements
+          </h1>
+          <p className="text-[13px] text-muted-foreground mt-2 font-medium">
+            Import bank statements → review → post to ledger
+          </p>
+        </div>
       </div>
 
       {!result && (

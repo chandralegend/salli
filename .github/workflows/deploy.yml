@@ -1,0 +1,84 @@
+name: Deploy infra (Pulumi)
+
+# Pulumi runs ONLY here — never locally. Push to main → `pulumi up`.
+# PRs touching infra/ → `pulumi preview` (no changes applied).
+on:
+  push:
+    # main → `pulumi up`. deploy/** branches → `pulumi preview` (lets us dry-run
+    # before merging, and works before the workflow exists on the default branch).
+    branches: [main, "deploy/**"]
+    paths:
+      - "infra/**"
+      - "src/**"
+      - "clients/**"
+      - "Dockerfile.api"
+      - ".github/workflows/deploy.yml"
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: pulumi-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pulumi:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra
+    env:
+      # ── Provider auth ──
+      PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      VERCEL_API_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      # ── App secrets forwarded into resources ──
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+      LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+      PADDLE_API_KEY: ${{ secrets.PADDLE_API_KEY }}
+      PADDLE_WEBHOOK_SECRET: ${{ secrets.PADDLE_WEBHOOK_SECRET }}
+      PADDLE_ENVIRONMENT: ${{ vars.PADDLE_ENVIRONMENT }}
+      PADDLE_PRICE_PLUS: ${{ vars.PADDLE_PRICE_PLUS }}
+      PADDLE_PRICE_PRO: ${{ vars.PADDLE_PRICE_PRO }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: infra/pnpm-lock.yaml
+
+      - name: Install Pulumi CLI
+        run: |
+          curl -fsSL https://get.pulumi.com | sh
+          echo "$HOME/.pulumi/bin" >> "$GITHUB_PATH"
+
+      # Runs the bridged-SDK postinstalls, which install the Pulumi
+      # Terraform-bridge plugin (allowed via infra/pnpm-workspace.yaml).
+      - name: Install JS deps + provider plugins
+        run: pnpm install --frozen-lockfile
+
+      - name: Select / create stack
+        run: pulumi stack select --create prod
+
+      # Real deploy only on a push to main; everything else is a dry run.
+      - name: Preview (branches / PRs)
+        if: github.ref != 'refs/heads/main'
+        run: pulumi preview --stack prod --diff
+
+      - name: Up (main)
+        if: github.ref == 'refs/heads/main'
+        run: pulumi up --yes --stack prod

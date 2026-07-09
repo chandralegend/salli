@@ -16,6 +16,54 @@ export const useSalliStore = create<SalliStore>((set) => ({
   setOnboardingComplete: (v) => set({ onboardingComplete: v }),
 }));
 
+// ── Scrooge panel ─────────────────────────────────────────────────────────────
+
+const PANEL_MIN_WIDTH = 320;
+const PANEL_DEFAULT_WIDTH = 460;
+
+function readStoredWidth(): number {
+  if (typeof window === "undefined") return PANEL_DEFAULT_WIDTH;
+  const v = parseInt(localStorage.getItem("scrooge_panel_width") ?? "", 10);
+  return !isNaN(v) && v >= PANEL_MIN_WIDTH ? v : PANEL_DEFAULT_WIDTH;
+}
+
+interface ScroogePanelStore {
+  isOpen: boolean;
+  threadId: string;
+  width: number;
+  isFullPage: boolean;
+  open: (threadId?: string) => void;
+  close: () => void;
+  toggle: () => void;
+  setThread: (id: string) => void;
+  setWidth: (w: number) => void;
+  toggleFullPage: () => void;
+}
+
+const initialThreadId = () =>
+  typeof globalThis.crypto !== "undefined" ? globalThis.crypto.randomUUID() : `t-${Date.now()}`;
+
+export const useScroogePanel = create<ScroogePanelStore>((set) => ({
+  isOpen: false,
+  threadId: initialThreadId(),
+  width: readStoredWidth(),
+  isFullPage: false,
+  open: (threadId?: string) =>
+    set((s) => ({ isOpen: true, threadId: threadId ?? s.threadId })),
+  close: () => set({ isOpen: false }),
+  toggle: () => set((s) => ({ isOpen: !s.isOpen })),
+  setThread: (id: string) => set({ threadId: id }),
+  setWidth: (w: number) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("scrooge_panel_width", String(w));
+    }
+    set({ width: w });
+  },
+  toggleFullPage: () => set((s) => ({ isFullPage: !s.isFullPage })),
+}));
+
+export { PANEL_MIN_WIDTH };
+
 export function getStoredToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("salli_token");

@@ -1,0 +1,14 @@
+name: salli-infra
+runtime:
+  name: nodejs
+  options:
+    packagemanager: pnpm
+description: >-
+  Salli infrastructure — Supabase (Postgres + Auth + Storage), Render (FastAPI
+  backend), and Vercel (web app + marketing site). Applied only from GitHub
+  Actions; state lives in Pulumi Cloud.
+
+# The Render provider is the official Terraform provider (render-oss/render),
+# bridged into Pulumi. CI runs `pulumi package add terraform-provider
+# render-oss/render` before `pulumi up`, which generates the local
+# `@pulumi/render` SDK that index.ts imports. See DEPLOY.md.

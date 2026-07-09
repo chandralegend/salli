@@ -24,10 +24,12 @@ services:
     env_file:
       - .env
     environment:
-      # App DB now lives on the local Supabase Postgres (prod parity).
-      # The docker `db` service remains as a dev fallback but is unused.
+      # Use local Supabase Postgres (host port 54322) for prod-parity
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@host.docker.internal:54322/postgres
       ENVIRONMENT: development
+      ALLOWED_ORIGINS: '["http://localhost:3002","http://localhost:3001"]'
+      SUPABASE_URL: http://host.docker.internal:54321
+      SUPABASE_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
     command: sh -c "alembic upgrade head && uvicorn salli.interfaces.api.main:app --host 0.0.0.0 --port 8000 --reload"
     depends_on:
       db:
@@ -37,7 +39,8 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ~/.salli/storage:/root/.salli/storage
-      - ./src:/app/src        # hot-reload Python source
+      - ./src:/app/src           # hot-reload Python source
+      - ./alembic:/app/alembic   # hot-reload migrations
 
   web:
     image: node:22-alpine
@@ -47,9 +50,11 @@ services:
       - ./clients/web:/app
       - web_node_modules:/app/node_modules
     ports:
-      - "3000:3000"
+      - "3002:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8080
+      NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
     depends_on:
       - api
 

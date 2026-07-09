@@ -40,6 +40,7 @@ export type Recommendation = {
   rationale: string;
   category: string;
   priority: number;
+  bucket_key: string | null;
   action_type: "none" | "reminder";
   action_params: { label?: string; due_in_days?: number | null };
   status: "pending" | "applied" | "dismissed";
@@ -49,6 +50,7 @@ export type AdvisoryReport = {
   id: string;
   trigger: string;
   summary: string;
+  fire_tier_assessment?: string;
   recommendations: Recommendation[];
   created_at: string;
 };
@@ -103,6 +105,95 @@ export function useDeleteGoal() {
   return useMutation({
     mutationFn: (id: string) => apiFetch("DELETE", `/fi/goals/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fi"] }),
+  });
+}
+
+// ── FIRE Strategy ─────────────────────────────────────────────────────────────
+
+export type AllocationBucket = {
+  key: string;
+  name: string;
+  target_pct: number;
+  description: string;
+  color: string;
+};
+
+export type FireStrategy = {
+  version: number;
+  fire_style: "lean" | "standard" | "fat" | "coast";
+  swr: number;
+  return_conservative: number;
+  return_base: number;
+  return_growth: number;
+  target_monthly_expenses: number | null;
+  target_age: number | null;
+  buckets: AllocationBucket[];
+  ai_rationale: string;
+  theories_applied: string[];
+  created_at: string;
+  is_initial: boolean;
+};
+
+export type ProjectionPoint = {
+  year: number;
+  conservative: string;
+  base: string;
+  growth: string;
+};
+
+export type ProjectionsData = {
+  points: ProjectionPoint[];
+  fi_number: string;
+  fire_year_conservative: number | null;
+  fire_year_base: number | null;
+  fire_year_growth: number | null;
+  current_portfolio: string;
+};
+
+export type SurplusBreakdown = {
+  income_by_source: Record<string, string>;
+  expense_by_category: Record<string, string>;
+  gross_monthly_income: string;
+  gross_monthly_expenses: string;
+  monthly_surplus: string;
+  savings_rate: string;
+};
+
+export function useFireStrategy() {
+  return useQuery({
+    queryKey: ["fi", "strategy"],
+    queryFn: () =>
+      apiFetch<FireStrategy>("GET", "/fi/strategy").catch((e) => {
+        if (e?.message?.includes("404") || String(e).includes("404")) return null;
+        throw e;
+      }),
+    staleTime: 60_000,
+    retry: false,
+  });
+}
+
+export function useFireStrategyHistory() {
+  return useQuery({
+    queryKey: ["fi", "strategy", "history"],
+    queryFn: () =>
+      apiFetch<{ history: unknown[] }>("GET", "/fi/strategy/history").then((d) => d.history),
+    staleTime: 60_000,
+  });
+}
+
+export function useFireProjections() {
+  return useQuery({
+    queryKey: ["fi", "projections"],
+    queryFn: () => apiFetch<ProjectionsData>("GET", "/fi/projections"),
+    staleTime: 120_000,
+  });
+}
+
+export function useFireSurplus() {
+  return useQuery({
+    queryKey: ["fi", "surplus"],
+    queryFn: () => apiFetch<SurplusBreakdown>("GET", "/fi/surplus"),
+    staleTime: 120_000,
   });
 }
 

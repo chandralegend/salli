@@ -85,12 +85,7 @@ def create_app() -> FastAPI:
     )
 
     # ── CORS ──────────────────────────────────────────────────────────────────
-    # Production origins are locked down via environment variable
-    origins = (
-        ["*"]
-        if settings.environment == "development"
-        else getattr(settings, "allowed_origins", ["https://salli.lk"])
-    )
+    origins = ["*"] if settings.environment == "development" else settings.allowed_origins
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,

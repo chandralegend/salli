@@ -21,6 +21,7 @@ from salli.adapters.db.models import (
     AdvisoryReportORM,
     AgentDocumentORM,
     AgentSessionORM,
+    FireStrategyORM,
     FiScoreORM,
     GoalORM,
     JournalEntryORM,
@@ -37,6 +38,7 @@ from salli.application.ports import (
     AdvisoryRepository,
     AgentDocumentRepository,
     AgentSessionRepository,
+    FireStrategyRepository,
     FiScoreRepository,
     GoalRepository,
     LedgerRepository,
@@ -203,9 +205,7 @@ class SQLLedgerRepository(LedgerRepository):
     async def update_account(
         self, user_id: str, account_id: str, *, code: str, name: str, type: str, currency: str
     ) -> None:
-        stmt = select(AccountORM).where(
-            AccountORM.id == account_id, AccountORM.user_id == user_id
-        )
+        stmt = select(AccountORM).where(AccountORM.id == account_id, AccountORM.user_id == user_id)
         result = await self._session.execute(stmt)
         row = result.scalar_one_or_none()
         if row:
@@ -215,9 +215,7 @@ class SQLLedgerRepository(LedgerRepository):
             row.currency = currency
 
     async def deactivate_account(self, user_id: str, account_id: str) -> None:
-        stmt = select(AccountORM).where(
-            AccountORM.id == account_id, AccountORM.user_id == user_id
-        )
+        stmt = select(AccountORM).where(AccountORM.id == account_id, AccountORM.user_id == user_id)
         result = await self._session.execute(stmt)
         row = result.scalar_one_or_none()
         if row:
@@ -563,9 +561,7 @@ class SQLAgentDocumentRepository(AgentDocumentRepository):
         if row:
             await self._session.delete(row)
 
-    async def get_by_slug(
-        self, user_id: str, namespace: str, slug: str
-    ) -> dict[str, Any] | None:
+    async def get_by_slug(self, user_id: str, namespace: str, slug: str) -> dict[str, Any] | None:
         stmt = select(AgentDocumentORM).where(
             AgentDocumentORM.user_id == user_id,
             AgentDocumentORM.namespace == namespace,
@@ -580,7 +576,9 @@ class SQLAgentDocumentRepository(AgentDocumentRepository):
     ) -> str:
         existing = await self.get_by_slug(user_id, namespace, slug)
         if existing:
-            updates = {k: v for k, v in doc.items() if k not in ("id", "user_id", "slug", "namespace")}
+            updates = {
+                k: v for k, v in doc.items() if k not in ("id", "user_id", "slug", "namespace")
+            }
             await self.update(user_id, existing["id"], updates)
             return existing["id"]
         return await self.save(
@@ -617,12 +615,14 @@ class SQLAgentSessionRepository(AgentSessionRepository):
         if row:
             row.last_active_at = datetime.now(UTC)
         else:
-            self._s.add(AgentSessionORM(
-                id=str(uuid.uuid4()),
-                user_id=user_id,
-                thread_id=thread_id,
-                last_active_at=datetime.now(UTC),
-            ))
+            self._s.add(
+                AgentSessionORM(
+                    id=str(uuid.uuid4()),
+                    user_id=user_id,
+                    thread_id=thread_id,
+                    last_active_at=datetime.now(UTC),
+                )
+            )
         await self._s.flush()
 
     async def set_title(self, user_id: str, thread_id: str, title: str) -> None:
@@ -679,9 +679,11 @@ def _subscription_to_dict(row: SubscriptionORM) -> dict[str, Any]:
         "provider_customer_id": row.provider_customer_id,
         "provider_subscription_id": row.provider_subscription_id,
         "current_period_start": row.current_period_start.isoformat()
-        if row.current_period_start else None,
+        if row.current_period_start
+        else None,
         "current_period_end": row.current_period_end.isoformat()
-        if row.current_period_end else None,
+        if row.current_period_end
+        else None,
         "cancel_at_period_end": row.cancel_at_period_end,
     }
 
@@ -711,12 +713,18 @@ class SQLSubscriptionRepository(SubscriptionRepository):
         await self._s.flush()
 
     async def list_active_paid(self) -> list[dict[str, Any]]:
-        rows = (await self._s.execute(
-            select(SubscriptionORM).where(
-                SubscriptionORM.status.in_(("active", "trialing")),
-                SubscriptionORM.plan != "free",
+        rows = (
+            (
+                await self._s.execute(
+                    select(SubscriptionORM).where(
+                        SubscriptionORM.status.in_(("active", "trialing")),
+                        SubscriptionORM.plan != "free",
+                    )
+                )
             )
-        )).scalars().all()
+            .scalars()
+            .all()
+        )
         return [_subscription_to_dict(r) for r in rows]
 
 
@@ -766,9 +774,7 @@ class SQLUserProfileRepository(UserProfileRepository):
         self._s = session
 
     async def get(self, user_id: str) -> dict[str, Any] | None:
-        result = await self._s.execute(
-            select(UserProfileORM).where(UserProfileORM.id == user_id)
-        )
+        result = await self._s.execute(select(UserProfileORM).where(UserProfileORM.id == user_id))
         row = result.scalar_one_or_none()
         if not row:
             return None
@@ -780,9 +786,7 @@ class SQLUserProfileRepository(UserProfileRepository):
         }
 
     async def upsert(self, user_id: str, fields: dict[str, Any]) -> None:
-        result = await self._s.execute(
-            select(UserProfileORM).where(UserProfileORM.id == user_id)
-        )
+        result = await self._s.execute(select(UserProfileORM).where(UserProfileORM.id == user_id))
         row = result.scalar_one_or_none()
         if row is None:
             row = UserProfileORM(id=user_id)
@@ -819,25 +823,29 @@ class SQLGoalRepository(GoalRepository):
 
     async def save(self, user_id: str, goal: dict[str, Any]) -> str:
         gid = goal.get("id") or str(uuid.uuid4())
-        self._s.add(GoalORM(
-            id=gid,
-            user_id=user_id,
-            name=goal["name"],
-            kind=goal.get("kind", "custom"),
-            target_amount_minor=int(goal.get("target_amount_minor", 0)),
-            current_amount_minor=int(goal.get("current_amount_minor", 0)),
-            target_date=goal.get("target_date"),
-            priority=int(goal.get("priority", 2)),
-            is_active=goal.get("is_active", True),
-            extra=goal.get("extra", {}),
-        ))
+        self._s.add(
+            GoalORM(
+                id=gid,
+                user_id=user_id,
+                name=goal["name"],
+                kind=goal.get("kind", "custom"),
+                target_amount_minor=int(goal.get("target_amount_minor", 0)),
+                current_amount_minor=int(goal.get("current_amount_minor", 0)),
+                target_date=goal.get("target_date"),
+                priority=int(goal.get("priority", 2)),
+                is_active=goal.get("is_active", True),
+                extra=goal.get("extra", {}),
+            )
+        )
         await self._s.flush()
         return gid
 
     async def get(self, user_id: str, goal_id: str) -> dict[str, Any] | None:
-        r = (await self._s.execute(
-            select(GoalORM).where(GoalORM.id == goal_id, GoalORM.user_id == user_id)
-        )).scalar_one_or_none()
+        r = (
+            await self._s.execute(
+                select(GoalORM).where(GoalORM.id == goal_id, GoalORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
         return _goal_to_dict(r) if r else None
 
     async def list(self, user_id: str, active_only: bool = True) -> list[dict[str, Any]]:
@@ -848,21 +856,33 @@ class SQLGoalRepository(GoalRepository):
         return [_goal_to_dict(r) for r in (await self._s.execute(stmt)).scalars().all()]
 
     async def update(self, user_id: str, goal_id: str, updates: dict[str, Any]) -> None:
-        r = (await self._s.execute(
-            select(GoalORM).where(GoalORM.id == goal_id, GoalORM.user_id == user_id)
-        )).scalar_one_or_none()
+        r = (
+            await self._s.execute(
+                select(GoalORM).where(GoalORM.id == goal_id, GoalORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
         if not r:
             return
-        for k in ("name", "kind", "target_amount_minor", "current_amount_minor",
-                  "target_date", "priority", "is_active", "extra"):
+        for k in (
+            "name",
+            "kind",
+            "target_amount_minor",
+            "current_amount_minor",
+            "target_date",
+            "priority",
+            "is_active",
+            "extra",
+        ):
             if k in updates and updates[k] is not None:
                 setattr(r, k, updates[k])
         await self._s.flush()
 
     async def delete(self, user_id: str, goal_id: str) -> None:
-        r = (await self._s.execute(
-            select(GoalORM).where(GoalORM.id == goal_id, GoalORM.user_id == user_id)
-        )).scalar_one_or_none()
+        r = (
+            await self._s.execute(
+                select(GoalORM).where(GoalORM.id == goal_id, GoalORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
         if r:
             await self._s.delete(r)
 
@@ -873,29 +893,43 @@ class SQLFiScoreRepository(FiScoreRepository):
 
     async def save(self, user_id: str, score: dict[str, Any]) -> str:
         sid = str(uuid.uuid4())
-        self._s.add(FiScoreORM(
-            id=sid,
-            user_id=user_id,
-            score=score["overall_score"],
-            pack_version=score["pack_version"],
-            inputs_hash=score.get("inputs_hash", ""),
-            result_json=score,
-        ))
+        self._s.add(
+            FiScoreORM(
+                id=sid,
+                user_id=user_id,
+                score=score["overall_score"],
+                pack_version=score["pack_version"],
+                inputs_hash=score.get("inputs_hash", ""),
+                result_json=score,
+            )
+        )
         await self._s.flush()
         return sid
 
     async def get_latest(self, user_id: str) -> dict[str, Any] | None:
-        r = (await self._s.execute(
-            select(FiScoreORM).where(FiScoreORM.user_id == user_id)
-            .order_by(FiScoreORM.created_at.desc()).limit(1)
-        )).scalar_one_or_none()
+        r = (
+            await self._s.execute(
+                select(FiScoreORM)
+                .where(FiScoreORM.user_id == user_id)
+                .order_by(FiScoreORM.created_at.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
         return r.result_json if r else None
 
     async def history(self, user_id: str, limit: int = 90) -> list[dict[str, Any]]:
-        rows = (await self._s.execute(
-            select(FiScoreORM).where(FiScoreORM.user_id == user_id)
-            .order_by(FiScoreORM.created_at.desc()).limit(limit)
-        )).scalars().all()
+        rows = (
+            (
+                await self._s.execute(
+                    select(FiScoreORM)
+                    .where(FiScoreORM.user_id == user_id)
+                    .order_by(FiScoreORM.created_at.desc())
+                    .limit(limit)
+                )
+            )
+            .scalars()
+            .all()
+        )
         return [{"score": float(r.score), "created_at": r.created_at.isoformat()} for r in rows]
 
 
@@ -917,52 +951,138 @@ class SQLAdvisoryRepository(AdvisoryRepository):
 
     async def save(self, user_id: str, report: dict[str, Any]) -> str:
         rid = str(uuid.uuid4())
-        self._s.add(AdvisoryReportORM(
-            id=rid,
-            user_id=user_id,
-            trigger=report.get("trigger", "manual"),
-            fi_score_id=report.get("fi_score_id"),
-            summary=report.get("summary", ""),
-            recommendations=report.get("recommendations", []),
-        ))
+        self._s.add(
+            AdvisoryReportORM(
+                id=rid,
+                user_id=user_id,
+                trigger=report.get("trigger", "manual"),
+                fi_score_id=report.get("fi_score_id"),
+                summary=report.get("summary", ""),
+                recommendations=report.get("recommendations", []),
+            )
+        )
         await self._s.flush()
         return rid
 
     async def get(self, user_id: str, report_id: str) -> dict[str, Any] | None:
-        r = (await self._s.execute(
-            select(AdvisoryReportORM).where(
-                AdvisoryReportORM.id == report_id, AdvisoryReportORM.user_id == user_id
+        r = (
+            await self._s.execute(
+                select(AdvisoryReportORM).where(
+                    AdvisoryReportORM.id == report_id, AdvisoryReportORM.user_id == user_id
+                )
             )
-        )).scalar_one_or_none()
+        ).scalar_one_or_none()
         return _report_to_dict(r) if r else None
 
     async def get_latest(self, user_id: str) -> dict[str, Any] | None:
-        r = (await self._s.execute(
-            select(AdvisoryReportORM).where(AdvisoryReportORM.user_id == user_id)
-            .order_by(AdvisoryReportORM.created_at.desc()).limit(1)
-        )).scalar_one_or_none()
+        r = (
+            await self._s.execute(
+                select(AdvisoryReportORM)
+                .where(AdvisoryReportORM.user_id == user_id)
+                .order_by(AdvisoryReportORM.created_at.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
         return _report_to_dict(r) if r else None
 
     async def list(self, user_id: str, limit: int = 30) -> list[dict[str, Any]]:
-        rows = (await self._s.execute(
-            select(AdvisoryReportORM).where(AdvisoryReportORM.user_id == user_id)
-            .order_by(AdvisoryReportORM.created_at.desc()).limit(limit)
-        )).scalars().all()
+        rows = (
+            (
+                await self._s.execute(
+                    select(AdvisoryReportORM)
+                    .where(AdvisoryReportORM.user_id == user_id)
+                    .order_by(AdvisoryReportORM.created_at.desc())
+                    .limit(limit)
+                )
+            )
+            .scalars()
+            .all()
+        )
         return [_report_to_dict(r) for r in rows]
 
-    async def update_recommendations(self, user_id: str, report_id: str, recommendations: list) -> None:
-        r = (await self._s.execute(
-            select(AdvisoryReportORM).where(
-                AdvisoryReportORM.id == report_id, AdvisoryReportORM.user_id == user_id
+    async def update_recommendations(
+        self, user_id: str, report_id: str, recommendations: list
+    ) -> None:
+        r = (
+            await self._s.execute(
+                select(AdvisoryReportORM).where(
+                    AdvisoryReportORM.id == report_id, AdvisoryReportORM.user_id == user_id
+                )
             )
-        )).scalar_one_or_none()
+        ).scalar_one_or_none()
         if r:
             r.recommendations = recommendations
             await self._s.flush()
 
     async def ran_today(self, user_id: str, day: str) -> bool:
-        rows = (await self._s.execute(
-            select(AdvisoryReportORM.created_at).where(AdvisoryReportORM.user_id == user_id)
-            .order_by(AdvisoryReportORM.created_at.desc()).limit(1)
-        )).scalar_one_or_none()
+        rows = (
+            await self._s.execute(
+                select(AdvisoryReportORM.created_at)
+                .where(AdvisoryReportORM.user_id == user_id)
+                .order_by(AdvisoryReportORM.created_at.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
         return rows is not None and rows.isoformat().startswith(day)
+
+
+class SQLFireStrategyRepository(FireStrategyRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def get_latest(self, user_id: str) -> dict[str, Any] | None:
+        r = (
+            await self._s.execute(
+                select(FireStrategyORM)
+                .where(FireStrategyORM.user_id == user_id)
+                .order_by(FireStrategyORM.version.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        if r is None:
+            return None
+        return {"version": r.version, "created_at": r.created_at.isoformat(), **r.strategy}
+
+    async def save(self, user_id: str, strategy: dict[str, Any]) -> int:
+        # Determine next version number
+        latest = (
+            await self._s.execute(
+                select(FireStrategyORM.version)
+                .where(FireStrategyORM.user_id == user_id)
+                .order_by(FireStrategyORM.version.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        version = (latest or 0) + 1
+        self._s.add(
+            FireStrategyORM(
+                id=str(uuid.uuid4()),
+                user_id=user_id,
+                version=version,
+                strategy=strategy,
+            )
+        )
+        await self._s.flush()
+        return version
+
+    async def get_history(self, user_id: str) -> list[dict[str, Any]]:
+        rows = (
+            (
+                await self._s.execute(
+                    select(FireStrategyORM)
+                    .where(FireStrategyORM.user_id == user_id)
+                    .order_by(FireStrategyORM.version.desc())
+                )
+            )
+            .scalars()
+            .all()
+        )
+        return [
+            {
+                "version": r.version,
+                "created_at": r.created_at.isoformat(),
+                "fire_style": r.strategy.get("fire_style"),
+                "theories_applied": r.strategy.get("theories_applied", []),
+            }
+            for r in rows
+        ]

@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "salli-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "clients/web", "dev"],
+      "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "salli-site",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "clients/site", "--config.verify-deps-before-run=false", "dev"],
+      "port": 3001,
+      "autoPort": true
+    }
+  ]
+}

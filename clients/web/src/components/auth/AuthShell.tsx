@@ -1,10 +1,5 @@
-import { cn } from "@/lib/utils";
-import { Logo } from "@/components/Logo";
+import { BubbleBackground } from "@/components/ui/bubble-background";
 
-/**
- * Two-column auth frame: a dark "ledger cover" brand panel (the same charcoal as
- * the app sidebar) beside a warm-paper form. Single column on mobile.
- */
 export function AuthShell({
   children,
   title,
@@ -15,64 +10,37 @@ export function AuthShell({
   subtitle: string;
 }) {
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Brand panel — ledger cover */}
-      <div className="relative hidden lg:flex flex-col justify-between bg-sidebar text-sidebar-foreground p-10 overflow-hidden">
-        {/* faint ruled lines, like the inside of a ledger cover */}
-        <div
-          className="absolute inset-0 opacity-[0.06]"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(to bottom, transparent 0, transparent 27px, #fff 27px, #fff 28px)",
-          }}
-        />
-        <div className="relative flex items-center gap-4">
-          <Logo className="size-20 rounded-2xl shadow-lg shadow-black/30" />
-          <div className="leading-tight">
-            <p className="text-2xl font-semibold tracking-tight">Salli</p>
-            <p className="text-[15px] text-sidebar-foreground/55">Finance &amp; Tax · Sri Lanka</p>
-          </div>
-        </div>
+    <BubbleBackground
+      className="min-h-screen bg-[#0C0C0A] flex items-center justify-center p-6"
+      interactive
+      colors={{
+        first:  "232,252,133",
+        second: "165,255,185",
+        third:  "0,180,150",
+        fourth: "100,220,160",
+        fifth:  "200,240,100",
+        sixth:  "130,210,190",
+      }}
+    >
+      {/* Auth card */}
+      <div
+        className="w-full max-w-[400px] bg-card rounded-3xl p-10 relative z-10"
+        style={{ animation: "fadeUp 0.3s ease" }}
+      >
+        {/* Logo */}
+        <span className="text-[26px] font-black tracking-[-0.07em] mb-8 block">
+          <span className="text-[#E8FC85]">s</span>
+          <span className="text-foreground">alli</span>
+        </span>
 
-        <div className="relative max-w-md">
-          <p className="font-ledger text-[36px] leading-[1.08] text-sidebar-foreground">
-            STOP GUESSING.
-            <br />
-            START KNOWING.
-          </p>
-          <p className="text-[15px] text-sidebar-foreground/65 mt-4 leading-relaxed">
-            Track your money. Understand your tax. Build your freedom.
-          </p>
-        </div>
+        <h1 className="text-[26px] font-extrabold tracking-[-0.04em] leading-tight mb-1.5">
+          {title}
+        </h1>
+        <p className="text-[14px] text-muted-foreground mb-8">{subtitle}</p>
 
-        <div className="relative flex items-center gap-6 text-[11px] text-sidebar-foreground/40 font-mono">
-          <span>YA 2025/26</span>
-          <span>LKR</span>
-          <span>IRD-aligned</span>
-        </div>
+        {children}
       </div>
-
-      {/* Form panel — warm paper */}
-      <div className="flex items-center justify-center bg-background ledger-paper px-6 py-12">
-        <div className="w-full max-w-[360px]">
-          {/* mobile wordmark — large, centered */}
-          <div className="lg:hidden flex flex-col items-center text-center mb-8">
-            <Logo className="size-20 rounded-2xl shadow-lg shadow-black/10" />
-            <span className="text-xl font-semibold mt-3">Salli</span>
-            <span className="font-ledger text-[13px] text-muted-foreground mt-1">
-              Stop guessing. Start knowing.
-            </span>
-          </div>
-
-          <h1 className={cn("text-[24px] font-semibold tracking-[-0.02em] text-foreground")}>
-            {title}
-          </h1>
-          <p className="text-[13px] text-muted-foreground mt-1 mb-7">{subtitle}</p>
-
-          {children}
-        </div>
-      </div>
-    </div>
+    </BubbleBackground>
   );
 }
 

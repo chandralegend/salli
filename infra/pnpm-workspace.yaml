@@ -1,0 +1,6 @@
+# Allow the bridged provider SDKs' postinstall (which installs the Pulumi
+# Terraform-bridge plugin) to run without interactive approval.
+allowBuilds:
+  "@pulumi/render@file:sdks/render": true
+  "@pulumi/supabase@file:sdks/supabase": true
+  protobufjs: true

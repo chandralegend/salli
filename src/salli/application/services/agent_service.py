@@ -256,9 +256,7 @@ class AgentService:
             from langchain_anthropic import ChatAnthropic
             from langchain_core.messages import HumanMessage
 
-            haiku = ChatAnthropic(
-                model="claude-haiku-4-5-20251001", temperature=0, max_tokens=20
-            )
+            haiku = ChatAnthropic(model="claude-haiku-4-5-20251001", temperature=0, max_tokens=20)
             prompt = (
                 "Generate a 3-5 word title for this conversation. "
                 "Reply with ONLY the title — no quotes, no punctuation, no explanation.\n\n"
@@ -273,9 +271,7 @@ class AgentService:
         except Exception:
             pass  # title generation is best-effort
 
-    async def list_sessions(
-        self, user_id: str, limit: int = 50
-    ) -> list[dict[str, Any]]:
+    async def list_sessions(self, user_id: str, limit: int = 50) -> list[dict[str, Any]]:
         if not self._uow_factory:
             return []
         async with self._uow_factory() as uow:
@@ -421,12 +417,14 @@ class AgentService:
                     for tc in tool_calls:
                         if tc.get("name") in _HIDE_TOOLS:
                             continue
-                        current_section["parts"].append({
-                            "type": "tool_call",
-                            "name": tc.get("name", ""),
-                            "input": tc.get("args", {}),
-                            "done": True,
-                        })
+                        current_section["parts"].append(
+                            {
+                                "type": "tool_call",
+                                "name": tc.get("name", ""),
+                                "input": tc.get("args", {}),
+                                "done": True,
+                            }
+                        )
                     if text and not is_handoff:
                         current_section["parts"].append({"type": "token", "content": text})
                 else:
@@ -437,12 +435,14 @@ class AgentService:
                     for tc in tool_calls:
                         if tc.get("name") in _HIDE_TOOLS:
                             continue
-                        parts.append({
-                            "type": "tool_call",
-                            "name": tc.get("name", ""),
-                            "input": tc.get("args", {}),
-                            "done": True,
-                        })
+                        parts.append(
+                            {
+                                "type": "tool_call",
+                                "name": tc.get("name", ""),
+                                "input": tc.get("args", {}),
+                                "done": True,
+                            }
+                        )
 
             # ToolMessage outputs are not rendered in the UI, so they are skipped.
 

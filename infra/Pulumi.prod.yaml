@@ -1,0 +1,25 @@
+config:
+  # ── Repo / branch ──────────────────────────────────────────────────────────
+  salli:githubRepo: chandralegend/salli
+  salli:branch: main
+
+  # ── Supabase ───────────────────────────────────────────────────────────────
+  # Dashboard → Settings → General → Organization ID (a slug like "abcd1234efgh").
+  salli:supabaseOrgId: nvzmgtgrhrzexipkeplp
+  salli:supabaseRegion: ap-southeast-1        # Singapore — lowest latency from LK
+
+  # ── Render ─────────────────────────────────────────────────────────────────
+  # Render Dashboard → your workspace → the owner id in the URL / API
+  # (GET https://api.render.com/v1/owners). Looks like "tea-xxxxxxxx" or "usr-…".
+  salli:renderOwnerId: tea-ctfa2bl2ng1s738hqnu0
+  salli:renderRegion: singapore
+  salli:renderPlan: free                      # free (sleeps) | starter | standard …
+
+  # ── Custom domains (leave blank until DNS is ready; wire later) ─────────────
+  salli:appDomain: ""                         # e.g. app.salli.lk
+  salli:siteDomain: ""                        # e.g. salli.lk
+  salli:apiDomain: ""                         # e.g. api.salli.lk
+
+  # ── Vercel ───────────────────────────────────────────────────────────────
+  # Your Vercel Team ID or slug (Team Settings → General). Required on Team plan.
+  vercel:team: team_1LaOpfBaorsDSC3AGi03ffQV

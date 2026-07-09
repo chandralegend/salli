@@ -1,104 +1,121 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useCallback } from "react";
+import { Loader2, Trash2, Sparkles, Check, X, Clock, BadgeCheck, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import {
-  RefreshCw, Loader2, Sparkles, Target, Plus, Check, X, TrendingUp, Trash2,
-} from "lucide-react";
+  useFiScore,
+  useRecomputeScore,
+  useGoals,
+  useCreateGoal,
+  useDeleteGoal,
+  useLatestAdvisory,
+  useRunAdvisor,
+  useApplyRecommendation,
+  useDismissRecommendation,
+  useFireStrategy,
+  useFireProjections,
+  useFireSurplus,
+  type Goal,
+  type Recommendation,
+} from "@/hooks/useFi";
+import { ProjectionChart } from "@/components/fi/ProjectionChart";
+import { AllocationBuckets } from "@/components/fi/AllocationBuckets";
+import { StrategySetup } from "@/components/fi/StrategySetup";
+import { SectionTitle } from "@/components/ui/page-shell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import {
-  useFiScore, useRecomputeScore, useGoals, useCreateGoal, useDeleteGoal,
-  useLatestAdvisory, useRunAdvisor, useApplyRecommendation, useDismissRecommendation,
-  type Goal, type Recommendation,
-} from "@/hooks/useFi";
 
-function lkr(v: string | number, dp = 0): string {
+// ── Formatters ────────────────────────────────────────────────────────────────
+
+function lkr(v: string | number): string {
   const n = typeof v === "string" ? Number(v) : v;
   if (!isFinite(n)) return "—";
-  return n.toLocaleString("en-LK", { maximumFractionDigits: dp });
+  if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  return n.toLocaleString("en-LK", { maximumFractionDigits: 0 });
 }
-function pct(v: string | number, dp = 0): string {
+
+function pct(v: string | number, dp = 1): string {
   const n = (typeof v === "string" ? Number(v) : v) * 100;
   return `${n.toFixed(dp)}%`;
 }
 
-const GRADE_COLOR: Record<string, string> = {
-  "FI-ready": "text-emerald-600",
-  "Strong": "text-emerald-600",
-  "On track": "text-primary",
-  "Building": "text-amber-600",
-  "Just starting": "text-rose-600",
-};
+// ── Stat tile ─────────────────────────────────────────────────────────────────
 
-// ── Score gauge (SVG ring) ──────────────────────────────────────────────────
+function StatTile({
+  bg, label, sub, value, badge, badgeStyle,
+}: {
+  bg: string; label: string; sub?: string; value: string;
+  badge?: string; badgeStyle?: React.CSSProperties;
+}) {
+  const dark = bg === "#010001";
+  const adaptive = bg.startsWith("var(");
+  const labelColor = dark ? "rgba(255,255,255,0.3)" : adaptive ? "var(--muted-foreground)" : "rgba(0,0,0,0.45)";
+  const subColor = dark ? "rgba(255,255,255,0.28)" : adaptive ? "var(--muted-foreground)" : "rgba(0,0,0,0.35)";
+  const valueColor = dark ? "#E8FC85" : adaptive ? "var(--foreground)" : "#010001";
 
-function ScoreGauge({ score, grade }: { score: number; grade: string }) {
-  const r = 52;
-  const c = 2 * Math.PI * r;
-  const filled = Math.max(0, Math.min(100, score)) / 100;
   return (
-    <div className="relative w-[136px] h-[136px] shrink-0">
-      <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
-        <circle cx="60" cy="60" r={r} fill="none" stroke="var(--border)" strokeWidth="10" />
-        <circle
-          cx="60" cy="60" r={r} fill="none" stroke="var(--primary)" strokeWidth="10"
-          strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - filled)}
-          className="transition-[stroke-dashoffset] duration-700"
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-ledger text-[34px] leading-none">{score.toFixed(0)}</span>
-        <span className={cn("text-[11px] font-semibold mt-1", GRADE_COLOR[grade] ?? "text-foreground")}>
-          {grade}
-        </span>
+    <div style={{
+      background: bg, borderRadius: 20, padding: 22, minHeight: 160,
+      display: "flex", flexDirection: "column", justifyContent: "space-between",
+    }}>
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: labelColor }}>{label}</div>
+        {sub && <div style={{ fontSize: 12, color: subColor, marginTop: 3 }}>{sub}</div>}
+      </div>
+      <div>
+        <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.05em", color: valueColor, lineHeight: 1, marginBottom: 5 }}>
+          {value}
+        </div>
+        {badge && (
+          <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999, ...badgeStyle }}>
+            {badge}
+          </span>
+        )}
       </div>
     </div>
   );
 }
 
-function Figure({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div>
-      <p className="text-secondary-label">{label}</p>
-      <p className="font-ledger text-[16px] mt-1">{value}</p>
-      {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
-    </div>
-  );
-}
-
-// ── Goals ────────────────────────────────────────────────────────────────────
+// ── Goal row ──────────────────────────────────────────────────────────────────
 
 function GoalRow({ goal, onDelete }: { goal: Goal; onDelete: () => void }) {
+  const progress = Math.round(goal.progress * 100);
   return (
-    <div className="group flex items-center gap-3 py-2.5">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-[13px] font-medium truncate">{goal.name}</p>
-          <span className="font-ledger text-[12px] text-muted-foreground shrink-0">
-            <span className="text-[0.8em] mr-0.5">LKR</span>{lkr(goal.current_amount)} / {lkr(goal.target_amount)}
-          </span>
-        </div>
-        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden mt-1.5">
-          <div className="h-full rounded-full bg-primary transition-[width] duration-500"
-               style={{ width: `${Math.round(goal.progress * 100)}%` }} />
+    <div className="rounded-[14px] bg-muted p-3.5">
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
+        <span className="text-[13px] font-bold text-foreground">{goal.name}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {goal.target_date && <span className="text-[12px] text-muted-foreground">{goal.target_date.slice(0, 4)}</span>}
+          <button
+            onClick={onDelete}
+            className="opacity-40 hover:opacity-100 transition-opacity text-destructive"
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+          >
+            <Trash2 className="size-3.5" />
+          </button>
         </div>
       </div>
-      <button onClick={onDelete}
-        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition">
-        <Trash2 className="size-3.5" />
-      </button>
+      <div className="h-[3px] rounded-full bg-border overflow-hidden mb-1.5">
+        <div style={{ width: `${progress}%`, height: "100%", background: "#E8FC85", borderRadius: 999 }} />
+      </div>
+      <div className="text-[11.5px] text-muted-foreground">
+        LKR {lkr(goal.current_amount)} / {lkr(goal.target_amount)}
+      </div>
     </div>
   );
 }
+
+// ── Add goal dialog ────────────────────────────────────────────────────────────
 
 function AddGoalDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const create = useCreateGoal();
@@ -109,11 +126,7 @@ function AddGoalDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
 
   async function submit() {
     if (!name.trim() || !target) return;
-    await create.mutateAsync({
-      name, kind: "custom",
-      target_amount: Number(target), current_amount: Number(current || 0),
-      target_date: date || null, priority: 2,
-    });
+    await create.mutateAsync({ name, kind: "custom", target_amount: Number(target), current_amount: Number(current || 0), target_date: date || null, priority: 2 });
     onOpenChange(false);
     setName(""); setTarget(""); setCurrent(""); setDate("");
   }
@@ -122,8 +135,8 @@ function AddGoalDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-[15px]">New goal</DialogTitle>
-          <DialogDescription>Track progress toward something specific.</DialogDescription>
+          <DialogTitle>New goal</DialogTitle>
+          <DialogDescription>Track progress toward a financial milestone.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
@@ -153,68 +166,84 @@ function AddGoalDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
   );
 }
 
-// ── Recommendations ──────────────────────────────────────────────────────────
+// ── Rec item ──────────────────────────────────────────────────────────────────
 
-const CAT_COLOR: Record<string, string> = {
-  emergency_fund: "bg-blue-50 text-blue-700 border-blue-200",
-  debt: "bg-rose-50 text-rose-700 border-rose-200",
-  savings: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  investing: "bg-violet-50 text-violet-700 border-violet-200",
-  spending: "bg-amber-50 text-amber-700 border-amber-200",
-  tax: "bg-primary/10 text-primary border-primary/20",
-  goal: "bg-muted text-muted-foreground border-border",
+const PRIO_STYLE: Record<number, { color: string; bg: string }> = {
+  1: { color: "#DC2626", bg: "rgba(220,38,38,0.2)" },
+  2: { color: "#D97706", bg: "rgba(217,119,6,0.2)" },
+  3: { color: "#7DA6A9", bg: "rgba(125,166,169,0.2)" },
 };
 
-function RecCard({ rec, reportId }: { rec: Recommendation; reportId: string }) {
+function RecItem({ rec, reportId }: { rec: Recommendation; reportId: string }) {
   const apply = useApplyRecommendation();
   const dismiss = useDismissRecommendation();
+  const prio = PRIO_STYLE[rec.priority] ?? PRIO_STYLE[3];
   const done = rec.status !== "pending";
+
   return (
-    <div className={cn("rounded-xl border p-3.5", done ? "border-border/60 bg-muted/30" : "border-border bg-card")}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className={cn("text-[10px] font-semibold uppercase tracking-wide rounded-full border px-2 py-0.5", CAT_COLOR[rec.category] ?? CAT_COLOR.goal)}>
-            {rec.category.replace("_", " ")}
-          </span>
-          {rec.status === "applied" && <span className="text-[10px] text-emerald-600 font-medium">Applied</span>}
-          {rec.status === "dismissed" && <span className="text-[10px] text-muted-foreground">Dismissed</span>}
-        </div>
+    <div style={{ padding: "11px 13px", background: "rgba(255,255,255,0.05)", borderRadius: 12, opacity: done ? 0.5 : 1 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+        <span style={{ fontSize: 10, fontWeight: 900, color: prio.color, background: prio.bg, padding: "1px 7px", borderRadius: 5 }}>
+          P{rec.priority}
+        </span>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: "#fff" }}>{rec.title}</span>
       </div>
-      <p className="text-[13px] font-medium mt-2">{rec.title}</p>
-      <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">{rec.rationale}</p>
+      <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.38)", lineHeight: 1.5 }}>{rec.rationale}</div>
       {!done && (
-        <div className="flex items-center gap-2 mt-3">
+        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
           {rec.action_type === "reminder" && (
-            <Button size="sm" className="h-7 text-[12px] gap-1"
+            <button
+              onClick={() => apply.mutate({ reportId, recId: rec.id })}
               disabled={apply.isPending}
-              onClick={() => apply.mutate({ reportId, recId: rec.id })}>
-              <Check className="size-3" />
-              {rec.action_params?.label ? "Create reminder" : "Mark done"}
-            </Button>
+              style={{ fontSize: 11, color: "#E8FC85", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}
+            >
+              <Check className="inline size-3 mr-1" />Create reminder
+            </button>
           )}
-          <Button size="sm" variant="ghost" className="h-7 text-[12px] gap-1 text-muted-foreground"
+          <button
+            onClick={() => dismiss.mutate({ reportId, recId: rec.id })}
             disabled={dismiss.isPending}
-            onClick={() => dismiss.mutate({ reportId, recId: rec.id })}>
-            <X className="size-3" /> Dismiss
-          </Button>
+            style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}
+          >
+            <X className="inline size-3 mr-1" />Dismiss
+          </button>
         </div>
       )}
     </div>
   );
 }
 
-// ── Page ─────────────────────────────────────────────────────────────────────
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function FinancialIndependencePage() {
+  const qc = useQueryClient();
   const score = useFiScore();
   const recompute = useRecomputeScore();
   const goals = useGoals();
   const deleteGoal = useDeleteGoal();
   const advisory = useLatestAdvisory();
   const runAdvisor = useRunAdvisor();
+  const strategy = useFireStrategy();
+  const projections = useFireProjections();
+  const surplus = useFireSurplus();
+
   const [addOpen, setAddOpen] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
+  const [strategyOpen, setStrategyOpen] = useState(false);
 
   const s = score.data;
+  const strat = strategy.data;
+  const proj = projections.data;
+  const surplusData = surplus.data;
+  const hasStrategy = !!strat;
+
+  const handleStrategyComplete = useCallback(() => {
+    qc.invalidateQueries({ queryKey: ["fi", "strategy"] });
+    qc.invalidateQueries({ queryKey: ["fi", "projections"] });
+    qc.invalidateQueries({ queryKey: ["fi", "surplus"] });
+    setShowSetup(false);
+    toast.success("Your FIRE strategy has been updated!");
+  }, [qc]);
 
   async function handleRun() {
     try {
@@ -230,113 +259,363 @@ export default function FinancialIndependencePage() {
     }
   }
 
+  // ── Setup / Refresh flow ────────────────────────────────────────────────────
+
+  if ((!hasStrategy && !strategy.isLoading) || showSetup) {
+    return (
+      <div className="p-8 max-w-[1320px] mx-auto">
+        {showSetup && (
+          <button
+            onClick={() => setShowSetup(false)}
+            className="text-[13px] text-muted-foreground hover:text-foreground transition mb-5 block"
+          >
+            ← Back
+          </button>
+        )}
+        <StrategySetup isRefresh={hasStrategy} onComplete={handleStrategyComplete} />
+      </div>
+    );
+  }
+
+  // ── Active dashboard ────────────────────────────────────────────────────────
+
+  const fiNumber = proj?.fi_number ?? s?.fi_number;
+  const netWorth = s?.net_worth ?? "0";
+  const progressToFi = proj?.fi_number
+    ? Number(netWorth) / Number(proj.fi_number)
+    : Number(s?.progress_to_fi ?? 0);
+  const yearsToFire = proj?.fire_year_base;
+  const savingsRate = surplusData
+    ? Number(surplusData.savings_rate) * 100
+    : Number(s?.savings_rate ?? 0) * 100;
+
+  const stratDate = strat
+    ? new Date(strat.created_at).toLocaleDateString("en-LK", { month: "short", day: "numeric", year: "numeric" })
+    : "";
+
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-5">
-      <div className="flex items-end justify-between">
+    <div className="p-8 max-w-[1320px] mx-auto">
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
-          <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">Financial Independence</h1>
-          <p className="text-meta mt-1">Your path to financial freedom · FIRE methodology</p>
+          <h1 style={{ fontSize: 40, fontWeight: 900, letterSpacing: "-0.05em", lineHeight: 1.1, color: "var(--foreground)" }}>
+            Financial Independence
+          </h1>
+          <p style={{ fontSize: 13, color: "var(--muted-foreground)", marginTop: 8, fontWeight: 500 }}>
+            {strat
+              ? `${strat.fire_style.charAt(0).toUpperCase() + strat.fire_style.slice(1)} FIRE · Strategy v${strat.version} · ${stratDate} · SWR ${(strat.swr * 100).toFixed(1)}%`
+              : "FIRE planning · Sri Lanka · LKR"}
+          </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => recompute.mutate()} disabled={recompute.isPending} className="gap-1.5">
-          {recompute.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
-          Recompute
-        </Button>
+        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+          <button
+            onClick={() => recompute.mutate()}
+            disabled={recompute.isPending}
+            className="text-foreground border-border bg-card hover:bg-muted transition-colors"
+            style={{ padding: "10px 20px", border: "1.5px solid", borderRadius: 999, fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+          >
+            {recompute.isPending ? <Loader2 className="inline size-3.5 mr-1 animate-spin" /> : null}
+            Recompute
+          </button>
+          <button
+            onClick={() => setShowSetup(true)}
+            style={{ padding: "10px 20px", background: "#010001", color: "#fff", border: "none", borderRadius: 999, fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+          >
+            ↺ Refresh Strategy
+          </button>
+        </div>
       </div>
 
-      {/* Score + figures */}
-      <Card>
-        <CardContent>
-          {score.isLoading || !s ? (
-            <Skeleton className="h-32 w-full" />
-          ) : (
-            <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-              <ScoreGauge score={Number(s.overall_score)} grade={s.grade} />
-              <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 w-full">
-                <Figure label="SAVINGS RATE" value={pct(s.savings_rate, 1)} sub={`LKR ${lkr(s.monthly_surplus)}/mo surplus`} />
-                <Figure label="EMERGENCY FUND" value={`${Number(s.emergency_fund_months).toFixed(1)} mo`} sub="target 6 months" />
-                <Figure label="NET WORTH" value={`LKR ${lkr(s.net_worth)}`} />
-                <Figure label="FI NUMBER" value={`LKR ${lkr(s.fi_number)}`} sub="25× annual expenses" />
-                <Figure label="PROGRESS TO FI" value={pct(s.progress_to_fi, 1)} />
-                <Figure label="PROJECTED FI" value={s.projected_fi_date ? s.projected_fi_date.slice(0, 4) : "—"}
-                  sub={s.projected_fi_date ? "at current pace" : "increase savings"} />
+      {/* BENTO GRID */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 }}>
+
+        {/* ── Section: Overview ───────────────────────────────────────────── */}
+        <SectionTitle>Overview</SectionTitle>
+
+        {/* Row 1 — 4 stat tiles */}
+        <StatTile
+          bg="var(--card)"
+          label="FI Number"
+          sub={strat ? `${(strat.swr * 100).toFixed(1)}% safe withdrawal rate` : "25× annual expenses"}
+          value={fiNumber ? lkr(fiNumber) : "—"}
+        />
+        <StatTile
+          bg="#A5FFB9"
+          label="Net Worth"
+          sub={`${(progressToFi * 100).toFixed(1)}% of FI number`}
+          value={lkr(netWorth)}
+          badge={s ? `+${pct(s.savings_rate, 1)}` : undefined}
+          badgeStyle={{ background: "rgba(0,0,0,0.1)", color: "#010001" }}
+        />
+        {/* Years to FIRE — dark tile */}
+        <div style={{
+          background: "#010001", borderRadius: 20, padding: 22, minHeight: 160,
+          display: "flex", flexDirection: "column", justifyContent: "space-between",
+        }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>Years to FIRE</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.28)", marginTop: 3 }}>
+              Base scenario · {strat ? `${(strat.return_base * 100).toFixed(0)}% return` : "9% return"}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: "-0.06em", color: "#E8FC85", lineHeight: 1, marginBottom: 5 }}>
+              {yearsToFire ?? "—"}
+            </div>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>years remaining</span>
+          </div>
+        </div>
+        <StatTile
+          bg="#D5E9EA"
+          label="Savings Rate"
+          sub="Monthly surplus ratio"
+          value={`${savingsRate.toFixed(1)}`}
+          badge={savingsRate >= 40 ? "↑ above 40% target" : savingsRate >= 20 ? "→ building" : "↓ below target"}
+          badgeStyle={{
+            background: savingsRate >= 40 ? "#DCFCE7" : savingsRate >= 20 ? "#FEF3C7" : "#FEE2E2",
+            color: savingsRate >= 40 ? "#16A34A" : savingsRate >= 20 ? "#D97706" : "#DC2626",
+            fontWeight: 800,
+          }}
+        />
+
+        {/* ── Section: Projection ─────────────────────────────────────────── */}
+        <SectionTitle>Portfolio Projection</SectionTitle>
+
+        {/* Row 2 — Chart (col 1-3) + FI Score (col 4) */}
+        <div style={{ gridColumn: "1/4", background: "var(--card)", borderRadius: 20, padding: 26, minHeight: 320, display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--foreground)" }}>Portfolio Projection</div>
+              <div style={{ fontSize: 12, color: "var(--muted-foreground)", marginTop: 3 }}>Conservative · Base · Growth scenarios</div>
+            </div>
+            <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ width: 16, height: 2, background: "#CBD5E1", borderRadius: 2 }} />
+                <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>Conservative</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ width: 16, height: 2.5, background: "#010001", borderRadius: 2 }} />
+                <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>Base</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ width: 16, height: 2, background: "#F59E0B", borderRadius: 2 }} />
+                <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>Growth</span>
               </div>
             </div>
-          )}
-          {s && s.components.length > 0 && (
-            <div className="mt-5 pt-4 border-t border-border/60 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5">
-              {s.components.map((c) => (
-                <div key={c.key} className="flex items-center gap-3">
-                  <span className="text-[12px] text-muted-foreground w-32 shrink-0">{c.label}</span>
-                  <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full bg-primary/70" style={{ width: `${Number(c.score)}%` }} />
-                  </div>
-                  <span className="font-ledger text-[11px] text-muted-foreground w-9 text-right">{Number(c.score).toFixed(0)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Goals */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-[14px] flex items-center gap-2"><Target className="size-4 text-muted-foreground" /> Goals</CardTitle>
-            <Button size="sm" variant="ghost" className="h-7 gap-1 text-[12px]" onClick={() => setAddOpen(true)}>
-              <Plus className="size-3.5" /> Add
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {goals.isLoading ? (
-              <Skeleton className="h-20 w-full" />
-            ) : (goals.data ?? []).length === 0 ? (
-              <p className="text-[13px] text-muted-foreground py-6 text-center">
-                No goals yet. Add one to track your progress.
-              </p>
+          </div>
+          <div style={{ flex: 1 }}>
+            {projections.isLoading || !proj ? (
+              <div className="h-48 bg-muted rounded-xl animate-pulse" />
             ) : (
-              <div className="divide-y divide-border/60">
-                {goals.data!.map((g) => (
-                  <GoalRow key={g.id} goal={g} onDelete={() => deleteGoal.mutate(g.id)} />
+              <ProjectionChart data={proj} />
+            )}
+          </div>
+        </div>
+
+        {/* FI Score tile */}
+        <div style={{ background: "#010001", borderRadius: 20, padding: 24, display: "flex", flexDirection: "column" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 14 }}>FI Score</div>
+          {score.isLoading || !s ? (
+            <div className="flex-1 bg-white/5 rounded-xl animate-pulse" />
+          ) : (
+            <>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: 4 }}>
+                <span style={{ fontSize: 52, fontWeight: 900, letterSpacing: "-0.06em", color: "#E8FC85", lineHeight: 1 }}>
+                  {Number(s.overall_score).toFixed(0)}
+                </span>
+                <span style={{ fontSize: 17, fontWeight: 600, color: "rgba(255,255,255,0.2)" }}>/100</span>
+              </div>
+              <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.38)", marginBottom: 18 }}>
+                {s.grade} · {strat?.fire_style ?? "Standard"} FIRE
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
+                {s.components.slice(0, 5).map((c) => {
+                  const v = Number(c.score);
+                  const amber = v < 50;
+                  return (
+                    <div key={c.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>{c.label}</span>
+                      <div style={{ flex: 1, height: 3, background: "rgba(255,255,255,0.08)", borderRadius: 999, overflow: "hidden" }}>
+                        <div style={{ width: `${v}%`, height: "100%", background: amber ? "#F59E0B" : "#E8FC85", borderRadius: 999 }} />
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: amber ? "#F59E0B" : "rgba(255,255,255,0.5)", width: 20, textAlign: "right" }}>
+                        {v.toFixed(0)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ── Section: Allocation ─────────────────────────────────────────── */}
+        <SectionTitle>Allocation Buckets</SectionTitle>
+
+        {/* Row 3 — Allocation Buckets full width */}
+        <div style={{ gridColumn: "1/5" }}>
+          {strategy.isLoading ? (
+            <div className="h-36 bg-muted rounded-xl animate-pulse" />
+          ) : (
+            <AllocationBuckets buckets={strat?.buckets ?? []} surplus={surplusData} />
+          )}
+        </div>
+
+        {/* ── Section: Strategy ───────────────────────────────────────────── */}
+        <SectionTitle>AI Strategy</SectionTitle>
+
+        {/* Row 4 — AI Strategy full width */}
+        <div style={{ gridColumn: "1/5", background: "var(--card)", borderRadius: 20, overflow: "hidden" }}>
+          <div
+            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px", cursor: "pointer" }}
+            onClick={() => setStrategyOpen((p) => !p)}
+          >
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: 14, fontWeight: 800, color: "var(--foreground)" }}>AI Strategy</span>
+                {strat && (
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#7DA6A9", background: "#D5E9EA", padding: "2px 9px", borderRadius: 999 }}>
+                    {strat.fire_style.charAt(0).toUpperCase() + strat.fire_style.slice(1)} FIRE
+                  </span>
+                )}
+                {strat && (
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "var(--muted-foreground)", background: "var(--muted)", padding: "2px 9px", borderRadius: 999 }}>
+                    v{strat.version}
+                  </span>
+                )}
+              </div>
+              {strat && (
+                <div style={{ fontSize: 12, color: "var(--muted-foreground)" }}>
+                  {stratDate} · SWR {(strat.swr * 100).toFixed(1)}%{strat.target_age ? ` · Target age ${strat.target_age}` : ""}
+                </div>
+              )}
+            </div>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--muted-foreground)" strokeWidth="1.5"
+              style={{ transform: strategyOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s", flexShrink: 0 }}>
+              <polyline points="4 6 8 10 12 6" />
+            </svg>
+          </div>
+
+          {strategyOpen && strat && (
+            <div style={{ padding: "0 24px 24px", borderTop: "1px solid var(--border)" }}>
+              <p style={{ fontSize: 13.5, color: "var(--foreground)", lineHeight: 1.75, marginTop: 16, marginBottom: 14, opacity: 0.85 }}>
+                {strat.ai_rationale?.split(".").slice(0, 3).join(".") + "."}
+              </p>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>
+                {strat.theories_applied.map((t) => (
+                  <span key={t} style={{ fontSize: 11.5, fontWeight: 700, color: "var(--foreground)", background: "var(--muted)", padding: "4px 11px", borderRadius: 999 }}>
+                    {t}
+                  </span>
                 ))}
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Advisor */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-[14px] flex items-center gap-2"><Sparkles className="size-4 text-primary" /> Wealth Advisor</CardTitle>
-            <Button size="sm" onClick={handleRun} disabled={runAdvisor.isPending} className="h-7 gap-1 text-[12px]">
-              {runAdvisor.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <TrendingUp className="size-3.5" />}
-              Run advisor
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {advisory.isLoading ? (
-              <Skeleton className="h-24 w-full" />
-            ) : !advisory.data?.id ? (
-              <p className="text-[13px] text-muted-foreground py-6 text-center">
-                Run the advisor to get personalised recommendations.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-[12px] text-foreground/80 leading-relaxed">{advisory.data.summary}</p>
-                <div className="space-y-2">
-                  {advisory.data.recommendations.map((r) => (
-                    <RecCard key={r.id} rec={r} reportId={advisory.data!.id} />
-                  ))}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                <div style={{ padding: 14, background: "#A5FFB9", borderRadius: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(0,0,0,0.4)", marginBottom: 6 }}>Conservative</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", color: "#010001" }}>{(strat.return_conservative * 100).toFixed(1)}%</div>
+                </div>
+                <div style={{ padding: 14, background: "#E8FC85", borderRadius: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(0,0,0,0.4)", marginBottom: 6 }}>Base</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", color: "#010001" }}>{(strat.return_base * 100).toFixed(1)}%</div>
+                </div>
+                <div style={{ padding: 14, background: "#010001", borderRadius: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(255,255,255,0.35)", marginBottom: 6 }}>Growth</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", color: "#E8FC85" }}>{(strat.return_growth * 100).toFixed(1)}%</div>
                 </div>
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Section: Goals & Mentoring ──────────────────────────────────── */}
+        <SectionTitle>Goals & Mentoring</SectionTitle>
+
+        {/* Row 5 — Goals (col-span-2) + FI Mentor (col-span-2) */}
+
+        {/* Goals */}
+        <div style={{ gridColumn: "span 2", background: "var(--card)", borderRadius: 20, padding: 22 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "var(--foreground)" }}>Goals</div>
+            <button
+              onClick={() => setAddOpen(true)}
+              className="text-foreground border-border hover:bg-muted transition-colors"
+              style={{ padding: "7px 14px", border: "1.5px solid", borderRadius: 999, background: "transparent", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+            >
+              + Add
+            </button>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {goals.isLoading ? (
+              <div className="h-20 bg-muted rounded-xl animate-pulse" />
+            ) : (goals.data ?? []).length === 0 ? (
+              <p className="text-[13px] text-muted-foreground text-center py-4">No goals yet.</p>
+            ) : (
+              goals.data!.map((g) => (
+                <GoalRow key={g.id} goal={g} onDelete={() => deleteGoal.mutate(g.id)} />
+              ))
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        {/* FI Mentor */}
+        <div style={{ gridColumn: "span 2", background: "#010001", borderRadius: 20, padding: 26, minHeight: 240, display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>FI Mentor</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {advisory.data?.created_at && (
+                <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "rgba(255,255,255,0.3)" }}>
+                  <Clock className="size-3" />
+                  {new Date(advisory.data.created_at).toLocaleDateString("en-LK", { month: "short", day: "numeric" })}
+                </span>
+              )}
+              <button
+                onClick={handleRun}
+                disabled={runAdvisor.isPending}
+                style={{ padding: "6px 12px", background: "rgba(255,255,255,0.1)", color: "#E8FC85", border: "none", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+              >
+                {runAdvisor.isPending ? <Loader2 className="inline size-3 mr-1 animate-spin" /> : <Sparkles className="inline size-3 mr-1" />}
+                {runAdvisor.isPending ? "Running…" : "Run"}
+              </button>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+            {advisory.isLoading ? (
+              <div className="h-20 bg-white/5 rounded-xl animate-pulse" />
+            ) : !advisory.data?.id ? (
+              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", textAlign: "center", lineHeight: 1.6, maxWidth: 280 }}>
+                  {strat
+                    ? `Your FI Mentor has access to your ${strat.fire_style.toUpperCase()} strategy. Click Run for personalised guidance.`
+                    : "Generate your FIRE strategy first, then run a mentoring session."}
+                </p>
+              </div>
+            ) : (
+              <>
+                {advisory.data.fire_tier_assessment && (
+                  <div style={{ padding: "10px 13px", background: "rgba(232,252,133,0.1)", borderRadius: 12, marginBottom: 4 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <BadgeCheck className="size-3.5 text-[#E8FC85] shrink-0" />
+                      <span style={{ fontSize: 12, color: "#E8FC85", fontWeight: 600, lineHeight: 1.4 }}>
+                        {advisory.data.fire_tier_assessment}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                {advisory.data.recommendations
+                  .slice()
+                  .sort((a, b) => a.priority - b.priority)
+                  .slice(0, 4)
+                  .map((r) => (
+                    <RecItem key={r.id} rec={r} reportId={advisory.data!.id} />
+                  ))}
+              </>
+            )}
+          </div>
+        </div>
+
       </div>
 
-      <p className="text-[11px] text-muted-foreground/60 text-center">
-        Guidance is informational, not financial advice ·{" "}
-        <Link href="/settings" className="hover:text-foreground">Manage plan</Link>
+      <p className="text-[11px] text-muted-foreground/60 text-center mt-4">
+        Guidance is informational, not financial advice.
       </p>
 
       <AddGoalDialog open={addOpen} onOpenChange={setAddOpen} />

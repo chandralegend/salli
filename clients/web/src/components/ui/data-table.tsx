@@ -6,13 +6,15 @@ import {
   type Row,
   type SortingState,
   type ColumnFiltersState,
+  type PaginationState,
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
   getFilteredRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ArrowUp, ArrowDown, Search } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -69,7 +71,10 @@ interface DataTableProps<TData, TValue> {
   searchPlaceholder?: string;
   searchColumn?: string;
   toolbar?: React.ReactNode;
+  pageSize?: number;
 }
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 export function DataTable<TData, TValue>({
   columns,
@@ -80,24 +85,38 @@ export function DataTable<TData, TValue>({
   searchPlaceholder,
   searchColumn,
   toolbar,
+  pageSize: defaultPageSize = 10,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
+  const [pagination, setPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: defaultPageSize,
+  });
 
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, columnFilters, globalFilter },
+    state: { sorting, columnFilters, globalFilter, pagination },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    autoResetPageIndex: true,
   });
 
   const rows = table.getRowModel().rows;
+  const totalFiltered = table.getFilteredRowModel().rows.length;
+  const { pageIndex, pageSize } = table.getState().pagination;
+  const pageCount = table.getPageCount();
+  const from = totalFiltered === 0 ? 0 : pageIndex * pageSize + 1;
+  const to = Math.min((pageIndex + 1) * pageSize, totalFiltered);
+  const showPagination = !isLoading && totalFiltered > 0;
 
   return (
     <div className="flex flex-col gap-0">
@@ -180,15 +199,90 @@ export function DataTable<TData, TValue>({
         </TableBody>
       </Table>
 
-      {/* Footer row count */}
-      {!isLoading && rows.length > 0 && (
-        <div className="px-4 py-2.5 border-t bg-muted/20">
-          <p className="text-[11px] text-muted-foreground tabular-nums">
-            {rows.length} {rows.length === 1 ? "row" : "rows"}
-            {rows.length !== data.length && ` of ${data.length} total`}
-          </p>
+      {/* Pagination footer */}
+      {showPagination && (
+        <div className="flex items-center justify-between gap-4 px-4 py-2.5 border-t bg-muted/20">
+          {/* Rows per page */}
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[11px] text-muted-foreground hidden sm:inline">Rows per page</span>
+            <select
+              value={pageSize}
+              onChange={(e) => table.setPageSize(Number(e.target.value))}
+              className="text-[11px] border border-border rounded-md px-1.5 py-1 bg-background text-foreground cursor-pointer hover:border-ring transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              {PAGE_SIZE_OPTIONS.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Range label */}
+          <span className="text-[11px] text-muted-foreground tabular-nums">
+            {from}–{to} of {totalFiltered}
+            {totalFiltered !== data.length && (
+              <span className="text-muted-foreground/60"> (filtered from {data.length})</span>
+            )}
+          </span>
+
+          {/* Page navigation */}
+          <div className="flex items-center gap-0.5 shrink-0">
+            <PaginationButton
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+              title="First page"
+            >
+              <ChevronsLeft className="size-3.5" />
+            </PaginationButton>
+            <PaginationButton
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              title="Previous page"
+            >
+              <ChevronLeft className="size-3.5" />
+            </PaginationButton>
+            <span className="text-[11px] text-muted-foreground px-2 tabular-nums min-w-[80px] text-center">
+              Page {pageIndex + 1} of {pageCount || 1}
+            </span>
+            <PaginationButton
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              title="Next page"
+            >
+              <ChevronRight className="size-3.5" />
+            </PaginationButton>
+            <PaginationButton
+              onClick={() => table.setPageIndex(pageCount - 1)}
+              disabled={!table.getCanNextPage()}
+              title="Last page"
+            >
+              <ChevronsRight className="size-3.5" />
+            </PaginationButton>
+          </div>
         </div>
       )}
     </div>
+  );
+}
+
+function PaginationButton({
+  onClick,
+  disabled,
+  title,
+  children,
+}: {
+  onClick: () => void;
+  disabled: boolean;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+    >
+      {children}
+    </button>
   );
 }

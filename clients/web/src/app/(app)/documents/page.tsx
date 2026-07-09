@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useDocuments, type AgentDocument } from "@/hooks/useDocuments";
+import { PageShell, PageHeader } from "@/components/ui/page-shell";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -239,26 +240,19 @@ export default function DocumentsPage() {
   const docs = docsQuery.data ?? [];
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">Documents</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Files and notes saved by the agent · {docs.length} item{docs.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader title="Documents" subtitle="AI-saved documents and memories from Scrooge" />
 
       <Tabs value={tab} onValueChange={setTab}>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-5">
           <TabsList>
             <TabsTrigger value="documents" className="gap-1.5">
               <FileText className="size-3.5" />
-              Documents
+              Documents {tab === "documents" && docs.length > 0 ? `(${docs.length})` : ""}
             </TabsTrigger>
             <TabsTrigger value="memories" className="gap-1.5">
               <Brain className="size-3.5" />
-              Memories
+              Memories {tab === "memories" && docs.length > 0 ? `(${docs.length})` : ""}
             </TabsTrigger>
           </TabsList>
 
@@ -273,22 +267,24 @@ export default function DocumentsPage() {
           </div>
         </div>
 
-        <TabsContent value="documents">
-          <DocTable
-            docs={docs}
-            loading={docsQuery.isLoading}
-            onView={setViewDoc}
-            onDelete={(id) => deleteDocument.mutate(id)}
-          />
-        </TabsContent>
+        <div className="bg-card rounded-[20px] overflow-hidden">
+          <TabsContent value="documents" className="mt-0">
+            <DocTable
+              docs={docs}
+              loading={docsQuery.isLoading}
+              onView={setViewDoc}
+              onDelete={(id) => deleteDocument.mutate(id)}
+            />
+          </TabsContent>
 
-        <TabsContent value="memories">
-          <MemoryTable
-            docs={docs}
-            loading={docsQuery.isLoading}
-            onDelete={(id) => deleteDocument.mutate(id)}
-          />
-        </TabsContent>
+          <TabsContent value="memories" className="mt-0">
+            <MemoryTable
+              docs={docs}
+              loading={docsQuery.isLoading}
+              onDelete={(id) => deleteDocument.mutate(id)}
+            />
+          </TabsContent>
+        </div>
       </Tabs>
 
       {/* Document content viewer */}
@@ -327,6 +323,6 @@ export default function DocumentsPage() {
           </DialogContent>
         )}
       </Dialog>
-    </div>
+    </PageShell>
   );
 }

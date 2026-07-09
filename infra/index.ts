@@ -225,8 +225,6 @@ const site = new vercel.Project(
     framework: "nextjs",
     rootDirectory: "clients/site",
     gitRepository: { type: "github", repo: githubRepo, productionBranch: branch },
-    // Skip a rebuild when the change didn't touch this app's directory.
-    ignoreCommand: "git diff --quiet HEAD^ HEAD -- clients/site",
   },
   { provider: vercelProvider },
 );
@@ -240,7 +238,6 @@ const web = new vercel.Project(
     framework: "nextjs",
     rootDirectory: "clients/web",
     gitRepository: { type: "github", repo: githubRepo, productionBranch: branch },
-    ignoreCommand: "git diff --quiet HEAD^ HEAD -- clients/web",
   },
   { provider: vercelProvider },
 );

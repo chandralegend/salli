@@ -220,7 +220,15 @@ const api = new render.WebService(
     healthCheckPath: "/healthz",
     envVars: apiEnvVars,
   },
-  { provider: renderProvider, dependsOn: [project] },
+  {
+    provider: renderProvider,
+    dependsOn: [project],
+    // Free-tier services can't be updated via this provider — any update sends a
+    // `maintenance_mode` field the API rejects ("only for non-free tier"). So we
+    // ignore the mutable bits and manage them out-of-band (Render API/dashboard)
+    // while on free. On a paid plan, drop this to let Pulumi manage env directly.
+    ignoreChanges: ["envVars", "maintenanceMode"],
+  },
 );
 
 // ─────────────────────────────────────────────────────────────────────────────

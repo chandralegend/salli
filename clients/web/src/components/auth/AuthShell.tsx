@@ -25,24 +25,25 @@ export function AuthShell({
         sixth:  "130,210,190",
       }}
     >
-      <div className="flex flex-col items-center gap-6 relative z-10">
-        {/* Auth card */}
+      <div className="w-full flex flex-col items-center gap-6 relative z-10">
+        {/* Auth card — scales up on larger viewports so it doesn't look lost
+            in the middle of the ambient background on a big display. */}
         <div
-          className="w-full max-w-[400px] bg-card rounded-3xl p-10"
+          className="w-full max-w-[400px] lg:max-w-[460px] 2xl:max-w-[540px] bg-card rounded-3xl p-10 lg:p-12 2xl:p-14"
           style={{ animation: "fadeUp 0.3s ease" }}
         >
           {/* Logo lockup */}
           <div className="flex items-center gap-2.5 mb-8">
-            <Logo className="size-9 rounded-xl" />
-            <span className="text-[24px] font-black tracking-[-0.07em] text-foreground">
+            <Logo className="size-9 lg:size-10 2xl:size-11 rounded-xl" />
+            <span className="text-[24px] lg:text-[26px] 2xl:text-[28px] font-black tracking-[-0.07em] text-foreground">
               salli
             </span>
           </div>
 
-          <h1 className="text-[26px] font-extrabold tracking-[-0.04em] leading-tight mb-1.5">
+          <h1 className="text-[26px] lg:text-[28px] 2xl:text-[32px] font-extrabold tracking-[-0.04em] leading-tight mb-1.5">
             {title}
           </h1>
-          <p className="text-[14px] text-muted-foreground mb-8">{subtitle}</p>
+          <p className="text-[14px] lg:text-[15px] text-muted-foreground mb-8">{subtitle}</p>
 
           {children}
         </div>

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { View, Text, Pressable, ActivityIndicator } from "react-native";
-import { RefreshCw, Globe, AlertTriangle, Percent } from "lucide-react-native";
+import { RefreshCw, Globe, AlertTriangle, Percent, TrendingUp, ShieldCheck, Calculator } from "lucide-react-native";
 import { ScreenShell, CardContainer, SectionTitle } from "@/components/ui/page-shell";
-import { BentoTile } from "@/components/ui/bento-tile";
+import { BentoTile, useTileIconColor } from "@/components/ui/bento-tile";
+import { BarsWatermark, LandmarkWatermark } from "@/components/ui/card-watermarks";
 import { PillButton } from "@/components/ui/pill-button";
 import { useTax, type TaxResult } from "@/hooks/useTax";
 import { useThemeColors } from "@/lib/theme";
@@ -90,20 +91,23 @@ export default function TaxScreen() {
           <View className="flex-row gap-3">
             <View className="flex-1">
               <BentoTile
-                variant="mint"
+                variant="green"
                 label="Gross Income"
                 sub={hasFsi ? "Employment + FSI + Other" : "Employment + Other"}
                 value={displayResult.gross_income}
                 badge={displayResult.currency}
+                icon={<TrendingUp size={15} color={useTileIconColor("green")} strokeWidth={2} />}
+                watermark={<BarsWatermark />}
               />
             </View>
             <View className="flex-1">
               <BentoTile
-                variant="teal"
+                variant="blueGrey"
                 label="Personal Relief"
                 sub="Statutory deduction"
                 value={`(${displayResult.personal_relief})`}
                 badge={`${displayResult.currency} deducted`}
+                icon={<ShieldCheck size={15} color={useTileIconColor("blueGrey")} strokeWidth={2} />}
               />
             </View>
           </View>
@@ -115,15 +119,17 @@ export default function TaxScreen() {
                 sub="After all reliefs"
                 value={displayResult.taxable_income}
                 badge={displayResult.currency}
+                icon={<Calculator size={15} color={useTileIconColor("card")} strokeWidth={2} />}
               />
             </View>
             <View className="flex-1">
               <BentoTile
-                variant="lime"
+                variant="gold"
                 label="Tax Payable"
                 sub="Net · due Sep 30, 2026"
                 value={displayResult.tax_payable}
                 badge={effectiveRate ? `${effectiveRate}% effective rate` : undefined}
+                watermark={<LandmarkWatermark />}
               />
             </View>
           </View>

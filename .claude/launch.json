@@ -21,6 +21,13 @@
       "runtimeArgs": ["--dir", "clients/mobile", "--config.verify-deps-before-run=false", "web"],
       "port": 8081,
       "autoPort": true
+    },
+    {
+      "name": "salli-api",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": ["run", "uvicorn", "salli.interfaces.api.main:app", "--host", "0.0.0.0", "--port", "8000"],
+      "port": 8000,
+      "autoPort": true
     }
   ]
 }

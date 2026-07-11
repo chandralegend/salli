@@ -1,7 +1,9 @@
 import { View, Text, ActivityIndicator } from "react-native";
 import { Link } from "expo-router";
+import { Home, TrendingUp, Wallet } from "lucide-react-native";
 import { ScreenShell, PageHeader, CardContainer } from "@/components/ui/page-shell";
-import { BentoTile } from "@/components/ui/bento-tile";
+import { BentoTile, useTileIconColor } from "@/components/ui/bento-tile";
+import { SparklineWatermark, BarsWatermark } from "@/components/ui/card-watermarks";
 import { PostingRow } from "@/components/PostingRow";
 import { DeadlineChip } from "@/components/DeadlineChip";
 import { AvatarMoreButton } from "@/components/layout/AvatarMoreButton";
@@ -33,30 +35,35 @@ export default function DashboardScreen() {
 
       <View className="gap-3">
         <BentoTile
-          variant="dark"
+          variant="navy"
           label="Net Worth"
           sub="Total financial standing"
           value={loading ? "—" : nw.main}
           suffix={nw.suffix || undefined}
           minHeight={140}
+          icon={<Home size={15} color={useTileIconColor("navy")} strokeWidth={2} />}
+          watermark={<SparklineWatermark />}
         />
 
         <View className="flex-row gap-3">
           <BentoTile
-            variant="lime"
+            variant="green"
             label="Income YTD"
             value={loading ? "—" : inc.main}
             suffix={inc.suffix || undefined}
             badge={loading ? undefined : "YTD"}
             style={{ flex: 1 }}
+            icon={<TrendingUp size={15} color={useTileIconColor("green")} strokeWidth={2} />}
+            watermark={<BarsWatermark />}
           />
           <BentoTile
-            variant="teal"
+            variant="purple"
             label="Expenses YTD"
             value={loading ? "—" : exp.main}
             suffix={exp.suffix || undefined}
             badge={loading ? undefined : "YTD"}
             style={{ flex: 1 }}
+            icon={<Wallet size={15} color={useTileIconColor("purple")} strokeWidth={2} />}
           />
         </View>
 

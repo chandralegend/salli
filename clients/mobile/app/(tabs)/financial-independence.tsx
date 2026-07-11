@@ -10,11 +10,16 @@ import {
   ChevronDown,
   ChevronUp,
   RefreshCw,
+  Target,
+  Home,
+  Calendar,
+  Percent,
 } from "lucide-react-native";
 import Markdown from "react-native-markdown-display";
 import { LineChart } from "react-native-gifted-charts";
 import { ScreenShell, PageHeader, CardContainer, SectionTitle } from "@/components/ui/page-shell";
-import { BentoTile } from "@/components/ui/bento-tile";
+import { BentoTile, useTileIconColor } from "@/components/ui/bento-tile";
+import { SparklineWatermark, RingWatermark } from "@/components/ui/card-watermarks";
 import { PillButton } from "@/components/ui/pill-button";
 import { TextField } from "@/components/ui/text-field";
 import { AvatarMoreButton } from "@/components/layout/AvatarMoreButton";
@@ -165,16 +170,19 @@ export default function FinancialIndependenceScreen() {
               label="FI Number"
               sub={strat ? `${(strat.swr * 100).toFixed(1)}% safe withdrawal rate` : "25× annual expenses"}
               value={fiNumber ? lkr(fiNumber) : "—"}
+              icon={<Target size={15} color={useTileIconColor("card")} strokeWidth={2} />}
             />
           </View>
           <View className="flex-1">
             <BentoTile
-              variant="mint"
+              variant="navy"
               label="Net Worth"
               sub={`${(progressToFi * 100).toFixed(1)}% of FI number`}
               value={lkr(netWorth)}
               badge={s ? `+${pct(s.savings_rate, 1)}` : undefined}
               badgeVariant="neutral"
+              icon={<Home size={15} color={useTileIconColor("navy")} strokeWidth={2} />}
+              watermark={<SparklineWatermark />}
             />
           </View>
         </View>
@@ -186,11 +194,12 @@ export default function FinancialIndependenceScreen() {
               label="Years to FIRE"
               sub={`Base scenario · ${strat ? `${(strat.return_base * 100).toFixed(0)}% return` : "9% return"}`}
               value={yearsToFire != null ? String(yearsToFire) : "—"}
+              icon={<Calendar size={15} color={useTileIconColor("dark")} strokeWidth={2} />}
             />
           </View>
           <View className="flex-1">
             <BentoTile
-              variant="teal"
+              variant="blueGrey"
               label="Savings Rate"
               sub="Monthly surplus ratio"
               value={savingsRate.toFixed(1)}
@@ -199,6 +208,8 @@ export default function FinancialIndependenceScreen() {
                 savingsRate >= 40 ? "↑ above 40% target" : savingsRate >= 20 ? "→ building" : "↓ below target"
               }
               badgeVariant={savingsRate >= 40 ? "green" : savingsRate >= 20 ? "amber" : "red"}
+              icon={<Percent size={15} color={useTileIconColor("blueGrey")} strokeWidth={2} />}
+              watermark={<RingWatermark />}
             />
           </View>
         </View>

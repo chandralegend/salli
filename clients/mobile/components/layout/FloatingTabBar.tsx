@@ -8,6 +8,7 @@ import { useSalliStore } from "@/lib/store";
 import { useAppTheme } from "@/lib/theme";
 
 const ACTIVE = "#E8FC85";
+const ACTIVE_ICON = "#010001";
 const INACTIVE = "rgba(255,255,255,0.55)";
 
 const BAR_HEIGHT = 68;
@@ -60,9 +61,20 @@ export function FloatingTabBar({ state, descriptors, navigation, insets }: Botto
       >
         <View
           className="w-10 h-10 rounded-xl items-center justify-center"
-          style={{ backgroundColor: isFocused ? "rgba(255,255,255,0.15)" : "transparent" }}
+          style={
+            isFocused
+              ? {
+                  backgroundColor: ACTIVE,
+                  shadowColor: ACTIVE,
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.55,
+                  shadowRadius: 8,
+                  elevation: 6,
+                }
+              : { backgroundColor: "transparent" }
+          }
         >
-          <Icon color={isFocused ? ACTIVE : INACTIVE} size={20} />
+          <Icon color={isFocused ? ACTIVE_ICON : INACTIVE} size={20} strokeWidth={isFocused ? 2.25 : 2} />
         </View>
       </Pressable>
     );

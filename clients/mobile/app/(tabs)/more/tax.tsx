@@ -21,6 +21,12 @@ export default function TaxScreen() {
   const [result, setResult] = useState<TaxResult | undefined>(undefined);
   const displayResult = result ?? compute.data ?? latest.data ?? null;
 
+  // Hooks must run unconditionally on every render — these tiles are inside a
+  // `{displayResult && ...}` block below, so the color must be resolved here first.
+  const greenIconColor = useTileIconColor("green");
+  const blueGreyIconColor = useTileIconColor("blueGrey");
+  const cardIconColor = useTileIconColor("card");
+
   const hasFsi = !!displayResult && parse(displayResult.foreign_service_income) > 0;
 
   async function handleCompute() {
@@ -96,7 +102,7 @@ export default function TaxScreen() {
                 sub={hasFsi ? "Employment + FSI + Other" : "Employment + Other"}
                 value={displayResult.gross_income}
                 badge={displayResult.currency}
-                icon={<TrendingUp size={15} color={useTileIconColor("green")} strokeWidth={2} />}
+                icon={<TrendingUp size={15} color={greenIconColor} strokeWidth={2} />}
                 watermark={<BarsWatermark />}
               />
             </View>
@@ -107,7 +113,7 @@ export default function TaxScreen() {
                 sub="Statutory deduction"
                 value={`(${displayResult.personal_relief})`}
                 badge={`${displayResult.currency} deducted`}
-                icon={<ShieldCheck size={15} color={useTileIconColor("blueGrey")} strokeWidth={2} />}
+                icon={<ShieldCheck size={15} color={blueGreyIconColor} strokeWidth={2} />}
               />
             </View>
           </View>
@@ -119,7 +125,7 @@ export default function TaxScreen() {
                 sub="After all reliefs"
                 value={displayResult.taxable_income}
                 badge={displayResult.currency}
-                icon={<Calculator size={15} color={useTileIconColor("card")} strokeWidth={2} />}
+                icon={<Calculator size={15} color={cardIconColor} strokeWidth={2} />}
               />
             </View>
             <View className="flex-1">

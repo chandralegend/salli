@@ -88,6 +88,13 @@ export default function FinancialIndependenceScreen() {
   // ScreenShell padding (20×2) + CardContainer padding (20×2)
   const chartWidth = windowWidth - 80;
 
+  // Hooks must run unconditionally on every render — these tiles are inside a
+  // `{tab === "overview" && ...}` block below, so the colors must be resolved here first.
+  const cardIconColor = useTileIconColor("card");
+  const navyIconColor = useTileIconColor("navy");
+  const darkIconColor = useTileIconColor("dark");
+  const blueGreyIconColor = useTileIconColor("blueGrey");
+
   const s = score.data;
   const strat = strategy.data;
   const proj = projections.data;
@@ -170,7 +177,7 @@ export default function FinancialIndependenceScreen() {
               label="FI Number"
               sub={strat ? `${(strat.swr * 100).toFixed(1)}% safe withdrawal rate` : "25× annual expenses"}
               value={fiNumber ? lkr(fiNumber) : "—"}
-              icon={<Target size={15} color={useTileIconColor("card")} strokeWidth={2} />}
+              icon={<Target size={15} color={cardIconColor} strokeWidth={2} />}
             />
           </View>
           <View className="flex-1">
@@ -181,7 +188,7 @@ export default function FinancialIndependenceScreen() {
               value={lkr(netWorth)}
               badge={s ? `+${pct(s.savings_rate, 1)}` : undefined}
               badgeVariant="neutral"
-              icon={<Home size={15} color={useTileIconColor("navy")} strokeWidth={2} />}
+              icon={<Home size={15} color={navyIconColor} strokeWidth={2} />}
               watermark={<SparklineWatermark />}
             />
           </View>
@@ -194,7 +201,7 @@ export default function FinancialIndependenceScreen() {
               label="Years to FIRE"
               sub={`Base scenario · ${strat ? `${(strat.return_base * 100).toFixed(0)}% return` : "9% return"}`}
               value={yearsToFire != null ? String(yearsToFire) : "—"}
-              icon={<Calendar size={15} color={useTileIconColor("dark")} strokeWidth={2} />}
+              icon={<Calendar size={15} color={darkIconColor} strokeWidth={2} />}
             />
           </View>
           <View className="flex-1">
@@ -208,7 +215,7 @@ export default function FinancialIndependenceScreen() {
                 savingsRate >= 40 ? "↑ above 40% target" : savingsRate >= 20 ? "→ building" : "↓ below target"
               }
               badgeVariant={savingsRate >= 40 ? "green" : savingsRate >= 20 ? "amber" : "red"}
-              icon={<Percent size={15} color={useTileIconColor("blueGrey")} strokeWidth={2} />}
+              icon={<Percent size={15} color={blueGreyIconColor} strokeWidth={2} />}
               watermark={<RingWatermark />}
             />
           </View>

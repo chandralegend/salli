@@ -14,6 +14,13 @@
       "runtimeArgs": ["--dir", "clients/site", "--config.verify-deps-before-run=false", "dev"],
       "port": 3001,
       "autoPort": true
+    },
+    {
+      "name": "salli-mobile",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "clients/mobile", "--config.verify-deps-before-run=false", "web"],
+      "port": 8081,
+      "autoPort": true
     }
   ]
 }

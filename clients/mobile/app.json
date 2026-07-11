@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Salli",
+    "slug": "salli-mobile",
+    "scheme": "salli",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F1F7F7",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "lk.salli.app"
+    },
+    "android": {
+      "package": "lk.salli.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#F1F7F7",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-splash-screen",
+      "expo-web-browser"
+    ]
+  }
+}

@@ -26,13 +26,13 @@ export type MessagePart =
 const WORKER_META: Record<string, { label: string; badge: string; border: string }> = {
   tax_specialist: {
     label: "Tax Specialist",
-    badge: "text-blue-700 bg-blue-50 border-blue-200",
-    border: "border-blue-200",
+    badge: "badge-blue",
+    border: "border-blue-200 dark:border-blue-400/25",
   },
   finance_specialist: {
     label: "Finance Specialist",
-    badge: "text-purple-700 bg-purple-50 border-purple-200",
-    border: "border-purple-200",
+    badge: "badge-purple",
+    border: "border-violet-200 dark:border-violet-400/25",
   },
 };
 
@@ -150,7 +150,7 @@ function MarkdownContent({ content, streaming }: { content: string; streaming?: 
               href={href ?? "#"}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 underline decoration-blue-300 underline-offset-2 hover:text-blue-700 hover:decoration-blue-500 transition-colors inline-flex items-center gap-0.5"
+              className="text-blue-600 dark:text-blue-400 underline decoration-blue-300 dark:decoration-blue-400/40 underline-offset-2 hover:text-blue-700 dark:hover:text-blue-300 hover:decoration-blue-500 transition-colors inline-flex items-center gap-0.5"
             >
               {children}
               <ExternalLink className="size-2.5 opacity-50 shrink-0" />

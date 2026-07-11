@@ -168,7 +168,7 @@ export function DataTable<TData, TValue>({
             [...Array(5)].map((_, i) => (
               <TableRow key={i}>
                 {columns.map((_, j) => (
-                  <TableCell key={j} className="px-3 py-2.5">
+                  <TableCell key={j} className="px-3 py-3.5">
                     <Skeleton className="h-4 w-full" />
                   </TableCell>
                 ))}
@@ -189,7 +189,7 @@ export function DataTable<TData, TValue>({
                 className={cn("border-b last:border-0", getRowClassName?.(row))}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="px-3 py-2.5">
+                  <TableCell key={cell.id} className="px-3 py-3.5">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}

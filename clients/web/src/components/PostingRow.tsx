@@ -25,15 +25,15 @@ export function PostingRow({
       <div
         className={`text-xs font-medium px-1.5 py-0.5 rounded shrink-0 ${
           isCredit
-            ? "bg-emerald-50 text-emerald-700"
-            : "bg-rose-50 text-rose-700"
+            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300"
+            : "bg-rose-50 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300"
         }`}
       >
         {isCredit ? "CR" : "DR"}
       </div>
       <span
         className={`font-ledger text-[13px] font-medium w-28 text-right shrink-0 ${
-          isCredit ? "text-emerald-700" : "text-rose-700"
+          isCredit ? "text-emerald-700 dark:text-emerald-300" : "text-rose-700 dark:text-rose-300"
         }`}
       >
         <span className="text-[0.78em] text-muted-foreground mr-1">{currency}</span>

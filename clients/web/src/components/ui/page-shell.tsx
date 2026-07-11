@@ -180,7 +180,9 @@ export function CardContainer({
 
 // ── BentoTile ─────────────────────────────────────────────────────────────────
 
-export type TileVariant = "mint" | "teal" | "lime" | "dark" | "card";
+export type TileVariant =
+  | "mint" | "teal" | "lime" | "dark" | "card"
+  | "navy" | "green" | "purple" | "blueGrey" | "gold";
 export type BadgeVariant = "green" | "amber" | "red" | "neutral";
 
 const TILE_COLORS: Record<TileVariant, {
@@ -191,7 +193,16 @@ const TILE_COLORS: Record<TileVariant, {
   lime: { bg: "#E8FC85", label: "rgba(0,0,0,0.45)", sub: "rgba(0,0,0,0.35)", value: "#010001" },
   dark: { bg: "#010001", label: "rgba(255,255,255,0.3)", sub: "rgba(255,255,255,0.28)", value: "#E8FC85" },
   card: { bg: "var(--card)", label: "var(--muted-foreground)", sub: "var(--muted-foreground)", value: "var(--foreground)" },
+  // Redesign tones — tactile KPI cards (§6)
+  navy:     { bg: "var(--card-navy)",      label: "rgba(255,255,255,0.48)", sub: "rgba(255,255,255,0.38)", value: "#FFFFFF" },
+  green:    { bg: "var(--card-green)",     label: "rgba(255,255,255,0.58)", sub: "rgba(255,255,255,0.44)", value: "#FFFFFF" },
+  purple:   { bg: "var(--card-purple)",    label: "rgba(255,255,255,0.58)", sub: "rgba(255,255,255,0.44)", value: "#FFFFFF" },
+  blueGrey: { bg: "var(--card-blue-grey)", label: "rgba(255,255,255,0.58)", sub: "rgba(255,255,255,0.44)", value: "#FFFFFF" },
+  gold:     { bg: "var(--card-gold)",      label: "rgba(23,18,8,0.52)",     sub: "rgba(23,18,8,0.4)",      value: "#171208" },
 };
+
+// Tones that need light text/badges (dark or saturated backgrounds).
+const LIGHT_TEXT_TONES: ReadonlySet<TileVariant> = new Set(["dark", "navy", "green", "purple", "blueGrey"]);
 
 const BADGE_COLORS: Record<BadgeVariant, { bg: string; text: string }> = {
   green:   { bg: "#DCFCE7", text: "#16A34A" },
@@ -210,6 +221,18 @@ interface BentoTileProps {
   suffix?: string;
   badge?: string;
   badgeVariant?: BadgeVariant;
+  /** Optional top-right contextual icon (§6). */
+  icon?: React.ReactNode;
+  /** Optional low-opacity decorative chart/symbol behind the content (§8) —
+   * a sparkline, bar silhouette, or radial ring. Purely decorative. */
+  watermark?: React.ReactNode;
+  /**
+   * Fade direction for the watermark, so it never competes with the card's
+   * text. "bottom" (default) fades a bottom-anchored chart before it reaches
+   * the label; "top" fades a top-anchored mark before it reaches the value;
+   * "none" skips masking entirely (e.g. a fully-inset icon touching no edge).
+   */
+  watermarkFade?: "bottom" | "top" | "none";
   loading?: boolean;
   onClick?: () => void;
   className?: string;
@@ -226,6 +249,9 @@ export function BentoTile({
   suffix,
   badge,
   badgeVariant = "neutral",
+  icon,
+  watermark,
+  watermarkFade = "bottom",
   loading,
   onClick,
   className,
@@ -234,57 +260,98 @@ export function BentoTile({
   children,
 }: BentoTileProps) {
   const c = TILE_COLORS[variant];
-  const isDark = variant === "dark";
+  const isDark = LIGHT_TEXT_TONES.has(variant);
   const rawBadge = BADGE_COLORS[badgeVariant];
   const badgeBg = isDark && badgeVariant === "neutral" ? DARK_NEUTRAL_BADGE.bg : rawBadge.bg;
   const badgeText = isDark && badgeVariant === "neutral" ? DARK_NEUTRAL_BADGE.text : rawBadge.text;
 
   return (
     <div
-      className={cn(
-        "rounded-[20px] flex flex-col justify-between transition-all",
-        onClick && "cursor-pointer hover:brightness-[0.97]",
-        className,
-      )}
-      style={{ background: c.bg, padding: 22, minHeight, ...style }}
+      className={cn("metric-card rounded-[var(--radius-card)]", onClick && "cursor-pointer", className)}
+      style={{ background: c.bg, ...style }}
+      data-clickable={onClick ? "true" : undefined}
       onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
     >
-      <div>
-        <div style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
-          textTransform: "uppercase", color: c.label,
-        }}>
-          {label}
-        </div>
-        {sub && (
-          <div style={{ fontSize: 11.5, color: c.sub, marginTop: 3 }}>{sub}</div>
+      {watermark && (() => {
+        const fadeCss =
+          watermarkFade === "top"
+            ? "linear-gradient(to bottom, black 0%, black 45%, transparent 92%)"
+            : watermarkFade === "none"
+              ? undefined
+              : "linear-gradient(to top, black 0%, black 45%, transparent 92%)";
+        return (
+          <div
+            className="absolute inset-0 z-0 overflow-hidden rounded-[inherit] pointer-events-none"
+            style={fadeCss ? { maskImage: fadeCss, WebkitMaskImage: fadeCss } : undefined}
+          >
+            {watermark}
+          </div>
+        );
+      })()}
+      <div
+        className="relative z-[1] flex flex-col justify-between h-full"
+        style={{ padding: 22, minHeight }}
+      >
+        {icon && (
+          // A position:absolute child's containing block is the parent's
+          // *padding box* — top:0/right:0 sits at the card's true edge,
+          // completely ignoring the 22px padding declared above (padding
+          // only affects in-flow children). Match that 22px explicitly so
+          // the badge lines up with the rest of the content's inset.
+          <div className="absolute opacity-70" style={{ top: 22, right: 22 }}>{icon}</div>
         )}
-      </div>
-      {loading ? (
-        <Skeleton
-          className="h-9 w-32"
-          style={{ background: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)" }}
-        />
-      ) : (
         <div>
           <div style={{
-            fontSize: 34, fontWeight: 900, letterSpacing: "-0.05em",
-            color: c.value, lineHeight: 1, marginBottom: 5,
+            fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
+            textTransform: "uppercase", color: c.label,
           }}>
-            {value}
-            {suffix && <span style={{ fontSize: 18 }}>{suffix}</span>}
+            {label}
           </div>
-          {badge && (
-            <span style={{
-              fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999,
-              background: badgeBg, color: badgeText,
-            }}>
-              {badge}
-            </span>
+          {sub && (
+            <div style={{ fontSize: 11.5, color: c.sub, marginTop: 3 }}>{sub}</div>
           )}
         </div>
-      )}
-      {children}
+        {loading ? (
+          <Skeleton
+            className="h-9 w-32"
+            style={{ background: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)" }}
+          />
+        ) : value === "" ? null : (
+          <div>
+            <div
+              style={{
+                fontSize: 34, fontWeight: 900, letterSpacing: "-0.05em",
+                color: c.value, lineHeight: 1, marginBottom: 5,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {value}
+              {suffix && <span style={{ fontSize: 18 }}>{suffix}</span>}
+            </div>
+            {badge && (
+              <span style={{
+                fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999,
+                background: badgeBg, color: badgeText,
+              }}>
+                {badge}
+              </span>
+            )}
+          </div>
+        )}
+        {children}
+      </div>
     </div>
   );
 }

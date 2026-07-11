@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Upload, Plus, ArrowRight, MessageCircle } from "lucide-react";
+import { Upload, Plus, ArrowRight, MessageCircle, Home, TrendingUp, Activity } from "lucide-react";
+import { IconBadge, SparklineWatermark, BarsWatermark, RingWatermark, LandmarkWatermark } from "@/components/ui/card-watermarks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PostingRow } from "@/components/PostingRow";
 import { DeadlineChip } from "@/components/DeadlineChip";
@@ -30,6 +31,8 @@ function formatPct(v: string | null | undefined): string {
   if (!isFinite(n)) return v;
   return `${(n * 100).toFixed(1)}`;
 }
+
+// ── Card chrome — contextual icon badge + decorative watermarks (§6, §8) ──────
 
 // ── Sub-score bar ─────────────────────────────────────────────────────────────
 
@@ -87,77 +90,80 @@ export default function DashboardPage() {
         }
       />
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 
         {/* Row 1 col 1 — Net Worth */}
         <BentoTile
-          variant="mint"
+          variant="navy"
           label="Net Worth"
           sub="Total financial standing"
           value={nw.main}
           suffix={nw.suffix || undefined}
           badge={loading ? undefined : "+0.0%"}
+          icon={<IconBadge><Home className="size-4 text-white" /></IconBadge>}
+          watermark={<SparklineWatermark />}
           loading={loading}
           onClick={() => router.push("/financial-independence")}
         />
 
         {/* Row 1 col 2 — Income YTD */}
         <BentoTile
-          variant="mint"
+          variant="green"
           label="Income YTD"
           sub="This assessment year"
           value={inc.main}
           suffix={inc.suffix || undefined}
           badge={loading ? undefined : "YTD"}
+          icon={<IconBadge><TrendingUp className="size-4 text-white" /></IconBadge>}
+          watermark={<BarsWatermark />}
           loading={loading}
         />
 
-        {/* Col 3, rows 1-2 — Tax Payable (lime, spans 2 rows) */}
-        <div
-          className="bg-[#E8FC85] rounded-[20px] p-[26px] flex flex-col justify-between cursor-pointer hover:brightness-[0.97] transition-all"
-          style={{ gridColumn: "3", gridRow: "1 / 3" }}
+        {/* Col 3, rows 1-2 — Tax Payable (gold, spans 2 rows) */}
+        <BentoTile
+          variant="gold"
+          label="Tax Payable"
+          sub="Assessment Year 2025/26 · Sri Lanka IRD"
+          value=""
+          minHeight={0}
+          className="justify-start lg:col-start-3 lg:row-span-2"
+          watermark={<LandmarkWatermark />}
           onClick={() => router.push("/tax")}
         >
-          <div>
-            <div className="text-[11px] font-bold tracking-[0.06em] uppercase text-black/40 mb-1.5">
-              Tax Payable
+          <div className="text-[12px] mt-1" style={{ color: "rgba(23,18,8,0.4)" }}>Due Jul 31, 2025</div>
+          <div className="flex-1" />
+          {latest.isLoading ? (
+            <Skeleton className="h-12 w-36 mb-4" style={{ background: "rgba(23,18,8,0.1)" }} />
+          ) : (
+            <div className="text-[46px] font-black tracking-[-0.06em] leading-none mb-4" style={{ color: "#171208", fontVariantNumeric: "tabular-nums" }}>
+              {latest.data?.tax_payable ?? "—"}{" "}
+              <span className="text-[18px] font-semibold opacity-50">LKR</span>
             </div>
-            <div className="text-[14px] font-bold text-black/55 leading-[1.45]">
-              Assessment Year 2025/26 · Sri Lanka IRD
-            </div>
-            <div className="text-[12px] text-black/38 mt-1">Due Jul 31, 2025</div>
-          </div>
-          <div>
-            {latest.isLoading ? (
-              <Skeleton className="h-12 w-36 bg-black/10 mb-4" />
-            ) : (
-              <div className="text-[46px] font-black tracking-[-0.06em] text-[#010001] leading-none mb-4">
-                {latest.data?.tax_payable ?? "—"}{" "}
-                <span className="text-[18px] font-semibold opacity-50">LKR</span>
-              </div>
-            )}
-            <button
-              onClick={(e) => { e.stopPropagation(); router.push("/tax"); }}
-              className="w-full py-3 bg-[#010001] text-white border-none rounded-full text-[13.5px] font-bold cursor-pointer hover:bg-[#1a1a1a] transition-colors"
-            >
-              View full breakdown →
-            </button>
-          </div>
-        </div>
+          )}
+          <button
+            onClick={(e) => { e.stopPropagation(); router.push("/tax"); }}
+            className="w-full py-3 bg-[#010001] text-white border-none rounded-full text-[13.5px] font-bold cursor-pointer hover:bg-[#1a1a1a] transition-colors"
+          >
+            View full breakdown →
+          </button>
+        </BentoTile>
 
-        {/* Col 4, rows 1-2 — FI Score (dark, spans 2 rows) */}
-        <div
-          className="bg-[#010001] rounded-[20px] p-[26px] flex flex-col cursor-pointer hover:bg-[#1a1a1a] transition-colors"
-          style={{ gridColumn: "4", gridRow: "1 / 3" }}
+        {/* Col 4, rows 1-2 — FI Score (dark navy, spans 2 rows) */}
+        <BentoTile
+          variant="dark"
+          label="FI Score"
+          value=""
+          minHeight={0}
+          className="justify-start lg:col-start-4 lg:row-span-2"
+          icon={<IconBadge><Activity className="size-4 text-[#E8FC85]" /></IconBadge>}
           onClick={() => router.push("/financial-independence")}
         >
-          <div className="text-[11px] font-bold tracking-[0.06em] uppercase text-white/30 mb-3.5">FI Score</div>
           {fiLoading ? (
             <Skeleton className="h-16 w-24 bg-white/10 mb-2" />
           ) : (
             <>
               <div className="flex items-baseline gap-[5px] mb-1">
-                <span className="text-[60px] font-black tracking-[-0.06em] text-[#E8FC85] leading-none">{fiScore}</span>
+                <span className="text-[60px] font-black tracking-[-0.06em] text-[#E8FC85] leading-none" style={{ fontVariantNumeric: "tabular-nums" }}>{fiScore}</span>
                 <span className="text-[20px] font-semibold text-white/20">/100</span>
               </div>
               <div className="text-[13px] text-white/38 mb-5">{fiData?.grade} · Standard FIRE</div>
@@ -172,11 +178,11 @@ export default function DashboardPage() {
             ))}
           </div>
           <div className="text-[12px] text-[#E8FC85] font-bold mt-5">View FIRE strategy →</div>
-        </div>
+        </BentoTile>
 
         {/* Row 2 col 1 — Expenses YTD */}
         <BentoTile
-          variant="mint"
+          variant="purple"
           label="Expenses YTD"
           sub="This assessment year"
           value={exp.main}
@@ -187,13 +193,14 @@ export default function DashboardPage() {
 
         {/* Row 2 col 2 — Savings Rate */}
         <BentoTile
-          variant="teal"
+          variant="blueGrey"
           label="Savings Rate"
           sub="Monthly surplus"
           value={fiLoading ? "—" : savingsPct}
           suffix="%"
-          badge={fiData && Number(fiData.savings_rate) >= 0.2 ? "↑ target" : undefined}
+          badge={fiData && Number(fiData.savings_rate) >= 0.2 ? "↑ Target" : undefined}
           badgeVariant="green"
+          watermark={<RingWatermark />}
           loading={fiLoading}
         />
 
@@ -205,7 +212,7 @@ export default function DashboardPage() {
               All <ArrowRight className="size-3.5" />
             </Link>
           }
-          style={{ gridColumn: "1 / 3" }}
+          className="sm:col-span-1 lg:col-span-2"
           padding={24}
         >
           {loading ? (
@@ -246,7 +253,7 @@ export default function DashboardPage() {
               All <ArrowRight className="size-3.5" />
             </Link>
           }
-          style={{ gridColumn: "3 / 5" }}
+          className="sm:col-span-1 lg:col-span-2"
           padding={22}
         >
           {upcomingReminders.length === 0 ? (
@@ -265,14 +272,14 @@ export default function DashboardPage() {
                   <div
                     key={r.id}
                     className={`flex flex-col gap-1.5 p-3 rounded-[14px] ${
-                      isOverdue ? "bg-[#FEE2E2]" : isDueSoon ? "bg-[#FEF3C7]" : "bg-muted"
+                      isOverdue ? "bg-[#FEE2E2] dark:bg-rose-400/15" : isDueSoon ? "bg-[#FEF3C7] dark:bg-amber-400/15" : "bg-muted"
                     }`}
                   >
                     <div>
-                      <div className={`text-[13px] font-bold ${isOverdue ? "text-[#7F1D1D]" : isDueSoon ? "text-[#78350F]" : "text-foreground"}`}>
+                      <div className={`text-[13px] font-bold ${isOverdue ? "text-[#7F1D1D] dark:text-rose-300" : isDueSoon ? "text-[#78350F] dark:text-amber-300" : "text-foreground"}`}>
                         {r.kind}
                       </div>
-                      <div className={`text-[11.5px] mt-[1px] ${isOverdue ? "text-[#B91C1C]" : isDueSoon ? "text-[#B45309]" : "text-muted-foreground"}`}>
+                      <div className={`text-[11.5px] mt-[1px] ${isOverdue ? "text-[#B91C1C] dark:text-rose-300/80" : isDueSoon ? "text-[#B45309] dark:text-amber-300/80" : "text-muted-foreground"}`}>
                         {new Date(r.due_date).toLocaleDateString("en-LK", { month: "short", day: "numeric", year: "numeric" })}
                       </div>
                     </div>
@@ -285,27 +292,24 @@ export default function DashboardPage() {
         </CardContainer>
 
         {/* Row 4 — Scrooge CTA (dark, full width) */}
-        <div
-          className="bg-[#010001] rounded-[20px] px-7 py-[22px] flex items-center justify-between gap-6"
-          style={{ gridColumn: "1 / 5" }}
-        >
-          <div className="flex items-center gap-4 flex-1">
+        <div className="col-span-full bg-[#010001] rounded-[20px] px-5 sm:px-7 py-[22px] flex flex-col sm:flex-row sm:items-center justify-between gap-5 sm:gap-6">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
             <div className="w-11 h-11 bg-[#E8FC85] rounded-[14px] flex items-center justify-center shrink-0">
               <MessageCircle className="size-5 text-[#010001]" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="text-[15px] font-extrabold text-white tracking-[-0.02em]">Ask Scrooge anything about your money</div>
               <div className="text-[13px] text-white/35 mt-[3px]">Tax, projections, spending — from your real ledger. Never guesses.</div>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button onClick={() => openScrooge()} className="px-4 py-2.5 bg-white/8 rounded-full text-[12.5px] font-semibold text-white/65 hover:bg-white/14 transition-colors whitespace-nowrap">
+          <div className="flex items-center gap-2 shrink-0 overflow-x-auto sm:overflow-visible -mx-1 px-1 sm:mx-0 sm:px-0">
+            <button onClick={() => openScrooge()} className="px-4 py-2.5 bg-white/8 rounded-full text-[12.5px] font-semibold text-white/65 hover:bg-white/14 transition-colors whitespace-nowrap shrink-0">
               Tax payable?
             </button>
-            <button onClick={() => openScrooge()} className="px-4 py-2.5 bg-white/8 rounded-full text-[12.5px] font-semibold text-white/65 hover:bg-white/14 transition-colors whitespace-nowrap">
+            <button onClick={() => openScrooge()} className="hidden sm:inline-flex px-4 py-2.5 bg-white/8 rounded-full text-[12.5px] font-semibold text-white/65 hover:bg-white/14 transition-colors whitespace-nowrap shrink-0">
               On track for FIRE?
             </button>
-            <button onClick={() => openScrooge()} className="px-5 py-2.5 bg-[#E8FC85] text-[#010001] border-none rounded-full text-[13.5px] font-extrabold cursor-pointer hover:brightness-[0.94] transition-all whitespace-nowrap">
+            <button onClick={() => openScrooge()} className="px-5 py-2.5 bg-[#E8FC85] text-[#010001] border-none rounded-full text-[13.5px] font-extrabold cursor-pointer hover:brightness-[0.94] transition-all whitespace-nowrap shrink-0">
               Start conversation →
             </button>
           </div>

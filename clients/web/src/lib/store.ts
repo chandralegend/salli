@@ -7,13 +7,27 @@ interface SalliStore {
   setToken: (token: string | null) => void;
   onboardingComplete: boolean;
   setOnboardingComplete: (v: boolean) => void;
+  /** Incrementing counter — bump it to signal "open the new-entry flow" from
+   * anywhere (e.g. the mobile bottom-dock's + button) without route coupling.
+   * Since the request usually fires just before a route change (a fresh
+   * mount of the ledger page), the "already consumed" marker must live here
+   * too — a component-local ref can't tell "new request" from "request that
+   * fired before I mounted" once the page has remounted. */
+  quickAddEntryRequest: number;
+  quickAddEntryConsumed: number;
+  requestQuickAddEntry: () => void;
+  consumeQuickAddEntry: () => void;
 }
 
-export const useSalliStore = create<SalliStore>((set) => ({
+export const useSalliStore = create<SalliStore>((set, get) => ({
   token: null,
   setToken: (token) => set({ token }),
   onboardingComplete: false,
   setOnboardingComplete: (v) => set({ onboardingComplete: v }),
+  quickAddEntryRequest: 0,
+  quickAddEntryConsumed: 0,
+  requestQuickAddEntry: () => set((s) => ({ quickAddEntryRequest: s.quickAddEntryRequest + 1 })),
+  consumeQuickAddEntry: () => set({ quickAddEntryConsumed: get().quickAddEntryRequest }),
 }));
 
 // ── Scrooge panel ─────────────────────────────────────────────────────────────

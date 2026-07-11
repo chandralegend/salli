@@ -109,6 +109,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
           exit="exit"
           transition={{ duration: 0.42, ease: [0.32, 0.72, 0, 1] }}
           ref={scrollRef}
+          className="pb-[100px] md:pb-0"
           style={{ position: "absolute", inset: 0, overflowY: "auto" }}
         >
           {children}

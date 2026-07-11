@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSalliStore } from "@/lib/store";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Pencil, Trash2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,11 +47,11 @@ const ACCOUNT_TYPES = ["asset", "liability", "equity", "income", "expense"] as c
 type AccountType = typeof ACCOUNT_TYPES[number];
 
 const TYPE_COLORS: Record<string, string> = {
-  asset:     "bg-sky-50 text-sky-700 border-sky-200",
-  liability: "bg-rose-50 text-rose-700 border-rose-200",
-  equity:    "bg-violet-50 text-violet-700 border-violet-200",
-  income:    "bg-emerald-50 text-emerald-700 border-emerald-200",
-  expense:   "bg-amber-50 text-amber-700 border-amber-200",
+  asset:     "badge-info",
+  liability: "badge-danger",
+  equity:    "badge-purple",
+  income:    "badge-success",
+  expense:   "badge-warning",
 };
 
 type JournalEntry = {
@@ -179,7 +180,7 @@ export default function LedgerPage() {
       enableSorting: false,
       header: () => <span className="text-secondary-label">Status</span>,
       cell: ({ row }) => (
-        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${row.original.is_active ? "bg-emerald-50 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
+        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${row.original.is_active ? "badge-success" : "bg-muted text-muted-foreground"}`}>
           {row.original.is_active ? "Active" : "Inactive"}
         </span>
       ),
@@ -293,6 +294,21 @@ export default function LedgerPage() {
   const entriesList = (entries.data ?? []) as JournalEntry[];
 
   const [ledgerTab, setLedgerTab] = useState<"accounts" | "entries" | "income">("accounts");
+
+  // Mobile bottom-dock "+" button signals a quick-add via the store rather
+  // than route params. The request fires just before navigation, so this
+  // page mounts fresh with the signal already set — the "consumed" marker
+  // must live in the store too, or a local ref would never see it change.
+  const quickAddEntryRequest = useSalliStore((s) => s.quickAddEntryRequest);
+  const quickAddEntryConsumed = useSalliStore((s) => s.quickAddEntryConsumed);
+  const consumeQuickAddEntry = useSalliStore((s) => s.consumeQuickAddEntry);
+  useEffect(() => {
+    if (quickAddEntryRequest !== 0 && quickAddEntryRequest !== quickAddEntryConsumed) {
+      consumeQuickAddEntry();
+      setLedgerTab("entries");
+      setEntryOpen(true);
+    }
+  }, [quickAddEntryRequest, quickAddEntryConsumed, consumeQuickAddEntry]);
 
   return (
     <PageShell>
@@ -465,9 +481,9 @@ export default function LedgerPage() {
                     </TableBody>
                   </Table>
                   {Object.entries(incomeStatement.data.expenses ?? {}).length > 0 && (
-                    <div className="mx-3 mb-3 px-4 py-2.5 flex items-center justify-between bg-rose-100 rounded-xl">
-                      <p className="text-[13px] font-bold text-rose-900">Total Expenses</p>
-                      <p className="text-[13px] font-bold tabular-nums text-rose-900 font-mono">
+                    <div className="mx-3 mb-3 px-4 py-2.5 flex items-center justify-between bg-rose-100 dark:bg-rose-400/15 rounded-xl">
+                      <p className="text-[13px] font-bold text-rose-900 dark:text-rose-300">Total Expenses</p>
+                      <p className="text-[13px] font-bold tabular-nums text-rose-900 dark:text-rose-300 font-mono">
                         {fmt(Object.values(incomeStatement.data.expenses ?? {}).reduce((s, v) => s + Number(v), 0))}
                       </p>
                     </div>

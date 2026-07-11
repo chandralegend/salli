@@ -21,7 +21,7 @@ export function DeadlineChip({ dueDate, done }: DeadlineChipProps) {
   }
   if (days < 0) {
     return (
-      <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-rose-50 text-rose-700">
+      <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-rose-50 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300">
         {Math.abs(days)}d overdue
       </span>
     );
@@ -35,7 +35,7 @@ export function DeadlineChip({ dueDate, done }: DeadlineChipProps) {
   }
   if (days <= 14) {
     return (
-      <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 tabular-nums">
+      <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300 tabular-nums">
         {days}d
       </span>
     );

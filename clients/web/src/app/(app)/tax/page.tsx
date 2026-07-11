@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, RefreshCw, Globe, AlertTriangle } from "lucide-react";
+import { Loader2, RefreshCw, Globe, AlertTriangle, TrendingUp, ShieldCheck, Calculator } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTax } from "@/hooks/useTax";
 import { PageShell, PageHeader, PillButton, BentoTile, CardContainer } from "@/components/ui/page-shell";
+import { IconBadge, BarsWatermark, LandmarkWatermark } from "@/components/ui/card-watermarks";
 
 function parse(s: string) {
   return parseFloat(s.replace(/,/g, "")) || 0;
@@ -72,7 +73,7 @@ export default function TaxPage() {
             <p className="text-[14px] text-muted-foreground leading-[1.7] mb-3">
               Salli&apos;s deterministic rules engine — not the AI — computes your liability from your ledger data.
             </p>
-            <div className="bg-amber-50 border border-amber-200 rounded-[14px] px-4 py-3.5 text-[13px] text-amber-800 text-left mb-7 leading-relaxed">
+            <div className="badge-warning rounded-[14px] px-4 py-3.5 text-[13px] text-left mb-7 leading-relaxed">
               Planning estimate only. Consult a registered tax agent before filing with the IRD.
             </div>
             <button
@@ -97,19 +98,22 @@ export default function TaxPage() {
           {/* ── Row 1: 4 metric tiles ── */}
 
           <BentoTile
-            variant="mint"
+            variant="green"
             label="Gross Income"
             sub={hasFsi ? "Employment + FSI + Other" : "Employment + Other"}
             value={displayResult.gross_income}
             badge={displayResult.currency}
+            icon={<IconBadge><TrendingUp className="size-4 text-white" /></IconBadge>}
+            watermark={<BarsWatermark />}
           />
 
           <BentoTile
-            variant="teal"
+            variant="blueGrey"
             label="Personal Relief"
             sub="Statutory deduction"
             value={`(${displayResult.personal_relief})`}
             badge={`${displayResult.currency} deducted`}
+            icon={<IconBadge><ShieldCheck className="size-4 text-white" /></IconBadge>}
           />
 
           <BentoTile
@@ -118,20 +122,22 @@ export default function TaxPage() {
             sub="After all reliefs"
             value={displayResult.taxable_income}
             badge={displayResult.currency}
+            icon={<IconBadge><Calculator className="size-4 text-foreground" /></IconBadge>}
           />
 
           <BentoTile
-            variant="lime"
+            variant="gold"
             label="Tax Payable"
             sub="Net · due Jul 31, 2025"
             value={displayResult.tax_payable}
             badge={effectiveRate ? `${effectiveRate}% effective rate` : undefined}
+            watermark={<LandmarkWatermark />}
           />
 
           {/* ── Row 2 ── */}
 
           {/* Computation workings — cols 1-2 */}
-          <div className="col-span-2 bg-card rounded-[20px] p-[26px]">
+          <div className="col-span-2 glass-surface rounded-[var(--radius-panel)] p-[26px]">
             <div className="text-[14px] font-extrabold tracking-[-0.02em] mb-5">Computation</div>
             <div className="flex flex-col">
               {/* Income sources */}
@@ -205,18 +211,19 @@ export default function TaxPage() {
                 return (
                   <div
                     key={i}
-                    className="flex justify-between items-center px-3 py-2.5 rounded-[10px]"
-                    style={{ background: active ? "#D5E9EA" : "var(--muted)" }}
+                    className={`flex justify-between items-center px-3 py-2.5 rounded-[10px] ${
+                      active ? "bg-[#D5E9EA] dark:bg-teal-400/12" : "bg-muted"
+                    }`}
                   >
                     <div>
-                      <div className={`text-[12px] font-bold ${active ? "text-[#010001]" : "text-foreground"}`}>{b.band}</div>
-                      <div className={`text-[11px] mt-0.5 ${active ? "text-black/45" : "text-muted-foreground"}`}>
+                      <div className={`text-[12px] font-bold ${active ? "text-[#010001] dark:text-teal-200" : "text-foreground"}`}>{b.band}</div>
+                      <div className={`text-[11px] mt-0.5 ${active ? "text-black/45 dark:text-teal-200/60" : "text-muted-foreground"}`}>
                         {parse(b.taxable_in_band) > 0 ? `${displayResult.currency} ${b.taxable_in_band} in band` : "Nil band"}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className={`text-[13px] font-extrabold ${active ? "text-[#010001]" : "text-muted-foreground"}`}>{b.rate}</div>
-                      <div className={`text-[11px] ${active ? "text-black/45" : "text-muted-foreground"}`}>
+                      <div className={`text-[13px] font-extrabold ${active ? "text-[#010001] dark:text-teal-200" : "text-muted-foreground"}`}>{b.rate}</div>
+                      <div className={`text-[11px] ${active ? "text-black/45 dark:text-teal-200/60" : "text-muted-foreground"}`}>
                         {parse(b.tax) > 0 ? b.tax : "—"}
                       </div>
                     </div>
@@ -232,9 +239,9 @@ export default function TaxPage() {
           </div>
 
           {/* ── Row 3: Disclaimer — full width ── */}
-          <div className="col-span-4 flex items-center gap-2.5 px-[18px] py-3 bg-amber-50 border border-amber-200 rounded-[14px]">
-            <AlertTriangle className="size-[15px] text-amber-700 shrink-0" />
-            <span className="text-[13px] text-amber-800 leading-relaxed">
+          <div className="col-span-4 flex items-center gap-2.5 px-[18px] py-3 badge-warning rounded-[14px]">
+            <AlertTriangle className="size-[15px] text-amber-700 dark:text-amber-300 shrink-0" />
+            <span className="text-[13px] leading-relaxed">
               Planning estimate only. Numbers from the deterministic rules engine — the AI never computes tax.
               Consult a registered tax agent before filing with the IRD.
             </span>

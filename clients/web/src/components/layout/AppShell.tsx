@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AppSidebar } from "./AppSidebar";
+import { MobileNav } from "./MobileNav";
 import { ScroogePanel } from "./ScroogePanel";
 import { PageTransition } from "./PageTransition";
 import { useScroogePanel } from "@/lib/store";
@@ -52,11 +53,12 @@ export function AppShell({ children }: AppShellProps) {
   }, [isOpen]);
 
   return (
-    <div className="relative flex h-screen overflow-hidden bg-background">
+    <div className="app-canvas relative flex h-screen overflow-hidden">
       <AppSidebar />
       <main className="flex-1 min-w-0 overflow-hidden">
         <PageTransition>{children}</PageTransition>
       </main>
+      <MobileNav />
 
       {isOpen && (
           <div

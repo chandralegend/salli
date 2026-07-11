@@ -108,6 +108,42 @@
   --salli-teal: #D5E9EA;       /* teal tile */
   --salli-dark: #010001;       /* near-black */
   --salli-muted: #7DA6A9;      /* teal-gray muted text */
+
+  /* === Redesign: additional card tones (tactile KPI system) === */
+  --card-navy: #132b40;
+  --card-green: #57bc83;
+  --card-purple: #7668be;
+  --card-blue-grey: #6f9daa;
+  --card-gold: #e7bd61;
+
+  /* Status tones — for inline-styled components that can't use Tailwind's
+     dark: variant. Light-mode values match the existing pale badge look. */
+  --status-danger-bg: #FEE2E2;
+  --status-danger-text: #DC2626;
+  --status-warning-bg: #FEF3C7;
+  --status-warning-text: #D97706;
+  --status-success-bg: #DCFCE7;
+  --status-success-text: #16A34A;
+
+  /* Glass + elevation */
+  --border-glass: rgba(255, 255, 255, 0.72);
+  --border-subtle: rgba(20, 40, 48, 0.08);
+
+  --shadow-surface: 0 1px 2px rgba(12, 25, 31, 0.04), 0 12px 32px rgba(29, 49, 58, 0.08);
+  --shadow-card: 0 2px 4px rgba(13, 29, 38, 0.08), 0 18px 36px rgba(18, 37, 47, 0.14);
+  --shadow-card-hover: 0 8px 12px rgba(13, 29, 38, 0.10), 0 26px 54px rgba(18, 37, 47, 0.20);
+  --shadow-navigation: 0 16px 36px rgba(5, 13, 18, 0.28);
+
+  /* Radius (additive — existing --radius chain is untouched) */
+  --radius-xs: 10px;
+  --radius-card: 22px;
+  --radius-panel: 24px;
+
+  /* Motion */
+  --motion-fast: 120ms;
+  --motion-default: 200ms;
+  --motion-slow: 320ms;
+  --ease-premium: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .dark {
@@ -153,6 +189,16 @@
   --chart-3: #A5FFB9;
   --chart-4: #F59E0B;
   --chart-5: #D5E9EA;
+
+  --border-glass: rgba(255, 255, 255, 0.10);
+  --shadow-navigation: 0 16px 36px rgba(0, 0, 0, 0.45);
+
+  --status-danger-bg: rgba(248, 113, 113, 0.15);
+  --status-danger-text: #FCA5A5;
+  --status-warning-bg: rgba(251, 191, 36, 0.15);
+  --status-warning-text: #FCD34D;
+  --status-success-bg: rgba(52, 211, 153, 0.15);
+  --status-success-text: #6EE7B7;
 }
 
 @layer base {
@@ -226,6 +272,30 @@
 }
 
 @layer components {
+  /* ── Semantic status pills — used for badges, warning banners, error/success
+     messages everywhere. Tailwind's -50/-700/-200 shades are fixed light-mode
+     colors with no automatic dark counterpart, so every one of these needs an
+     explicit dark: pairing or it reads as a washed-out, near-invisible pill on
+     a dark background. Defined once here instead of repeated ad hoc. ── */
+  .badge-success {
+    @apply border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-400/15 dark:text-emerald-300 dark:border-emerald-400/25;
+  }
+  .badge-danger {
+    @apply border bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-400/15 dark:text-rose-300 dark:border-rose-400/25;
+  }
+  .badge-warning {
+    @apply border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-400/15 dark:text-amber-300 dark:border-amber-400/25;
+  }
+  .badge-info {
+    @apply border bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-400/15 dark:text-sky-300 dark:border-sky-400/25;
+  }
+  .badge-purple {
+    @apply border bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-400/15 dark:text-violet-300 dark:border-violet-400/25;
+  }
+  .badge-blue {
+    @apply border bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-400/15 dark:text-blue-300 dark:border-blue-400/25;
+  }
+
   .text-primary-label {
     @apply text-sm font-semibold text-foreground;
   }
@@ -251,6 +321,88 @@
   .tile-mint  { background: #A5FFB9; }
   .tile-teal  { background: #D5E9EA; }
   .tile-dark  { background: #010001; }
+
+  /* ── App canvas — softly illuminated background for the authenticated app ── */
+  .app-canvas {
+    background:
+      radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.95), transparent 34%),
+      radial-gradient(circle at 100% 10%, rgba(232, 252, 133, 0.10), transparent 28%),
+      linear-gradient(135deg, #f3f7f7 0%, #e9f0f2 100%);
+  }
+  .dark .app-canvas {
+    background:
+      radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.035), transparent 34%),
+      radial-gradient(circle at 100% 10%, rgba(232, 252, 133, 0.05), transparent 28%),
+      linear-gradient(135deg, #121412 0%, #0d0f0c 100%);
+  }
+
+  /* ── Glass surface — frosted panel primitive ── */
+  .glass-surface {
+    background: rgba(255, 255, 255, 0.68);
+    border: 1px solid var(--border-glass);
+    box-shadow: var(--shadow-surface);
+    backdrop-filter: blur(18px) saturate(125%);
+    -webkit-backdrop-filter: blur(18px) saturate(125%);
+  }
+  .dark .glass-surface {
+    background: rgba(28, 28, 26, 0.62);
+  }
+  @supports not (backdrop-filter: blur(1px)) {
+    .glass-surface { background: rgba(248, 250, 249, 0.96); }
+    .dark .glass-surface { background: rgba(28, 28, 26, 0.96); }
+  }
+
+  /* ── Metric card — tactile KPI card depth system (§6–7) ──────────────────── */
+  .metric-card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: var(--shadow-card);
+    transform: translateZ(0);
+    transition:
+      transform var(--motion-default) var(--ease-premium),
+      box-shadow var(--motion-default) ease,
+      border-color var(--motion-default) ease;
+  }
+  .metric-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.22), transparent 38%, rgba(0, 0, 0, 0.10));
+    pointer-events: none;
+  }
+  .metric-card::after {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    z-index: 0;
+    border-radius: inherit;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.30),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.10);
+    pointer-events: none;
+  }
+  .metric-card[data-clickable="true"]:hover {
+    transform: translateY(-4px) scale(1.008);
+    box-shadow: var(--shadow-card-hover);
+    border-color: rgba(255, 255, 255, 0.34);
+  }
+  .metric-card[data-clickable="true"]:active {
+    transform: translateY(-1px) scale(0.995);
+  }
+  .metric-card:focus-visible {
+    outline: 3px solid rgba(232, 252, 133, 0.68);
+    outline-offset: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @keyframes bubble-move-vertical {

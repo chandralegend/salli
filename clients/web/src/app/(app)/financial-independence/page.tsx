@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Loader2, Trash2, Sparkles, Check, X, Clock, BadgeCheck, Plus } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import { Loader2, Trash2, Sparkles, Check, X, Clock, BadgeCheck, Plus, Target, Home, Calendar, Percent } from "lucide-react";
+import { IconBadge, SparklineWatermark, RingWatermark } from "@/components/ui/card-watermarks";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -52,35 +54,56 @@ function pct(v: string | number, dp = 1): string {
 // ── Stat tile ─────────────────────────────────────────────────────────────────
 
 function StatTile({
-  bg, label, sub, value, badge, badgeStyle,
+  bg, label, sub, value, badge, badgeStyle, lightText, icon, watermark,
 }: {
   bg: string; label: string; sub?: string; value: string;
-  badge?: string; badgeStyle?: React.CSSProperties;
+  badge?: string; badgeStyle?: React.CSSProperties; lightText?: boolean;
+  icon?: React.ReactNode; watermark?: React.ReactNode;
 }) {
-  const dark = bg === "#010001";
-  const adaptive = bg.startsWith("var(");
-  const labelColor = dark ? "rgba(255,255,255,0.3)" : adaptive ? "var(--muted-foreground)" : "rgba(0,0,0,0.45)";
-  const subColor = dark ? "rgba(255,255,255,0.28)" : adaptive ? "var(--muted-foreground)" : "rgba(0,0,0,0.35)";
-  const valueColor = dark ? "#E8FC85" : adaptive ? "var(--foreground)" : "#010001";
+  const isBlack = bg === "#010001";
+  const dark = isBlack || lightText;
+  const adaptive = bg.startsWith("var(") && !lightText;
+  const labelColor = dark ? "rgba(255,255,255,0.48)" : adaptive ? "var(--muted-foreground)" : "rgba(0,0,0,0.45)";
+  const subColor = dark ? "rgba(255,255,255,0.38)" : adaptive ? "var(--muted-foreground)" : "rgba(0,0,0,0.35)";
+  const valueColor = isBlack ? "#E8FC85" : dark ? "#FFFFFF" : adaptive ? "var(--foreground)" : "#010001";
 
   return (
-    <div style={{
-      background: bg, borderRadius: 20, padding: 22, minHeight: 160,
-      display: "flex", flexDirection: "column", justifyContent: "space-between",
-    }}>
-      <div>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: labelColor }}>{label}</div>
-        {sub && <div style={{ fontSize: 12, color: subColor, marginTop: 3 }}>{sub}</div>}
-      </div>
-      <div>
-        <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.05em", color: valueColor, lineHeight: 1, marginBottom: 5 }}>
-          {value}
+    <div className="metric-card" style={{ background: bg, borderRadius: "var(--radius-card)" }}>
+      {watermark && (
+        <div
+          className="absolute inset-0 z-0 overflow-hidden rounded-[inherit] pointer-events-none"
+          style={{
+            maskImage: "linear-gradient(to top, black 0%, black 45%, transparent 92%)",
+            WebkitMaskImage: "linear-gradient(to top, black 0%, black 45%, transparent 92%)",
+          }}
+        >
+          {watermark}
         </div>
-        {badge && (
-          <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999, ...badgeStyle }}>
-            {badge}
-          </span>
+      )}
+      <div style={{
+        position: "relative", zIndex: 1, padding: 22, minHeight: 160,
+        display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%",
+      }}>
+        {icon && (
+          // Match BentoTile: a position:absolute child's containing block is
+          // the padding box, so top:0/right:0 ignores the 22px padding above
+          // entirely. Use the same explicit 22px inset to line up with it.
+          <div className="absolute opacity-70" style={{ top: 22, right: 22 }}>{icon}</div>
         )}
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: labelColor }}>{label}</div>
+          {sub && <div style={{ fontSize: 12, color: subColor, marginTop: 3 }}>{sub}</div>}
+        </div>
+        <div>
+          <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.05em", color: valueColor, lineHeight: 1, marginBottom: 5, fontVariantNumeric: "tabular-nums" }}>
+            {value}
+          </div>
+          {badge && (
+            <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999, ...badgeStyle }}>
+              {badge}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -338,38 +361,50 @@ export default function FinancialIndependencePage() {
           label="FI Number"
           sub={strat ? `${(strat.swr * 100).toFixed(1)}% safe withdrawal rate` : "25× annual expenses"}
           value={fiNumber ? lkr(fiNumber) : "—"}
+          icon={<IconBadge><Target className="size-4 text-foreground" /></IconBadge>}
         />
         <StatTile
-          bg="#A5FFB9"
+          bg="var(--card-green)"
+          lightText
           label="Net Worth"
           sub={`${(progressToFi * 100).toFixed(1)}% of FI number`}
           value={lkr(netWorth)}
           badge={s ? `+${pct(s.savings_rate, 1)}` : undefined}
-          badgeStyle={{ background: "rgba(0,0,0,0.1)", color: "#010001" }}
+          badgeStyle={{ background: "rgba(255,255,255,0.2)", color: "#FFFFFF" }}
+          icon={<IconBadge><Home className="size-4 text-white" /></IconBadge>}
+          watermark={<SparklineWatermark />}
         />
         {/* Years to FIRE — dark tile */}
-        <div style={{
-          background: "#010001", borderRadius: 20, padding: 22, minHeight: 160,
-          display: "flex", flexDirection: "column", justifyContent: "space-between",
-        }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>Years to FIRE</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.28)", marginTop: 3 }}>
-              Base scenario · {strat ? `${(strat.return_base * 100).toFixed(0)}% return` : "9% return"}
+        <div className="metric-card" style={{ background: "#010001", borderRadius: "var(--radius-card)" }}>
+          <div style={{
+            position: "relative", zIndex: 1, padding: 22, minHeight: 160,
+            display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%",
+          }}>
+            <div className="absolute opacity-70" style={{ top: 22, right: 22 }}>
+              <IconBadge><Calendar className="size-4 text-[#E8FC85]" /></IconBadge>
             </div>
-          </div>
-          <div>
-            <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: "-0.06em", color: "#E8FC85", lineHeight: 1, marginBottom: 5 }}>
-              {yearsToFire ?? "—"}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>Years to FIRE</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.28)", marginTop: 3 }}>
+                Base scenario · {strat ? `${(strat.return_base * 100).toFixed(0)}% return` : "9% return"}
+              </div>
             </div>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>years remaining</span>
+            <div>
+              <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: "-0.06em", color: "#E8FC85", lineHeight: 1, marginBottom: 5, fontVariantNumeric: "tabular-nums" }}>
+                {yearsToFire ?? "—"}
+              </div>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>years remaining</span>
+            </div>
           </div>
         </div>
         <StatTile
-          bg="#D5E9EA"
+          bg="var(--card-blue-grey)"
+          lightText
           label="Savings Rate"
           sub="Monthly surplus ratio"
           value={`${savingsRate.toFixed(1)}`}
+          icon={<IconBadge><Percent className="size-4 text-white" /></IconBadge>}
+          watermark={<RingWatermark />}
           badge={savingsRate >= 40 ? "↑ above 40% target" : savingsRate >= 20 ? "→ building" : "↓ below target"}
           badgeStyle={{
             background: savingsRate >= 40 ? "#DCFCE7" : savingsRate >= 20 ? "#FEF3C7" : "#FEE2E2",
@@ -413,8 +448,11 @@ export default function FinancialIndependencePage() {
         </div>
 
         {/* FI Score tile */}
-        <div style={{ background: "#010001", borderRadius: 20, padding: 24, display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 14 }}>FI Score</div>
+        <div className="metric-card" style={{ background: "#010001", borderRadius: "var(--radius-card)", padding: 24, display: "flex", flexDirection: "column", position: "relative" }}>
+          <div className="absolute opacity-70" style={{ top: 24, right: 24, zIndex: 1 }}>
+            <IconBadge><Sparkles className="size-4 text-[#E8FC85]" /></IconBadge>
+          </div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 14, position: "relative", zIndex: 1 }}>FI Score</div>
           {score.isLoading || !s ? (
             <div className="flex-1 bg-white/5 rounded-xl animate-pulse" />
           ) : (
@@ -498,9 +536,26 @@ export default function FinancialIndependencePage() {
 
           {strategyOpen && strat && (
             <div style={{ padding: "0 24px 24px", borderTop: "1px solid var(--border)" }}>
-              <p style={{ fontSize: 13.5, color: "var(--foreground)", lineHeight: 1.75, marginTop: 16, marginBottom: 14, opacity: 0.85 }}>
-                {strat.ai_rationale?.split(".").slice(0, 3).join(".") + "."}
-              </p>
+              <div className="text-[13.5px] leading-relaxed mt-4 mb-3.5" style={{ color: "var(--foreground)" }}>
+                <ReactMarkdown
+                  components={{
+                    h1: (props) => <h1 className="text-[16px] font-bold text-foreground mt-4 mb-2 first:mt-0">{props.children}</h1>,
+                    h2: (props) => <h2 className="text-[13px] font-semibold text-foreground uppercase tracking-wide mt-4 mb-1.5 first:mt-0 border-b border-border/40 pb-1">{props.children}</h2>,
+                    h3: (props) => <h3 className="text-[13px] font-semibold text-foreground mt-3 mb-1">{props.children}</h3>,
+                    h4: (props) => <h4 className="text-[12px] font-semibold text-foreground mt-2 mb-0.5">{props.children}</h4>,
+                    p: (props) => <p className="text-foreground/80 mb-2.5 last:mb-0">{props.children}</p>,
+                    strong: (props) => <strong className="font-semibold text-foreground">{props.children}</strong>,
+                    em: (props) => <em className="italic text-foreground/70">{props.children}</em>,
+                    ul: (props) => <ul className="list-disc pl-4 space-y-1 mb-2.5">{props.children}</ul>,
+                    ol: (props) => <ol className="list-decimal pl-4 space-y-1 mb-2.5">{props.children}</ol>,
+                    li: (props) => <li className="text-foreground/80">{props.children}</li>,
+                    hr: () => <hr className="border-border/40 my-3.5" />,
+                    blockquote: (props) => <blockquote className="border-l-2 border-primary/40 pl-3 italic text-foreground/60 my-2.5">{props.children}</blockquote>,
+                  }}
+                >
+                  {strat.ai_rationale}
+                </ReactMarkdown>
+              </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>
                 {strat.theories_applied.map((t) => (
                   <span key={t} style={{ fontSize: 11.5, fontWeight: 700, color: "var(--foreground)", background: "var(--muted)", padding: "4px 11px", borderRadius: 999 }}>

@@ -118,7 +118,7 @@ export function StrategySetup({ isRefresh = false, onComplete }: Props) {
             )}
           </div>
           {error && (
-            <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-[12px] text-rose-700">
+            <div className="mt-4 rounded-xl badge-danger px-4 py-3 text-[12px]">
               {error}
             </div>
           )}
@@ -148,7 +148,7 @@ export function StrategySetup({ isRefresh = false, onComplete }: Props) {
             : "Scrooge's finance sub-agent analyses your income, expenses, net worth, goals, and risk appetite to produce a personalised FIRE roadmap."}
         </p>
         {error && (
-          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-[12px] text-rose-700">
+          <div className="mb-4 rounded-xl badge-danger px-4 py-3 text-[12px]">
             {error}
           </div>
         )}

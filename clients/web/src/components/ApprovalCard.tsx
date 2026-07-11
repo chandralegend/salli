@@ -36,7 +36,7 @@ export function ApprovalCard({ action, status, onApprove, onDeny }: ApprovalCard
 
   if (status === "approved") {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-200 bg-emerald-50 text-[12px] text-emerald-700 my-2">
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg badge-success text-[12px] my-2">
         <CheckCircle className="size-3.5 shrink-0" />
         <span><strong>{actionLabel}</strong> — approved</span>
       </div>
@@ -45,7 +45,7 @@ export function ApprovalCard({ action, status, onApprove, onDeny }: ApprovalCard
 
   if (status === "denied") {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-rose-200 bg-rose-50 text-[12px] text-rose-700 my-2">
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg badge-danger text-[12px] my-2">
         <XCircle className="size-3.5 shrink-0" />
         <span><strong>{actionLabel}</strong> — denied</span>
       </div>
@@ -53,25 +53,25 @@ export function ApprovalCard({ action, status, onApprove, onDeny }: ApprovalCard
   }
 
   return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 my-3 space-y-3">
+    <div className="rounded-xl border border-amber-200 dark:border-amber-400/25 bg-amber-50/60 dark:bg-amber-400/10 p-4 my-3 space-y-3">
       <div className="flex items-start gap-2.5">
-        <ShieldAlert className="size-4 text-amber-600 shrink-0 mt-0.5" />
+        <ShieldAlert className="size-4 text-amber-600 dark:text-amber-300 shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[12px] font-semibold text-amber-900">Action requires approval</span>
-            <Badge variant="outline" className="text-[10px] border-amber-300 text-amber-700">
+            <span className="text-[12px] font-semibold text-amber-900 dark:text-amber-200">Action requires approval</span>
+            <Badge variant="outline" className="text-[10px] border-amber-300 dark:border-amber-400/30 text-amber-700 dark:text-amber-300">
               {actionLabel}
             </Badge>
           </div>
-          <p className="text-[12px] text-amber-800 leading-relaxed">{action.description}</p>
+          <p className="text-[12px] text-amber-800 dark:text-amber-200/80 leading-relaxed">{action.description}</p>
 
           {Object.keys(action.params).length > 0 && (
-            <div className="mt-2 rounded-md bg-amber-100/70 border border-amber-200 px-3 py-2">
+            <div className="mt-2 rounded-md bg-amber-100/70 dark:bg-amber-400/10 border border-amber-200 dark:border-amber-400/25 px-3 py-2">
               <dl className="space-y-0.5">
                 {Object.entries(action.params).map(([k, v]) => (
                   <div key={k} className="flex gap-2 text-[11px]">
-                    <dt className="text-amber-600 font-medium min-w-[80px]">{k}</dt>
-                    <dd className="text-amber-900 font-mono">{String(v)}</dd>
+                    <dt className="text-amber-600 dark:text-amber-300/80 font-medium min-w-[80px]">{k}</dt>
+                    <dd className="text-amber-900 dark:text-amber-200 font-mono">{String(v)}</dd>
                   </div>
                 ))}
               </dl>
@@ -84,7 +84,7 @@ export function ApprovalCard({ action, status, onApprove, onDeny }: ApprovalCard
         <Button
           size="sm"
           variant="outline"
-          className="h-7 text-[12px] border-rose-200 text-rose-700 hover:bg-rose-50"
+          className="h-7 text-[12px] border-rose-200 dark:border-rose-400/25 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-400/10"
           onClick={handleDeny}
           disabled={busy}
         >

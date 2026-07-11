@@ -29,13 +29,13 @@ import { PageShell, PageHeader, PillButton, CardContainer } from "@/components/u
 // ── Status chip ────────────────────────────────────────────────────────────────
 
 function statusChip(dueDate: string, done: boolean) {
-  if (done) return { label: "Done", bg: "#DCFCE7", color: "#16A34A" };
+  if (done) return { label: "Done", bg: "var(--status-success-bg)", color: "var(--status-success-text)" };
   const d = new Date(dueDate);
   const now = new Date();
   const diff = (d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-  if (diff < 0) return { label: "Overdue", bg: "#FEE2E2", color: "#DC2626" };
-  if (diff <= 14) return { label: "Due Soon", bg: "#FEF3C7", color: "#D97706" };
-  return { label: "Upcoming", bg: "#F1F7F7", color: "#7DA6A9" };
+  if (diff < 0) return { label: "Overdue", bg: "var(--status-danger-bg)", color: "var(--status-danger-text)" };
+  if (diff <= 14) return { label: "Due Soon", bg: "var(--status-warning-bg)", color: "var(--status-warning-text)" };
+  return { label: "Upcoming", bg: "var(--muted)", color: "var(--muted-foreground)" };
 }
 
 // ── Reminder row ───────────────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ function ReminderRow({
           <button
             onClick={() => onMarkDone(r.id)}
             disabled={markDonePending}
-            style={{ fontSize: 12.5, fontWeight: 700, color: "#16A34A", border: "1.5px solid #16A34A", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: "5px 12px", borderRadius: 999 }}
+            style={{ fontSize: 12.5, fontWeight: 700, color: "var(--status-success-text)", border: "1.5px solid var(--status-success-text)", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: "5px 12px", borderRadius: 999 }}
           >
             {markDonePending ? <Loader2 className="inline size-3 mr-1 animate-spin" /> : <Check className="inline size-3 mr-1" />}
             Done
@@ -89,7 +89,7 @@ function ReminderRow({
         )}
         <button
           onClick={() => onDelete(r)}
-          style={{ fontSize: 12.5, color: "#DC2626", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}
+          style={{ fontSize: 12.5, color: "var(--status-danger-text)", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}
         >
           Delete
         </button>
@@ -154,16 +154,16 @@ export default function RemindersPage() {
       {/* Status bento (only show when there are items) */}
       {!reminders.isLoading && items.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
-          <div style={{ background: "#FEE2E2", borderRadius: 18, padding: "20px 22px" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(220,38,38,0.55)", marginBottom: 8 }}>Overdue</div>
-            <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: "-0.06em", color: "#DC2626", lineHeight: 1 }}>{overdue.length}</div>
+          <div style={{ background: "var(--status-danger-bg)", borderRadius: 18, padding: "20px 22px" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--status-danger-text)", opacity: 0.7, marginBottom: 8 }}>Overdue</div>
+            <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: "-0.06em", color: "var(--status-danger-text)", lineHeight: 1 }}>{overdue.length}</div>
           </div>
-          <div style={{ background: "#FEF3C7", borderRadius: 18, padding: "20px 22px" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(217,119,6,0.55)", marginBottom: 8 }}>Due Soon</div>
-            <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: "-0.06em", color: "#D97706", lineHeight: 1 }}>{dueSoon.length}</div>
+          <div style={{ background: "var(--status-warning-bg)", borderRadius: 18, padding: "20px 22px" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--status-warning-text)", opacity: 0.7, marginBottom: 8 }}>Due Soon</div>
+            <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: "-0.06em", color: "var(--status-warning-text)", lineHeight: 1 }}>{dueSoon.length}</div>
           </div>
-          <div style={{ background: "#F1F7F7", borderRadius: 18, padding: "20px 22px" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7DA6A9", marginBottom: 8 }}>Upcoming</div>
+          <div style={{ background: "var(--muted)", borderRadius: 18, padding: "20px 22px" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: 8 }}>Upcoming</div>
             <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: "-0.06em", color: "var(--foreground)", lineHeight: 1 }}>{upcoming.length}</div>
           </div>
         </div>

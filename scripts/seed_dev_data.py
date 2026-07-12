@@ -38,6 +38,10 @@ SEED_PASSWORD = os.environ.get("SEED_PASSWORD", "supersecret123")
 # Required when running without a local Supabase stack (the API dev fallback
 # accepts any Bearer value as the user_id when SUPABASE_URL/JWT_SECRET are empty).
 SEED_TOKEN = os.environ.get("SEED_TOKEN", "")
+# When set, skip the direct-Postgres cleanup pass entirely — for targets (e.g.
+# production) where only the public HTTPS API + Supabase anon key are available,
+# with no direct DB connection string. Safe for a first-time seed of a fresh account.
+SEED_SKIP_CLEAR = os.environ.get("SEED_SKIP_CLEAR", "") == "1"
 
 # Legacy identity whose data should always be purged on reseed
 LEGACY_USER = "dev-user"
@@ -575,10 +579,14 @@ async def main() -> None:
     else:
         token, user_id = get_auth()
         print(f"🔑  Seeding as {SEED_EMAIL} (user_id={user_id})\n")
-    # Purge the legacy dev-user data AND any prior data for the seeding account
-    await clear_user_data([LEGACY_USER, user_id])
+    if SEED_SKIP_CLEAR:
+        print("⏭  Skipping direct-Postgres cleanup (SEED_SKIP_CLEAR=1)\n")
+    else:
+        # Purge the legacy dev-user data AND any prior data for the seeding account
+        await clear_user_data([LEGACY_USER, user_id])
     await seed(token)
-    await engine.dispose()
+    if not SEED_SKIP_CLEAR:
+        await engine.dispose()
 
 
 if __name__ == "__main__":

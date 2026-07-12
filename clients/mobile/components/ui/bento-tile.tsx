@@ -137,7 +137,7 @@ export function BentoTile({
         </View>
       )}
 
-      <View>
+      <View style={icon ? { paddingRight: 40 } : undefined}>
         <Text
           style={{ fontSize: 10.5, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase", color: c.label }}
         >

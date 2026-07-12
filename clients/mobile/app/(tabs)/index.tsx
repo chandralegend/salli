@@ -221,9 +221,10 @@ export default function DashboardScreen() {
                           : theme.muted,
                     }}
                   >
-                    <View>
+                    <View style={{ flex: 1, marginRight: 8 }}>
                       <Text
                         className="text-[13px]"
+                        numberOfLines={1}
                         style={{
                           fontFamily: "DMSans_700Bold",
                           color: isOverdue

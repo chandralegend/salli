@@ -1,3 +1,4 @@
+import Image from "next/image";
 import {
   BookOpen, Calculator, Bot, Compass, FileText, ShieldCheck,
   ArrowRight, Check, TrendingUp,
@@ -14,6 +15,9 @@ import { AnimatedNumber } from "@/components/ui/animated-number";
 import { Sparkline } from "@/components/ui/sparkline";
 import { CometCard } from "@/components/ui/comet-card";
 import { AnimatedTestimonials, type Testimonial } from "@/components/ui/animated-testimonials";
+import { ContainerScroll } from "@/components/ui/container-scroll";
+import { PhoneFrame } from "@/components/ui/phone-frame";
+import { StoreBadges } from "@/components/ui/store-badges";
 
 const APP = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.salli.lk";
 
@@ -21,12 +25,33 @@ const FEATURES = [
   { icon: BookOpen, tile: "mint" as const, span: "md:col-span-2", title: "Double-entry ledger", body: "Every rupee accounted for. Proper bookkeeping that balances — not a spreadsheet that quietly drifts out of sync." },
   { icon: Calculator, tile: "card" as const, span: "", title: "Sri Lanka tax engine", body: "Deterministic income-tax for YA 2025/26 — bands, reliefs, APIT/AIT credits, FSI. IRD-aligned, never guessed." },
   { icon: Bot, tile: "card" as const, span: "", title: "AI agent on your ledger", body: "Ask about your tax or spending. It pulls real numbers from your books — it doesn't invent them." },
-  { icon: Compass, tile: "lime" as const, span: "md:col-span-2", title: "Financial Independence score", body: "A FIRE-based 0–100 score from your real savings rate, net worth, and goals — with your projected freedom date." },
+  { icon: Compass, tile: "lime" as const, span: "md:col-span-2", title: "Financial Independence score", body: "A FIRE-based 0–100 score from your savings rate, net worth, and goals — with your projected freedom date." },
   { icon: FileText, tile: "card" as const, span: "", title: "Statement parsing", body: "Drop in a bank statement; Salli extracts and classifies transactions for you to review and post." },
   { icon: ShieldCheck, tile: "teal" as const, span: "", title: "Your data, your control", body: "Money is computed on a deterministic engine — the AI never does the arithmetic on your figures." },
 ];
 
 const TRUST = ["YA 2025/26", "IRD-aligned", "FIRE methodology", "Double-entry accounting", "Deterministic tax engine", "Your data, your database", "4% rule", "Daily wealth advisor"];
+
+const SCREENS = [
+  {
+    src: "/screens/web-ledger.webp",
+    eyebrow: "Ledger",
+    title: "Every account, balanced automatically.",
+    body: "Proper double-entry bookkeeping — every posting balanced. Search, filter, and drill into any transaction across your full chart of accounts.",
+  },
+  {
+    src: "/screens/web-tax.webp",
+    eyebrow: "Tax engine",
+    title: "Your tax, broken down and explained",
+    body: "Gross income, reliefs, progressive bands, APIT/AIT/FTC credits — computed deterministically and laid out so you can see exactly how the number was reached.",
+  },
+];
+
+const MOBILE_SCREENS = [
+  { src: "/screens/mobile-dashboard.webp", alt: "Salli mobile — Overview dashboard" },
+  { src: "/screens/mobile-tax.webp", alt: "Salli mobile — Tax breakdown" },
+  { src: "/screens/mobile-fi.webp", alt: "Salli mobile — Financial Independence" },
+];
 
 const TESTIMONIALS: Testimonial[] = [
   { quote: "I finally stopped dreading April. Salli worked out my APIT and FSI credits exactly the way my accountant did — in seconds.", name: "Dileepa Fernando", designation: "Freelance developer · Colombo", initials: "DF", gradient: "linear-gradient(140deg, #E8FC85, #A5FFB9)" },
@@ -174,6 +199,30 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Dashboard preview (real screenshot) ──────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-5 pt-6 pb-20 sm:pb-28">
+        <ContainerScroll
+          titleComponent={
+            <>
+              <p className="t-eyebrow">Dashboard</p>
+              <h2 className="t-h2 mt-3 text-foreground">Everything, in one view.</h2>
+              <p className="t-lead mt-4 max-w-lg mx-auto text-muted-foreground">
+                Net worth, income, tax payable, your FI score — updated the moment you post an entry.
+              </p>
+            </>
+          }
+        >
+          <Image
+            src="/screens/web-dashboard.webp"
+            alt="Salli web dashboard — Overview with Net Worth, Income, Tax Payable, and FI Score"
+            width={1600}
+            height={1000}
+            className="w-full h-auto"
+            priority
+          />
+        </ContainerScroll>
+      </section>
+
       {/* ── Trust marquee ───────────────────────────────────────────────── */}
       <section className="border-y border-border bg-card/40 py-4">
         <Marquee speed={36}>
@@ -191,8 +240,8 @@ export default function Home() {
           <p className="t-eyebrow">What&apos;s inside</p>
           <h2 className="t-h2 mt-3 text-foreground">One ledger. Every answer.</h2>
           <p className="t-lead mt-4 text-muted-foreground">
-            Salli keeps proper books, computes your tax deterministically, and turns the
-            result into clear guidance — so the numbers are trustworthy, not vibes.
+            Salli keeps proper books, computes your Sri Lanka income tax deterministically,
+            and turns the result into clear, actionable guidance.
           </p>
         </FadeIn>
         <FadeIn delay={0.1} className="mt-10">
@@ -213,6 +262,22 @@ export default function Home() {
             })}
           </BentoGrid>
         </FadeIn>
+      </section>
+
+      {/* ── Screens: product walkthrough ─────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-5 py-20 sm:py-28 space-y-20 sm:space-y-28">
+        {SCREENS.map((s, i) => (
+          <FadeIn key={s.title} className={`grid lg:grid-cols-2 gap-10 lg:gap-16 items-center ${i % 2 === 1 ? "lg:[&>*:first-child]:order-2" : ""}`}>
+            <div>
+              <p className="t-eyebrow">{s.eyebrow}</p>
+              <h2 className="t-h2 mt-3 text-foreground">{s.title}</h2>
+              <p className="t-lead mt-4 text-muted-foreground max-w-md">{s.body}</p>
+            </div>
+            <div className="rounded-2xl overflow-hidden ring-1 ring-white/12 shadow-[0_40px_100px_-30px_rgba(0,0,0,0.6)]">
+              <Image src={s.src} alt={s.title} width={1600} height={1000} className="w-full h-auto" />
+            </div>
+          </FadeIn>
+        ))}
       </section>
 
       {/* ── FI deep-dive (vault) ────────────────────────────────────────── */}
@@ -246,6 +311,34 @@ export default function Home() {
             </a>
           </FadeIn>
           <FiScoreCard />
+        </div>
+      </section>
+
+      {/* ── Mobile app: coming soon ──────────────────────────────────────── */}
+      <section className="relative overflow-hidden">
+        <div className="max-w-6xl mx-auto px-5 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 items-center">
+          <FadeIn className="order-2 lg:order-1">
+            <p className="t-eyebrow">Mobile</p>
+            <h2 className="t-h2 mt-3 text-foreground">Your numbers, in your pocket.</h2>
+            <p className="t-lead mt-4 text-muted-foreground max-w-md">
+              The same ledger, tax engine, and FI score — redesigned for iOS and Android.
+              We&apos;re polishing the last details before launch.
+            </p>
+            <StoreBadges className="mt-8" />
+          </FadeIn>
+          <FadeIn delay={0.1} className="order-1 lg:order-2 flex justify-center items-end">
+            <div className="flex items-end sm:-space-x-8 lg:-space-x-10">
+              <div className="hidden sm:block rotate-[-8deg] translate-y-4">
+                <PhoneFrame src={MOBILE_SCREENS[1].src} alt={MOBILE_SCREENS[1].alt} className="w-[150px] lg:w-[190px]" />
+              </div>
+              <div className="z-10 sm:-translate-y-2">
+                <PhoneFrame src={MOBILE_SCREENS[0].src} alt={MOBILE_SCREENS[0].alt} className="w-[210px] sm:w-[180px] lg:w-[250px]" priority />
+              </div>
+              <div className="hidden sm:block rotate-[8deg] translate-y-4">
+                <PhoneFrame src={MOBILE_SCREENS[2].src} alt={MOBILE_SCREENS[2].alt} className="w-[150px] lg:w-[190px]" />
+              </div>
+            </div>
+          </FadeIn>
         </div>
       </section>
 

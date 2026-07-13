@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { AppStoreBadge, PlayStoreBadge } from "@/components/ui/store-badges";
 
 const APP = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.salli.lk";
 
@@ -60,7 +61,7 @@ export function SiteFooter() {
   return (
     <footer className="relative border-t border-border bg-[#070807] overflow-hidden">
       <div className="max-w-6xl mx-auto px-5 pt-16 pb-10">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-10">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-10">
           <div className="col-span-2">
             <div className="flex items-center gap-2.5">
               <Logo className="size-8" />
@@ -87,6 +88,14 @@ export function SiteFooter() {
               </ul>
             </div>
           ))}
+
+          <div className="col-span-2 md:col-span-1">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/45">Get the app</p>
+            <div className="mt-4 flex flex-col gap-2.5 items-start">
+              <AppStoreBadge compact />
+              <PlayStoreBadge compact />
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-14 pt-6 border-t border-border">

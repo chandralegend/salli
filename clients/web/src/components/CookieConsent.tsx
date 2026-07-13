@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Cookie, X } from "lucide-react";
 
 const STORAGE_KEY = "salli_cookie_consent";
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://salli.lk";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://salli.leafmonkey.org";
 
 /**
  * Bottom-anchored cookie notice for the app. Shows once until the visitor

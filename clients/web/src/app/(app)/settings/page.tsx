@@ -12,7 +12,7 @@ import { UsageMeter } from "@/components/billing/UsageMeter";
 import { UpgradeDialog } from "@/components/billing/UpgradeDialog";
 import { toast } from "sonner";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://salli.lk";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://salli.leafmonkey.org";
 
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   active:   { bg: "#DCFCE7", color: "#16A34A" },

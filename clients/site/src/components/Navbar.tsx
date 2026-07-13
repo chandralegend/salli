@@ -5,7 +5,7 @@ import { motion, useScroll, useMotionValueEvent, AnimatePresence } from "motion/
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const APP = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.salli.lk";
+const APP = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.salli.leafmonkey.org";
 
 function Logo({ className = "size-7" }: { className?: string }) {
   // Sinhala rupee glyph "රු" — lime badge (pops on the dark site). Flex-centered

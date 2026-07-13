@@ -9,7 +9,7 @@ import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 /** Where mobile sends users to finish checkout — the web app runs the real Paddle.js overlay. */
-const SITE_URL = process.env.EXPO_PUBLIC_SITE_URL ?? "https://salli.lk";
+const SITE_URL = process.env.EXPO_PUBLIC_SITE_URL ?? "https://salli.leafmonkey.org";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "";

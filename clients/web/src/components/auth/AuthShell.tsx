@@ -1,7 +1,7 @@
 import { BubbleBackground } from "@/components/ui/bubble-background";
 import { Logo } from "@/components/Logo";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://salli.lk";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://salli.leafmonkey.org";
 
 export function AuthShell({
   children,

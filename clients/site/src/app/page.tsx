@@ -19,7 +19,7 @@ import { ContainerScroll } from "@/components/ui/container-scroll";
 import { PhoneFrame } from "@/components/ui/phone-frame";
 import { StoreBadges } from "@/components/ui/store-badges";
 
-const APP = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.salli.lk";
+const APP = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.salli.leafmonkey.org";
 
 const FEATURES = [
   { icon: BookOpen, tile: "mint" as const, span: "md:col-span-2", title: "Double-entry ledger", body: "Every rupee accounted for. Proper bookkeeping that balances — not a spreadsheet that quietly drifts out of sync." },

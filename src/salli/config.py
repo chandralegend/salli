@@ -39,8 +39,14 @@ class Settings(BaseSettings):
     advisor_api_base_url: str = "http://localhost:8000"
 
     # CORS — comma-separated list of allowed origins in production.
-    # Defaults cover app + marketing site; override via ALLOWED_ORIGINS env var.
-    allowed_origins: list[str] = ["https://app.salli.lk", "https://salli.lk"]
+    # Defaults cover app + marketing site (both the leafmonkey.org subdomains and
+    # the legacy salli.lk domain); override via ALLOWED_ORIGINS env var.
+    allowed_origins: list[str] = [
+        "https://app.salli.leafmonkey.org",
+        "https://salli.leafmonkey.org",
+        "https://app.salli.lk",
+        "https://salli.lk",
+    ]
 
     # App
     environment: str = "development"

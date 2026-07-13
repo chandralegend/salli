@@ -58,3 +58,5 @@ node_modules/
 .claude/settings.local.json
 .agents/
 .pulumi/
+.vercel
+.env*

@@ -7,7 +7,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const buildDate = new Date();
   const routes = ["", "/privacy", "/terms", "/security", "/cookies"];
   return routes.map((route) => ({
-    url: `https://salli.lk${route}`,
+    url: `https://salli.leafmonkey.org${route}`,
     lastModified: buildDate,
     changeFrequency: route === "" ? "weekly" : "yearly",
     priority: route === "" ? 1 : 0.3,

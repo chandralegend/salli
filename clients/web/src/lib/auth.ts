@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSalliStore, getStoredToken, setStoredToken } from "./store";
+import { useSalliStore, getStoredToken, setStoredToken, getOnboardingComplete, setOnboardingComplete } from "./store";
 import { getSupabase, isSupabaseConfigured } from "./supabase";
+import { API_URL } from "./api-client";
 
 const SITE_URL =
   typeof window !== "undefined" ? window.location.origin : "";
@@ -91,6 +92,29 @@ export async function sendPasswordReset(email: string) {
     redirectTo: `${SITE_URL}/auth/callback`,
   });
   if (error) throw error;
+}
+
+/**
+ * Where to send a user right after a session is established: the onboarding
+ * wizard if their profile isn't complete yet, otherwise the dashboard.
+ * Mirrors the check in `(app)/layout.tsx` so login/signup/OAuth all land in
+ * the right place immediately instead of flashing the dashboard first.
+ */
+export async function resolvePostLoginRoute(token: string): Promise<string> {
+  if (getOnboardingComplete()) return "/dashboard";
+  try {
+    const res = await fetch(`${API_URL}/onboarding/status`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data: { complete: boolean } = await res.json();
+    if (data.complete) {
+      setOnboardingComplete();
+      return "/dashboard";
+    }
+    return "/onboarding";
+  } catch {
+    return "/dashboard"; // network error — don't block the app
+  }
 }
 
 export { isSupabaseConfigured };

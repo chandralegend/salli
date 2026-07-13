@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
+import { resolvePostLoginRoute } from "@/lib/auth";
 
 /**
  * Lands here after an OAuth redirect, an email confirmation, or a password-reset
@@ -27,11 +28,11 @@ export default function AuthCallbackPage() {
       typeof window !== "undefined" && window.location.hash.includes("type=recovery");
 
     let settled = false;
-    const finish = (session: unknown) => {
+    const finish = (session: { access_token: string } | null) => {
       if (settled) return;
       settled = true;
       if (isRecovery) router.replace("/reset-password");
-      else if (session) router.replace("/dashboard");
+      else if (session) resolvePostLoginRoute(session.access_token).then((dest) => router.replace(dest));
       else router.replace("/login");
     };
 

@@ -10,6 +10,7 @@ import {
   signInWithPassword,
   signInWithOAuth,
   isSupabaseConfigured,
+  resolvePostLoginRoute,
 } from "@/lib/auth";
 
 export default function LoginPage() {
@@ -27,8 +28,9 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      await signInWithPassword(email, password);
-      router.replace("/dashboard");
+      const { session } = await signInWithPassword(email, password);
+      const dest = session ? await resolvePostLoginRoute(session.access_token) : "/dashboard";
+      router.replace(dest);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
@@ -47,9 +49,10 @@ export default function LoginPage() {
     }
   }
 
-  function handleDevLogin() {
+  async function handleDevLogin() {
     login("dev-seed-user");
-    router.replace("/dashboard");
+    const dest = await resolvePostLoginRoute("dev-seed-user");
+    router.replace(dest);
   }
 
   return (

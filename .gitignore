@@ -45,6 +45,8 @@ Thumbs.db
 # Secrets / local config
 *.local
 secrets/
+gcloud_auth_client_secret.json
+*_client_secret.json
 
 # Documentation (internal — not for distribution)
 doc/

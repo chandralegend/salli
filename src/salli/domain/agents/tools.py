@@ -157,6 +157,7 @@ def make_manager_tools(
     tax_svc: Any,
     profile_svc: Any = None,
     budget_svc: Any = None,
+    debt_svc: Any = None,
 ) -> list[Any]:
     """
     Return the manager-only tools:
@@ -165,6 +166,7 @@ def make_manager_tools(
       - save_memory, get_memory, list_memories
       - get_financial_profile (fact-find profile: risk category, life stage, dependents)
       - get_budget_summary (category limits vs. actual spend for a budget period)
+      - get_payoff_plan (avalanche/snowball debt payoff plan)
       - create_account, create_reminder, post_journal_entry (all need user approval)
     """
 
@@ -371,6 +373,30 @@ def make_manager_tools(
             return {"error": f"Budget {budget_id} not found"}
         return summary
 
+    # ── Debt tool ─────────────────────────────────────────────────────────────
+
+    @tool
+    async def get_payoff_plan(
+        extra_monthly_payment: Annotated[
+            str, "Extra monthly payment beyond minimums, as a decimal string, e.g. '200'"
+        ] = "0",
+        strategy: Annotated[
+            str,
+            "'avalanche' (highest APR first, minimizes interest) or 'snowball' (smallest balance first)",
+        ] = "avalanche",
+    ) -> dict[str, Any]:
+        """
+        Return an avalanche or snowball payoff plan for the user's active debts —
+        months to payoff, total interest paid, and the month-by-month schedule.
+        Numbers here are authoritative — do NOT recompute or estimate them.
+        """
+        if debt_svc is None:
+            return {"error": "Debt service unavailable"}
+        if strategy not in ("avalanche", "snowball"):
+            return {"error": f"Unknown strategy '{strategy}'. Use 'avalanche' or 'snowball'."}
+        user_id = _current_user.get()
+        return await debt_svc.get_payoff_plan(user_id, Decimal(extra_monthly_payment), strategy)
+
     # ── Write tools (require user approval via interrupt) ─────────────────────
 
     @tool
@@ -511,6 +537,7 @@ def make_manager_tools(
         list_memories,
         get_financial_profile,
         get_budget_summary,
+        get_payoff_plan,
         create_account,
         create_reminder,
         post_journal_entry,

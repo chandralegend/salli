@@ -14,6 +14,7 @@ from salli.application.services.advisor_service import AdvisorService
 from salli.application.services.agent_service import AgentService
 from salli.application.services.billing_service import BillingService
 from salli.application.services.budget_service import BudgetService
+from salli.application.services.debt_service import DebtService
 from salli.application.services.document_service import DocumentService
 from salli.application.services.fi_service import FiService
 from salli.application.services.ledger_service import LedgerService
@@ -40,6 +41,7 @@ class Services:
     advisor: AdvisorService
     profile: UserProfileService
     budget: BudgetService
+    debt: DebtService
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
@@ -65,12 +67,14 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     fi = FiService(uow_factory)
     profile = UserProfileService(uow_factory, ledger, fi, documents)
     budget = BudgetService(uow_factory)
+    debt = DebtService(uow_factory)
     agent = AgentService(
         ledger,
         tax,
         documents,
         profile,
         budget,
+        debt,
         checkpointer=checkpointer,
         uow_factory=uow_factory,
     )
@@ -94,6 +98,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         advisor=advisor,
         profile=profile,
         budget=budget,
+        debt=debt,
     )
 
 

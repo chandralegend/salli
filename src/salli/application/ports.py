@@ -358,3 +358,23 @@ class FireStrategyRepository(ABC):
 
     @abstractmethod
     async def get_history(self, user_id: str) -> list[dict[str, Any]]: ...
+
+
+# ── Budget ────────────────────────────────────────────────────────────────────
+
+
+class BudgetRepository(ABC):
+    @abstractmethod
+    async def save(self, user_id: str, budget: dict[str, Any]) -> str: ...
+
+    @abstractmethod
+    async def get(self, user_id: str, budget_id: str) -> dict[str, Any] | None: ...
+
+    @abstractmethod
+    async def list(self, user_id: str) -> list[dict[str, Any]]: ...
+
+    @abstractmethod
+    async def update(self, user_id: str, budget_id: str, updates: dict[str, Any]) -> None: ...
+
+    @abstractmethod
+    async def delete(self, user_id: str, budget_id: str) -> None: ...

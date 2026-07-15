@@ -449,3 +449,31 @@ class AdvisoryReportORM(Base):
     )
 
     __table_args__ = (Index("ix_advisory_reports_user_date", "user_id", "created_at"),)
+
+
+# ── Budget ────────────────────────────────────────────────────────────────────
+
+
+class BudgetORM(Base):
+    """One row per budget period. `lines` is a JSONB list of
+
+    {account_id, limit_minor} — mirrors FireStrategyORM's JSONB sub-list convention
+    rather than a separate join table, since a budget's category limits are always
+    read/written together with their parent period.
+    """
+
+    __tablename__ = "budgets"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    period_start: Mapped[str] = mapped_column(String(10), nullable=False)  # YYYY-MM-DD
+    period_end: Mapped[str] = mapped_column(String(10), nullable=False)
+    lines: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+
+    __table_args__ = (Index("ix_budgets_user_period", "user_id", "period_start"),)

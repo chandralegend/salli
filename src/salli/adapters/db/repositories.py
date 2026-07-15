@@ -21,6 +21,7 @@ from salli.adapters.db.models import (
     AdvisoryReportORM,
     AgentDocumentORM,
     AgentSessionORM,
+    BudgetORM,
     FireStrategyORM,
     FiScoreORM,
     GoalORM,
@@ -38,6 +39,7 @@ from salli.application.ports import (
     AdvisoryRepository,
     AgentDocumentRepository,
     AgentSessionRepository,
+    BudgetRepository,
     FireStrategyRepository,
     FiScoreRepository,
     GoalRepository,
@@ -1096,3 +1098,75 @@ class SQLFireStrategyRepository(FireStrategyRepository):
             }
             for r in rows
         ]
+
+
+# ── Budget repository ─────────────────────────────────────────────────────────
+
+
+def _budget_to_dict(r: BudgetORM) -> dict[str, Any]:
+    return {
+        "id": r.id,
+        "user_id": r.user_id,
+        "period_start": r.period_start,
+        "period_end": r.period_end,
+        "lines": r.lines or [],
+        "created_at": r.created_at.isoformat(),
+        "updated_at": r.updated_at.isoformat(),
+    }
+
+
+class SQLBudgetRepository(BudgetRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def save(self, user_id: str, budget: dict[str, Any]) -> str:
+        bid = budget.get("id") or str(uuid.uuid4())
+        self._s.add(
+            BudgetORM(
+                id=bid,
+                user_id=user_id,
+                period_start=budget["period_start"],
+                period_end=budget["period_end"],
+                lines=budget.get("lines", []),
+            )
+        )
+        await self._s.flush()
+        return bid
+
+    async def get(self, user_id: str, budget_id: str) -> dict[str, Any] | None:
+        r = (
+            await self._s.execute(
+                select(BudgetORM).where(BudgetORM.id == budget_id, BudgetORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+        return _budget_to_dict(r) if r else None
+
+    async def list(self, user_id: str) -> list[dict[str, Any]]:
+        stmt = (
+            select(BudgetORM)
+            .where(BudgetORM.user_id == user_id)
+            .order_by(BudgetORM.period_start.desc())
+        )
+        return [_budget_to_dict(r) for r in (await self._s.execute(stmt)).scalars().all()]
+
+    async def update(self, user_id: str, budget_id: str, updates: dict[str, Any]) -> None:
+        r = (
+            await self._s.execute(
+                select(BudgetORM).where(BudgetORM.id == budget_id, BudgetORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+        if not r:
+            return
+        for k in ("period_start", "period_end", "lines"):
+            if k in updates and updates[k] is not None:
+                setattr(r, k, updates[k])
+        await self._s.flush()
+
+    async def delete(self, user_id: str, budget_id: str) -> None:
+        r = (
+            await self._s.execute(
+                select(BudgetORM).where(BudgetORM.id == budget_id, BudgetORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+        if r:
+            await self._s.delete(r)

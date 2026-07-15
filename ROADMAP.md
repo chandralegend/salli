@@ -12,7 +12,8 @@ verified end-to-end and committed before moving on.
 | 0. CLI completion | ✅ Done (464c594) | reminders/fi/advisor/documents/billing CLI groups, entry reverse, ledger income-statement, agent sessions/history/resume |
 | 1. Onboarding / fact-find redo (backend) | ✅ Done (8c586e8, 26af540, cabc975, ed24b29, eff1e8a) | see below |
 | 2. Budget domain | ✅ Done (87a3c0c, fdd8835, 3fd1928, f121403, 013a1c3) | see below |
-| 3+. Debt, Investment Portfolio, Insurance, AI Advisor upgrades, Reports & alerts, Data portability | ⏳ Not started | sketched only, each gets its own plan when its turn comes |
+| 3. Debt management | ✅ Done (a052731, 9e23f32, 2ec88a6, 10c15cf, 3f5f254) | see below |
+| 4+. Investment Portfolio, Insurance, AI Advisor upgrades, Reports & alerts, Data portability | ⏳ Not started | sketched only, each gets its own plan when its turn comes |
 
 ---
 
@@ -113,9 +114,55 @@ and after every commit.
 
 ---
 
+## Phase 3 — Debt management ✅
+
+New domain following the Tax/FI/Budget engine pattern — the "cleanest fit" per the original
+roadmap sketch.
+
+**Built**:
+
+- [x] `domain/debt/models.py` (Debt, PayoffScheduleEntry, PayoffPlan) + `engine.py` — pure
+      `compute_payoff_plan(debts, extra_monthly_payment, strategy) -> PayoffPlan`, a
+      month-by-month amortization simulator with same-month cascading of the extra payment pool
+      through debts in priority order (avalanche = highest APR first, snowball = smallest
+      balance first); once a debt is paid off, its minimum payment frees up for the rest
+- [x] `DebtRepository` port + `SQLDebtRepository` adapter + `debts` table (principal/APR/minimum
+      payment as minor-unit BIGINTs, mirroring `GoalORM`'s convention) — migration `89738a990810`
+- [x] `DebtService` (application/services/) — add/list/get/update/delete debts, `get_payoff_plan`
+      (converts stored minor-unit amounts to Decimal, calls the pure engine)
+- [x] Wired into `composition.py` as `svc.debt`
+- [x] `interfaces/api/routers/debt.py`: GET/POST `/debt/`, GET `/debt/{id}`, PATCH/DELETE
+      `/debt/{id}`, GET `/debt/payoff-plan` (registered before the `{debt_id}` route so it isn't
+      swallowed by the path parameter)
+- [x] CLI `debt` group: list/add/update/delete/payoff-plan
+- [x] Agent tool `get_payoff_plan`
+- [x] Golden tests (hand-verified 2-month single-debt amortization, avalanche/snowball priority
+      ordering, avalanche beats snowball on a well-behaved example) + 3 Hypothesis property tests
+      (non-negative interest, non-negative balances, valid payoff months)
+
+**A genuine design detour worth recording**: an initial property test asserted "avalanche never
+pays more total interest than snowball" as a universal invariant. Hypothesis found real
+counterexamples. Independent verification (a from-scratch simulation, with and without cent
+rounding) confirmed this is not a bug — "avalanche minimizes interest" is a proven fact only for
+continuous/unrounded payment allocation; discrete monthly cent-rounding interacting with
+pathological minimum-payment-to-balance ratios can shift a payoff across a month boundary and
+flip the comparison by a few cents. Rather than assert a false invariant or paper over it with an
+arbitrary tolerance, the engine was first improved (excess payment now cascades to the next debt
+within the same month, not just the following month — a genuine correctness improvement), the
+invalid property test was removed, and the engine's docstring now documents the caveat honestly.
+The golden test suite still demonstrates avalanche's typical-case advantage on a realistic example.
+
+**Verified**: created debts via both CLI and real HTTP (ASGI transport) for the dev user; the
+payoff plan's first schedule entry was hand-verified (interest = principal × monthly rate,
+payment = minimum + extra, matching exactly); update/delete round-tripped correctly; the
+`get_payoff_plan` agent tool invoked directly (no LLM key in this sandbox) returned the same
+numbers as the CLI. Zero regressions: same pre-existing 11 test failures and lint/pyright
+baseline before and after every commit.
+
+---
+
 ## Roadmap (later — each gets its own detailed plan when its turn comes)
 
-4. **Debt management** — structured `Debt` entity + avalanche/snowball payoff engine.
 5. **Investment portfolio** — holdings/positions, allocation-vs-risk recommendations,
    rebalancing alerts, ROI/benchmark comparison.
 6. **Insurance** — policy inventory + coverage-gap analysis.

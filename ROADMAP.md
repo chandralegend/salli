@@ -10,7 +10,7 @@ verified end-to-end and committed before moving on.
 | Phase | Status | Notes |
 |---|---|---|
 | 0. CLI completion | ✅ Done (464c594) | reminders/fi/advisor/documents/billing CLI groups, entry reverse, ledger income-statement, agent sessions/history/resume |
-| 1. Onboarding / fact-find redo (backend) | 🚧 In progress | see below |
+| 1. Onboarding / fact-find redo (backend) | ✅ Done (8c586e8, 26af540, cabc975, ed24b29, eff1e8a) | see below |
 | 2. Budget domain | ⏳ Not started | |
 | 3+. Debt, Investment Portfolio, Insurance, AI Advisor upgrades, Reports & alerts, Data portability | ⏳ Not started | sketched only, each gets its own plan when its turn comes |
 
@@ -34,7 +34,7 @@ event-loop-closed crash in `income-statement`, and a wrong dict key in `fi histo
 
 ---
 
-## Phase 1 — Onboarding / fact-find redo (backend)
+## Phase 1 — Onboarding / fact-find redo (backend) ✅
 
 **Why**: current onboarding (`clients/web/src/app/onboarding/` +
 `interfaces/api/routers/onboarding.py`) is a product setup wizard, not a real fact-find — no
@@ -42,26 +42,39 @@ opening balances, income is category checkboxes with no amounts, risk profiling 
 3-option radio, no age/dependents/life-stage, only one goal captured. `UserProfileORM` only
 holds `id/email/display_name/paddle_customer_id`.
 
-**Scope** (backend only — web onboarding UI is a follow-up):
+**Built**:
 
-- [ ] Extend `UserProfileORM` with structured columns (date_of_birth/age, dependents_count,
+- [x] Extended `UserProfileORM` with structured columns (date_of_birth, dependents_count,
       employment_status, residency_status, employer, employment_type, ird_number, risk_score,
-      risk_category, life_stage) + migration
-- [ ] `domain/risk/` module: `models.py` (RiskQuestionnaireAnswers, RiskProfile), `engine.py`
-      (pure `compute(answers) -> RiskProfile`), `life_stage.py` (derive_life_stage)
-- [ ] `UserProfileService` (application/services/) — get_profile, update_identity,
-      submit_risk_questionnaire, declare_opening_balances (reuses LedgerService),
-      declare_income (reuses LedgerService)
-- [ ] Wire `UserProfileService` into `composition.py`
-- [ ] Rework `interfaces/api/routers/onboarding.py` into focused step endpoints
-- [ ] CLI `onboarding`/`profile` command group
-- [ ] Agent tool `get_financial_profile`
-- [ ] Golden tests (risk scoring rubric) + property test (score monotonicity)
+      risk_category, life_stage) — all nullable, migration `fa523e86f4cf`
+- [x] `domain/risk/` module: `models.py` (RiskQuestionnaireAnswers, RiskProfile), `engine.py`
+      (pure `compute(answers) -> RiskProfile`, 5-dimension point rubric), `life_stage.py`
+      (derive_life_stage)
+- [x] `UserProfileService` (application/services/) — get_profile (+ best-effort backfill from
+      the old memory-based fields), update_identity, submit_risk_questionnaire,
+      declare_opening_balances/declare_income (reuse LedgerService.add_account/add_entry to post
+      real, balanced journal entries)
+- [x] Wired into `composition.py` as `svc.profile`
+- [x] `interfaces/api/routers/onboarding.py`: added GET/PATCH `/profile`, POST
+      `/balance-sheet`, `/income`, `/risk-questionnaire`, `/goals` (repeatable) — legacy
+      `GET /status` and `POST /complete` left untouched so the current frontend wizard keeps
+      working unchanged
+- [x] CLI `profile` command group: show/update/risk-questionnaire/balance-sheet/income
+- [x] Agent tool `get_financial_profile` (threaded through AgentService -> build_manager_agent
+      -> make_manager_tools)
+- [x] Golden tests (4 hand-scored questionnaire examples) + 7 Hypothesis property tests
+      (monotonicity per dimension, score bounds, category thresholds) — all passing
 
-**Verify**: fresh dev user through the new step-by-step flow — opening balances land as real
-journal entries (net worth non-zero immediately), risk score/category sensible, life stage
-derives correctly, multiple goals creatable. Confirm `GET /onboarding/status` still gates the
-frontend `(app)` layout redirect (no frontend changes).
+**Verified**: fresh dev user through the full step-by-step flow (direct service calls, real HTTP
+via ASGI transport, and CLI) — opening balances/income post real balanced journal entries (trial
+balance stays net-zero), risk questionnaire produces sensible scores across conservative/
+balanced/aggressive, life stage derives correctly for student/early_career/family/pre_retirement/
+retired combinations, multiple goals created for one user. `GET /onboarding/status` and
+`POST /onboarding/complete` confirmed unchanged (still gate the frontend `(app)` layout redirect).
+Zero regressions: same 11 pre-existing test failures and same pre-existing lint/pyright baseline
+before and after every commit. Flagged (not fixed, out of scope): the API test suite's
+`get_current_user` dependency is never overridden in `tests/unit/api/conftest.py`, so all of
+those tests 401 regardless of route logic — spawned as a separate background task.
 
 ---
 

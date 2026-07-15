@@ -34,6 +34,7 @@ advisor_app = typer.Typer(help="Wealth Advisor")
 advisor_reports_app = typer.Typer(help="Advisor reports")
 documents_app = typer.Typer(help="Uploaded documents and memories")
 billing_app = typer.Typer(help="Plans and subscription")
+profile_app = typer.Typer(help="Fact-find profile: identity, risk, opening balances, income")
 
 app.add_typer(accounts_app, name="accounts")
 app.add_typer(entry_app, name="entry")
@@ -49,6 +50,7 @@ app.add_typer(advisor_app, name="advisor")
 advisor_app.add_typer(advisor_reports_app, name="reports")
 app.add_typer(documents_app, name="documents")
 app.add_typer(billing_app, name="billing")
+app.add_typer(profile_app, name="profile")
 
 
 def _services():
@@ -1170,6 +1172,138 @@ def _run_agent_chat(priming_message: str | None, thread_id: str | None = None):
         if not user_input:
             continue
         asyncio.run(_stream_one(user_input))
+
+
+# ── profile ───────────────────────────────────────────────────────────────────
+
+
+@profile_app.command("show")
+def profile_show():
+    """Show the fact-find profile: identity, risk profile, life stage."""
+    user_id = _require_user()
+    profile = asyncio.run(_services().profile.get_profile(user_id))
+    for key, value in profile.items():
+        console.print(f"  {key:<20} {value}")
+
+
+@profile_app.command("update")
+def profile_update(
+    display_name: str = typer.Option(None, "--display-name"),
+    date_of_birth: str = typer.Option(None, "--date-of-birth", help="YYYY-MM-DD"),
+    dependents_count: int = typer.Option(None, "--dependents-count"),
+    employment_status: str = typer.Option(
+        None, "--employment-status", help="employed|self_employed|unemployed|student|retired"
+    ),
+    employment_type: str = typer.Option(
+        None, "--employment-type", help="permanent|contract|self_employed|other"
+    ),
+    residency_status: str = typer.Option(None, "--residency-status", help="resident|non_resident"),
+    employer: str = typer.Option(None, "--employer"),
+    ird_number: str = typer.Option(None, "--ird-number"),
+):
+    """Update identity fields on the fact-find profile."""
+    user_id = _require_user()
+    data: dict[str, object] = {}
+    if display_name is not None:
+        data["display_name"] = display_name
+    if date_of_birth is not None:
+        data["date_of_birth"] = date_of_birth
+    if dependents_count is not None:
+        data["dependents_count"] = dependents_count
+    if employment_status is not None:
+        data["employment_status"] = employment_status
+    if employment_type is not None:
+        data["employment_type"] = employment_type
+    if residency_status is not None:
+        data["residency_status"] = residency_status
+    if employer is not None:
+        data["employer"] = employer
+    if ird_number is not None:
+        data["ird_number"] = ird_number
+    if not data:
+        console.print("[yellow]Nothing to update.[/yellow]")
+        raise typer.Exit(1)
+    asyncio.run(_services().profile.update_identity(user_id, data))
+    console.print("[green]Profile updated.[/green]")
+
+
+@profile_app.command("risk-questionnaire")
+def profile_risk_questionnaire(
+    time_horizon_years: int = typer.Option(..., "--time-horizon-years"),
+    drawdown_reaction: str = typer.Option(
+        ..., "--drawdown-reaction", help="sell_all|sell_some|hold|buy_more"
+    ),
+    income_stability: str = typer.Option(
+        ..., "--income-stability", help="unstable|moderate|stable"
+    ),
+    investment_experience: str = typer.Option(
+        ..., "--investment-experience", help="none|some|experienced"
+    ),
+    dependents_count: int = typer.Option(0, "--dependents-count"),
+):
+    """Submit the risk-tolerance questionnaire and persist the scored result."""
+    user_id = _require_user()
+    result = asyncio.run(
+        _services().profile.submit_risk_questionnaire(
+            user_id,
+            {
+                "time_horizon_years": time_horizon_years,
+                "drawdown_reaction": drawdown_reaction,
+                "income_stability": income_stability,
+                "investment_experience": investment_experience,
+                "dependents_count": dependents_count,
+            },
+        )
+    )
+    console.print(f"\n[bold]Risk score:[/bold] {result['score']} ({result['category']})\n")
+    for key, points in result["breakdown"].items():
+        console.print(f"  {key:<24} {points}")
+
+
+@profile_app.command("balance-sheet")
+def profile_balance_sheet(
+    balance: list[str] = typer.Option(..., "--balance", help="CODE:NAME:TYPE:AMOUNT (repeat)"),
+):
+    """Declare opening balances — posts real journal entries (asset|liability)."""
+    user_id = _require_user()
+    items = []
+    for raw in balance:
+        try:
+            code, name, type_, amount = raw.split(":", 3)
+        except ValueError:
+            console.print(f"[red]Invalid format '{raw}'. Use CODE:NAME:TYPE:AMOUNT[/red]")
+            raise typer.Exit(1)
+        items.append({"code": code, "name": name, "type": type_, "amount": amount})
+    entry_ids = asyncio.run(_services().profile.declare_opening_balances(user_id, items))
+    console.print(f"[green]Posted {len(entry_ids)} opening-balance entry(ies).[/green]")
+
+
+@profile_app.command("income")
+def profile_income(
+    income: list[str] = typer.Option(..., "--income", help="CODE:NAME:AMOUNT (repeat)"),
+    deposit_account_code: str = typer.Option("1200", "--deposit-account-code"),
+    deposit_account_name: str = typer.Option("Bank Account", "--deposit-account-name"),
+):
+    """Declare income sources — posts one representative monthly entry each."""
+    user_id = _require_user()
+    items = []
+    for raw in income:
+        try:
+            code, name, amount = raw.split(":", 2)
+        except ValueError:
+            console.print(f"[red]Invalid format '{raw}'. Use CODE:NAME:AMOUNT[/red]")
+            raise typer.Exit(1)
+        items.append(
+            {
+                "code": code,
+                "name": name,
+                "amount": amount,
+                "deposit_account_code": deposit_account_code,
+                "deposit_account_name": deposit_account_name,
+            }
+        )
+    entry_ids = asyncio.run(_services().profile.declare_income(user_id, items))
+    console.print(f"[green]Posted {len(entry_ids)} income entry(ies).[/green]")
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────

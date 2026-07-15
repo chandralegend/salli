@@ -477,3 +477,28 @@ class BudgetORM(Base):
     )
 
     __table_args__ = (Index("ix_budgets_user_period", "user_id", "period_start"),)
+
+
+# ── Debt ──────────────────────────────────────────────────────────────────────
+
+
+class DebtORM(Base):
+    """A structured debt — principal, rate, and minimum payment for payoff planning."""
+
+    __tablename__ = "debts"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    principal_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    apr: Mapped[float] = mapped_column(Numeric(6, 4), nullable=False)  # e.g. 0.1850 = 18.5%
+    minimum_payment_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+
+    __table_args__ = (Index("ix_debts_user_active", "user_id", "is_active"),)

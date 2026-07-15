@@ -22,6 +22,7 @@ from salli.adapters.db.models import (
     AgentDocumentORM,
     AgentSessionORM,
     BudgetORM,
+    DebtORM,
     FireStrategyORM,
     FiScoreORM,
     GoalORM,
@@ -40,6 +41,7 @@ from salli.application.ports import (
     AgentDocumentRepository,
     AgentSessionRepository,
     BudgetRepository,
+    DebtRepository,
     FireStrategyRepository,
     FiScoreRepository,
     GoalRepository,
@@ -1166,6 +1168,81 @@ class SQLBudgetRepository(BudgetRepository):
         r = (
             await self._s.execute(
                 select(BudgetORM).where(BudgetORM.id == budget_id, BudgetORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+        if r:
+            await self._s.delete(r)
+
+
+# ── Debt repository ───────────────────────────────────────────────────────────
+
+
+def _debt_to_dict(r: DebtORM) -> dict[str, Any]:
+    return {
+        "id": r.id,
+        "user_id": r.user_id,
+        "name": r.name,
+        "principal_minor": r.principal_minor,
+        "apr": str(r.apr),
+        "minimum_payment_minor": r.minimum_payment_minor,
+        "is_active": r.is_active,
+        "created_at": r.created_at.isoformat(),
+        "updated_at": r.updated_at.isoformat(),
+    }
+
+
+class SQLDebtRepository(DebtRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def save(self, user_id: str, debt: dict[str, Any]) -> str:
+        did = debt.get("id") or str(uuid.uuid4())
+        self._s.add(
+            DebtORM(
+                id=did,
+                user_id=user_id,
+                name=debt["name"],
+                principal_minor=int(debt["principal_minor"]),
+                apr=debt["apr"],
+                minimum_payment_minor=int(debt["minimum_payment_minor"]),
+                is_active=debt.get("is_active", True),
+            )
+        )
+        await self._s.flush()
+        return did
+
+    async def get(self, user_id: str, debt_id: str) -> dict[str, Any] | None:
+        r = (
+            await self._s.execute(
+                select(DebtORM).where(DebtORM.id == debt_id, DebtORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+        return _debt_to_dict(r) if r else None
+
+    async def list(self, user_id: str, active_only: bool = True) -> list[dict[str, Any]]:
+        stmt = select(DebtORM).where(DebtORM.user_id == user_id)
+        if active_only:
+            stmt = stmt.where(DebtORM.is_active == True)  # noqa: E712
+        stmt = stmt.order_by(DebtORM.created_at)
+        return [_debt_to_dict(r) for r in (await self._s.execute(stmt)).scalars().all()]
+
+    async def update(self, user_id: str, debt_id: str, updates: dict[str, Any]) -> None:
+        r = (
+            await self._s.execute(
+                select(DebtORM).where(DebtORM.id == debt_id, DebtORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+        if not r:
+            return
+        for k in ("name", "principal_minor", "apr", "minimum_payment_minor", "is_active"):
+            if k in updates and updates[k] is not None:
+                setattr(r, k, updates[k])
+        await self._s.flush()
+
+    async def delete(self, user_id: str, debt_id: str) -> None:
+        r = (
+            await self._s.execute(
+                select(DebtORM).where(DebtORM.id == debt_id, DebtORM.user_id == user_id)
             )
         ).scalar_one_or_none()
         if r:

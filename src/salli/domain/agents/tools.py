@@ -51,8 +51,7 @@ def make_read_tools(ledger_svc: Any, tax_svc: Any) -> list[Any]:
         }
 
     @tool
-    async def get_accounts(
-    ) -> dict[str, Any]:
+    async def get_accounts() -> dict[str, Any]:
         """List all accounts in the user's chart of accounts."""
         user_id = _current_user.get()
         accounts = await ledger_svc.list_accounts(user_id)
@@ -152,12 +151,15 @@ def make_read_tools(ledger_svc: Any, tax_svc: Any) -> list[Any]:
 # ── Manager tools factory (web search + documents + write with approval) ───────
 
 
-def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]:
+def make_manager_tools(
+    doc_svc: Any, ledger_svc: Any, tax_svc: Any, profile_svc: Any = None
+) -> list[Any]:
     """
     Return the manager-only tools:
       - web_search (Tavily)
       - save_document, read_document, update_document, list_documents, delete_document
       - save_memory, get_memory, list_memories
+      - get_financial_profile (fact-find profile: risk category, life stage, dependents)
       - create_account, create_reminder, post_journal_entry (all need user approval)
     """
 
@@ -299,18 +301,44 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
         mem = await doc_svc.get_memory(user_id, slug=slug)
         if not mem:
             return {"slug": slug, "found": False}
-        return {"slug": slug, "found": True, "value": mem.get("content"), "updated_at": mem.get("updated_at")}
+        return {
+            "slug": slug,
+            "found": True,
+            "value": mem.get("content"),
+            "updated_at": mem.get("updated_at"),
+        }
 
     @tool
-    async def list_memories(
-    ) -> dict[str, Any]:
+    async def list_memories() -> dict[str, Any]:
         """List all named memories stored for this user."""
         user_id = _current_user.get()
         mems = await doc_svc.list_memories(user_id)
         return {
             "count": len(mems),
-            "memories": [{"slug": m.get("slug"), "value": m.get("content"), "updated_at": m.get("updated_at")} for m in mems],
+            "memories": [
+                {
+                    "slug": m.get("slug"),
+                    "value": m.get("content"),
+                    "updated_at": m.get("updated_at"),
+                }
+                for m in mems
+            ],
         }
+
+    # ── Profile tool ──────────────────────────────────────────────────────────
+
+    @tool
+    async def get_financial_profile() -> dict[str, Any]:
+        """
+        Return the user's fact-find profile: risk category, risk score, life stage,
+        dependents, employment status, and residency. Use this to tailor guidance
+        (e.g. "given your conservative risk profile...") — do NOT ask the user for
+        facts already available here.
+        """
+        if profile_svc is None:
+            return {"error": "Profile service unavailable"}
+        user_id = _current_user.get()
+        return await profile_svc.get_profile(user_id)
 
     # ── Write tools (require user approval via interrupt) ─────────────────────
 
@@ -450,6 +478,7 @@ def make_manager_tools(doc_svc: Any, ledger_svc: Any, tax_svc: Any) -> list[Any]
         save_memory,
         get_memory,
         list_memories,
+        get_financial_profile,
         create_account,
         create_reminder,
         post_journal_entry,

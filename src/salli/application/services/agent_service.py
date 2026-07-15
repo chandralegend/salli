@@ -75,12 +75,14 @@ class AgentService:
         ledger_svc: Any,
         tax_svc: Any,
         doc_svc: Any = None,
+        profile_svc: Any = None,
         checkpointer: Any = None,
         uow_factory: Any = None,
     ) -> None:
         self._ledger_svc = ledger_svc
         self._tax_svc = tax_svc
         self._doc_svc = doc_svc
+        self._profile_svc = profile_svc
         self._checkpointer = checkpointer
         self._uow_factory = uow_factory
         self._agent: Any = None
@@ -98,6 +100,7 @@ class AgentService:
                 self._ledger_svc,
                 self._tax_svc,
                 self._doc_svc,
+                self._profile_svc,
                 checkpointer=self._checkpointer,
             )
             self._agent_date = today

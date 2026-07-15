@@ -60,14 +60,16 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     ledger = LedgerService(uow_factory)
     tax = TaxService(uow_factory)
     documents = DocumentService(uow_factory, storage)
-    agent = AgentService(ledger, tax, documents, checkpointer=checkpointer, uow_factory=uow_factory)
+    fi = FiService(uow_factory)
+    profile = UserProfileService(uow_factory, ledger, fi, documents)
+    agent = AgentService(
+        ledger, tax, documents, profile, checkpointer=checkpointer, uow_factory=uow_factory
+    )
     parsing = ParsingService(uow_factory, storage)
     reminders = ReminderService(uow_factory)
     fx = CBSLFxRateAdapter()
     billing = BillingService(uow_factory, billing_port=_build_billing(settings))
-    fi = FiService(uow_factory)
     advisor = AdvisorService(uow_factory, fi, billing, doc_service=documents)
-    profile = UserProfileService(uow_factory, ledger, fi, documents)
 
     return Services(
         ledger=ledger,

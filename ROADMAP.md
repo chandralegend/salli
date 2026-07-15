@@ -11,7 +11,7 @@ verified end-to-end and committed before moving on.
 |---|---|---|
 | 0. CLI completion | ✅ Done (464c594) | reminders/fi/advisor/documents/billing CLI groups, entry reverse, ledger income-statement, agent sessions/history/resume |
 | 1. Onboarding / fact-find redo (backend) | ✅ Done (8c586e8, 26af540, cabc975, ed24b29, eff1e8a) | see below |
-| 2. Budget domain | ⏳ Not started | |
+| 2. Budget domain | ✅ Done (87a3c0c, fdd8835, 3fd1928, f121403, 013a1c3) | see below |
 | 3+. Debt, Investment Portfolio, Insurance, AI Advisor upgrades, Reports & alerts, Data portability | ⏳ Not started | sketched only, each gets its own plan when its turn comes |
 
 ---
@@ -78,15 +78,38 @@ those tests 401 regardless of route logic — spawned as a separate background t
 
 ---
 
-## Phase 2 — Budget domain
+## Phase 2 — Budget domain ✅
 
-New domain following the Tax/FI engine pattern: `domain/budget/{models,engine}.py`,
-`BudgetRepository` port + `SQLBudgetRepository` adapter + `budgets`/`budget_lines` tables,
-`BudgetService`, `interfaces/api/routers/budget.py`, CLI `budget` group, agent tool
-`get_budget_summary`, golden + property tests.
+New domain following the Tax/FI engine pattern.
 
-**Verify**: create budget via CLI + API, `summary` matches hand-computed expectations from
-seeded ledger data, agent can answer a budget question in chat.
+**Built**:
+
+- [x] `domain/budget/models.py` (BudgetLineDef, BudgetLine, BudgetSummary) + `engine.py` — pure
+      `compute(entries, accounts, budget_lines) -> BudgetSummary`, aggregating actual
+      expense-account spend from ledger entries and comparing against declared limits
+- [x] `BudgetRepository` port + `SQLBudgetRepository` adapter + `budgets` table — lines stored
+      as a JSONB list on the budget row (mirrors `FireStrategyORM.strategy`'s JSONB convention
+      rather than a separate join table, since a budget's category limits are always
+      read/written together with their parent period) — migration `77758941fb1b`
+- [x] `BudgetService` (application/services/) — create/list/get/update/delete budgets,
+      `get_summary` (fetches ledger data via its own `uow_factory`, matching
+      `FiService.build_snapshot`'s pattern, then calls the pure engine)
+- [x] Wired into `composition.py` as `svc.budget`
+- [x] `interfaces/api/routers/budget.py`: GET/POST `/budget/`, GET `/budget/{id}`,
+      GET `/budget/{id}/summary`, PATCH/DELETE `/budget/{id}`
+- [x] CLI `budget` group: list/add/summary/delete
+- [x] Agent tool `get_budget_summary` (defaults to the user's most recent budget if no ID given)
+- [x] Golden tests (under/over budget, unset category, non-expense postings ignored) + 3
+      Hypothesis property tests (actuals-sum invariant, total-actual invariant,
+      variance = limit - actual) — all passing
+
+**Verified**: created a budget via both CLI and real HTTP (ASGI transport) for the dev user;
+`summary` correctly aggregated the real seeded Groceries expense (LKR 15,000 actual) against
+declared limits, matching a hand cross-check against `ledger trial-balance`; both over-budget
+(red) and under-budget (green) variance rendered correctly in the CLI table; the
+`get_budget_summary` agent tool invoked directly (no LLM key in this sandbox) returned the same
+numbers. Zero regressions: same pre-existing 11 test failures and lint/pyright baseline before
+and after every commit.
 
 ---
 

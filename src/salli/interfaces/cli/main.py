@@ -36,6 +36,7 @@ documents_app = typer.Typer(help="Uploaded documents and memories")
 billing_app = typer.Typer(help="Plans and subscription")
 profile_app = typer.Typer(help="Fact-find profile: identity, risk, opening balances, income")
 budget_app = typer.Typer(help="Category budgets vs. actual ledger spend")
+debt_app = typer.Typer(help="Structured debts and avalanche/snowball payoff planning")
 
 app.add_typer(accounts_app, name="accounts")
 app.add_typer(entry_app, name="entry")
@@ -53,6 +54,7 @@ app.add_typer(documents_app, name="documents")
 app.add_typer(billing_app, name="billing")
 app.add_typer(profile_app, name="profile")
 app.add_typer(budget_app, name="budget")
+app.add_typer(debt_app, name="debt")
 
 
 def _services():
@@ -1402,6 +1404,141 @@ def budget_delete(
     user_id = _require_user()
     asyncio.run(_services().budget.delete_budget(user_id, budget_id))
     console.print(f"[green]Budget deleted:[/green] {budget_id}")
+
+
+# ── debt ──────────────────────────────────────────────────────────────────────
+
+
+@debt_app.command("list")
+def debt_list(
+    all: bool = typer.Option(False, "--all", help="Include inactive debts"),
+):
+    """List debts."""
+    user_id = _require_user()
+    debts = asyncio.run(_services().debt.list_debts(user_id, active_only=not all))
+    if not debts:
+        console.print("[dim]No debts found. Use 'salli debt add' to create one.[/dim]")
+        return
+    table = Table(title="Debts")
+    table.add_column("ID", style="dim")
+    table.add_column("Name")
+    table.add_column("Principal", justify="right")
+    table.add_column("APR", justify="right")
+    table.add_column("Min. Payment", justify="right")
+    for d in debts:
+        table.add_row(
+            str(d.get("id", ""))[:8],
+            d.get("name", ""),
+            d.get("principal", ""),
+            f"{float(d.get('apr', 0)) * 100:.2f}%",
+            d.get("minimum_payment", ""),
+        )
+    console.print(table)
+
+
+@debt_app.command("add")
+def debt_add(
+    name: str = typer.Argument(..., help="Debt name, e.g. 'Credit Card'"),
+    principal: str = typer.Option(..., "--principal", help="Outstanding balance"),
+    apr: str = typer.Option(..., "--apr", help="Annual percentage rate, e.g. 0.18 for 18%"),
+    minimum_payment: str = typer.Option(..., "--minimum-payment"),
+):
+    """Add a structured debt."""
+    user_id = _require_user()
+    debt_id = asyncio.run(
+        _services().debt.add_debt(
+            user_id,
+            {"name": name, "principal": principal, "apr": apr, "minimum_payment": minimum_payment},
+        )
+    )
+    console.print(f"[green]Debt created:[/green] {name} ({debt_id})")
+
+
+@debt_app.command("update")
+def debt_update(
+    debt_id: str = typer.Argument(...),
+    name: str = typer.Option(None, "--name"),
+    principal: str = typer.Option(None, "--principal"),
+    apr: str = typer.Option(None, "--apr"),
+    minimum_payment: str = typer.Option(None, "--minimum-payment"),
+    active: bool = typer.Option(None, "--active/--inactive"),
+):
+    """Update fields on an existing debt."""
+    user_id = _require_user()
+    data: dict[str, object] = {}
+    if name is not None:
+        data["name"] = name
+    if principal is not None:
+        data["principal"] = principal
+    if apr is not None:
+        data["apr"] = apr
+    if minimum_payment is not None:
+        data["minimum_payment"] = minimum_payment
+    if active is not None:
+        data["is_active"] = active
+    if not data:
+        console.print("[yellow]Nothing to update.[/yellow]")
+        raise typer.Exit(1)
+    asyncio.run(_services().debt.update_debt(user_id, debt_id, data))
+    console.print(f"[green]Debt updated:[/green] {debt_id}")
+
+
+@debt_app.command("delete")
+def debt_delete(
+    debt_id: str = typer.Argument(...),
+):
+    """Delete a debt."""
+    user_id = _require_user()
+    asyncio.run(_services().debt.delete_debt(user_id, debt_id))
+    console.print(f"[green]Debt deleted:[/green] {debt_id}")
+
+
+@debt_app.command("payoff-plan")
+def debt_payoff_plan(
+    extra_monthly_payment: str = typer.Option("0", "--extra", help="Extra monthly payment"),
+    strategy: str = typer.Option(
+        "avalanche",
+        "--strategy",
+        help="avalanche (highest APR first) or snowball (smallest balance first)",
+    ),
+):
+    """Show the avalanche/snowball payoff plan for all active debts."""
+    from decimal import Decimal
+
+    if strategy not in ("avalanche", "snowball"):
+        console.print(f"[red]Invalid strategy '{strategy}'. Use avalanche or snowball.[/red]")
+        raise typer.Exit(1)
+
+    user_id = _require_user()
+    plan = asyncio.run(
+        _services().debt.get_payoff_plan(user_id, Decimal(extra_monthly_payment), strategy)
+    )
+
+    months = plan.get("months_to_payoff")
+    months_str = str(months) if months is not None else "not within horizon"
+    console.print(f"\n[bold]Payoff Plan[/bold]  ({plan['strategy']})\n")
+    console.print(f"  Months to payoff:     {months_str}")
+    console.print(f"  Total interest paid:  LKR {Decimal(plan['total_interest_paid']):>16,.2f}\n")
+
+    schedule = plan.get("schedule") or []
+    if schedule:
+        table = Table(title="First 12 Months")
+        table.add_column("Month", justify="right")
+        table.add_column("Debt")
+        table.add_column("Payment", justify="right")
+        table.add_column("Principal", justify="right")
+        table.add_column("Interest", justify="right")
+        table.add_column("Balance", justify="right")
+        for entry in schedule[:12]:
+            table.add_row(
+                str(entry["month"]),
+                entry["debt_name"],
+                f"{Decimal(entry['payment']):,.2f}",
+                f"{Decimal(entry['principal_paid']):,.2f}",
+                f"{Decimal(entry['interest_paid']):,.2f}",
+                f"{Decimal(entry['remaining_balance']):,.2f}",
+            )
+        console.print(table)
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────

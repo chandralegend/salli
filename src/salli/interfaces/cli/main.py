@@ -35,6 +35,7 @@ advisor_reports_app = typer.Typer(help="Advisor reports")
 documents_app = typer.Typer(help="Uploaded documents and memories")
 billing_app = typer.Typer(help="Plans and subscription")
 profile_app = typer.Typer(help="Fact-find profile: identity, risk, opening balances, income")
+budget_app = typer.Typer(help="Category budgets vs. actual ledger spend")
 
 app.add_typer(accounts_app, name="accounts")
 app.add_typer(entry_app, name="entry")
@@ -51,6 +52,7 @@ advisor_app.add_typer(advisor_reports_app, name="reports")
 app.add_typer(documents_app, name="documents")
 app.add_typer(billing_app, name="billing")
 app.add_typer(profile_app, name="profile")
+app.add_typer(budget_app, name="budget")
 
 
 def _services():
@@ -1304,6 +1306,102 @@ def profile_income(
         )
     entry_ids = asyncio.run(_services().profile.declare_income(user_id, items))
     console.print(f"[green]Posted {len(entry_ids)} income entry(ies).[/green]")
+
+
+# ── budget ────────────────────────────────────────────────────────────────────
+
+
+@budget_app.command("list")
+def budget_list():
+    """List budgets."""
+    user_id = _require_user()
+    budgets = asyncio.run(_services().budget.list_budgets(user_id))
+    if not budgets:
+        console.print("[dim]No budgets found. Use 'salli budget add' to create one.[/dim]")
+        return
+    table = Table(title="Budgets")
+    table.add_column("ID", style="dim")
+    table.add_column("Period Start")
+    table.add_column("Period End")
+    table.add_column("Categories", justify="right")
+    for b in budgets:
+        table.add_row(
+            str(b.get("id", ""))[:8],
+            b.get("period_start", ""),
+            b.get("period_end", ""),
+            str(len(b.get("lines", []))),
+        )
+    console.print(table)
+
+
+@budget_app.command("add")
+def budget_add(
+    period_start: str = typer.Option(..., "--period-start", help="YYYY-MM-DD"),
+    period_end: str = typer.Option(..., "--period-end", help="YYYY-MM-DD"),
+    line: list[str] = typer.Option(
+        ..., "--line", help="ACCOUNT_ID:LIMIT_AMOUNT (repeat for multiple categories)"
+    ),
+):
+    """Create a budget for a period with per-category (expense account) limits."""
+    user_id = _require_user()
+    lines = []
+    for raw in line:
+        try:
+            account_id, limit_amount = raw.rsplit(":", 1)
+        except ValueError:
+            console.print(f"[red]Invalid format '{raw}'. Use ACCOUNT_ID:LIMIT_AMOUNT[/red]")
+            raise typer.Exit(1)
+        lines.append({"account_id": account_id.strip(), "limit_amount": limit_amount.strip()})
+    budget_id = asyncio.run(
+        _services().budget.create_budget(user_id, period_start, period_end, lines)
+    )
+    console.print(f"[green]Budget created:[/green] {budget_id}")
+
+
+@budget_app.command("summary")
+def budget_summary(
+    budget_id: str = typer.Argument(..., help="Budget ID"),
+):
+    """Show category limits vs. actual ledger spend for a budget's period."""
+    from decimal import Decimal
+
+    user_id = _require_user()
+    summary = asyncio.run(_services().budget.get_summary(user_id, budget_id))
+    if summary is None:
+        console.print(f"[red]Budget not found:[/red] {budget_id}")
+        raise typer.Exit(1)
+
+    console.print(
+        f"\n[bold]Budget Summary[/bold]  {summary['period_start']} → {summary['period_end']}\n"
+    )
+    table = Table(title="Category Limits")
+    table.add_column("Category")
+    table.add_column("Limit", justify="right")
+    table.add_column("Actual", justify="right")
+    table.add_column("Variance", justify="right")
+    for line in summary["lines"]:
+        variance = Decimal(line["variance"])
+        style = "red" if variance < 0 else "green"
+        table.add_row(
+            line["category"],
+            f"{Decimal(line['limit_amount']):,.2f}",
+            f"{Decimal(line['actual_amount']):,.2f}",
+            f"[{style}]{variance:,.2f}[/{style}]",
+        )
+    console.print(table)
+    console.print(f"\n  Total limit:    LKR {Decimal(summary['total_limit']):>16,.2f}")
+    console.print(f"  Total actual:   LKR {Decimal(summary['total_actual']):>16,.2f}")
+    console.print(f"  Total variance: LKR {Decimal(summary['total_variance']):>16,.2f}\n")
+
+
+@budget_app.command("delete")
+def budget_delete(
+    budget_id: str = typer.Argument(...),
+):
+    """Delete a budget."""
+    user_id = _require_user()
+    asyncio.run(_services().budget.delete_budget(user_id, budget_id))
+    console.print(f"[green]Budget deleted:[/green] {budget_id}")
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────

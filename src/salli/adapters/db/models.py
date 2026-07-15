@@ -7,12 +7,13 @@ These are the storage representations; mappers translate between them.
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     ForeignKey,
     Index,
@@ -286,7 +287,7 @@ class ReminderORM(Base):
 
 
 class UserProfileORM(Base):
-    """Identity + billing linkage. `id` is the Supabase auth uid (JWT `sub`)."""
+    """Identity, fact-find, and billing linkage. `id` is the Supabase auth uid (JWT `sub`)."""
 
     __tablename__ = "user_profiles"
 
@@ -294,6 +295,20 @@ class UserProfileORM(Base):
     email: Mapped[str | None] = mapped_column(String(320), nullable=True)
     display_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     paddle_customer_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    # Fact-find (Phase 1 onboarding redo) — all nullable: unanswered until the user
+    # completes the corresponding step.
+    date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
+    dependents_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    employment_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    residency_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    employer: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    employment_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    ird_number: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    risk_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    risk_category: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    life_stage: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
     )

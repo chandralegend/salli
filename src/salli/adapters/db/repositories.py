@@ -783,6 +783,16 @@ class SQLUserProfileRepository(UserProfileRepository):
             "email": row.email,
             "display_name": row.display_name,
             "paddle_customer_id": row.paddle_customer_id,
+            "date_of_birth": row.date_of_birth.isoformat() if row.date_of_birth else None,
+            "dependents_count": row.dependents_count,
+            "employment_status": row.employment_status,
+            "residency_status": row.residency_status,
+            "employer": row.employer,
+            "employment_type": row.employment_type,
+            "ird_number": row.ird_number,
+            "risk_score": row.risk_score,
+            "risk_category": row.risk_category,
+            "life_stage": row.life_stage,
         }
 
     async def upsert(self, user_id: str, fields: dict[str, Any]) -> None:

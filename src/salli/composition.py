@@ -19,6 +19,7 @@ from salli.application.services.ledger_service import LedgerService
 from salli.application.services.parsing_service import ParsingService
 from salli.application.services.reminder_service import ReminderService
 from salli.application.services.tax_service import TaxService
+from salli.application.services.user_profile_service import UserProfileService
 from salli.application.unit_of_work import UnitOfWork
 from salli.config import Settings
 
@@ -36,6 +37,7 @@ class Services:
     billing: BillingService
     fi: FiService
     advisor: AdvisorService
+    profile: UserProfileService
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
@@ -65,6 +67,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     billing = BillingService(uow_factory, billing_port=_build_billing(settings))
     fi = FiService(uow_factory)
     advisor = AdvisorService(uow_factory, fi, billing, doc_service=documents)
+    profile = UserProfileService(uow_factory, ledger, fi, documents)
 
     return Services(
         ledger=ledger,
@@ -78,6 +81,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         billing=billing,
         fi=fi,
         advisor=advisor,
+        profile=profile,
     )
 
 

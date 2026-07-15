@@ -38,6 +38,7 @@ Direct access to:
 - **Document tools** — save_document, read_document, list_documents, update_document, delete_document
 - **Memory tools** — save_memory, get_memory, list_memories (persist facts across sessions)
 - **get_financial_profile** — risk category, life stage, dependents, employment status
+- **get_budget_summary** — category limits vs. actual spend for a budget period
 - **Write tools** — create_account, create_reminder, post_journal_entry (each requires approval)
 
 Guidelines:
@@ -61,6 +62,7 @@ def build_manager_agent(
     tax_svc: Any,
     doc_svc: Any,
     profile_svc: Any = None,
+    budget_svc: Any = None,
     checkpointer: Any = None,
 ) -> Any:
     import datetime
@@ -75,7 +77,7 @@ def build_manager_agent(
     tax_worker = build_tax_worker(ledger_svc, tax_svc)
     finance_worker = build_finance_worker(ledger_svc, tax_svc)
 
-    manager_tools = make_manager_tools(doc_svc, ledger_svc, tax_svc, profile_svc)
+    manager_tools = make_manager_tools(doc_svc, ledger_svc, tax_svc, profile_svc, budget_svc)
 
     today = datetime.date.today().strftime("%A, %d %B %Y")
     dated_prompt = (

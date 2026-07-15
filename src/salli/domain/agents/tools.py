@@ -152,7 +152,11 @@ def make_read_tools(ledger_svc: Any, tax_svc: Any) -> list[Any]:
 
 
 def make_manager_tools(
-    doc_svc: Any, ledger_svc: Any, tax_svc: Any, profile_svc: Any = None
+    doc_svc: Any,
+    ledger_svc: Any,
+    tax_svc: Any,
+    profile_svc: Any = None,
+    budget_svc: Any = None,
 ) -> list[Any]:
     """
     Return the manager-only tools:
@@ -160,6 +164,7 @@ def make_manager_tools(
       - save_document, read_document, update_document, list_documents, delete_document
       - save_memory, get_memory, list_memories
       - get_financial_profile (fact-find profile: risk category, life stage, dependents)
+      - get_budget_summary (category limits vs. actual spend for a budget period)
       - create_account, create_reminder, post_journal_entry (all need user approval)
     """
 
@@ -340,6 +345,32 @@ def make_manager_tools(
         user_id = _current_user.get()
         return await profile_svc.get_profile(user_id)
 
+    # ── Budget tool ───────────────────────────────────────────────────────────
+
+    @tool
+    async def get_budget_summary(
+        budget_id: Annotated[
+            str | None, "Budget ID; omit to use the user's most recent budget"
+        ] = None,
+    ) -> dict[str, Any]:
+        """
+        Return a budget's category limits vs. actual spend for its period — use this
+        to answer "am I over budget?" or "how much have I spent on groceries?".
+        Numbers here are authoritative — do NOT recompute or estimate them.
+        """
+        if budget_svc is None:
+            return {"error": "Budget service unavailable"}
+        user_id = _current_user.get()
+        if budget_id is None:
+            budgets = await budget_svc.list_budgets(user_id)
+            if not budgets:
+                return {"error": "No budgets found. Create one first."}
+            budget_id = budgets[0]["id"]
+        summary = await budget_svc.get_summary(user_id, budget_id)
+        if summary is None:
+            return {"error": f"Budget {budget_id} not found"}
+        return summary
+
     # ── Write tools (require user approval via interrupt) ─────────────────────
 
     @tool
@@ -479,6 +510,7 @@ def make_manager_tools(
         get_memory,
         list_memories,
         get_financial_profile,
+        get_budget_summary,
         create_account,
         create_reminder,
         post_journal_entry,

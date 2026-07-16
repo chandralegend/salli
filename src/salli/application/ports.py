@@ -361,6 +361,17 @@ class AdvisoryRepository(ABC):
     @abstractmethod
     async def get_latest(self, user_id: str) -> dict[str, Any] | None: ...
 
+    @abstractmethod
+    async def list(self, user_id: str, limit: int = 30) -> list[dict[str, Any]]: ...
+
+    @abstractmethod
+    async def update_recommendations(
+        self, user_id: str, report_id: str, recommendations: list[Any]
+    ) -> None: ...
+
+    @abstractmethod
+    async def ran_today(self, user_id: str, day: str) -> bool: ...
+
 
 class FireStrategyRepository(ABC):
     @abstractmethod

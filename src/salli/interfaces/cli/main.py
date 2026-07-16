@@ -108,6 +108,90 @@ def accounts_add(
     console.print(f"[green]Account created:[/green] {code} — {name} ({account_id})")
 
 
+@accounts_app.command("show")
+def accounts_show(
+    account_id: str = typer.Argument(...),
+    from_date: str = typer.Option(None, "--from", help="YYYY-MM-DD"),
+    to_date: str = typer.Option(None, "--to", help="YYYY-MM-DD"),
+):
+    """Show an account's detail, current balance, and transaction history."""
+    from decimal import Decimal
+
+    user_id = _require_user()
+    overview = asyncio.run(
+        _services().ledger.get_account_overview(user_id, account_id, from_date, to_date)
+    )
+    if overview is None:
+        console.print(f"[red]Account not found:[/red] {account_id}")
+        raise typer.Exit(1)
+
+    acc = overview["account"]
+    console.print(
+        f"\n[bold]{acc['code']} — {acc['name']}[/bold]  ({acc['type']}, {acc['currency']})"
+    )
+    status_label = "active" if acc["is_active"] else "[red]inactive[/red]"
+    console.print(f"  Status:          {status_label}")
+    console.print(f"  Current balance: LKR {Decimal(overview['current_balance']):>16,.2f}\n")
+
+    transactions = overview.get("transactions") or []
+    if transactions:
+        table = Table(title="Transactions")
+        table.add_column("Date")
+        table.add_column("Description")
+        table.add_column("Source")
+        table.add_column("Running Balance", justify="right")
+        for t in transactions:
+            table.add_row(
+                t["entry_date"],
+                t["description"],
+                t["source"],
+                f"{Decimal(t['running_balance']):,.2f}",
+            )
+        console.print(table)
+    else:
+        console.print("[dim]No transactions for this account.[/dim]")
+
+
+@accounts_app.command("update")
+def accounts_update(
+    account_id: str = typer.Argument(...),
+    code: str = typer.Option(..., "--code"),
+    name: str = typer.Option(..., "--name"),
+    type: str = typer.Option(..., "--type", help="asset|liability|equity|income|expense"),
+    currency: str = typer.Option("LKR", "--currency"),
+):
+    """Update an account's code, name, type, and currency."""
+    user_id = _require_user()
+    valid_types = {"asset", "liability", "equity", "income", "expense"}
+    if type not in valid_types:
+        console.print(
+            f"[red]Invalid type '{type}'. Must be one of: {', '.join(sorted(valid_types))}[/red]"
+        )
+        raise typer.Exit(1)
+    asyncio.run(_services().ledger.update_account(user_id, account_id, code, name, type, currency))
+    console.print(f"[green]Account updated:[/green] {account_id}")
+
+
+@accounts_app.command("deactivate")
+def accounts_deactivate(
+    account_id: str = typer.Argument(...),
+):
+    """Deactivate (soft-delete) an account."""
+    user_id = _require_user()
+    asyncio.run(_services().ledger.deactivate_account(user_id, account_id))
+    console.print(f"[green]Account deactivated:[/green] {account_id}")
+
+
+@accounts_app.command("reactivate")
+def accounts_reactivate(
+    account_id: str = typer.Argument(...),
+):
+    """Reactivate a previously deactivated account."""
+    user_id = _require_user()
+    asyncio.run(_services().ledger.reactivate_account(user_id, account_id))
+    console.print(f"[green]Account reactivated:[/green] {account_id}")
+
+
 # ── entry ─────────────────────────────────────────────────────────────────────
 
 

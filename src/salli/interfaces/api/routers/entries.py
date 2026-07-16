@@ -3,7 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
 from salli.interfaces.api.deps import AppServices, CurrentUser
@@ -47,6 +47,7 @@ async def add_entry(body: AddEntryRequest, user_id: CurrentUser, svc: AppService
         description=body.description,
         source=body.source,
         postings_data=postings_data,
+        external_ref=body.external_ref,
     )
     return {"id": entry_id}
 
@@ -80,6 +81,40 @@ async def list_entries(
         }
         for e in entries
     ]
+
+
+@router.get("/{entry_id}")
+async def get_entry(entry_id: str, user_id: CurrentUser, svc: AppServices):
+    entry = await svc.ledger.get_entry(user_id, entry_id)
+    if entry is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entry not found")
+    return {
+        "id": entry.id,
+        "entry_date": entry.entry_date,
+        "description": entry.description,
+        "source": entry.source,
+        "external_ref": entry.external_ref,
+        "reversed_by": entry.reversed_by,
+        "postings": [
+            {
+                "account_id": p.account_id,
+                "direction": p.direction.value,
+                "amount": str(p.amount),
+                "currency": p.currency,
+                "fx_rate": str(p.fx_rate),
+            }
+            for p in entry.postings
+        ],
+    }
+
+
+@router.get("/{entry_id}/provenance")
+async def get_entry_provenance(entry_id: str, user_id: CurrentUser, svc: AppServices):
+    """Where this entry came from: a bank-statement transaction, or an attached receipt."""
+    provenance = await svc.ledger.get_entry_provenance(user_id, entry_id)
+    if provenance is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entry not found")
+    return provenance
 
 
 @router.post("/{entry_id}/reverse", status_code=201)

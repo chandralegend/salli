@@ -14,10 +14,10 @@ a new frontend wizard is a follow-up once these are in place.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
-from salli.interfaces.api.deps import AppServices, CurrentUser
+from salli.interfaces.api.deps import AppServices, CurrentEmail, CurrentUser
 
 router = APIRouter(prefix="/onboarding", tags=["onboarding"])
 
@@ -292,3 +292,34 @@ async def declare_goals(body: GoalsRequest, user_id: CurrentUser, svc: AppServic
     """Create one or more goals — repeatable, unlike the legacy single-goal flow."""
     goal_ids = [await svc.fi.create_goal(user_id, g.model_dump()) for g in body.goals]
     return {"goal_ids": goal_ids}
+
+
+# ── Data portability ─────────────────────────────────────────────────────────
+
+
+@router.get("/export")
+async def export_my_data(user_id: CurrentUser, svc: AppServices):
+    """Everything Salli has stored about this user, as one JSON document."""
+    return await svc.data_portability.export_all(user_id)
+
+
+class DeleteAccountRequest(BaseModel):
+    confirm_email: str
+
+
+@router.delete("/account")
+async def delete_my_account(
+    body: DeleteAccountRequest, user_id: CurrentUser, email: CurrentEmail, svc: AppServices
+):
+    """
+    Permanently delete every row belonging to this user. Irreversible.
+    Requires confirm_email to match the authenticated account's email —
+    a deliberate friction point against an accidental or spoofed call.
+    """
+    if not email or body.confirm_email.strip().lower() != email.strip().lower():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="confirm_email does not match the account email",
+        )
+    counts = await svc.data_portability.delete_account(user_id)
+    return {"deleted": True, "counts": counts}

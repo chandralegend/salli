@@ -52,6 +52,7 @@ class ParsedTransaction:
     dedup_key: str = ""  # SHA-256 idempotency key (filled by dedup module)
     dedup_status: str = "pending"  # UNIQUE | EXACT_DUPLICATE | FUZZY_MATCH
     id: str = ""  # DB primary key, populated after persistence
+    statement_id: str = ""  # parent Statement's ID, populated after persistence
 
 
 @dataclass

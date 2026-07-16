@@ -397,6 +397,24 @@ class SQLStatementRepository(StatementRepository):
             row.posted_entry_id = entry_id
             row.dedup_status = "posted"
 
+    async def get_statement(self, user_id: str, statement_id: str) -> dict[str, Any] | None:
+        stmt = select(StatementORM).where(
+            StatementORM.id == statement_id, StatementORM.user_id == user_id
+        )
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if not row:
+            return None
+        return {
+            "id": row.id,
+            "bank": row.bank,
+            "period_start": row.period_start,
+            "period_end": row.period_end,
+            "storage_key": row.storage_key,
+            "status": row.status,
+            "created_at": row.created_at.isoformat(),
+        }
+
 
 def _orm_to_parsed(row: ParsedTransactionORM) -> Any:
     from decimal import Decimal
@@ -421,6 +439,7 @@ def _orm_to_parsed(row: ParsedTransactionORM) -> Any:
         dedup_key=row.dedup_key or "",
         dedup_status=row.dedup_status,
         id=row.id,
+        statement_id=row.statement_id,
     )
 
 

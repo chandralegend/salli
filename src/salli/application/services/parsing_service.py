@@ -204,6 +204,7 @@ class ParsingService:
                     entry_date=txn.raw.date,
                     description=txn.raw.description,
                     source="statement",
+                    external_ref=txn.id,
                     postings=postings,
                 )
                 entry_id = await uow.ledger.save_entry(user_id, entry)

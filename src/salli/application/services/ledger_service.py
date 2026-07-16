@@ -61,6 +61,7 @@ class LedgerService:
         description: str,
         source: Source,
         postings_data: list[dict[str, Any]],
+        external_ref: str | None = None,
     ) -> str:
         postings = [Posting(**p) for p in postings_data]
         # JournalEntry.__init__ runs must_balance validator — raises ValueError if unbalanced
@@ -68,6 +69,7 @@ class LedgerService:
             entry_date=entry_date,
             description=description,
             source=source,
+            external_ref=external_ref,
             postings=postings,
         )
         async with self._uow_factory() as uow:
@@ -81,6 +83,57 @@ class LedgerService:
     ) -> list[StoredJournalEntry]:
         async with self._uow_factory() as uow:
             return await uow.ledger.get_entries(user_id, from_date, to_date)
+
+    async def get_entry(self, user_id: str, entry_id: str) -> StoredJournalEntry | None:
+        async with self._uow_factory() as uow:
+            return await uow.ledger.get_entry_by_id(user_id, entry_id)
+
+    async def get_entry_provenance(self, user_id: str, entry_id: str) -> dict[str, Any] | None:
+        """Resolve an entry's source + external_ref into human-readable provenance:
+        the original bank-statement transaction, or an attached manual receipt."""
+        async with self._uow_factory() as uow:
+            entry = await uow.ledger.get_entry_by_id(user_id, entry_id)
+            if entry is None:
+                return None
+
+            provenance: dict[str, Any] = {
+                "entry_id": entry.id,
+                "entry_date": entry.entry_date,
+                "description": entry.description,
+                "source": entry.source,
+                "external_ref": entry.external_ref,
+                "statement": None,
+                "receipt": None,
+            }
+
+            if entry.source == "statement" and entry.external_ref:
+                txns = await uow.statements.get_by_ids(user_id, [entry.external_ref])
+                if txns:
+                    txn = txns[0]
+                    statement_info = None
+                    if txn.statement_id:
+                        statement_info = await uow.statements.get_statement(
+                            user_id, txn.statement_id
+                        )
+                    provenance["statement"] = {
+                        "parsed_transaction_id": txn.id,
+                        "raw_description": txn.raw.description,
+                        "raw_amount": str(txn.raw.amount),
+                        "raw_date": txn.raw.date,
+                        "bank_ref": txn.raw.bank_ref,
+                        "statement": statement_info,
+                    }
+            elif entry.source == "manual" and entry.external_ref:
+                doc = await uow.agent_documents.get(user_id, entry.external_ref)
+                if doc:
+                    provenance["receipt"] = {
+                        "document_id": doc["id"],
+                        "title": doc["title"],
+                        "mime_type": doc["mime_type"],
+                        "storage_key": doc.get("storage_key"),
+                    }
+
+        return provenance
 
     async def get_trial_balance(
         self,

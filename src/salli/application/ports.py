@@ -118,6 +118,11 @@ class StatementRepository(ABC):
     @abstractmethod
     async def mark_posted(self, transaction_id: str, entry_id: str) -> None: ...
 
+    @abstractmethod
+    async def get_statement(self, user_id: str, statement_id: str) -> dict[str, Any] | None:
+        """Return a single statement's metadata (bank, period, storage key), or None."""
+        ...
+
 
 class LLMPort(ABC):
     """

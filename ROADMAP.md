@@ -15,7 +15,8 @@ verified end-to-end and committed before moving on.
 | 3. Debt management | ✅ Done (a052731, 9e23f32, 2ec88a6, 10c15cf, 3f5f254) | see below |
 | 4. Investment Portfolio | ✅ Done (99dbb31, eeaef81, 755c30a, 22f64de, 8abd08c) | see below |
 | 5. Account/entry management + recurring subscriptions | ✅ Done (6ebfdec, 68c80ce, 2961071, 5053624, 6957b86, 4502c8b, 2a67ec9, 8a51706, c6ad947, 1de56a1, 0d6c394, 1a84a69) | see below |
-| 6+. Insurance, AI Advisor upgrades, Reports & alerts, Data portability | ⏳ Not started | sketched only, each gets its own plan when its turn comes |
+| 6. Insurance | ✅ Done (7956cc8, e922ea8, f92b3b3, e4ed420, 354f47d, f0fa109) | see below |
+| 7+. AI Advisor upgrades, Reports & alerts, Data portability | ⏳ Not started | sketched only, each gets its own plan when its turn comes |
 
 ---
 
@@ -275,9 +276,52 @@ commit in this phase.
 
 ---
 
+## Phase 6 — Insurance ✅
+
+New domain following the Tax/FI/Budget/Debt/Portfolio/Subscription pattern — the smallest new
+domain per the original roadmap sketch. Chosen as the next phase (over AI Advisor upgrades,
+Reports & alerts, or Data portability) because it has no dependency on the others, while each of
+those benefits from every domain existing first.
+
+**Built**:
+
+- [x] `domain/insurance/models.py` (Policy, CoverageTarget, CoverageGapLine, ExpiryAlert,
+      CoverageGapReport) + `engine.py` — pure `compute_report(policies, targets, today,
+      expiry_warning_days=30) -> CoverageGapReport`. Mirrors the budget engine's
+      declared-vs-actual shape: a `CoverageTarget` is a desired coverage amount per policy type
+      (like a budget line's limit), and a gap line is only produced for types the user has
+      declared a target for — policy types with no target (e.g. motor, property) are tracked for
+      expiry alerts only, since there's no universal "correct" coverage amount to assume
+- [x] `PolicyRepository` + `InsuranceTargetRepository` ports (split like Goal/FiScore/
+      FireStrategy in the FI domain, not bundled into one repository) + `SQLPolicyRepository` /
+      `SQLInsuranceTargetRepository` adapters + `policies` / `insurance_targets` tables — the
+      target repo is an upsert since at most one target exists per (user, policy_type), enforced
+      by a unique constraint — migration `5474ef0df2f2`
+- [x] `InsuranceService` (application/services/) — policy/target CRUD, `get_report` (fetches
+      active policies + targets via its own `uow_factory`, calls the pure engine)
+- [x] Wired into `composition.py` as `svc.insurance`
+- [x] `interfaces/api/routers/insurance.py`: GET/POST `/insurance/policies`, GET/PATCH/DELETE
+      `/insurance/policies/{id}`, GET/PUT `/insurance/targets`, DELETE
+      `/insurance/targets/{policy_type}`, GET `/insurance/report`
+- [x] CLI `insurance` group with nested `policy`/`target` sub-groups (list/add/update/delete,
+      set/list/delete) plus a top-level `report` command that color-codes over-target gaps red
+- [x] Agent tool `get_coverage_report`
+- [x] 8 golden tests (coverage-meets-target, under-target gap, missing-type, multi-policy
+      summing, inactive-policy exclusion, expiring-soon window edges) + 5 Hypothesis property
+      tests (gap = target − actual, actual coverage matches hand-summed active policies,
+      missing-types consistency, expiring-soon membership and day-count correctness)
+
+**Verified**: full policy/target lifecycle exercised via direct service calls, real HTTP (ASGI
+transport), and the CLI against the dev DB — coverage-gap and expiring-soon alerts matched hand
+computation exactly; confirmed the `get_coverage_report` agent tool (invoked directly — no LLM
+key in this sandbox) returns byte-for-byte the same report as the service. Zero regressions: same
+11 pre-existing test failures and same pre-existing lint/pyright baseline before and after every
+commit in this phase.
+
+---
+
 ## Roadmap (later — each gets its own detailed plan when its turn comes)
 
-7. **Insurance** — policy inventory + coverage-gap analysis.
 8. **AI Advisor upgrades** — agent-invokable Wealth Advisor mid-conversation, monthly
    financial-health briefing workflow, sentiment-aware tone.
 9. **Reports & alerts** — exportable statements, historical net-worth snapshots, generalize

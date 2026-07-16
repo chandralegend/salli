@@ -286,7 +286,7 @@ function ExpenseAccountChipPicker({
   );
 }
 
-export function FormModal({
+function FormModal({
   visible,
   title,
   onClose,
@@ -334,7 +334,7 @@ export function FormModal({
   );
 }
 
-export function ConfirmModal({
+function ConfirmModal({
   visible,
   title,
   description,

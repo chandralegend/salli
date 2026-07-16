@@ -81,6 +81,7 @@ class AgentService:
         portfolio_svc: Any = None,
         subscription_svc: Any = None,
         insurance_svc: Any = None,
+        advisor_svc: Any = None,
         checkpointer: Any = None,
         uow_factory: Any = None,
     ) -> None:
@@ -93,11 +94,13 @@ class AgentService:
         self._portfolio_svc = portfolio_svc
         self._subscription_svc = subscription_svc
         self._insurance_svc = insurance_svc
+        self._advisor_svc = advisor_svc
         self._checkpointer = checkpointer
         self._uow_factory = uow_factory
         self._agent: Any = None
         self._agent_date: str | None = None
         self._workflow: Any = None
+        self._briefing_workflow: Any = None
 
     def _get_agent(self) -> Any:
         import datetime
@@ -131,6 +134,16 @@ class AgentService:
                 checkpointer=self._checkpointer,
             )
         return self._workflow
+
+    def _get_briefing_workflow(self) -> Any:
+        if self._briefing_workflow is None:
+            from salli.domain.agents.briefing_workflow import build_briefing_workflow
+
+            self._briefing_workflow = build_briefing_workflow(
+                self._advisor_svc,
+                checkpointer=self._checkpointer,
+            )
+        return self._briefing_workflow
 
     async def _build_message_content(
         self,
@@ -509,3 +522,54 @@ class AgentService:
 
         result = await workflow.ainvoke(Command(resume=decision), config=config)
         return {"worksheet": result.get("worksheet", {}), "error": result.get("error", "")}
+
+    async def prepare_briefing(
+        self,
+        user_id: str,
+        email: str | None = None,
+        thread_id: str | None = None,
+    ) -> dict[str, Any]:
+        """
+        Run the monthly briefing workflow up to the human review gate.
+        Returns the interrupt payload (draft briefing for human approval), or
+        the gather-step error (e.g. quota exceeded) if it never reached review.
+        """
+        if thread_id is None:
+            thread_id = str(uuid.uuid4())
+
+        workflow = self._get_briefing_workflow()
+        config = {"configurable": {"thread_id": thread_id}}
+
+        result = await workflow.ainvoke(
+            {"user_id": user_id, "email": email},
+            config=config,
+        )
+        advice = result.get("advice")
+        return {
+            "thread_id": thread_id,
+            "error": result.get("error", ""),
+            "briefing": {
+                "summary": advice.summary if advice else "",
+                "fire_tier_assessment": advice.fire_tier_assessment if advice else "",
+                "recommendations": [r.model_dump() for r in advice.recommendations]
+                if advice
+                else [],
+            },
+        }
+
+    async def resume_briefing(
+        self,
+        thread_id: str,
+        decision: str,
+    ) -> dict[str, Any]:
+        """
+        Resume the briefing workflow after human review.
+        decision: "approve" | "edit" | "reject"
+        """
+        from langgraph.types import Command
+
+        workflow = self._get_briefing_workflow()
+        config = {"configurable": {"thread_id": thread_id}}
+
+        result = await workflow.ainvoke(Command(resume=decision), config=config)
+        return {"report": result.get("report", {}), "error": result.get("error", "")}

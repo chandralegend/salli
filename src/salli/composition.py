@@ -77,6 +77,9 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     portfolio = PortfolioService(uow_factory)
     subscription = SubscriptionService(uow_factory)
     insurance = InsuranceService(uow_factory)
+    fx = CBSLFxRateAdapter()
+    billing = BillingService(uow_factory, billing_port=_build_billing(settings))
+    advisor = AdvisorService(uow_factory, fi, billing, doc_service=documents)
     agent = AgentService(
         ledger,
         tax,
@@ -87,14 +90,12 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         portfolio,
         subscription,
         insurance,
+        advisor,
         checkpointer=checkpointer,
         uow_factory=uow_factory,
     )
     parsing = ParsingService(uow_factory, storage)
     reminders = ReminderService(uow_factory)
-    fx = CBSLFxRateAdapter()
-    billing = BillingService(uow_factory, billing_port=_build_billing(settings))
-    advisor = AdvisorService(uow_factory, fi, billing, doc_service=documents)
 
     return Services(
         ledger=ledger,

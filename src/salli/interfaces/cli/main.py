@@ -1109,6 +1109,57 @@ def advisor_dismiss(
         raise typer.Exit(1)
 
 
+@advisor_app.command("briefing")
+def advisor_briefing(
+    thread_id: str = typer.Option(None, "--thread-id", help="Resume an existing briefing thread"),
+):
+    """Run the monthly financial-health briefing workflow (pauses for review before persisting)."""
+    user_id = _require_user()
+    svc = _services()
+
+    async def _run():
+        return await svc.agent.prepare_briefing(user_id, email=None, thread_id=thread_id)
+
+    result = asyncio.run(_run())
+    tid = result.get("thread_id", "")
+
+    if result.get("error"):
+        console.print(f"[yellow]{result['error']}[/yellow]")
+        return
+
+    briefing = result.get("briefing", {})
+    console.print(f"\n[bold]Monthly Briefing[/bold]  (thread: {tid})\n")
+    console.print(f"  {briefing.get('summary', '')}\n")
+    console.print(f"  [dim]{briefing.get('fire_tier_assessment', '')}[/dim]\n")
+
+    recs = briefing.get("recommendations") or []
+    if recs:
+        table = Table(title="Recommendations")
+        table.add_column("Priority", justify="right")
+        table.add_column("Title")
+        table.add_column("Rationale")
+        for r in recs:
+            table.add_row(str(r.get("priority", "")), r.get("title", ""), r.get("rationale", ""))
+        console.print(table)
+
+    console.print(
+        "\nApprove this briefing? [[green]approve[/green]/[yellow]edit[/yellow]/[red]reject[/red]]"
+    )
+    decision = input("> ").strip().lower()
+    if decision not in ("approve", "edit", "reject"):
+        decision = "reject"
+
+    async def _resume():
+        return await svc.agent.resume_briefing(tid, decision)
+
+    final = asyncio.run(_resume())
+    if final.get("error"):
+        console.print(f"[yellow]{final['error']}[/yellow]")
+    else:
+        console.print("\n[bold green]Briefing saved as an advisory report.[/bold green]")
+        console.print(f"  Report ID: {final.get('report', {}).get('id')}")
+
+
 # ── documents ──────────────────────────────────────────────────────────────────
 
 

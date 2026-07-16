@@ -37,6 +37,7 @@ billing_app = typer.Typer(help="Plans and subscription")
 profile_app = typer.Typer(help="Fact-find profile: identity, risk, opening balances, income")
 budget_app = typer.Typer(help="Category budgets vs. actual ledger spend")
 debt_app = typer.Typer(help="Structured debts and avalanche/snowball payoff planning")
+portfolio_app = typer.Typer(help="Investment holdings, allocation, and rebalancing")
 
 app.add_typer(accounts_app, name="accounts")
 app.add_typer(entry_app, name="entry")
@@ -55,6 +56,7 @@ app.add_typer(billing_app, name="billing")
 app.add_typer(profile_app, name="profile")
 app.add_typer(budget_app, name="budget")
 app.add_typer(debt_app, name="debt")
+app.add_typer(portfolio_app, name="portfolio")
 
 
 def _services():
@@ -1537,6 +1539,167 @@ def debt_payoff_plan(
                 f"{Decimal(entry['principal_paid']):,.2f}",
                 f"{Decimal(entry['interest_paid']):,.2f}",
                 f"{Decimal(entry['remaining_balance']):,.2f}",
+            )
+        console.print(table)
+
+
+# ── portfolio ─────────────────────────────────────────────────────────────────
+
+
+@portfolio_app.command("list")
+def portfolio_list(
+    all: bool = typer.Option(False, "--all", help="Include inactive holdings"),
+):
+    """List investment holdings."""
+    user_id = _require_user()
+    holdings = asyncio.run(_services().portfolio.list_holdings(user_id, active_only=not all))
+    if not holdings:
+        console.print("[dim]No holdings found. Use 'salli portfolio add' to create one.[/dim]")
+        return
+    table = Table(title="Holdings")
+    table.add_column("ID", style="dim")
+    table.add_column("Symbol")
+    table.add_column("Name")
+    table.add_column("Asset Class")
+    table.add_column("Cost Basis", justify="right")
+    table.add_column("Current Value", justify="right")
+    for h in holdings:
+        table.add_row(
+            str(h.get("id", ""))[:8],
+            h.get("symbol", ""),
+            h.get("name", ""),
+            h.get("asset_class", ""),
+            h.get("cost_basis", ""),
+            h.get("current_value", ""),
+        )
+    console.print(table)
+
+
+@portfolio_app.command("add")
+def portfolio_add(
+    symbol: str = typer.Argument(..., help="Ticker or short identifier, e.g. 'VOO'"),
+    name: str = typer.Option(..., "--name", help="Display name"),
+    asset_class: str = typer.Option(..., "--asset-class", help="e.g. equity, bond, cash, crypto"),
+    cost_basis: str = typer.Option(..., "--cost-basis", help="Total amount invested"),
+    current_value: str = typer.Option(..., "--current-value", help="Total current worth"),
+):
+    """Add an investment holding (manually declared, no live pricing)."""
+    user_id = _require_user()
+    holding_id = asyncio.run(
+        _services().portfolio.add_holding(
+            user_id,
+            {
+                "symbol": symbol,
+                "name": name,
+                "asset_class": asset_class,
+                "cost_basis": cost_basis,
+                "current_value": current_value,
+            },
+        )
+    )
+    console.print(f"[green]Holding created:[/green] {symbol} ({holding_id})")
+
+
+@portfolio_app.command("update")
+def portfolio_update(
+    holding_id: str = typer.Argument(...),
+    symbol: str = typer.Option(None, "--symbol"),
+    name: str = typer.Option(None, "--name"),
+    asset_class: str = typer.Option(None, "--asset-class"),
+    cost_basis: str = typer.Option(None, "--cost-basis"),
+    current_value: str = typer.Option(None, "--current-value"),
+    active: bool = typer.Option(None, "--active/--inactive"),
+):
+    """Update fields on an existing holding."""
+    user_id = _require_user()
+    data: dict[str, object] = {}
+    if symbol is not None:
+        data["symbol"] = symbol
+    if name is not None:
+        data["name"] = name
+    if asset_class is not None:
+        data["asset_class"] = asset_class
+    if cost_basis is not None:
+        data["cost_basis"] = cost_basis
+    if current_value is not None:
+        data["current_value"] = current_value
+    if active is not None:
+        data["is_active"] = active
+    if not data:
+        console.print("[yellow]Nothing to update.[/yellow]")
+        raise typer.Exit(1)
+    asyncio.run(_services().portfolio.update_holding(user_id, holding_id, data))
+    console.print(f"[green]Holding updated:[/green] {holding_id}")
+
+
+@portfolio_app.command("delete")
+def portfolio_delete(
+    holding_id: str = typer.Argument(...),
+):
+    """Delete a holding."""
+    user_id = _require_user()
+    asyncio.run(_services().portfolio.delete_holding(user_id, holding_id))
+    console.print(f"[green]Holding deleted:[/green] {holding_id}")
+
+
+@portfolio_app.command("summary")
+def portfolio_summary(
+    target: list[str] = typer.Option(
+        [], "--target", help="ASSET_CLASS:PCT (repeat); omit to skip rebalancing alerts"
+    ),
+):
+    """Show allocation by asset class, total gain/ROI, and rebalancing alerts."""
+    from decimal import Decimal
+
+    user_id = _require_user()
+    target_allocation = None
+    if target:
+        target_allocation = {}
+        for raw in target:
+            try:
+                asset_class, pct = raw.split(":", 1)
+            except ValueError:
+                console.print(f"[red]Invalid format '{raw}'. Use ASSET_CLASS:PCT[/red]")
+                raise typer.Exit(1)
+            target_allocation[asset_class.strip()] = Decimal(pct.strip())
+
+    summary = asyncio.run(_services().portfolio.get_summary(user_id, target_allocation))
+
+    console.print("\n[bold]Portfolio Summary[/bold]\n")
+    console.print(f"  Total value:       LKR {Decimal(summary['total_value']):>16,.2f}")
+    console.print(f"  Total cost basis:  LKR {Decimal(summary['total_cost_basis']):>16,.2f}")
+    console.print(f"  Total gain:        LKR {Decimal(summary['total_gain']):>16,.2f}")
+    console.print(f"  Total gain %:      {float(summary['total_gain_pct']) * 100:.2f}%\n")
+
+    allocation = summary.get("allocation") or []
+    if allocation:
+        table = Table(title="Allocation")
+        table.add_column("Asset Class")
+        table.add_column("Value", justify="right")
+        table.add_column("% of Portfolio", justify="right")
+        for a in allocation:
+            table.add_row(
+                a["asset_class"],
+                f"{Decimal(a['current_value']):,.2f}",
+                f"{float(a['pct_of_portfolio']) * 100:.2f}%",
+            )
+        console.print(table)
+
+    alerts = summary.get("alerts") or []
+    if alerts:
+        table = Table(title="Rebalancing Alerts")
+        table.add_column("Asset Class")
+        table.add_column("Current %", justify="right")
+        table.add_column("Target %", justify="right")
+        table.add_column("Drift", justify="right")
+        for alert in alerts:
+            drift = float(alert["drift_pct"]) * 100
+            style = "red" if drift > 0 else "yellow"
+            table.add_row(
+                alert["asset_class"],
+                f"{float(alert['current_pct']) * 100:.2f}%",
+                f"{float(alert['target_pct']) * 100:.2f}%",
+                f"[{style}]{drift:+.2f}%[/{style}]",
             )
         console.print(table)
 

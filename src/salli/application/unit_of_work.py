@@ -13,6 +13,7 @@ from salli.adapters.db.repositories import (
     SQLAdvisoryRepository,
     SQLAgentDocumentRepository,
     SQLAgentSessionRepository,
+    SQLAuditLogRepository,
     SQLBudgetRepository,
     SQLDebtRepository,
     SQLFireStrategyRepository,
@@ -34,6 +35,7 @@ from salli.application.ports import (
     AdvisoryRepository,
     AgentDocumentRepository,
     AgentSessionRepository,
+    AuditLogRepository,
     BudgetRepository,
     DebtRepository,
     FireStrategyRepository,
@@ -76,6 +78,7 @@ class UnitOfWork:
     recurring_subscriptions: RecurringSubscriptionRepository
     policies: PolicyRepository
     insurance_targets: InsuranceTargetRepository
+    audit_log: AuditLogRepository
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._factory = session_factory
@@ -102,6 +105,7 @@ class UnitOfWork:
         self.recurring_subscriptions = SQLRecurringSubscriptionRepository(self._session)
         self.policies = SQLPolicyRepository(self._session)
         self.insurance_targets = SQLInsuranceTargetRepository(self._session)
+        self.audit_log = SQLAuditLogRepository(self._session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

@@ -627,3 +627,24 @@ class InsuranceTargetORM(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "policy_type", name="uq_insurance_targets_user_type"),
     )
+
+
+# ── Audit log ──────────────────────────────────────────────────────────────────
+
+
+class AuditLogORM(Base):
+    """Immutable record of every agent-initiated write action and its human
+    decision (approved/denied) — never updated or deleted once written."""
+
+    __tablename__ = "audit_logs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    action: Mapped[str] = mapped_column(String(50), nullable=False)
+    params: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    decision: Mapped[str] = mapped_column(String(20), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+
+    __table_args__ = (Index("ix_audit_logs_user_created", "user_id", "created_at"),)

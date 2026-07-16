@@ -21,6 +21,7 @@ from salli.adapters.db.models import (
     AdvisoryReportORM,
     AgentDocumentORM,
     AgentSessionORM,
+    AuditLogORM,
     BudgetORM,
     DebtORM,
     FireStrategyORM,
@@ -44,6 +45,7 @@ from salli.application.ports import (
     AdvisoryRepository,
     AgentDocumentRepository,
     AgentSessionRepository,
+    AuditLogRepository,
     BudgetRepository,
     DebtRepository,
     FireStrategyRepository,
@@ -1672,3 +1674,45 @@ class SQLInsuranceTargetRepository(InsuranceTargetRepository):
         ).scalar_one_or_none()
         if r:
             await self._s.delete(r)
+
+
+# ── Audit log repository ──────────────────────────────────────────────────────
+
+
+def _audit_log_to_dict(r: AuditLogORM) -> dict[str, Any]:
+    return {
+        "id": r.id,
+        "user_id": r.user_id,
+        "action": r.action,
+        "params": r.params,
+        "decision": r.decision,
+        "created_at": r.created_at.isoformat(),
+    }
+
+
+class SQLAuditLogRepository(AuditLogRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def log(self, user_id: str, action: str, params: dict[str, Any], decision: str) -> str:
+        log_id = str(uuid.uuid4())
+        self._s.add(
+            AuditLogORM(
+                id=log_id,
+                user_id=user_id,
+                action=action,
+                params=params,
+                decision=decision,
+            )
+        )
+        await self._s.flush()
+        return log_id
+
+    async def list(self, user_id: str, limit: int = 100) -> list[dict[str, Any]]:
+        stmt = (
+            select(AuditLogORM)
+            .where(AuditLogORM.user_id == user_id)
+            .order_by(AuditLogORM.created_at.desc())
+            .limit(limit)
+        )
+        return [_audit_log_to_dict(r) for r in (await self._s.execute(stmt)).scalars().all()]

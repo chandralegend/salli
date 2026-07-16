@@ -513,3 +513,16 @@ class InsuranceTargetRepository(ABC):
 
     @abstractmethod
     async def delete(self, user_id: str, policy_type: str) -> None: ...
+
+
+# ── Audit log ──────────────────────────────────────────────────────────────────
+
+
+class AuditLogRepository(ABC):
+    @abstractmethod
+    async def log(
+        self, user_id: str, action: str, params: dict[str, Any], decision: str
+    ) -> str: ...
+
+    @abstractmethod
+    async def list(self, user_id: str, limit: int = 100) -> list[dict[str, Any]]: ...

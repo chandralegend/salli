@@ -984,7 +984,14 @@ class SQLFiScoreRepository(FiScoreRepository):
             .scalars()
             .all()
         )
-        return [{"score": float(r.score), "created_at": r.created_at.isoformat()} for r in rows]
+        return [
+            {
+                "score": float(r.score),
+                "net_worth": r.result_json.get("net_worth"),
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in rows
+        ]
 
 
 def _report_to_dict(r: AdvisoryReportORM) -> dict[str, Any]:

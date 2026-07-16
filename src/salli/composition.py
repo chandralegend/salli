@@ -22,6 +22,7 @@ from salli.application.services.ledger_service import LedgerService
 from salli.application.services.parsing_service import ParsingService
 from salli.application.services.portfolio_service import PortfolioService
 from salli.application.services.reminder_service import ReminderService
+from salli.application.services.report_service import ReportService
 from salli.application.services.subscription_service import SubscriptionService
 from salli.application.services.tax_service import TaxService
 from salli.application.services.user_profile_service import UserProfileService
@@ -48,6 +49,7 @@ class Services:
     portfolio: PortfolioService
     subscription: SubscriptionService
     insurance: InsuranceService
+    reports: ReportService
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
@@ -96,6 +98,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     )
     parsing = ParsingService(uow_factory, storage)
     reminders = ReminderService(uow_factory)
+    reports = ReportService(ledger, fi)
 
     return Services(
         ledger=ledger,
@@ -115,6 +118,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         portfolio=portfolio,
         subscription=subscription,
         insurance=insurance,
+        reports=reports,
     )
 
 

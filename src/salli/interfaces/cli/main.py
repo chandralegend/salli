@@ -766,8 +766,11 @@ def fi_history():
     table = Table(title="FI Score History")
     table.add_column("Computed At")
     table.add_column("Score", justify="right")
+    table.add_column("Net Worth", justify="right")
     for s in history:
-        table.add_row(str(s.get("created_at", "")), str(s.get("score", "")))
+        table.add_row(
+            str(s.get("created_at", "")), str(s.get("score", "")), str(s.get("net_worth", ""))
+        )
     console.print(table)
 
 

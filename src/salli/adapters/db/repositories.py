@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import or_, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -24,6 +24,7 @@ from salli.adapters.db.models import (
     AuditLogORM,
     BudgetORM,
     DebtORM,
+    DocumentORM,
     FireStrategyORM,
     FiScoreORM,
     GoalORM,
@@ -47,6 +48,7 @@ from salli.application.ports import (
     AgentSessionRepository,
     AuditLogRepository,
     BudgetRepository,
+    DataPortabilityRepository,
     DebtRepository,
     FireStrategyRepository,
     FiScoreRepository,
@@ -1716,3 +1718,71 @@ class SQLAuditLogRepository(AuditLogRepository):
             .limit(limit)
         )
         return [_audit_log_to_dict(r) for r in (await self._s.execute(stmt)).scalars().all()]
+
+
+# ── Data portability repository ───────────────────────────────────────────────
+
+
+class SQLDataPortabilityRepository(DataPortabilityRepository):
+    """Permanently deletes every row belonging to a user, across every
+    user-scoped table. Deletion order is constraint-driven, not arbitrary —
+    see the inline comments for exactly which foreign keys force which order."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def delete_all(self, user_id: str) -> dict[str, int]:
+        counts: dict[str, int] = {}
+
+        async def _delete(model: Any, column: Any) -> None:
+            result = await self._s.execute(delete(model).where(column == user_id))
+            counts[model.__tablename__] = result.rowcount or 0  # type: ignore[attr-defined]
+
+        # parsed_transactions.posted_entry_id -> journal_entries.id has no
+        # ondelete cascade, so it must be gone before journal_entries. It has
+        # no user_id column of its own — scoped via its parent statement.
+        result = await self._s.execute(
+            delete(ParsedTransactionORM).where(
+                ParsedTransactionORM.statement_id.in_(
+                    select(StatementORM.id).where(StatementORM.user_id == user_id)
+                )
+            )
+        )
+        counts["parsed_transactions"] = result.rowcount or 0  # type: ignore[attr-defined]
+
+        # recurring_subscriptions.account_id -> accounts.id has no ondelete
+        # cascade either, so it must be gone before accounts.
+        await _delete(RecurringSubscriptionORM, RecurringSubscriptionORM.user_id)
+
+        # journal_entries cascade-deletes their own postings (ondelete="CASCADE"
+        # on postings.entry_id); statements cascade-deletes parsed_transactions
+        # the same way (already emptied above, so that cascade is a no-op —
+        # harmless). Both must still go before accounts.
+        await _delete(JournalEntryORM, JournalEntryORM.user_id)
+        await _delete(StatementORM, StatementORM.user_id)
+        await _delete(AccountORM, AccountORM.user_id)
+
+        # Everything else has no FK ordering dependency on the tables above.
+        await _delete(DocumentORM, DocumentORM.user_id)
+        await _delete(AgentDocumentORM, AgentDocumentORM.user_id)
+        await _delete(AgentSessionORM, AgentSessionORM.user_id)
+        await _delete(ReminderORM, ReminderORM.user_id)
+        await _delete(SubscriptionORM, SubscriptionORM.user_id)
+        await _delete(UsageCounterORM, UsageCounterORM.user_id)
+        await _delete(GoalORM, GoalORM.user_id)
+        await _delete(FiScoreORM, FiScoreORM.user_id)
+        await _delete(FireStrategyORM, FireStrategyORM.user_id)
+        await _delete(AdvisoryReportORM, AdvisoryReportORM.user_id)
+        await _delete(BudgetORM, BudgetORM.user_id)
+        await _delete(DebtORM, DebtORM.user_id)
+        await _delete(HoldingORM, HoldingORM.user_id)
+        await _delete(PolicyORM, PolicyORM.user_id)
+        await _delete(InsuranceTargetORM, InsuranceTargetORM.user_id)
+        await _delete(TaxComputationORM, TaxComputationORM.user_id)
+        await _delete(AuditLogORM, AuditLogORM.user_id)
+
+        # UserProfileORM's primary key IS the user id — no separate user_id
+        # column — and nothing else has an FK pointing at it, so it's safe last.
+        await _delete(UserProfileORM, UserProfileORM.id)
+
+        return counts

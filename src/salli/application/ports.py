@@ -526,3 +526,14 @@ class AuditLogRepository(ABC):
 
     @abstractmethod
     async def list(self, user_id: str, limit: int = 100) -> list[dict[str, Any]]: ...
+
+
+# ── Data portability ───────────────────────────────────────────────────────────
+
+
+class DataPortabilityRepository(ABC):
+    @abstractmethod
+    async def delete_all(self, user_id: str) -> dict[str, int]:
+        """Permanently delete every row belonging to this user across every
+        user-scoped table. Returns {table_name: rows_deleted}. Irreversible."""
+        ...

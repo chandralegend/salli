@@ -15,6 +15,7 @@ from salli.adapters.db.repositories import (
     SQLAgentSessionRepository,
     SQLAuditLogRepository,
     SQLBudgetRepository,
+    SQLDataPortabilityRepository,
     SQLDebtRepository,
     SQLFireStrategyRepository,
     SQLFiScoreRepository,
@@ -37,6 +38,7 @@ from salli.application.ports import (
     AgentSessionRepository,
     AuditLogRepository,
     BudgetRepository,
+    DataPortabilityRepository,
     DebtRepository,
     FireStrategyRepository,
     FiScoreRepository,
@@ -79,6 +81,7 @@ class UnitOfWork:
     policies: PolicyRepository
     insurance_targets: InsuranceTargetRepository
     audit_log: AuditLogRepository
+    data_portability: DataPortabilityRepository
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._factory = session_factory
@@ -106,6 +109,7 @@ class UnitOfWork:
         self.policies = SQLPolicyRepository(self._session)
         self.insurance_targets = SQLInsuranceTargetRepository(self._session)
         self.audit_log = SQLAuditLogRepository(self._session)
+        self.data_portability = SQLDataPortabilityRepository(self._session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

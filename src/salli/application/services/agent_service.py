@@ -176,6 +176,28 @@ class AgentService:
             return HumanMessage(content=content[0]["text"])
         return HumanMessage(content=content)
 
+    async def _build_input_messages(
+        self,
+        user_id: str,
+        message: str,
+        file_refs: list[str] | None = None,
+    ) -> list[Any]:
+        """Build the message list sent into the manager agent graph: a leading
+        tone-instruction SystemMessage when the user's message reads as
+        frustrated/anxious/positive (see domain/agents/sentiment.py), then the
+        HumanMessage itself. Extracted from stream_chat so it's unit-testable
+        without invoking the graph or the LLM."""
+        from salli.domain.agents.sentiment import classify_sentiment, tone_instruction
+
+        human_msg = await self._build_message_content(user_id, message, file_refs)
+        instruction = tone_instruction(classify_sentiment(message))
+        if not instruction:
+            return [human_msg]
+
+        from langchain_core.messages import SystemMessage
+
+        return [SystemMessage(content=instruction), human_msg]
+
     async def _stream_events(
         self, agent: Any, input_: Any, config: dict[str, Any]
     ) -> AsyncIterator[tuple[str, Any]]:
@@ -346,9 +368,9 @@ class AgentService:
 
         agent = self._get_agent()
         config = {"configurable": {"thread_id": f"{user_id}:{thread_id}", "user_id": user_id}}
-        human_msg = await self._build_message_content(user_id, message, file_refs)
+        input_messages = await self._build_input_messages(user_id, message, file_refs)
 
-        async for event in self._stream_events(agent, {"messages": [human_msg]}, config):
+        async for event in self._stream_events(agent, {"messages": input_messages}, config):
             yield event
 
     async def resume_chat(

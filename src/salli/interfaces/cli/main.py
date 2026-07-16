@@ -1579,6 +1579,43 @@ def profile_income(
     console.print(f"[green]Posted {len(entry_ids)} income entry(ies).[/green]")
 
 
+@profile_app.command("export")
+def profile_export(
+    output: str = typer.Option(..., "--output", "-o", help="Output JSON file path"),
+):
+    """Export everything Salli has stored about you as one JSON document."""
+    import json
+
+    user_id = _require_user()
+    data = asyncio.run(_services().data_portability.export_all(user_id))
+    with open(output, "w") as f:
+        json.dump(data, f, indent=2, default=str)
+    console.print(f"[green]Exported account data to:[/green] {output}")
+
+
+@profile_app.command("delete-account")
+def profile_delete_account(
+    confirm: bool = typer.Option(
+        False, "--confirm", help="Skip the interactive confirmation prompt"
+    ),
+):
+    """Permanently delete every row belonging to your account. Irreversible."""
+    user_id = _require_user()
+    if not confirm:
+        typed = typer.prompt(
+            f"This will permanently delete ALL data for '{user_id}'. Type the user id to confirm"
+        )
+        if typed.strip() != user_id:
+            console.print("[yellow]Confirmation did not match. Aborted.[/yellow]")
+            raise typer.Exit(1)
+    counts = asyncio.run(_services().data_portability.delete_account(user_id))
+    total = sum(counts.values())
+    console.print(f"[red]Deleted {total} row(s) across {len(counts)} table(s).[/red]")
+    for table, count in counts.items():
+        if count:
+            console.print(f"  {table:<28} {count}")
+
+
 # ── budget ────────────────────────────────────────────────────────────────────
 
 

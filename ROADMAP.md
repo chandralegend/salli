@@ -14,7 +14,8 @@ verified end-to-end and committed before moving on.
 | 2. Budget domain | ✅ Done (87a3c0c, fdd8835, 3fd1928, f121403, 013a1c3) | see below |
 | 3. Debt management | ✅ Done (a052731, 9e23f32, 2ec88a6, 10c15cf, 3f5f254) | see below |
 | 4. Investment Portfolio | ✅ Done (99dbb31, eeaef81, 755c30a, 22f64de, 8abd08c) | see below |
-| 5+. Insurance, AI Advisor upgrades, Reports & alerts, Data portability | ⏳ Not started | sketched only, each gets its own plan when its turn comes |
+| 5. Account/entry management + recurring subscriptions | ✅ Done (6ebfdec, 68c80ce, 2961071, 5053624, 6957b86, 4502c8b, 2a67ec9, 8a51706, c6ad947, 1de56a1, 0d6c394, 1a84a69) | see below |
+| 6+. Insurance, AI Advisor upgrades, Reports & alerts, Data portability | ⏳ Not started | sketched only, each gets its own plan when its turn comes |
 
 ---
 
@@ -201,14 +202,87 @@ and after every commit.
 
 ---
 
+## Phase 5 — Account/entry management + recurring subscriptions ✅
+
+Triggered by an explicit gap-check before starting Phase 6+: account management and entry
+drill-down/provenance were incomplete, and there was no way to trace an entry back to a
+recurring subscription. Scoped into three parts, closed before moving on, per
+"let's get all those things in place before moving to the rest of the things."
+
+**Part A — account management**:
+
+- [x] `LedgerService.get_account`, `reactivate_account` (previously impossible — accounts could
+      only be deactivated, never reactivated), `get_account_overview` (current balance +
+      chronological transaction history via a new pure `account_running_balance` engine function)
+- [x] `LedgerRepository.get_account`/`reactivate_account` port methods + SQL adapter
+- [x] API: `GET /accounts/{id}`, `POST /accounts/{id}/reactivate`, `GET /accounts/{id}/overview`
+- [x] CLI: `accounts show/update/deactivate/reactivate`
+- [x] Fixed a display bug found during verification: running/current balance rendered as
+      `'0E-8'` instead of `'0.00'` (Decimal precision artifact from FX multiplication) — added a
+      `_q2()` quantization helper
+
+**Part B — entry drill-down and provenance**:
+
+- [x] `LedgerService.get_entry`, `get_entry_provenance` — resolves an entry's `source`/
+      `external_ref` into the original bank-statement transaction or an attached manual receipt,
+      always by following a reference set *at creation time*, never by mutating the posted entry
+      (the ledger's immutable-journal-entry invariant)
+- [x] `StatementRepository.get_statement` port method + adapter; `ParsedTransaction` gained a
+      `statement_id` field it was previously missing entirely
+- [x] API: `GET /entries/{id}`, `GET /entries/{id}/provenance`, `--receipt` support on entry add
+- [x] CLI: `entry show <id>` (prints postings + resolved provenance)
+- [x] Fixed two real bugs found during this work: statement-sourced entries never set
+      `external_ref` (breaking the only intended statement-trace hook), and `POST /entries/`
+      silently dropped a caller-supplied `external_ref` despite the field existing on the request
+      model
+
+**Part C — recurring-subscription domain** (scoped via explicit user choice: full domain, not a
+lightweight tag field):
+
+- [x] `domain/subscription/models.py` (Subscription, SubscriptionMatch, SubscriptionAlert,
+      SubscriptionReport) + `engine.py` — pure `find_matches`/`compute_report`. Two matching
+      strategies: account-linked (strong identity — matches every debit to that account
+      regardless of amount, which is what makes price-change detection possible) vs.
+      amount-tolerance fallback (amount *is* the matching criterion, so price-change detection is
+      impossible by construction in that mode — documented, not a bug)
+- [x] `RecurringSubscriptionRepository` port + `SQLRecurringSubscriptionRepository` adapter +
+      `recurring_subscriptions` table (named distinctly from the pre-existing billing
+      `SubscriptionORM`/`subscriptions` table, which is Paddle plan/entitlement state, not
+      personal-finance data) — migration `e6cb7ee51794`
+- [x] `SubscriptionService` — CRUD + `get_report`/`get_all_reports`; wired into
+      `composition.py` as `svc.subscription` and threaded through `AgentService`
+- [x] Closed the deferred Part B gap: `LedgerService.get_entry_provenance` now derives a
+      `possible_subscriptions` list by running the entry through `find_matches` against every
+      active subscription — always computed at query time, never stored on the entry
+- [x] API: `GET/POST /subscriptions/`, `GET /subscriptions/reports` (registered before the
+      dynamic `/{id}` route), `GET/PATCH/DELETE /subscriptions/{id}`,
+      `GET /subscriptions/{id}/report`
+- [x] CLI: `subscription list/add/update/delete/report`
+- [x] Agent tool `get_subscription_report` (omit ID for all active subscriptions' reports)
+- [x] 6 golden tests + 4 Hypothesis property tests, all passing
+- [x] Caught and fixed a real logic bug during manual verification (not the test suite): the
+      first draft of `find_matches` filtered candidates by amount tolerance *before* adding them
+      as matches, so the downstream price-change check could never fire — anything that passed
+      the filter was by definition within tolerance. Fixed by making account-linked matching
+      identity-based (account, not amount) instead.
+
+**Verified**: every piece exercised end-to-end against the real dev DB — direct service calls,
+real HTTP via ASGI transport, and the CLI — including a final cross-cutting check tying all three
+parts together (create a subscription, post a matching entry, confirm the report surfaces the
+match, confirm the entry's provenance resolves back to the subscription). Zero regressions: same
+11 pre-existing test failures and same pre-existing lint/pyright baseline before and after every
+commit in this phase.
+
+---
+
 ## Roadmap (later — each gets its own detailed plan when its turn comes)
 
-6. **Insurance** — policy inventory + coverage-gap analysis.
-7. **AI Advisor upgrades** — agent-invokable Wealth Advisor mid-conversation, monthly
+7. **Insurance** — policy inventory + coverage-gap analysis.
+8. **AI Advisor upgrades** — agent-invokable Wealth Advisor mid-conversation, monthly
    financial-health briefing workflow, sentiment-aware tone.
-8. **Reports & alerts** — exportable statements, historical net-worth snapshots, generalize
+9. **Reports & alerts** — exportable statements, historical net-worth snapshots, generalize
    Reminder into Alert/Notification.
-9. **Data portability** — export/delete-my-data, broader agent-write audit log.
+10. **Data portability** — export/delete-my-data, broader agent-write audit log.
 
 ## Execution approach
 

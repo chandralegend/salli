@@ -16,7 +16,8 @@ verified end-to-end and committed before moving on.
 | 4. Investment Portfolio | ✅ Done (99dbb31, eeaef81, 755c30a, 22f64de, 8abd08c) | see below |
 | 5. Account/entry management + recurring subscriptions | ✅ Done (6ebfdec, 68c80ce, 2961071, 5053624, 6957b86, 4502c8b, 2a67ec9, 8a51706, c6ad947, 1de56a1, 0d6c394, 1a84a69) | see below |
 | 6. Insurance | ✅ Done (7956cc8, e922ea8, f92b3b3, e4ed420, 354f47d, f0fa109) | see below |
-| 7+. AI Advisor upgrades, Reports & alerts, Data portability | ⏳ Not started | sketched only, each gets its own plan when its turn comes |
+| 7. AI Advisor upgrades | ✅ Done (6fb7db4, 3ba21d6, 22b0fee, 868151e, d66d084, 0b95d74, 0ad0310, 8bf36a7, 95b57d8, d64ecb3) | see below |
+| 8+. Reports & alerts, Data portability | ⏳ Not started | sketched only, each gets its own plan when its turn comes |
 
 ---
 
@@ -320,10 +321,87 @@ commit in this phase.
 
 ---
 
+## Phase 7 — AI Advisor upgrades ✅
+
+Scoped from the roadmap's terse one-liner ("agent-invokable Wealth Advisor mid-conversation,
+monthly financial-health briefing workflow, sentiment-aware tone") into three concrete
+deliverables, plus two prerequisite fixes surfaced by an audit of the existing
+`AdvisorService`/`advisor.py` before touching it.
+
+**Prerequisites** (closed a real gap, not new scope):
+
+- [x] `AdvisoryRepository` port ABC only declared `save`/`get`/`get_latest`, but
+      `AdvisorService` already called `.list(...)`, `.ran_today(...)`, and
+      `.update_recommendations(...)` — all three already implemented on
+      `SQLAdvisoryRepository`, just missing from the interface. Added them to the ABC
+      (documentation-only fix, zero adapter changes needed).
+- [x] The advisor domain had zero test coverage. Backfilled fake-repo-backed unit tests for
+      `apply_recommendation`/`dismiss_recommendation`/`due_users`/`list_reports`/
+      `get_latest_report`, plus a skip-if-no-`ANTHROPIC_API_KEY` test for `generate_advice`
+      (mirroring `test_return_workflow.py`'s convention for LLM-backed code).
+- [x] Refactored `AdvisorService.run_advisor` into `gather_context`/`persist_report` halves
+      (behavior-preserving) so the new briefing workflow's gather/finalize nodes can reuse the
+      logic instead of duplicating it. `gather_context` now also owns the quota check.
+
+**1. Agent-invokable Wealth Advisor mid-conversation**:
+
+- [x] `get_latest_advisor_report` tool — plain read, no approval, no quota cost; documented as
+      the preferred tool over regenerating
+- [x] `run_wealth_advisor` tool — generates a fresh report now (quota-gated); catches
+      `QuotaExceeded` itself and returns an actionable upgrade-suggestion error instead of
+      propagating
+- [x] Threaded `advisor_svc` through `make_manager_tools` → `build_manager_agent` →
+      `AgentService` (previously entirely absent from the conversational agent's object graph)
+
+**2. Monthly financial-health briefing workflow**:
+
+- [x] `domain/agents/briefing_workflow.py` — new LangGraph `StateGraph` mirroring
+      `return_workflow.py`'s gather→...→review→finalize shape, with a `narrate` node standing in
+      for `compute`. Unlike `return_workflow`, the LLM **is** invoked here (`narrate` calls
+      `advisor.generate_advice`) — that's the whole point of a briefing. `gather` is quota-gated
+      and routes to `END` on failure (e.g. quota exceeded) rather than propagating; `finalize`
+      only persists (`trigger="scheduled"`) when the review decision is `"approve"`
+- [x] `AgentService.prepare_briefing`/`resume_briefing` + a lazy `_get_briefing_workflow()`
+      builder, mirroring `prepare_return`/`resume_return` exactly
+- [x] Reordered `composition.py` so `billing`/`advisor` are constructed before `agent` (previously
+      `agent` was built first, so `advisor` couldn't be threaded in)
+- [x] API: `POST /advisor/briefing/prepare`, `POST /advisor/briefing/resume`
+- [x] CLI: `advisor briefing` (prints the draft, prompts approve/edit/reject, resumes)
+- [x] 7 unit tests for the pure routing functions and `finalize`'s approve/reject/edit paths
+
+**3. Sentiment-aware tone**:
+
+- [x] `domain/agents/sentiment.py` — `classify_sentiment(text)` is a deterministic keyword
+      heuristic (no LLM call, no I/O — intentionally coarse; a missed signal is cheaper than a
+      wrong one here) returning `frustrated|anxious|neutral|positive`, with priority
+      `frustrated > anxious > positive > neutral` so "thanks, but I'm frustrated this keeps
+      happening" surfaces the frustration, not the thanks. `tone_instruction(sentiment)` maps
+      each non-neutral result to a short meta-instruction for Scrooge's delivery
+- [x] Wired into `AgentService.stream_chat` via a new `_build_input_messages` helper (extracted
+      specifically so it's unit-testable without invoking the graph or the LLM): prepends a
+      `SystemMessage` tone instruction before the `HumanMessage` when sentiment is non-neutral
+- [x] 16 golden tests for the classifier + 5 unit tests for the message-construction wiring
+
+**A real sandbox constraint, not a shortcut**: this sandbox's configured Anthropic key returns
+`401 authentication_error` (confirmed once, without ever printing the key) — every LLM-backed
+piece (`narrate`, `run_wealth_advisor`'s underlying `generate_advice` call) was verified up to
+that boundary and no further, exactly like `test_agent_service_lazy_agent_build`'s pre-existing
+skip-if-no-key convention. `prepare_briefing` run against the real dev DB confirms `gather`
+succeeds (real quota check, real FI-score/ledger data) and `narrate`'s failure is caught and
+surfaced gracefully rather than crashing — the correct behavior on both sides of that boundary.
+
+**Verified**: `get_latest_advisor_report`/`run_wealth_advisor` invoked directly against the dev
+DB (the latter correctly caught a real `QuotaExceeded` from earlier verification runs in this
+session); the briefing workflow's graph structure and error-routing confirmed via a fake advisor
+double; `prepare_briefing`/`resume_briefing` exercised end-to-end via HTTP and the real
+composition root; sentiment tone injection confirmed via the real `AgentService` instance. Zero
+regressions: same 11 pre-existing test failures and same pre-existing lint/pyright baseline
+before and after every commit in this phase.
+
+---
+
 ## Roadmap (later — each gets its own detailed plan when its turn comes)
 
-8. **AI Advisor upgrades** — agent-invokable Wealth Advisor mid-conversation, monthly
-   financial-health briefing workflow, sentiment-aware tone.
 9. **Reports & alerts** — exportable statements, historical net-worth snapshots, generalize
    Reminder into Alert/Notification.
 10. **Data portability** — export/delete-my-data, broader agent-write audit log.

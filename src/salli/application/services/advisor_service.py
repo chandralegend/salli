@@ -28,16 +28,19 @@ class AdvisorService:
     async def run_advisor(
         self, user_id: str, email: str | None = None, trigger: str = "manual"
     ) -> dict[str, Any]:
-        # Quota gate (raises QuotaExceeded → 402 for manual; cron catches & skips)
-        await self._billing.check_and_increment(user_id, METRIC_ADVISOR_RUNS, email)
-
-        context = await self.gather_context(user_id)
+        context = await self.gather_context(user_id, email)
         advice = await advisor_llm.generate_advice(context)
         return await self.persist_report(user_id, trigger, advice)
 
-    async def gather_context(self, user_id: str) -> dict[str, Any]:
-        """Deterministic gather step, reused by both run_advisor and the briefing
-        workflow's gather node — never calls the LLM."""
+    async def gather_context(self, user_id: str, email: str | None = None) -> dict[str, Any]:
+        """Quota-gated, deterministic gather step — reused by both run_advisor and
+        the briefing workflow's gather node. Never calls the LLM.
+
+        Raises QuotaExceeded → 402 for manual runs; cron and the briefing
+        workflow both catch it and skip/surface gracefully rather than propagate.
+        """
+        await self._billing.check_and_increment(user_id, METRIC_ADVISOR_RUNS, email)
+
         from salli.domain.agents.tools import set_current_user
 
         set_current_user(user_id)

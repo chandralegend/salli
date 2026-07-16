@@ -161,6 +161,7 @@ def make_manager_tools(
     portfolio_svc: Any = None,
     subscription_svc: Any = None,
     insurance_svc: Any = None,
+    advisor_svc: Any = None,
 ) -> list[Any]:
     """
     Return the manager-only tools:
@@ -173,6 +174,8 @@ def make_manager_tools(
       - get_portfolio_summary (allocation, rebalancing drift, ROI)
       - get_subscription_report (missed-charge/price-change alerts for recurring subscriptions)
       - get_coverage_report (insurance coverage gap, missing types, expiring-soon policies)
+      - get_latest_advisor_report (most recent Wealth Advisor report, no new LLM call)
+      - run_wealth_advisor (generate a fresh Wealth Advisor report now; quota-gated)
       - create_account, create_reminder, post_journal_entry (all need user approval)
     """
 
@@ -480,6 +483,44 @@ def make_manager_tools(
         today = datetime.date.today().isoformat()
         return await insurance_svc.get_report(user_id, today)
 
+    # ── Wealth Advisor tools ──────────────────────────────────────────────────
+
+    @tool
+    async def get_latest_advisor_report() -> dict[str, Any]:
+        """
+        Return the user's most recent Wealth Advisor report (summary, FIRE tier
+        assessment, prioritised recommendations) without generating a new one.
+        Use this before run_wealth_advisor — most questions about "what has the
+        advisor told me" are answered by the existing report, not a fresh run.
+        """
+        if advisor_svc is None:
+            return {"error": "Advisor service unavailable"}
+        user_id = _current_user.get()
+        report = await advisor_svc.get_latest_report(user_id)
+        return report or {"error": "No advisor report found yet. Run the advisor first."}
+
+    @tool
+    async def run_wealth_advisor() -> dict[str, Any]:
+        """
+        Generate a fresh Wealth Advisor report now — a structured, strategy-linked
+        mentoring pass over the user's FI score, FIRE strategy, and goals. This
+        counts against the user's monthly advisor_runs quota. Prefer
+        get_latest_advisor_report unless the user explicitly asks for a fresh
+        analysis or their situation has clearly changed since the last report.
+        """
+        if advisor_svc is None:
+            return {"error": "Advisor service unavailable"}
+        user_id = _current_user.get()
+        from salli.application.services.billing_service import QuotaExceeded
+
+        try:
+            return await advisor_svc.run_advisor(user_id, email=None, trigger="manual")
+        except QuotaExceeded as exc:
+            return {
+                "error": f"Advisor run quota exceeded ({exc.metric}, limit {exc.limit} "
+                f"on the {exc.plan_key} plan). Suggest upgrading to run again this period."
+            }
+
     # ── Write tools (require user approval via interrupt) ─────────────────────
 
     @tool
@@ -624,6 +665,8 @@ def make_manager_tools(
         get_portfolio_summary,
         get_subscription_report,
         get_coverage_report,
+        get_latest_advisor_report,
+        run_wealth_advisor,
         create_account,
         create_reminder,
         post_journal_entry,

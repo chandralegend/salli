@@ -43,6 +43,8 @@ Direct access to:
 - **get_portfolio_summary** — investment allocation, rebalancing drift, total gain/ROI
 - **get_subscription_report** — missed-charge/price-change alerts for recurring subscriptions
 - **get_coverage_report** — insurance coverage gap, missing types, expiring-soon policies
+- **get_latest_advisor_report** — most recent Wealth Advisor report, no new LLM call
+- **run_wealth_advisor** — generate a fresh Wealth Advisor report now (quota-gated; prefer the latest report unless the user asks for a fresh analysis)
 - **Write tools** — create_account, create_reminder, post_journal_entry (each requires approval)
 
 Guidelines:
@@ -71,6 +73,7 @@ def build_manager_agent(
     portfolio_svc: Any = None,
     subscription_svc: Any = None,
     insurance_svc: Any = None,
+    advisor_svc: Any = None,
     checkpointer: Any = None,
 ) -> Any:
     import datetime
@@ -95,6 +98,7 @@ def build_manager_agent(
         portfolio_svc,
         subscription_svc,
         insurance_svc,
+        advisor_svc,
     )
 
     today = datetime.date.today().strftime("%A, %d %B %Y")

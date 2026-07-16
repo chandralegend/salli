@@ -115,6 +115,7 @@ class AgentService:
                 self._debt_svc,
                 self._portfolio_svc,
                 self._subscription_svc,
+                self._insurance_svc,
                 checkpointer=self._checkpointer,
             )
             self._agent_date = today

@@ -42,6 +42,7 @@ Direct access to:
 - **get_payoff_plan** — avalanche/snowball debt payoff plan, months to payoff, total interest
 - **get_portfolio_summary** — investment allocation, rebalancing drift, total gain/ROI
 - **get_subscription_report** — missed-charge/price-change alerts for recurring subscriptions
+- **get_coverage_report** — insurance coverage gap, missing types, expiring-soon policies
 - **Write tools** — create_account, create_reminder, post_journal_entry (each requires approval)
 
 Guidelines:
@@ -69,6 +70,7 @@ def build_manager_agent(
     debt_svc: Any = None,
     portfolio_svc: Any = None,
     subscription_svc: Any = None,
+    insurance_svc: Any = None,
     checkpointer: Any = None,
 ) -> Any:
     import datetime
@@ -92,6 +94,7 @@ def build_manager_agent(
         debt_svc,
         portfolio_svc,
         subscription_svc,
+        insurance_svc,
     )
 
     today = datetime.date.today().strftime("%A, %d %B %Y")

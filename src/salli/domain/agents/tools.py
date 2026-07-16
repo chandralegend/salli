@@ -160,6 +160,7 @@ def make_manager_tools(
     debt_svc: Any = None,
     portfolio_svc: Any = None,
     subscription_svc: Any = None,
+    insurance_svc: Any = None,
 ) -> list[Any]:
     """
     Return the manager-only tools:
@@ -171,6 +172,7 @@ def make_manager_tools(
       - get_payoff_plan (avalanche/snowball debt payoff plan)
       - get_portfolio_summary (allocation, rebalancing drift, ROI)
       - get_subscription_report (missed-charge/price-change alerts for recurring subscriptions)
+      - get_coverage_report (insurance coverage gap, missing types, expiring-soon policies)
       - create_account, create_reminder, post_journal_entry (all need user approval)
     """
 
@@ -459,6 +461,25 @@ def make_manager_tools(
             return {"error": f"Subscription {subscription_id} not found"}
         return report
 
+    # ── Insurance tool ────────────────────────────────────────────────────────
+
+    @tool
+    async def get_coverage_report() -> dict[str, Any]:
+        """
+        Return the user's insurance coverage-gap report: declared target vs.
+        actual coverage per policy type, policy types with no active coverage
+        at all, and policies expiring within 30 days. Use this to answer "am I
+        under-insured?" or "is anything about to lapse?". Numbers here are
+        authoritative — do NOT recompute or estimate them.
+        """
+        if insurance_svc is None:
+            return {"error": "Insurance service unavailable"}
+        user_id = _current_user.get()
+        import datetime
+
+        today = datetime.date.today().isoformat()
+        return await insurance_svc.get_report(user_id, today)
+
     # ── Write tools (require user approval via interrupt) ─────────────────────
 
     @tool
@@ -602,6 +623,7 @@ def make_manager_tools(
         get_payoff_plan,
         get_portfolio_summary,
         get_subscription_report,
+        get_coverage_report,
         create_account,
         create_reminder,
         post_journal_entry,

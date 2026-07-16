@@ -159,6 +159,7 @@ def make_manager_tools(
     budget_svc: Any = None,
     debt_svc: Any = None,
     portfolio_svc: Any = None,
+    subscription_svc: Any = None,
 ) -> list[Any]:
     """
     Return the manager-only tools:
@@ -169,6 +170,7 @@ def make_manager_tools(
       - get_budget_summary (category limits vs. actual spend for a budget period)
       - get_payoff_plan (avalanche/snowball debt payoff plan)
       - get_portfolio_summary (allocation, rebalancing drift, ROI)
+      - get_subscription_report (missed-charge/price-change alerts for recurring subscriptions)
       - create_account, create_reminder, post_journal_entry (all need user approval)
     """
 
@@ -430,6 +432,33 @@ def make_manager_tools(
                 parsed_target[asset_class.strip()] = Decimal(pct.strip())
         return await portfolio_svc.get_summary(user_id, parsed_target)
 
+    # ── Subscription tool ─────────────────────────────────────────────────────
+
+    @tool
+    async def get_subscription_report(
+        subscription_id: Annotated[
+            str | None, "Subscription ID; omit to get reports for all active subscriptions"
+        ] = None,
+    ) -> dict[str, Any]:
+        """
+        Return missed-charge/price-change report(s) for the user's recurring
+        subscriptions — use this to answer "did Netflix charge me yet?" or "has
+        any subscription gone up in price?". Numbers here are authoritative —
+        do NOT recompute or estimate them.
+        """
+        if subscription_svc is None:
+            return {"error": "Subscription service unavailable"}
+        user_id = _current_user.get()
+        import datetime
+
+        today = datetime.date.today().isoformat()
+        if subscription_id is None:
+            return {"reports": await subscription_svc.get_all_reports(user_id, today)}
+        report = await subscription_svc.get_report(user_id, subscription_id, today)
+        if report is None:
+            return {"error": f"Subscription {subscription_id} not found"}
+        return report
+
     # ── Write tools (require user approval via interrupt) ─────────────────────
 
     @tool
@@ -572,6 +601,7 @@ def make_manager_tools(
         get_budget_summary,
         get_payoff_plan,
         get_portfolio_summary,
+        get_subscription_report,
         create_account,
         create_reminder,
         post_journal_entry,

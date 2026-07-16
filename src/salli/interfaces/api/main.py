@@ -27,6 +27,7 @@ from salli.interfaces.api.routers import (
     documents,
     entries,
     fi,
+    insurance,
     ledger,
     onboarding,
     portfolio,
@@ -116,6 +117,7 @@ def create_app() -> FastAPI:
     app.include_router(debt.router)
     app.include_router(portfolio.router)
     app.include_router(subscriptions.router)
+    app.include_router(insurance.router)
 
     # ── Exception handlers ────────────────────────────────────────────────────
     @app.exception_handler(ValueError)

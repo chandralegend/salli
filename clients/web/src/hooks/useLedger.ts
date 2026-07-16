@@ -45,6 +45,37 @@ export type IncomeStatement = {
   net_income: string;
 };
 
+export type AccountTransaction = {
+  entry_id: string;
+  entry_date: string;
+  description: string;
+  source: string;
+  external_ref?: string | null;
+  running_balance: string;
+};
+
+export type AccountOverview = {
+  account: Account;
+  current_balance: string;
+  transactions: AccountTransaction[];
+};
+
+/** GET /accounts/{id}/overview — single-account detail + running-balance history. */
+export function useAccountOverview(accountId: string | null, fromDate?: string, toDate?: string) {
+  return useQuery({
+    queryKey: ["accounts", accountId, "overview", fromDate, toDate],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (fromDate) params.set("from_date", fromDate);
+      if (toDate) params.set("to_date", toDate);
+      const qs = params.toString();
+      return apiFetch<AccountOverview>("GET", `/accounts/${accountId}/overview${qs ? `?${qs}` : ""}`);
+    },
+    enabled: !!accountId,
+    staleTime: 15_000,
+  });
+}
+
 export function useLedger(fromDate?: string, toDate?: string) {
   const qc = useQueryClient();
 

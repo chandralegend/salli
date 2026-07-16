@@ -42,6 +42,31 @@ export type IncomeStatement = {
   net_income: string;
 };
 
+export type AccountTransaction = {
+  entry_id: string;
+  entry_date: string;
+  description: string;
+  source: string;
+  external_ref?: string | null;
+  running_balance: string;
+};
+
+export type AccountOverview = {
+  account: Account;
+  current_balance: string;
+  transactions: AccountTransaction[];
+};
+
+/** GET /accounts/{id}/overview — single-account detail + running-balance history. */
+export function useAccountOverview(accountId: string | null) {
+  return useQuery({
+    queryKey: ["accounts", accountId, "overview"],
+    queryFn: () => apiFetch<AccountOverview>("GET", `/accounts/${accountId}/overview`),
+    enabled: !!accountId,
+    staleTime: 15_000,
+  });
+}
+
 /** Full read/write ledger hook — mirrors clients/web/src/hooks/useLedger.ts. */
 export function useLedger(fromDate?: string, toDate?: string) {
   const qc = useQueryClient();

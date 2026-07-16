@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useSalliStore } from "@/lib/store";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Pencil, Trash2, RotateCcw } from "lucide-react";
+import { Eye, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -76,6 +77,7 @@ function TypeBadge({ type }: { type: string }) {
 }
 
 export default function LedgerPage() {
+  const router = useRouter();
   const { accounts, entries, incomeStatement, addAccount, updateAccount, deactivateAccount, addEntry, reverseEntry } = useLedger();
 
   // Add Account
@@ -192,6 +194,15 @@ export default function LedgerPage() {
       header: () => null,
       cell: ({ row }) => (
         <div className="flex gap-1 justify-end">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => router.push(`/ledger/${row.original.id}`)}
+            title="View account"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"

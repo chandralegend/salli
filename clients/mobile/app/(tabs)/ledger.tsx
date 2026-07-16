@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { View, Text, Pressable, ActivityIndicator, Modal, ScrollView } from "react-native";
-import { Plus, Pencil, Trash2, RotateCcw, X } from "lucide-react-native";
+import { router } from "expo-router";
+import { Eye, Plus, Pencil, Trash2, RotateCcw, X } from "lucide-react-native";
 import { ScreenShell, PageHeader, CardContainer, SectionTitle } from "@/components/ui/page-shell";
 import { PostingRow } from "@/components/PostingRow";
 import { PillButton } from "@/components/ui/pill-button";
@@ -232,6 +233,12 @@ export default function LedgerScreen() {
                   </View>
                 </View>
                 <View className="flex-row items-center gap-1 shrink-0">
+                  <Pressable
+                    onPress={() => router.push({ pathname: "/account-detail", params: { id: a.id } })}
+                    className="w-8 h-8 rounded-full items-center justify-center active:bg-muted"
+                  >
+                    <Eye color={theme.mutedForeground} size={15} />
+                  </Pressable>
                   <Pressable
                     onPress={() => openEdit(a)}
                     className="w-8 h-8 rounded-full items-center justify-center active:bg-muted"

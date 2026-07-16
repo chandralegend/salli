@@ -523,6 +523,16 @@ def make_manager_tools(
 
     # ── Write tools (require user approval via interrupt) ─────────────────────
 
+    async def _log_audit(user_id: str, action: str, params: dict[str, Any], decision: str) -> None:
+        """Record every agent-initiated write decision — approved or denied —
+        to the immutable audit log. Never blocks the tool's own outcome on
+        logging failure; a broken audit write must not break a legitimate action."""
+        try:
+            async with ledger_svc._uow_factory() as uow:
+                await uow.audit_log.log(user_id, action, params, decision)
+        except Exception:
+            pass
+
     @tool
     async def create_account(
         code: Annotated[str, "Account code, e.g. '1010'"],
@@ -536,14 +546,17 @@ def make_manager_tools(
         """
         from langgraph.types import interrupt
 
+        user_id = _current_user.get()
+        params = {"code": code, "name": name, "type": account_type, "currency": currency}
         decision = interrupt(
             {
                 "type": "action_approval",
                 "action": "create_account",
                 "description": f"Create account '{code} – {name}' (type: {account_type}, currency: {currency})",
-                "params": {"code": code, "name": name, "type": account_type, "currency": currency},
+                "params": params,
             }
         )
+        await _log_audit(user_id, "create_account", params, decision)
         if decision == "approved":
             from salli.domain.accounting.models import Account
 
@@ -554,7 +567,6 @@ def make_manager_tools(
                 type=account_type,  # type: ignore[arg-type]
                 currency=currency,
             )
-            user_id = _current_user.get()
             acct_id = await ledger_svc.add_account(user_id, account)
             return f"Account created: {name} ({code}), id={acct_id}"
         return "Action cancelled by user."
@@ -570,18 +582,20 @@ def make_manager_tools(
         """
         from langgraph.types import interrupt
 
+        user_id = _current_user.get()
+        params = {"description": description, "due_date": due_date}
         decision = interrupt(
             {
                 "type": "action_approval",
                 "action": "create_reminder",
                 "description": f"Create reminder: '{description}' due {due_date}",
-                "params": {"description": description, "due_date": due_date},
+                "params": params,
             }
         )
+        await _log_audit(user_id, "create_reminder", params, decision)
         if decision == "approved":
             from salli.application.services.reminder_service import ReminderService
 
-            user_id = _current_user.get()
             reminder_svc = ReminderService(ledger_svc._uow_factory)
             reminder_id = await reminder_svc.create_reminder(user_id, description, due_date)
             return f"Reminder created: '{description}' due {due_date}, id={reminder_id}"
@@ -602,6 +616,15 @@ def make_manager_tools(
         """
         from langgraph.types import interrupt
 
+        user_id = _current_user.get()
+        params = {
+            "entry_date": entry_date,
+            "description": description,
+            "debit_account_id": debit_account_id,
+            "credit_account_id": credit_account_id,
+            "amount": amount,
+            "currency": currency,
+        }
         decision = interrupt(
             {
                 "type": "action_approval",
@@ -610,22 +633,15 @@ def make_manager_tools(
                     f"Post {currency} {amount} — Dr {debit_account_id} / Cr {credit_account_id} "
                     f"on {entry_date}: {description}"
                 ),
-                "params": {
-                    "entry_date": entry_date,
-                    "description": description,
-                    "debit_account_id": debit_account_id,
-                    "credit_account_id": credit_account_id,
-                    "amount": amount,
-                    "currency": currency,
-                },
+                "params": params,
             }
         )
+        await _log_audit(user_id, "post_journal_entry", params, decision)
         if decision == "approved":
             from decimal import Decimal as D
 
             from salli.domain.accounting.models import Direction
 
-            user_id = _current_user.get()
             postings_data = [
                 {
                     "account_id": debit_account_id,

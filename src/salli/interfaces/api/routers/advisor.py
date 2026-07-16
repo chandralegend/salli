@@ -9,6 +9,7 @@ import hmac
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
+from pydantic import BaseModel
 from starlette.background import BackgroundTask
 from starlette.responses import JSONResponse
 
@@ -48,9 +49,7 @@ async def latest_report(user_id: CurrentUser, svc: AppServices):
 
 
 @router.post("/reports/{report_id}/recommendations/{rec_id}/apply")
-async def apply_recommendation(
-    report_id: str, rec_id: str, user_id: CurrentUser, svc: AppServices
-):
+async def apply_recommendation(report_id: str, rec_id: str, user_id: CurrentUser, svc: AppServices):
     try:
         return await svc.advisor.apply_recommendation(user_id, report_id, rec_id)
     except ValueError as exc:
@@ -65,6 +64,35 @@ async def dismiss_recommendation(
         return await svc.advisor.dismiss_recommendation(user_id, report_id, rec_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+
+
+# ── Monthly briefing workflow (human-review gate before persisting) ────────────
+
+
+class BriefingPrepareRequest(BaseModel):
+    thread_id: str | None = None
+
+
+class BriefingResumeRequest(BaseModel):
+    thread_id: str
+    decision: str  # "approve" | "edit" | "reject"
+
+
+@router.post("/briefing/prepare")
+async def prepare_briefing(
+    body: BriefingPrepareRequest, user_id: CurrentUser, email: CurrentEmail, svc: AppServices
+):
+    """
+    Run the monthly briefing workflow up to the human review gate. Returns the
+    draft briefing for approval, or a gather-step error (e.g. quota exceeded).
+    """
+    return await svc.agent.prepare_briefing(user_id, email, thread_id=body.thread_id)
+
+
+@router.post("/briefing/resume")
+async def resume_briefing(body: BriefingResumeRequest, svc: AppServices):
+    """Resume the briefing workflow after human review and persist if approved."""
+    return await svc.agent.resume_briefing(thread_id=body.thread_id, decision=body.decision)
 
 
 # ── Daily scheduling (called by Supabase pg_cron, not end users) ──────────────

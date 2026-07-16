@@ -698,6 +698,8 @@ def reminders_done(
 ):
     """Mark a reminder as done."""
     user_id = _require_user()
+    reminders = asyncio.run(_services().reminders.list_reminders(user_id, None))
+    reminder_id = _resolve_id(reminders, reminder_id, "reminder")
     asyncio.run(_services().reminders.mark_done(user_id, reminder_id))
     console.print(f"[green]Reminder marked done:[/green] {reminder_id}")
 
@@ -708,6 +710,8 @@ def reminders_delete(
 ):
     """Delete a reminder."""
     user_id = _require_user()
+    reminders = asyncio.run(_services().reminders.list_reminders(user_id, None))
+    reminder_id = _resolve_id(reminders, reminder_id, "reminder")
     asyncio.run(_services().reminders.delete_reminder(user_id, reminder_id))
     console.print(f"[green]Reminder deleted:[/green] {reminder_id}")
 
@@ -946,6 +950,8 @@ def fi_goals_update(
     if not data:
         console.print("[yellow]Nothing to update.[/yellow]")
         raise typer.Exit(1)
+    goals = asyncio.run(_services().fi.list_goals(user_id))
+    goal_id = _resolve_id(goals, goal_id, "goal")
     asyncio.run(_services().fi.update_goal(user_id, goal_id, data))
     console.print(f"[green]Goal updated:[/green] {goal_id}")
 
@@ -956,6 +962,8 @@ def fi_goals_delete(
 ):
     """Delete a goal."""
     user_id = _require_user()
+    goals = asyncio.run(_services().fi.list_goals(user_id))
+    goal_id = _resolve_id(goals, goal_id, "goal")
     asyncio.run(_services().fi.delete_goal(user_id, goal_id))
     console.print(f"[green]Goal deleted:[/green] {goal_id}")
 
@@ -1115,6 +1123,14 @@ def _print_advisor_report(report: dict) -> None:
         console.print(table)
 
 
+def _resolve_report_and_rec_id(user_id: str, report_id: str, rec_id: str) -> tuple[str, str]:
+    reports = asyncio.run(_services().advisor.list_reports(user_id))
+    report_id = _resolve_id(reports, report_id, "report")
+    report = next(r for r in reports if r["id"] == report_id)
+    rec_id = _resolve_id(report.get("recommendations") or [], rec_id, "recommendation")
+    return report_id, rec_id
+
+
 @advisor_app.command("apply")
 def advisor_apply(
     report_id: str = typer.Argument(...),
@@ -1122,6 +1138,7 @@ def advisor_apply(
 ):
     """Apply a recommendation from an advisor report."""
     user_id = _require_user()
+    report_id, rec_id = _resolve_report_and_rec_id(user_id, report_id, rec_id)
     try:
         result = asyncio.run(_services().advisor.apply_recommendation(user_id, report_id, rec_id))
         console.print(f"[green]Recommendation applied:[/green] {result.get('id')}")
@@ -1137,6 +1154,7 @@ def advisor_dismiss(
 ):
     """Dismiss a recommendation from an advisor report."""
     user_id = _require_user()
+    report_id, rec_id = _resolve_report_and_rec_id(user_id, report_id, rec_id)
     try:
         result = asyncio.run(_services().advisor.dismiss_recommendation(user_id, report_id, rec_id))
         console.print(f"[green]Recommendation dismissed:[/green] {result.get('id')}")
@@ -1235,6 +1253,8 @@ def documents_show(
 ):
     """Show a document's details."""
     user_id = _require_user()
+    docs = asyncio.run(_services().documents.list_documents(user_id))
+    doc_id = _resolve_id(docs, doc_id, "document")
     doc = asyncio.run(_services().documents.get_document(user_id, doc_id))
     if not doc:
         console.print(f"[red]Document not found:[/red] {doc_id}")
@@ -1249,6 +1269,8 @@ def documents_delete(
 ):
     """Delete a document."""
     user_id = _require_user()
+    docs = asyncio.run(_services().documents.list_documents(user_id))
+    doc_id = _resolve_id(docs, doc_id, "document")
     asyncio.run(_services().documents.delete_document(user_id, doc_id))
     console.print(f"[green]Document deleted:[/green] {doc_id}")
 
@@ -1674,6 +1696,8 @@ def budget_summary(
     from decimal import Decimal
 
     user_id = _require_user()
+    budgets = asyncio.run(_services().budget.list_budgets(user_id))
+    budget_id = _resolve_id(budgets, budget_id, "budget")
     summary = asyncio.run(_services().budget.get_summary(user_id, budget_id))
     if summary is None:
         console.print(f"[red]Budget not found:[/red] {budget_id}")
@@ -1708,6 +1732,8 @@ def budget_delete(
 ):
     """Delete a budget."""
     user_id = _require_user()
+    budgets = asyncio.run(_services().budget.list_budgets(user_id))
+    budget_id = _resolve_id(budgets, budget_id, "budget")
     asyncio.run(_services().budget.delete_budget(user_id, budget_id))
     console.print(f"[green]Budget deleted:[/green] {budget_id}")
 
@@ -1785,6 +1811,8 @@ def debt_update(
     if not data:
         console.print("[yellow]Nothing to update.[/yellow]")
         raise typer.Exit(1)
+    debts = asyncio.run(_services().debt.list_debts(user_id, active_only=False))
+    debt_id = _resolve_id(debts, debt_id, "debt")
     asyncio.run(_services().debt.update_debt(user_id, debt_id, data))
     console.print(f"[green]Debt updated:[/green] {debt_id}")
 
@@ -1795,6 +1823,8 @@ def debt_delete(
 ):
     """Delete a debt."""
     user_id = _require_user()
+    debts = asyncio.run(_services().debt.list_debts(user_id, active_only=False))
+    debt_id = _resolve_id(debts, debt_id, "debt")
     asyncio.run(_services().debt.delete_debt(user_id, debt_id))
     console.print(f"[green]Debt deleted:[/green] {debt_id}")
 
@@ -1932,6 +1962,8 @@ def portfolio_update(
     if not data:
         console.print("[yellow]Nothing to update.[/yellow]")
         raise typer.Exit(1)
+    holdings = asyncio.run(_services().portfolio.list_holdings(user_id, active_only=False))
+    holding_id = _resolve_id(holdings, holding_id, "holding")
     asyncio.run(_services().portfolio.update_holding(user_id, holding_id, data))
     console.print(f"[green]Holding updated:[/green] {holding_id}")
 
@@ -1942,6 +1974,8 @@ def portfolio_delete(
 ):
     """Delete a holding."""
     user_id = _require_user()
+    holdings = asyncio.run(_services().portfolio.list_holdings(user_id, active_only=False))
+    holding_id = _resolve_id(holdings, holding_id, "holding")
     asyncio.run(_services().portfolio.delete_holding(user_id, holding_id))
     console.print(f"[green]Holding deleted:[/green] {holding_id}")
 
@@ -2107,6 +2141,8 @@ def subscription_update(
     if not data:
         console.print("[yellow]Nothing to update.[/yellow]")
         raise typer.Exit(1)
+    subs = asyncio.run(_services().subscription.list_subscriptions(user_id, active_only=False))
+    subscription_id = _resolve_id(subs, subscription_id, "subscription")
     asyncio.run(_services().subscription.update_subscription(user_id, subscription_id, data))
     console.print(f"[green]Subscription updated:[/green] {subscription_id}")
 
@@ -2117,6 +2153,8 @@ def subscription_delete(
 ):
     """Delete a subscription."""
     user_id = _require_user()
+    subs = asyncio.run(_services().subscription.list_subscriptions(user_id, active_only=False))
+    subscription_id = _resolve_id(subs, subscription_id, "subscription")
     asyncio.run(_services().subscription.delete_subscription(user_id, subscription_id))
     console.print(f"[green]Subscription deleted:[/green] {subscription_id}")
 
@@ -2132,6 +2170,8 @@ def subscription_report(
     today = datetime.date.today().isoformat()
 
     if subscription_id:
+        subs = asyncio.run(_services().subscription.list_subscriptions(user_id, active_only=False))
+        subscription_id = _resolve_id(subs, subscription_id, "subscription")
         report = asyncio.run(_services().subscription.get_report(user_id, subscription_id, today))
         if report is None:
             console.print(f"[red]Subscription not found:[/red] {subscription_id}")
@@ -2259,6 +2299,8 @@ def insurance_policy_update(
     if not data:
         console.print("[yellow]Nothing to update.[/yellow]")
         raise typer.Exit(1)
+    policies = asyncio.run(_services().insurance.list_policies(user_id, active_only=False))
+    policy_id = _resolve_id(policies, policy_id, "policy")
     asyncio.run(_services().insurance.update_policy(user_id, policy_id, data))
     console.print(f"[green]Policy updated:[/green] {policy_id}")
 
@@ -2269,6 +2311,8 @@ def insurance_policy_delete(
 ):
     """Delete a policy."""
     user_id = _require_user()
+    policies = asyncio.run(_services().insurance.list_policies(user_id, active_only=False))
+    policy_id = _resolve_id(policies, policy_id, "policy")
     asyncio.run(_services().insurance.delete_policy(user_id, policy_id))
     console.print(f"[green]Policy deleted:[/green] {policy_id}")
 
@@ -2478,6 +2522,29 @@ def _require_user() -> str:
 
     user_id = os.environ.get("SALLI_USER_ID", "dev-user")
     return user_id
+
+
+def _resolve_id(items: list[dict], prefix: str, label: str = "item") -> str:
+    """
+    Resolve a full or truncated (list-display) id to the full id it refers to.
+    List commands truncate ids to 8 chars for table display; this lets delete/
+    update/show commands accept either the full id or that truncated form,
+    instead of silently no-op'ing on a copy-pasted truncated id.
+    """
+    ids = [str(i.get("id", "")) for i in items]
+    if prefix in ids:
+        return prefix
+    matches = [i for i in ids if i.startswith(prefix)]
+    if not matches:
+        console.print(f"[red]No {label} found matching id '{prefix}'.[/red]")
+        raise typer.Exit(1)
+    if len(matches) > 1:
+        console.print(
+            f"[red]Ambiguous id '{prefix}' matches {len(matches)} {label}s. "
+            "Use more characters.[/red]"
+        )
+        raise typer.Exit(1)
+    return matches[0]
 
 
 # ── entrypoint ────────────────────────────────────────────────────────────────

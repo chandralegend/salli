@@ -17,6 +17,7 @@ from salli.application.services.budget_service import BudgetService
 from salli.application.services.debt_service import DebtService
 from salli.application.services.document_service import DocumentService
 from salli.application.services.fi_service import FiService
+from salli.application.services.insurance_service import InsuranceService
 from salli.application.services.ledger_service import LedgerService
 from salli.application.services.parsing_service import ParsingService
 from salli.application.services.portfolio_service import PortfolioService
@@ -46,6 +47,7 @@ class Services:
     debt: DebtService
     portfolio: PortfolioService
     subscription: SubscriptionService
+    insurance: InsuranceService
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
@@ -74,6 +76,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     debt = DebtService(uow_factory)
     portfolio = PortfolioService(uow_factory)
     subscription = SubscriptionService(uow_factory)
+    insurance = InsuranceService(uow_factory)
     agent = AgentService(
         ledger,
         tax,
@@ -83,6 +86,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         debt,
         portfolio,
         subscription,
+        insurance,
         checkpointer=checkpointer,
         uow_factory=uow_factory,
     )
@@ -109,6 +113,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         debt=debt,
         portfolio=portfolio,
         subscription=subscription,
+        insurance=insurance,
     )
 
 

@@ -158,6 +158,7 @@ def make_manager_tools(
     profile_svc: Any = None,
     budget_svc: Any = None,
     debt_svc: Any = None,
+    portfolio_svc: Any = None,
 ) -> list[Any]:
     """
     Return the manager-only tools:
@@ -167,6 +168,7 @@ def make_manager_tools(
       - get_financial_profile (fact-find profile: risk category, life stage, dependents)
       - get_budget_summary (category limits vs. actual spend for a budget period)
       - get_payoff_plan (avalanche/snowball debt payoff plan)
+      - get_portfolio_summary (allocation, rebalancing drift, ROI)
       - create_account, create_reminder, post_journal_entry (all need user approval)
     """
 
@@ -397,6 +399,37 @@ def make_manager_tools(
         user_id = _current_user.get()
         return await debt_svc.get_payoff_plan(user_id, Decimal(extra_monthly_payment), strategy)
 
+    # ── Portfolio tool ────────────────────────────────────────────────────────
+
+    @tool
+    async def get_portfolio_summary(
+        target_allocation: Annotated[
+            str | None,
+            "Optional target allocation as 'asset_class:pct,...', e.g. "
+            "'equity:0.6,bond:0.3,cash:0.1'. Omit to skip rebalancing alerts.",
+        ] = None,
+    ) -> dict[str, Any]:
+        """
+        Return the user's investment allocation by asset class, total gain/ROI,
+        and (if a target allocation is given) rebalancing drift alerts. Holdings
+        are manually declared, not live-priced — numbers are only as fresh as the
+        user's last update. Numbers here are authoritative — do NOT recompute them.
+        """
+        if portfolio_svc is None:
+            return {"error": "Portfolio service unavailable"}
+        user_id = _current_user.get()
+        parsed_target: dict[str, Decimal] | None = None
+        if target_allocation:
+            parsed_target = {}
+            for pair in target_allocation.split(","):
+                asset_class, _, pct = pair.strip().partition(":")
+                if not asset_class or not pct:
+                    return {
+                        "error": f"Invalid target allocation entry '{pair}'. Use asset_class:pct."
+                    }
+                parsed_target[asset_class.strip()] = Decimal(pct.strip())
+        return await portfolio_svc.get_summary(user_id, parsed_target)
+
     # ── Write tools (require user approval via interrupt) ─────────────────────
 
     @tool
@@ -538,6 +571,7 @@ def make_manager_tools(
         get_financial_profile,
         get_budget_summary,
         get_payoff_plan,
+        get_portfolio_summary,
         create_account,
         create_reminder,
         post_journal_entry,

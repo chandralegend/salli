@@ -78,6 +78,7 @@ class AgentService:
         profile_svc: Any = None,
         budget_svc: Any = None,
         debt_svc: Any = None,
+        portfolio_svc: Any = None,
         checkpointer: Any = None,
         uow_factory: Any = None,
     ) -> None:
@@ -87,6 +88,7 @@ class AgentService:
         self._profile_svc = profile_svc
         self._budget_svc = budget_svc
         self._debt_svc = debt_svc
+        self._portfolio_svc = portfolio_svc
         self._checkpointer = checkpointer
         self._uow_factory = uow_factory
         self._agent: Any = None
@@ -107,6 +109,7 @@ class AgentService:
                 self._profile_svc,
                 self._budget_svc,
                 self._debt_svc,
+                self._portfolio_svc,
                 checkpointer=self._checkpointer,
             )
             self._agent_date = today

@@ -40,6 +40,7 @@ Direct access to:
 - **get_financial_profile** — risk category, life stage, dependents, employment status
 - **get_budget_summary** — category limits vs. actual spend for a budget period
 - **get_payoff_plan** — avalanche/snowball debt payoff plan, months to payoff, total interest
+- **get_portfolio_summary** — investment allocation, rebalancing drift, total gain/ROI
 - **Write tools** — create_account, create_reminder, post_journal_entry (each requires approval)
 
 Guidelines:
@@ -65,6 +66,7 @@ def build_manager_agent(
     profile_svc: Any = None,
     budget_svc: Any = None,
     debt_svc: Any = None,
+    portfolio_svc: Any = None,
     checkpointer: Any = None,
 ) -> Any:
     import datetime
@@ -80,7 +82,7 @@ def build_manager_agent(
     finance_worker = build_finance_worker(ledger_svc, tax_svc)
 
     manager_tools = make_manager_tools(
-        doc_svc, ledger_svc, tax_svc, profile_svc, budget_svc, debt_svc
+        doc_svc, ledger_svc, tax_svc, profile_svc, budget_svc, debt_svc, portfolio_svc
     )
 
     today = datetime.date.today().strftime("%A, %d %B %Y")

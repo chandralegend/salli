@@ -468,6 +468,11 @@ class SQLReminderRepository(ReminderRepository):
                 "kind": r.kind,
                 "due_date": r.due_date,
                 "status": r.status,
+                "alert_type": r.alert_type,
+                "source_domain": r.source_domain,
+                "source_id": r.source_id,
+                "severity": r.severity,
+                "created_at": r.created_at.isoformat(),
             }
             for r in result.scalars().all()
         ]
@@ -502,6 +507,46 @@ class SQLReminderRepository(ReminderRepository):
         row = result.scalar_one_or_none()
         if row:
             await self._session.delete(row)
+
+    async def upsert_alert(
+        self,
+        user_id: str,
+        alert_type: str,
+        source_domain: str,
+        source_id: str,
+        kind: str,
+        due_date: str,
+        severity: str,
+    ) -> str:
+        stmt = select(ReminderORM).where(
+            ReminderORM.user_id == user_id,
+            ReminderORM.source_domain == source_domain,
+            ReminderORM.source_id == source_id,
+            ReminderORM.alert_type == alert_type,
+        )
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row:
+            row.kind = kind
+            row.due_date = due_date
+            row.severity = severity
+            row.status = "pending"
+            return row.id
+        alert_id = str(uuid.uuid4())
+        self._session.add(
+            ReminderORM(
+                id=alert_id,
+                user_id=user_id,
+                kind=kind,
+                due_date=due_date,
+                status="pending",
+                alert_type=alert_type,
+                source_domain=source_domain,
+                source_id=source_id,
+                severity=severity,
+            )
+        )
+        return alert_id
 
 
 # ── Agent Documents ────────────────────────────────────────────────────────────

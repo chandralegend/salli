@@ -271,6 +271,11 @@ class AgentSessionORM(Base):
 
 
 class ReminderORM(Base):
+    """A due-date task, or (via the nullable alert_type/source_* /severity columns
+    added for the Alert/Notification generalization) a system-detected condition
+    like a budget overspend or an expiring policy. Additive, not a schema
+    rewrite — plain user-created reminders leave the new columns null."""
+
     __tablename__ = "reminders"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
@@ -278,8 +283,16 @@ class ReminderORM(Base):
     due_date: Mapped[str] = mapped_column(String(10), nullable=False)
     kind: Mapped[str] = mapped_column(String(500), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    alert_type: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    source_domain: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    source_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    severity: Mapped[str | None] = mapped_column(String(20), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
+    )
+
+    __table_args__ = (
+        Index("ix_reminders_user_alert_source", "user_id", "source_domain", "source_id"),
     )
 
 

@@ -92,6 +92,24 @@ class ReminderRepository(ABC):
     @abstractmethod
     async def delete_reminder(self, user_id: str, reminder_id: str) -> None: ...
 
+    @abstractmethod
+    async def upsert_alert(
+        self,
+        user_id: str,
+        alert_type: str,
+        source_domain: str,
+        source_id: str,
+        kind: str,
+        due_date: str,
+        severity: str,
+    ) -> str:
+        """Create or refresh a system-detected alert, keyed on
+        (user_id, source_domain, source_id, alert_type) — re-running a sync
+        against the same still-active condition updates the existing row
+        (kind/due_date/severity, and resets status to "pending" if it had been
+        dismissed) rather than creating a duplicate."""
+        ...
+
 
 class StatementRepository(ABC):
     @abstractmethod

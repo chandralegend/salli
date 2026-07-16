@@ -201,6 +201,9 @@ def entry_add(
     desc: str = typer.Option(..., "--desc", help="Description"),
     debit: list[str] = typer.Option(..., "--debit", help="ACCOUNT_ID:AMOUNT (repeat for splits)"),
     credit: list[str] = typer.Option(..., "--credit", help="ACCOUNT_ID:AMOUNT (repeat for splits)"),
+    receipt: str = typer.Option(
+        None, "--receipt", help="Document ID of an attached receipt/file (source stays 'manual')"
+    ),
 ):
     """Add a balanced journal entry (ACCOUNT_ID:AMOUNT pairs)."""
     from decimal import Decimal
@@ -231,12 +234,71 @@ def entry_add(
 
     try:
         entry_id = asyncio.run(
-            _services().ledger.add_entry(user_id, date, desc, "manual", postings_data)
+            _services().ledger.add_entry(
+                user_id, date, desc, "manual", postings_data, external_ref=receipt
+            )
         )
         console.print(f"[green]Entry posted:[/green] {entry_id}")
     except ValueError as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
+
+
+@entry_app.command("show")
+def entry_show(
+    entry_id: str = typer.Argument(...),
+):
+    """Show a journal entry's full detail and provenance (statement/receipt trace)."""
+    from decimal import Decimal
+
+    user_id = _require_user()
+    entry = asyncio.run(_services().ledger.get_entry(user_id, entry_id))
+    if entry is None:
+        console.print(f"[red]Entry not found:[/red] {entry_id}")
+        raise typer.Exit(1)
+
+    console.print(f"\n[bold]{entry.description}[/bold]  ({entry.entry_date})")
+    console.print(f"  Source:       {entry.source}")
+    if entry.reversed_by:
+        console.print(f"  [yellow]Reversed by:[/yellow]  {entry.reversed_by}\n")
+    else:
+        console.print()
+
+    table = Table(title="Postings")
+    table.add_column("Account ID")
+    table.add_column("Direction")
+    table.add_column("Amount", justify="right")
+    table.add_column("Currency")
+    for p in entry.postings:
+        table.add_row(
+            p.account_id,
+            "DEBIT" if p.direction.value == 1 else "CREDIT",
+            f"{Decimal(p.amount):,.2f}",
+            p.currency,
+        )
+    console.print(table)
+
+    provenance = asyncio.run(_services().ledger.get_entry_provenance(user_id, entry_id))
+    if provenance and provenance.get("statement"):
+        stmt = provenance["statement"]
+        console.print("\n[bold]Provenance:[/bold] bank statement")
+        console.print(f"  Raw description:  {stmt['raw_description']}")
+        console.print(f"  Bank ref:          {stmt.get('bank_ref') or '—'}")
+        if stmt.get("statement"):
+            s = stmt["statement"]
+            console.print(f"  Bank:              {s.get('bank') or '—'}")
+            console.print(f"  Period:            {s.get('period_start')} → {s.get('period_end')}")
+            console.print(f"  File:              {s.get('storage_key') or '—'}")
+    elif provenance and provenance.get("receipt"):
+        receipt_info = provenance["receipt"]
+        console.print("\n[bold]Provenance:[/bold] attached receipt")
+        console.print(f"  Title:      {receipt_info['title']}")
+        console.print(f"  MIME type:  {receipt_info['mime_type']}")
+        console.print(f"  Document:   {receipt_info['document_id']}")
+    else:
+        console.print(
+            "\n[dim]No provenance recorded (manually entered, no receipt attached).[/dim]"
+        )
 
 
 @entry_app.command("reverse")

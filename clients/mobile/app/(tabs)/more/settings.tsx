@@ -83,6 +83,16 @@ export default function SettingsScreen() {
         </CardContainer>
 
         <CardContainer>
+          <SectionTitle>Profile Setup</SectionTitle>
+          <Text className="text-muted-foreground text-[13px] mb-3 leading-5">
+            Your profile configures default accounts and personalises tax and FIRE calculations.
+          </Text>
+          <PillButton variant="secondary" onPress={() => router.push("/onboarding")} className="self-start">
+            Redo profile setup
+          </PillButton>
+        </CardContainer>
+
+        <CardContainer>
           <SectionTitle>Danger Zone</SectionTitle>
           <View className="gap-4">
             <View>

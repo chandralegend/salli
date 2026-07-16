@@ -39,6 +39,9 @@ budget_app = typer.Typer(help="Category budgets vs. actual ledger spend")
 debt_app = typer.Typer(help="Structured debts and avalanche/snowball payoff planning")
 portfolio_app = typer.Typer(help="Investment holdings, allocation, and rebalancing")
 subscription_app = typer.Typer(help="Recurring subscriptions and missed-charge/price-change alerts")
+insurance_app = typer.Typer(help="Insurance policy inventory and coverage-gap analysis")
+insurance_policy_app = typer.Typer(help="Insurance policies")
+insurance_target_app = typer.Typer(help="Declared coverage targets")
 
 app.add_typer(accounts_app, name="accounts")
 app.add_typer(entry_app, name="entry")
@@ -59,6 +62,9 @@ app.add_typer(budget_app, name="budget")
 app.add_typer(debt_app, name="debt")
 app.add_typer(portfolio_app, name="portfolio")
 app.add_typer(subscription_app, name="subscription")
+app.add_typer(insurance_app, name="insurance")
+insurance_app.add_typer(insurance_policy_app, name="policy")
+insurance_app.add_typer(insurance_target_app, name="target")
 
 
 def _services():
@@ -2002,6 +2008,212 @@ def subscription_report(
             for m in report["matches"][-5:]:
                 table.add_row(m["entry_date"], m["amount"])
             console.print(table)
+
+
+# ── insurance ──────────────────────────────────────────────────────────────────
+
+
+@insurance_policy_app.command("list")
+def insurance_policy_list(
+    all: bool = typer.Option(False, "--all", help="Include inactive policies"),
+):
+    """List insurance policies."""
+    user_id = _require_user()
+    policies = asyncio.run(_services().insurance.list_policies(user_id, active_only=not all))
+    if not policies:
+        console.print(
+            "[dim]No policies found. Use 'salli insurance policy add' to create one.[/dim]"
+        )
+        return
+    table = Table(title="Insurance Policies")
+    table.add_column("ID", style="dim")
+    table.add_column("Name")
+    table.add_column("Type")
+    table.add_column("Provider")
+    table.add_column("Coverage", justify="right")
+    table.add_column("Expiry")
+    for p in policies:
+        table.add_row(
+            str(p.get("id", ""))[:8],
+            p.get("name", ""),
+            p.get("policy_type", ""),
+            p.get("provider", ""),
+            p.get("coverage_amount", ""),
+            p.get("expiry_date", ""),
+        )
+    console.print(table)
+
+
+@insurance_policy_app.command("add")
+def insurance_policy_add(
+    name: str = typer.Argument(..., help="Policy name, e.g. 'Life Basic'"),
+    policy_type: str = typer.Option(..., "--type", help="life|health|motor|property|other"),
+    provider: str = typer.Option(..., "--provider"),
+    coverage_amount: str = typer.Option(..., "--coverage"),
+    premium_amount: str = typer.Option(..., "--premium"),
+    premium_frequency: str = typer.Option(
+        "monthly", "--frequency", help="monthly|quarterly|yearly"
+    ),
+    expiry_date: str = typer.Option(..., "--expiry-date", help="YYYY-MM-DD"),
+):
+    """Add an insurance policy."""
+    user_id = _require_user()
+    policy_id = asyncio.run(
+        _services().insurance.add_policy(
+            user_id,
+            {
+                "name": name,
+                "policy_type": policy_type,
+                "provider": provider,
+                "coverage_amount": coverage_amount,
+                "premium_amount": premium_amount,
+                "premium_frequency": premium_frequency,
+                "expiry_date": expiry_date,
+            },
+        )
+    )
+    console.print(f"[green]Policy created:[/green] {name} ({policy_id})")
+
+
+@insurance_policy_app.command("update")
+def insurance_policy_update(
+    policy_id: str = typer.Argument(...),
+    name: str = typer.Option(None, "--name"),
+    policy_type: str = typer.Option(None, "--type"),
+    provider: str = typer.Option(None, "--provider"),
+    coverage_amount: str = typer.Option(None, "--coverage"),
+    premium_amount: str = typer.Option(None, "--premium"),
+    premium_frequency: str = typer.Option(None, "--frequency"),
+    expiry_date: str = typer.Option(None, "--expiry-date"),
+    active: bool = typer.Option(None, "--active/--inactive"),
+):
+    """Update fields on an existing policy."""
+    user_id = _require_user()
+    data: dict[str, object] = {}
+    if name is not None:
+        data["name"] = name
+    if policy_type is not None:
+        data["policy_type"] = policy_type
+    if provider is not None:
+        data["provider"] = provider
+    if coverage_amount is not None:
+        data["coverage_amount"] = coverage_amount
+    if premium_amount is not None:
+        data["premium_amount"] = premium_amount
+    if premium_frequency is not None:
+        data["premium_frequency"] = premium_frequency
+    if expiry_date is not None:
+        data["expiry_date"] = expiry_date
+    if active is not None:
+        data["is_active"] = active
+    if not data:
+        console.print("[yellow]Nothing to update.[/yellow]")
+        raise typer.Exit(1)
+    asyncio.run(_services().insurance.update_policy(user_id, policy_id, data))
+    console.print(f"[green]Policy updated:[/green] {policy_id}")
+
+
+@insurance_policy_app.command("delete")
+def insurance_policy_delete(
+    policy_id: str = typer.Argument(...),
+):
+    """Delete a policy."""
+    user_id = _require_user()
+    asyncio.run(_services().insurance.delete_policy(user_id, policy_id))
+    console.print(f"[green]Policy deleted:[/green] {policy_id}")
+
+
+@insurance_target_app.command("set")
+def insurance_target_set(
+    policy_type: str = typer.Argument(..., help="life|health|motor|property|other"),
+    target_amount: str = typer.Option(..., "--amount", help="Desired total coverage for this type"),
+):
+    """Set (or update) the declared coverage target for a policy type."""
+    from decimal import Decimal
+
+    user_id = _require_user()
+    target_id = asyncio.run(
+        _services().insurance.set_target(user_id, policy_type, Decimal(target_amount))
+    )
+    console.print(f"[green]Target set:[/green] {policy_type} = {target_amount} ({target_id})")
+
+
+@insurance_target_app.command("list")
+def insurance_target_list():
+    """List declared coverage targets."""
+    user_id = _require_user()
+    targets = asyncio.run(_services().insurance.list_targets(user_id))
+    if not targets:
+        console.print(
+            "[dim]No targets found. Use 'salli insurance target set' to declare one.[/dim]"
+        )
+        return
+    table = Table(title="Coverage Targets")
+    table.add_column("Type")
+    table.add_column("Target Amount", justify="right")
+    for t in targets:
+        table.add_row(t.get("policy_type", ""), t.get("target_amount", ""))
+    console.print(table)
+
+
+@insurance_target_app.command("delete")
+def insurance_target_delete(
+    policy_type: str = typer.Argument(...),
+):
+    """Delete the declared coverage target for a policy type."""
+    user_id = _require_user()
+    asyncio.run(_services().insurance.delete_target(user_id, policy_type))
+    console.print(f"[green]Target deleted:[/green] {policy_type}")
+
+
+@insurance_app.command("report")
+def insurance_report():
+    """Show the coverage-gap report: target vs. actual coverage, missing types,
+    and policies expiring within 30 days."""
+    import datetime
+
+    user_id = _require_user()
+    today = datetime.date.today().isoformat()
+    report = asyncio.run(_services().insurance.get_report(user_id, today))
+
+    if report["lines"]:
+        table = Table(title="Coverage Gap")
+        table.add_column("Type")
+        table.add_column("Target", justify="right")
+        table.add_column("Actual", justify="right")
+        table.add_column("Gap", justify="right")
+        for line in report["lines"]:
+            from decimal import Decimal
+
+            gap = Decimal(line["gap"])
+            style = "red" if gap > 0 else "green"
+            table.add_row(
+                line["policy_type"],
+                line["target_amount"],
+                line["actual_coverage"],
+                f"[{style}]{line['gap']}[/{style}]",
+            )
+        console.print(table)
+    else:
+        console.print("[dim]No coverage targets declared.[/dim]")
+
+    if report["missing_types"]:
+        console.print(f"\n[red]Missing coverage:[/red] {', '.join(report['missing_types'])}")
+
+    if report["expiring_soon"]:
+        table = Table(title="Expiring Soon")
+        table.add_column("Policy")
+        table.add_column("Type")
+        table.add_column("Expiry")
+        table.add_column("Days Left", justify="right")
+        for alert in report["expiring_soon"]:
+            table.add_row(
+                alert["policy_name"],
+                alert["policy_type"],
+                alert["expiry_date"],
+                str(alert["days_until_expiry"]),
+            )
+        console.print(table)
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────

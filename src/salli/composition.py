@@ -14,6 +14,7 @@ from salli.application.services.advisor_service import AdvisorService
 from salli.application.services.agent_service import AgentService
 from salli.application.services.billing_service import BillingService
 from salli.application.services.budget_service import BudgetService
+from salli.application.services.data_portability_service import DataPortabilityService
 from salli.application.services.debt_service import DebtService
 from salli.application.services.document_service import DocumentService
 from salli.application.services.fi_service import FiService
@@ -50,6 +51,7 @@ class Services:
     subscription: SubscriptionService
     insurance: InsuranceService
     reports: ReportService
+    data_portability: DataPortabilityService
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
@@ -99,6 +101,21 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     parsing = ParsingService(uow_factory, storage)
     reminders = ReminderService(uow_factory, budget, subscription, insurance)
     reports = ReportService(ledger, fi)
+    data_portability = DataPortabilityService(
+        uow_factory,
+        profile,
+        ledger,
+        tax,
+        budget,
+        debt,
+        portfolio,
+        subscription,
+        insurance,
+        fi,
+        advisor,
+        documents,
+        reminders,
+    )
 
     return Services(
         ledger=ledger,
@@ -119,6 +136,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         subscription=subscription,
         insurance=insurance,
         reports=reports,
+        data_portability=data_portability,
     )
 
 

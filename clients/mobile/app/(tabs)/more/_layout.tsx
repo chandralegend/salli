@@ -22,6 +22,13 @@ export default function MoreLayout() {
       <Stack.Screen name="statements" options={{ title: "Statements" }} />
       <Stack.Screen name="settings" options={{ title: "Settings" }} />
       <Stack.Screen name="billing" options={{ title: "Billing" }} />
+      <Stack.Screen name="budget" options={{ title: "Budget" }} />
+      <Stack.Screen name="debt" options={{ title: "Debt" }} />
+      <Stack.Screen name="portfolio" options={{ title: "Portfolio" }} />
+      <Stack.Screen name="insurance" options={{ title: "Insurance" }} />
+      <Stack.Screen name="subscriptions" options={{ title: "Subscriptions" }} />
+      <Stack.Screen name="reports" options={{ title: "Reports" }} />
+      <Stack.Screen name="audit-log" options={{ title: "Audit Log" }} />
     </Stack>
   );
 }

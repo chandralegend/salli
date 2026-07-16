@@ -398,3 +398,23 @@ class DebtRepository(ABC):
 
     @abstractmethod
     async def delete(self, user_id: str, debt_id: str) -> None: ...
+
+
+# ── Portfolio ─────────────────────────────────────────────────────────────────
+
+
+class PortfolioRepository(ABC):
+    @abstractmethod
+    async def save(self, user_id: str, holding: dict[str, Any]) -> str: ...
+
+    @abstractmethod
+    async def get(self, user_id: str, holding_id: str) -> dict[str, Any] | None: ...
+
+    @abstractmethod
+    async def list(self, user_id: str, active_only: bool = True) -> list[dict[str, Any]]: ...
+
+    @abstractmethod
+    async def update(self, user_id: str, holding_id: str, updates: dict[str, Any]) -> None: ...
+
+    @abstractmethod
+    async def delete(self, user_id: str, holding_id: str) -> None: ...

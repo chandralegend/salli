@@ -26,6 +26,7 @@ from salli.adapters.db.models import (
     FireStrategyORM,
     FiScoreORM,
     GoalORM,
+    HoldingORM,
     JournalEntryORM,
     ParsedTransactionORM,
     PostingORM,
@@ -46,6 +47,7 @@ from salli.application.ports import (
     FiScoreRepository,
     GoalRepository,
     LedgerRepository,
+    PortfolioRepository,
     ReminderRepository,
     StatementRepository,
     SubscriptionRepository,
@@ -1243,6 +1245,90 @@ class SQLDebtRepository(DebtRepository):
         r = (
             await self._s.execute(
                 select(DebtORM).where(DebtORM.id == debt_id, DebtORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+        if r:
+            await self._s.delete(r)
+
+
+# ── Portfolio repository ──────────────────────────────────────────────────────
+
+
+def _holding_to_dict(r: HoldingORM) -> dict[str, Any]:
+    return {
+        "id": r.id,
+        "user_id": r.user_id,
+        "symbol": r.symbol,
+        "name": r.name,
+        "asset_class": r.asset_class,
+        "cost_basis_minor": r.cost_basis_minor,
+        "current_value_minor": r.current_value_minor,
+        "is_active": r.is_active,
+        "created_at": r.created_at.isoformat(),
+        "updated_at": r.updated_at.isoformat(),
+    }
+
+
+class SQLPortfolioRepository(PortfolioRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def save(self, user_id: str, holding: dict[str, Any]) -> str:
+        hid = holding.get("id") or str(uuid.uuid4())
+        self._s.add(
+            HoldingORM(
+                id=hid,
+                user_id=user_id,
+                symbol=holding["symbol"],
+                name=holding["name"],
+                asset_class=holding["asset_class"],
+                cost_basis_minor=int(holding["cost_basis_minor"]),
+                current_value_minor=int(holding["current_value_minor"]),
+                is_active=holding.get("is_active", True),
+            )
+        )
+        await self._s.flush()
+        return hid
+
+    async def get(self, user_id: str, holding_id: str) -> dict[str, Any] | None:
+        r = (
+            await self._s.execute(
+                select(HoldingORM).where(HoldingORM.id == holding_id, HoldingORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+        return _holding_to_dict(r) if r else None
+
+    async def list(self, user_id: str, active_only: bool = True) -> list[dict[str, Any]]:
+        stmt = select(HoldingORM).where(HoldingORM.user_id == user_id)
+        if active_only:
+            stmt = stmt.where(HoldingORM.is_active == True)  # noqa: E712
+        stmt = stmt.order_by(HoldingORM.created_at)
+        return [_holding_to_dict(r) for r in (await self._s.execute(stmt)).scalars().all()]
+
+    async def update(self, user_id: str, holding_id: str, updates: dict[str, Any]) -> None:
+        r = (
+            await self._s.execute(
+                select(HoldingORM).where(HoldingORM.id == holding_id, HoldingORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+        if not r:
+            return
+        for k in (
+            "symbol",
+            "name",
+            "asset_class",
+            "cost_basis_minor",
+            "current_value_minor",
+            "is_active",
+        ):
+            if k in updates and updates[k] is not None:
+                setattr(r, k, updates[k])
+        await self._s.flush()
+
+    async def delete(self, user_id: str, holding_id: str) -> None:
+        r = (
+            await self._s.execute(
+                select(HoldingORM).where(HoldingORM.id == holding_id, HoldingORM.user_id == user_id)
             )
         ).scalar_one_or_none()
         if r:

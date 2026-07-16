@@ -502,3 +502,30 @@ class DebtORM(Base):
     )
 
     __table_args__ = (Index("ix_debts_user_active", "user_id", "is_active"),)
+
+
+# ── Portfolio ─────────────────────────────────────────────────────────────────
+
+
+class HoldingORM(Base):
+    """A manually-declared investment holding — cost basis and current value are
+    user-entered, never fetched from a live market-data feed."""
+
+    __tablename__ = "holdings"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    symbol: Mapped[str] = mapped_column(String(20), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    asset_class: Mapped[str] = mapped_column(String(40), nullable=False)
+    cost_basis_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    current_value_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+
+    __table_args__ = (Index("ix_holdings_user_active", "user_id", "is_active"),)

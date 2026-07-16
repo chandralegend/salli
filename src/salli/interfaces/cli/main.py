@@ -38,6 +38,7 @@ profile_app = typer.Typer(help="Fact-find profile: identity, risk, opening balan
 budget_app = typer.Typer(help="Category budgets vs. actual ledger spend")
 debt_app = typer.Typer(help="Structured debts and avalanche/snowball payoff planning")
 portfolio_app = typer.Typer(help="Investment holdings, allocation, and rebalancing")
+subscription_app = typer.Typer(help="Recurring subscriptions and missed-charge/price-change alerts")
 
 app.add_typer(accounts_app, name="accounts")
 app.add_typer(entry_app, name="entry")
@@ -57,6 +58,7 @@ app.add_typer(profile_app, name="profile")
 app.add_typer(budget_app, name="budget")
 app.add_typer(debt_app, name="debt")
 app.add_typer(portfolio_app, name="portfolio")
+app.add_typer(subscription_app, name="subscription")
 
 
 def _services():
@@ -1848,6 +1850,158 @@ def portfolio_summary(
                 f"[{style}]{drift:+.2f}%[/{style}]",
             )
         console.print(table)
+
+
+# ── subscription ──────────────────────────────────────────────────────────────
+
+
+@subscription_app.command("list")
+def subscription_list(
+    all: bool = typer.Option(False, "--all", help="Include inactive subscriptions"),
+):
+    """List recurring subscriptions."""
+    user_id = _require_user()
+    subscriptions = asyncio.run(
+        _services().subscription.list_subscriptions(user_id, active_only=not all)
+    )
+    if not subscriptions:
+        console.print(
+            "[dim]No subscriptions found. Use 'salli subscription add' to create one.[/dim]"
+        )
+        return
+    table = Table(title="Recurring Subscriptions")
+    table.add_column("ID", style="dim")
+    table.add_column("Name")
+    table.add_column("Amount", justify="right")
+    table.add_column("Frequency")
+    table.add_column("Next Due")
+    for s in subscriptions:
+        table.add_row(
+            str(s.get("id", ""))[:8],
+            s.get("name", ""),
+            s.get("amount", ""),
+            s.get("frequency", ""),
+            s.get("next_due_date", ""),
+        )
+    console.print(table)
+
+
+@subscription_app.command("add")
+def subscription_add(
+    name: str = typer.Argument(..., help="Subscription name, e.g. 'Netflix'"),
+    amount: str = typer.Option(..., "--amount", help="Expected charge amount"),
+    frequency: str = typer.Option(..., "--frequency", help="weekly|monthly|quarterly|yearly"),
+    next_due_date: str = typer.Option(..., "--next-due-date", help="YYYY-MM-DD"),
+    account_id: str = typer.Option(
+        None, "--account-id", help="Restrict matching to this expense account"
+    ),
+    grace_days: int = typer.Option(5, "--grace-days"),
+    amount_tolerance_pct: str = typer.Option("0.05", "--tolerance"),
+):
+    """Add a recurring subscription."""
+    user_id = _require_user()
+    subscription_id = asyncio.run(
+        _services().subscription.add_subscription(
+            user_id,
+            {
+                "name": name,
+                "amount": amount,
+                "frequency": frequency,
+                "next_due_date": next_due_date,
+                "account_id": account_id,
+                "grace_days": grace_days,
+                "amount_tolerance_pct": amount_tolerance_pct,
+            },
+        )
+    )
+    console.print(f"[green]Subscription created:[/green] {name} ({subscription_id})")
+
+
+@subscription_app.command("update")
+def subscription_update(
+    subscription_id: str = typer.Argument(...),
+    name: str = typer.Option(None, "--name"),
+    amount: str = typer.Option(None, "--amount"),
+    frequency: str = typer.Option(None, "--frequency"),
+    next_due_date: str = typer.Option(None, "--next-due-date"),
+    account_id: str = typer.Option(None, "--account-id"),
+    grace_days: int = typer.Option(None, "--grace-days"),
+    amount_tolerance_pct: str = typer.Option(None, "--tolerance"),
+    active: bool = typer.Option(None, "--active/--inactive"),
+):
+    """Update fields on an existing subscription."""
+    user_id = _require_user()
+    data: dict[str, object] = {}
+    if name is not None:
+        data["name"] = name
+    if amount is not None:
+        data["amount"] = amount
+    if frequency is not None:
+        data["frequency"] = frequency
+    if next_due_date is not None:
+        data["next_due_date"] = next_due_date
+    if account_id is not None:
+        data["account_id"] = account_id
+    if grace_days is not None:
+        data["grace_days"] = grace_days
+    if amount_tolerance_pct is not None:
+        data["amount_tolerance_pct"] = amount_tolerance_pct
+    if active is not None:
+        data["is_active"] = active
+    if not data:
+        console.print("[yellow]Nothing to update.[/yellow]")
+        raise typer.Exit(1)
+    asyncio.run(_services().subscription.update_subscription(user_id, subscription_id, data))
+    console.print(f"[green]Subscription updated:[/green] {subscription_id}")
+
+
+@subscription_app.command("delete")
+def subscription_delete(
+    subscription_id: str = typer.Argument(...),
+):
+    """Delete a subscription."""
+    user_id = _require_user()
+    asyncio.run(_services().subscription.delete_subscription(user_id, subscription_id))
+    console.print(f"[green]Subscription deleted:[/green] {subscription_id}")
+
+
+@subscription_app.command("report")
+def subscription_report(
+    subscription_id: str = typer.Argument(None, help="Omit to show reports for all subscriptions"),
+):
+    """Show missed-charge/price-change report(s)."""
+    import datetime
+
+    user_id = _require_user()
+    today = datetime.date.today().isoformat()
+
+    if subscription_id:
+        report = asyncio.run(_services().subscription.get_report(user_id, subscription_id, today))
+        if report is None:
+            console.print(f"[red]Subscription not found:[/red] {subscription_id}")
+            raise typer.Exit(1)
+        reports = [report]
+    else:
+        reports = asyncio.run(_services().subscription.get_all_reports(user_id, today))
+
+    if not reports:
+        console.print("[dim]No subscriptions found.[/dim]")
+        return
+
+    for report in reports:
+        console.print(f"\n[bold]{report['name']}[/bold]  ({report['subscription_id'][:8]})")
+        if not report["alerts"]:
+            console.print("  [green]No alerts.[/green]")
+        for alert in report["alerts"]:
+            style = "red" if alert["kind"] == "missed_charge" else "yellow"
+            console.print(f"  [{style}]{alert['kind']}:[/{style}] {alert['message']}")
+        if report["matches"]:
+            table = Table(title="Matched Charges")
+            table.add_column("Date")
+            table.add_column("Amount", justify="right")
+            for m in report["matches"][-5:]:
+                table.add_row(m["entry_date"], m["amount"])
+            console.print(table)
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────

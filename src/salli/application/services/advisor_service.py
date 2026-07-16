@@ -31,11 +31,17 @@ class AdvisorService:
         # Quota gate (raises QuotaExceeded → 402 for manual; cron catches & skips)
         await self._billing.check_and_increment(user_id, METRIC_ADVISOR_RUNS, email)
 
+        context = await self.gather_context(user_id)
+        advice = await advisor_llm.generate_advice(context)
+        return await self.persist_report(user_id, trigger, advice)
+
+    async def gather_context(self, user_id: str) -> dict[str, Any]:
+        """Deterministic gather step, reused by both run_advisor and the briefing
+        workflow's gather node — never calls the LLM."""
         from salli.domain.agents.tools import set_current_user
 
         set_current_user(user_id)
 
-        # ── Gather (all deterministic) ──────────────────────────────────────────
         score = await self._fi.compute_score(user_id)
         goals = await self._fi.list_goals(user_id)
         profile = await self._gather_profile(user_id)
@@ -93,9 +99,12 @@ class AdvisorService:
             "profile": profile,  # primary_goal, motivation, risk_appetite, target year/amount
             "current_rates_research": rates,
         }
+        return context
 
-        advice = await advisor_llm.generate_advice(context)
-
+    async def persist_report(self, user_id: str, trigger: str, advice: Any) -> dict[str, Any]:
+        """Persist structured LLM advice (an Advice model, or anything exposing the
+        same summary/fire_tier_assessment/recommendations shape) as an advisory
+        report. Shared by run_advisor and the briefing workflow's finalize node."""
         recommendations = [
             {
                 "id": str(uuid.uuid4()),

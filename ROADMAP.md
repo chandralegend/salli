@@ -17,7 +17,8 @@ verified end-to-end and committed before moving on.
 | 5. Account/entry management + recurring subscriptions | ✅ Done (6ebfdec, 68c80ce, 2961071, 5053624, 6957b86, 4502c8b, 2a67ec9, 8a51706, c6ad947, 1de56a1, 0d6c394, 1a84a69) | see below |
 | 6. Insurance | ✅ Done (7956cc8, e922ea8, f92b3b3, e4ed420, 354f47d, f0fa109) | see below |
 | 7. AI Advisor upgrades | ✅ Done (6fb7db4, 3ba21d6, 22b0fee, 868151e, d66d084, 0b95d74, 0ad0310, 8bf36a7, 95b57d8, d64ecb3) | see below |
-| 8+. Reports & alerts, Data portability | ⏳ Not started | sketched only, each gets its own plan when its turn comes |
+| 8. Reports & alerts | ✅ Done (0360b0d, a3bfd09, e4ac20e, d48ad3b, 4519851, d8fe246, 6f479e8) | see below |
+| 9+. Data portability | ⏳ Not started | sketched only, gets its own plan when its turn comes |
 
 ---
 
@@ -400,11 +401,87 @@ before and after every commit in this phase.
 
 ---
 
+## Phase 8 — Reports & alerts ✅
+
+Scoped from the roadmap's one-liner ("exportable statements, historical net-worth snapshots,
+generalize Reminder into Alert/Notification") after an audit of what already existed —
+`ledger`'s trial-balance/income-statement endpoints, `fi_scores`' snapshot history, and the
+Reminder domain — turned up more reusable groundwork than the terse description implied, and
+one genuinely risky design fork (rewrite Reminder's schema vs. extend it additively) that needed
+resolving before writing any code.
+
+**Exportable statements**:
+
+- [x] `domain/reports/csv_export.py` — pure `rows_to_csv(headers, rows) -> bytes`, stdlib `csv`
+      (no new dependency; `pandas`/`openpyxl` were already available but stdlib is simpler for
+      this flat-row shape)
+- [x] `ReportService` composes over already-existing `LedgerService`/`FiService` data rather than
+      introducing new persisted state: `get_balance_sheet` (groups accounts by type, converting
+      liabilities' credit-normal balances to the magnitude owed), `get_net_worth_statement`
+      (current value + historical trend), `get_goal_progress_report` (wraps `list_goals`),
+      `export_csv` (flattens any of the three)
+- [x] API: `GET /reports/balance-sheet`, `GET /reports/net-worth`, `GET /reports/goal-progress`,
+      `GET /reports/{type}/export` (CSV download via `Content-Disposition`)
+- [x] CLI: `reports balance-sheet`, `net-worth`, `goal-progress`, `export <type> --output <file>`
+- [x] No PDF export — no PDF library exists in this repo (`pdfplumber`/`pypdf` are read-oriented,
+      used for parsing uploaded statements) and adding one wasn't warranted for a "sketched only"
+      roadmap line; CSV satisfies "exportable" with zero new dependencies
+
+**Historical net-worth snapshots** — deliberately *not* a new table:
+
+- [x] `fi_scores` already inserts a timestamped row on every `compute_score` call, and `FiScore`
+      already carries `net_worth` — but `SQLFiScoreRepository.history()` was silently dropping it
+      (only ever projected `{score, created_at}`). Added `net_worth` to that projection (additive,
+      no signature change) instead of building a parallel snapshot mechanism that would duplicate
+      working functionality
+- [x] Found and fixed a related bug while wiring this up: `get_net_worth_statement`'s `as_of` was
+      always `None` — the stored `result_json` never contained `created_at` (that lives on the
+      ORM row, not the payload) — now sourced from history's most recent entry
+- [x] CLI `fi history` gained a Net Worth column now that `history()` returns it
+
+**Generalize Reminder into Alert/Notification** — the one real design fork in this phase:
+
+- [x] Chose additive extension of the existing `reminders` table over a schema rewrite or a
+      disconnected new domain, matching the roadmap's explicit "reuses the existing reminder
+      infra rather than a new domain": four new nullable columns (`alert_type`, `source_domain`,
+      `source_id`, `severity`). Plain user-created reminders leave them null
+      — migration is purely additive (4 nullable columns + 1 index)
+- [x] `ReminderRepository.upsert_alert()`, keyed on `(user_id, source_domain, source_id,
+      alert_type)` — re-running a detection pass against a still-active condition updates the
+      existing row (and resets `status` to `"pending"` if previously dismissed) instead of
+      duplicating it
+- [x] `ReminderService.sync_alerts(user_id, today)` normalizes three already-computed alert
+      shapes into this one: Budget (`variance < 0` → `budget_overspend`), Subscription
+      (`missed_charge`/`price_change` from `get_all_reports`), Insurance (`expiring_soon` →
+      `policy_expiring`, `missing_types` → `coverage_missing`). **Portfolio is deliberately
+      excluded** (documented in the docstring, not silently dropped) — its rebalancing alerts need
+      a target allocation the caller supplies on demand, and nothing is persisted to check against
+      automatically
+- [x] API: `POST /reminders/sync-alerts`, `GET /reminders/?alerts_only=true`
+- [x] CLI: `reminders sync-alerts`, `reminders list --alerts-only` (severity color-coded)
+- [x] Also fixed `list_reminders`' row projection, which was silently dropping `created_at` even
+      though it existed on the ORM, while adding the four new fields
+
+**Verified**: balance sheet and net-worth statement cross-checked against each other and against
+hand computation via direct service calls, HTTP, and CLI against the dev DB; all three CSV
+exports produce valid byte output with correct headers; `sync_alerts` correctly detected a real
+subscription price-change and a real expiring insurance policy, and re-running it against the
+same conditions updated the existing 2 rows rather than creating 4 (confirmed via direct service
+calls, HTTP, and CLI). Zero regressions: same 11 pre-existing test failures and same
+pre-existing lint/pyright baseline before and after every commit in this phase.
+
+**Flagged, not fixed** (out of scope for this phase, spawned as a separate background task): every
+domain's CLI list command truncates IDs to 8 characters for table display, but the corresponding
+delete/done commands require the full ID and silently no-op on a truncated one — reproduced
+directly with a synced alert's reminder ID. Fixing this well (full-ID display, prefix matching, or
+a visible not-found error) touches every domain's CLI group, not just reminders, so it's scoped
+as its own task rather than folded into this phase.
+
+---
+
 ## Roadmap (later — each gets its own detailed plan when its turn comes)
 
-9. **Reports & alerts** — exportable statements, historical net-worth snapshots, generalize
-   Reminder into Alert/Notification.
-10. **Data portability** — export/delete-my-data, broader agent-write audit log.
+9. **Data portability** — export/delete-my-data, broader agent-write audit log.
 
 ## Execution approach
 

@@ -19,6 +19,7 @@ verified end-to-end and committed before moving on.
 | 7. AI Advisor upgrades | ✅ Done (6fb7db4, 3ba21d6, 22b0fee, 868151e, d66d084, 0b95d74, 0ad0310, 8bf36a7, 95b57d8, d64ecb3) | see below |
 | 8. Reports & alerts | ✅ Done (0360b0d, a3bfd09, e4ac20e, d48ad3b, 4519851, d8fe246, 6f479e8) | see below |
 | 9. Data portability | ✅ Done (64648a0, 1db9877, 6c3700e, 09d26c4, f701d98, c3f210f, 7e00d4d) | see below — **closes the original roadmap** |
+| 10. Frontend parity (web + mobile) | ✅ Done (048defb…0a6a8cd) | see below — separate plan, not part of the original backend roadmap |
 
 ---
 
@@ -535,9 +536,77 @@ test failures (222 passed, 2 skipped) and same pre-existing lint/pyright baselin
 
 ---
 
+## Phase 10 — Frontend parity (web + mobile) ✅
+
+Not part of the original backend roadmap (Phases 0–9 closed it). A separate follow-on plan to
+bring both frontend clients up to parity with the fully-built backend: 8 domains
+(Budget/Debt/Portfolio/Insurance/Subscriptions/Reports/Audit Log/Data Portability) had zero
+frontend coverage on either client, and the onboarding wizard on both clients still only captured
+category checkboxes with no amounts, no opening balances, no risk questionnaire — despite the
+backend's real fact-find endpoints (`profile`/`balance-sheet`/`income`/`risk-questionnaire`/`goals`)
+existing since Phase 1.
+
+**Pattern used throughout**: neither client's generated OpenAPI SDK covers these routes (stale
+snapshot, broken codegen), so every new domain uses the same hand-written `apiFetch<T>(method,
+path, body)` helper already established for `fi`/`advisor`/`billing`/`documents`, wrapped in
+per-domain React Query hooks. Web composes `PageShell`/`PageHeader`/`BentoTile`/`DataTable`/
+`Dialog`/`AlertDialog`; mobile composes `ScreenShell`/`BentoTile`/`CardContainer` with hand-rolled
+list rows and a shared `FormModal`/`ConfirmModal` pair (mirroring the existing `ledger.tsx`
+pattern) since there's no mobile DataTable equivalent.
+
+**Web** (048defb…29ea136):
+- [x] Foundation: deleted 3 confirmed-dead files (`Sidebar.tsx`, `StrategyCard.tsx`,
+      `SurplusFlow.tsx`); added a `/more` hub page (mirroring mobile's existing overflow pattern)
+      hosting Statements (re-linked) + the 8 new domains; one new `AppSidebar` entry
+- [x] Budget, Debt, Portfolio, Insurance, Subscriptions, Reports, Audit Log — each a
+      `hooks/use<Domain>.ts` + `app/(app)/<domain>/page.tsx`, verified live against the real local
+      Postgres dev DB via `founder@salli.lk`: full create/edit/delete cycles, computed views
+      (debt payoff schedule, portfolio allocation/gain, insurance coverage-gap report,
+      subscription alerts, balance-sheet/net-worth/goal-progress reports with CSV export)
+- [x] Data Portability folded into the existing Settings page as a "Danger Zone" section: export
+      (JSON download via Blob/anchor) + delete-account (email-confirmation `AlertDialog`,
+      mirroring the CLI's confirmation friction) — wrong-email-rejection path verified live,
+      successful-deletion path deliberately not exercised against the shared dev account
+- [x] Onboarding wizard rebuilt from a single-payload legacy form into a 7-step flow (Welcome →
+      Identity → Balance Sheet → Income → Risk → Goals → Review), calling the real fact-find
+      endpoints in sequence before the legacy `/onboarding/complete` call (kept last since it's
+      the only thing that flips the `onboarding_complete` flag; `_ensure_account`'s idempotent
+      by-code account creation means there's no ordering dependency on it)
+
+**Mobile** (2a8dc97…0a6a8cd):
+- [x] Nav wiring: 8 new `Stack.Screen`/`ITEMS` entries in `app/(tabs)/more/`
+- [x] Same 8 domains ported to `ScreenShell`/`BentoTile`/`CardContainer` screens, hooks ported
+      near-verbatim from web (no toast lib on mobile, so mutations surface errors inline instead);
+      Reports' CSV export and Data Portability's JSON export use `expo-file-system`'s new
+      `File`/`Paths` API + `expo-sharing` to the native share sheet (web's Blob/anchor-download
+      has no mobile equivalent) — verified the underlying data flow live, but the actual native
+      share-sheet handoff isn't exercisable from the Expo **web** preview (`expo-file-system`'s
+      web shim doesn't implement the new File API); this targets native iOS/Android where it's
+      fully supported
+- [x] Onboarding wizard rebuilt to mirror web's 7-step flow; added a "Profile Setup → Redo profile
+      setup" card to `more/settings.tsx` (a genuine parity gap — mobile had no in-app way to reach
+      `/onboarding` after first completion, unlike web)
+- [x] Full CRUD + wizard-completion verified live end-to-end via the Expo web preview against the
+      same local backend and `founder@salli.lk` account
+
+**Discovered along the way, flagged not fixed**: mobile's auth-token hydration (`lib/auth.ts`'s
+`useAuth()`) only runs from `app/index.tsx`, `(tabs)/more/settings.tsx`, and `(auth)/login.tsx` —
+landing on any other route via a hard deep link (bypassing `index.tsx`) never hydrates the token
+for that session, so the route's first API call gets a spurious 401 that a React Query hook can
+then cache as a false empty state for its `staleTime` window. Confirmed pre-existing and
+identical across every domain (old and new) by reproducing it on `/accounts` under a hard reload;
+not scoped into this pass since fixing it means auditing every hook's `enabled`/`authReady` gating
+app-wide. Spawned as background task `task_c000923b`.
+
+Zero backend changes in this phase — every endpoint called already existed, was tested, and was
+verified in Phases 0–9.
+
+---
+
 ## Roadmap status
 
-All originally-scoped phases (0 through 9) are now complete. The feature set sketched at the top
+All originally-scoped phases (0 through 9) are now complete, and the frontend-parity follow-on
+(Phase 10) has brought both clients level with the backend's full domain set. The feature set sketched at the top
 of this file — CLI/API parity, Budget, Debt, Investment Portfolio, account/entry management,
 recurring subscriptions, Insurance, AI Advisor upgrades, Reports & alerts, and Data
 portability — is built, tested, and verified end-to-end. Further work should be scoped as a new

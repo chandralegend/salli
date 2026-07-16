@@ -5,98 +5,81 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Check, ChevronRight, ChevronLeft } from "lucide-react";
+import { Loader2, Check, ChevronRight, ChevronLeft, Plus, Trash2 } from "lucide-react";
 import { getStoredToken, setOnboardingComplete } from "@/lib/store";
 import { API_URL } from "@/lib/api-client";
 import { Logo } from "@/components/Logo";
+import {
+  updateProfileIdentity,
+  declareBalanceSheet,
+  declareIncome,
+  submitRiskQuestionnaire,
+  declareGoals,
+  type OpeningBalanceItem,
+  type IncomeItem,
+  type OnboardingGoalItem,
+} from "@/hooks/useOnboardingWizard";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-interface OnboardingData {
-  name: string;
-  nic: string;
-  residency: string;
-  employer: string;
+interface WizardData {
+  display_name: string;
+  date_of_birth: string;
+  dependents_count: string;
+  employment_status: string;
   employment_type: string;
+  residency_status: string;
+  employer: string;
   ird_number: string;
-  income_sources: string[];
-  primary_goal: string;
-  goal_target_amount: string;
-  goal_target_year: string;
-  risk_appetite: string;
-  motivation: string;
+  balances: OpeningBalanceItem[];
+  incomes: IncomeItem[];
+  time_horizon_years: string;
+  drawdown_reaction: string;
+  income_stability: string;
+  investment_experience: string;
+  goals: OnboardingGoalItem[];
 }
 
-const GOAL_OPTIONS = [
-  { id: "financial_independence", label: "Financial independence", desc: "Build enough to live off your investments" },
-  { id: "retirement", label: "Comfortable retirement", desc: "Retire without money worries" },
-  { id: "home", label: "Buy a home", desc: "Save toward a property" },
-  { id: "emergency_fund", label: "Emergency fund", desc: "A safety net of 3–6 months" },
-  { id: "debt_free", label: "Become debt-free", desc: "Clear loans and credit" },
-  { id: "wealth_growth", label: "Grow my wealth", desc: "Invest and compound over time" },
+const GOAL_KIND_OPTIONS = [
+  { id: "financial_independence", label: "Financial independence" },
+  { id: "retirement", label: "Comfortable retirement" },
+  { id: "home", label: "Buy a home" },
+  { id: "emergency_fund", label: "Emergency fund" },
+  { id: "debt_free", label: "Become debt-free" },
+  { id: "wealth_growth", label: "Grow my wealth" },
+  { id: "custom", label: "Something else" },
 ];
 
-const RISK_OPTIONS = [
-  { id: "conservative", label: "Conservative", desc: "Protect capital, steady returns" },
-  { id: "balanced", label: "Balanced", desc: "A mix of safety and growth" },
-  { id: "aggressive", label: "Aggressive", desc: "Maximise growth, accept swings" },
+const DRAWDOWN_OPTIONS = [
+  { id: "sell_all", label: "Sell everything" },
+  { id: "sell_some", label: "Sell some" },
+  { id: "hold", label: "Hold steady" },
+  { id: "buy_more", label: "Buy more" },
 ];
 
-// ── Income source options ────────────────────────────────────────────────────
-
-const INCOME_SOURCE_OPTIONS = [
-  {
-    id: "employment",
-    label: "Employment",
-    description: "Salary or wages from an employer",
-    accounts: ["Employment Income (4100)", "APIT Receivable (4110)"],
-  },
-  {
-    id: "freelance",
-    label: "Freelance / Business",
-    description: "Self-employment or business income",
-    accounts: ["Freelance / Business Income (4200)", "Business Expenses (5100)"],
-  },
-  {
-    id: "rental",
-    label: "Rental Income",
-    description: "Income from renting property",
-    accounts: ["Rental Income (4300)", "Property & Maintenance Expenses (5200)"],
-  },
-  {
-    id: "interest",
-    label: "Interest Income",
-    description: "Bank interest and fixed deposits",
-    accounts: ["Interest Income (4400)", "AIT Receivable (4410)"],
-  },
-  {
-    id: "foreign",
-    label: "Foreign Remittances",
-    description: "Income from abroad remitted via licensed bank",
-    accounts: ["Foreign Service Income (4500)", "Foreign Currency Account (1300)", "Foreign Tax Credit Receivable (4510)"],
-  },
-  {
-    id: "dividends",
-    label: "Dividends",
-    description: "Dividend income from shares",
-    accounts: ["Dividend Income (4600)"],
-  },
+const STABILITY_OPTIONS = [
+  { id: "unstable", label: "Unstable" },
+  { id: "moderate", label: "Moderate" },
+  { id: "stable", label: "Stable" },
 ];
 
-const BASE_ACCOUNTS = [
-  "Cash (1100)",
-  "Bank Account — LKR (1200)",
-  "Opening Equity (3000)",
-  "General Expenses (5000)",
+const EXPERIENCE_OPTIONS = [
+  { id: "none", label: "None" },
+  { id: "some", label: "Some" },
+  { id: "experienced", label: "Experienced" },
 ];
 
-const STEPS = ["Welcome", "About you", "Work & tax", "Income sources", "Your goals", "Review"];
+const STEPS = ["Welcome", "About you", "Opening balances", "Income", "Risk profile", "Goals", "Review"];
+
+const EMPTY_BALANCE: OpeningBalanceItem = { code: "", name: "", type: "asset", amount: 0 };
+const EMPTY_INCOME: IncomeItem = { code: "", name: "", amount: 0 };
+const EMPTY_GOAL: OnboardingGoalItem = { name: "", kind: "financial_independence", target_amount: 0, current_amount: 0, priority: 2 };
 
 // ── Step components ──────────────────────────────────────────────────────────
 
 function StepIndicator({ current, total }: { current: number; total: number }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 flex-wrap justify-center">
       {Array.from({ length: total }).map((_, i) => (
         <div key={i} className="flex items-center">
           <div
@@ -108,7 +91,7 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
             {i < current ? <Check className="size-3" /> : i + 1}
           </div>
           {i < total - 1 && (
-            <div className={`w-8 h-px mx-1 ${i < current ? "bg-foreground" : "bg-border"}`} />
+            <div className={`w-6 h-px mx-1 ${i < current ? "bg-foreground" : "bg-border"}`} />
           )}
         </div>
       ))}
@@ -123,12 +106,19 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
       <div className="space-y-2">
         <h2 className="text-2xl font-semibold tracking-tight">Welcome to Salli</h2>
         <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-          Your personal finance and tax assistant for Sri Lanka. Let&apos;s set up your profile — it only takes a minute.
+          Your personal finance and tax assistant for Sri Lanka. A real fact-find — it only
+          takes a few minutes and your numbers start working for you immediately.
         </p>
       </div>
       <div className="bg-muted/50 rounded-xl p-4 text-left space-y-3 max-w-sm mx-auto">
         <p className="text-[12px] font-medium text-foreground">What we&apos;ll set up:</p>
-        {["Your personal & tax profile", "Chart of accounts based on your income", "AI assistant configured for your situation"].map((item) => (
+        {[
+          "Your identity & tax profile",
+          "Opening balance sheet — your net worth starts non-zero",
+          "Income sources with real amounts",
+          "A scored risk-tolerance profile",
+          "Your financial goals",
+        ].map((item) => (
           <div key={item} className="flex items-start gap-2">
             <div className="w-4 h-4 rounded-full bg-foreground/10 flex items-center justify-center flex-shrink-0 mt-0.5">
               <Check className="size-2.5 text-foreground" />
@@ -144,367 +134,272 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-function AboutYouStep({
-  data,
-  onChange,
-}: {
-  data: OnboardingData;
-  onChange: (updates: Partial<OnboardingData>) => void;
-}) {
+function IdentityStep({ data, onChange }: { data: WizardData; onChange: (u: Partial<WizardData>) => void }) {
   return (
     <div className="space-y-5">
       <div>
         <h2 className="text-xl font-semibold tracking-tight">About you</h2>
-        <p className="text-sm text-muted-foreground mt-1">Basic personal details for your profile</p>
+        <p className="text-sm text-muted-foreground mt-1">Basic personal & tax details for your profile.</p>
       </div>
-
       <div className="space-y-4">
         <div className="space-y-1.5">
           <Label className="text-[12px] font-medium">Full name</Label>
-          <Input
-            placeholder="e.g. Chandra Perera"
-            value={data.name}
-            onChange={(e) => onChange({ name: e.target.value })}
-            className="h-9 text-[13px]"
-          />
+          <Input placeholder="e.g. Chandra Perera" value={data.display_name} onChange={(e) => onChange({ display_name: e.target.value })} className="h-9 text-[13px]" />
         </div>
-
-        <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium">
-            NIC number <span className="text-muted-foreground font-normal">(optional)</span>
-          </Label>
-          <Input
-            placeholder="e.g. 199012345678 or 901234567V"
-            value={data.nic}
-            onChange={(e) => onChange({ nic: e.target.value })}
-            className="h-9 text-[13px]"
-          />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-[12px] font-medium">Date of birth <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input type="date" value={data.date_of_birth} onChange={(e) => onChange({ date_of_birth: e.target.value })} className="h-9 text-[13px]" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[12px] font-medium">Dependents <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input inputMode="numeric" value={data.dependents_count} onChange={(e) => onChange({ dependents_count: e.target.value.replace(/[^0-9]/g, "") })} className="h-9 text-[13px]" />
+          </div>
         </div>
-
         <div className="space-y-1.5">
           <Label className="text-[12px] font-medium">Residency status</Label>
           <div className="grid grid-cols-2 gap-2">
-            {[
-              { id: "resident", label: "Sri Lanka Resident", desc: "Lived in SL for 183+ days this year" },
-              { id: "non_resident", label: "Non-Resident", desc: "Based overseas most of the year" },
-            ].map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => onChange({ residency: opt.id })}
-                className={`
-                  text-left px-3 py-3 rounded-lg border text-[12px] transition-colors
-                  ${data.residency === opt.id ? "border-foreground bg-foreground/5" : "border-border hover:border-foreground/40"}
-                `}
-              >
-                <div className="font-medium text-foreground">{opt.label}</div>
-                <div className="text-muted-foreground mt-0.5">{opt.desc}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function WorkTaxStep({
-  data,
-  onChange,
-}: {
-  data: OnboardingData;
-  onChange: (updates: Partial<OnboardingData>) => void;
-}) {
-  return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-xl font-semibold tracking-tight">Work & tax</h2>
-        <p className="text-sm text-muted-foreground mt-1">Help us tailor your tax setup. All fields are optional.</p>
-      </div>
-
-      <div className="space-y-4">
-        <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium">
-            Employer name <span className="text-muted-foreground font-normal">(optional)</span>
-          </Label>
-          <Input
-            placeholder="e.g. Virtusa Corporation"
-            value={data.employer}
-            onChange={(e) => onChange({ employer: e.target.value })}
-            className="h-9 text-[13px]"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium">Employment type</Label>
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { id: "permanent", label: "Permanent employee" },
-              { id: "contract", label: "Contract / fixed-term" },
-              { id: "self_employed", label: "Self-employed" },
-              { id: "other", label: "Other" },
-            ].map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => onChange({ employment_type: opt.id })}
-                className={`
-                  text-left px-3 py-2.5 rounded-lg border text-[12px] transition-colors
-                  ${data.employment_type === opt.id ? "border-foreground bg-foreground/5 font-medium" : "border-border hover:border-foreground/40"}
-                `}
-              >
+            {[{ id: "resident", label: "Sri Lanka Resident" }, { id: "non_resident", label: "Non-Resident" }].map((opt) => (
+              <button key={opt.id} type="button" onClick={() => onChange({ residency_status: opt.id })}
+                className={`text-left px-3 py-2.5 rounded-lg border text-[12px] transition-colors ${data.residency_status === opt.id ? "border-foreground bg-foreground/5 font-medium" : "border-border hover:border-foreground/40"}`}>
                 {opt.label}
               </button>
             ))}
           </div>
         </div>
-
         <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium">
-            IRD number <span className="text-muted-foreground font-normal">(optional)</span>
-          </Label>
-          <Input
-            placeholder="e.g. 134012345"
-            value={data.ird_number}
-            onChange={(e) => onChange({ ird_number: e.target.value })}
-            className="h-9 text-[13px]"
-          />
-          <p className="text-[11px] text-muted-foreground">
-            Your Inland Revenue Department taxpayer identification number
-          </p>
+          <Label className="text-[12px] font-medium">Employment status</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {["employed", "self_employed", "unemployed", "student", "retired"].map((opt) => (
+              <button key={opt} type="button" onClick={() => onChange({ employment_status: opt })}
+                className={`text-left px-2.5 py-2 rounded-lg border text-[11.5px] capitalize transition-colors ${data.employment_status === opt ? "border-foreground bg-foreground/5 font-medium" : "border-border hover:border-foreground/40"}`}>
+                {opt.replace("_", " ")}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-[12px] font-medium">Employer <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input placeholder="e.g. Virtusa" value={data.employer} onChange={(e) => onChange({ employer: e.target.value })} className="h-9 text-[13px]" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[12px] font-medium">IRD number <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input placeholder="e.g. 134012345" value={data.ird_number} onChange={(e) => onChange({ ird_number: e.target.value })} className="h-9 text-[13px]" />
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function IncomeSourcesStep({
-  data,
-  onChange,
-}: {
-  data: OnboardingData;
-  onChange: (updates: Partial<OnboardingData>) => void;
-}) {
-  function toggle(id: string) {
-    const next = data.income_sources.includes(id)
-      ? data.income_sources.filter((s) => s !== id)
-      : [...data.income_sources, id];
-    onChange({ income_sources: next });
+function BalanceSheetStep({ data, onChange }: { data: WizardData; onChange: (u: Partial<WizardData>) => void }) {
+  const lines = data.balances;
+  function setLine(i: number, patch: Partial<OpeningBalanceItem>) {
+    onChange({ balances: lines.map((l, j) => (j === i ? { ...l, ...patch } : l)) });
   }
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-semibold tracking-tight">Opening balances</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Declare what you already have — your net worth starts non-zero immediately. Optional; skip if you&apos;d rather add these later.
+        </p>
+      </div>
+      <div className="space-y-2">
+        {lines.map((line, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <Input placeholder="Code (e.g. 1100)" className="w-24 h-9 text-[12px]" value={line.code} onChange={(e) => setLine(i, { code: e.target.value })} />
+            <Input placeholder="Name (e.g. Cash)" className="flex-1 h-9 text-[12px]" value={line.name} onChange={(e) => setLine(i, { name: e.target.value })} />
+            <div className="flex rounded-lg border border-border overflow-hidden">
+              {(["asset", "liability"] as const).map((t) => (
+                <button key={t} type="button" onClick={() => setLine(i, { type: t })}
+                  className={`px-2.5 h-9 text-[11px] capitalize ${line.type === t ? "bg-foreground text-background" : "bg-transparent text-muted-foreground"}`}>
+                  {t}
+                </button>
+              ))}
+            </div>
+            <Input placeholder="Amount" className="w-28 h-9 text-[12px]" value={line.amount || ""} onChange={(e) => setLine(i, { amount: Number(e.target.value.replace(/[^0-9.]/g, "")) || 0 })} />
+            <button type="button" onClick={() => onChange({ balances: lines.filter((_, j) => j !== i) })} disabled={lines.length === 1}>
+              <Trash2 className="size-4 text-destructive" />
+            </button>
+          </div>
+        ))}
+        <button type="button" onClick={() => onChange({ balances: [...lines, { ...EMPTY_BALANCE }] })}
+          className="flex items-center gap-1 text-[12px] font-medium text-foreground/70 hover:text-foreground px-1 py-1">
+          <Plus className="size-3.5" /> Add balance
+        </button>
+      </div>
+    </div>
+  );
+}
 
+function IncomeStep({ data, onChange }: { data: WizardData; onChange: (u: Partial<WizardData>) => void }) {
+  const lines = data.incomes;
+  function setLine(i: number, patch: Partial<IncomeItem>) {
+    onChange({ incomes: lines.map((l, j) => (j === i ? { ...l, ...patch } : l)) });
+  }
   return (
     <div className="space-y-5">
       <div>
         <h2 className="text-xl font-semibold tracking-tight">Income sources</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Select all that apply. We&apos;ll create the right accounts for you automatically.
+          Declare a representative monthly amount per source — real numbers your FI score and cash-flow can use right away. Optional.
         </p>
       </div>
-
       <div className="space-y-2">
-        {INCOME_SOURCE_OPTIONS.map((opt) => {
-          const selected = data.income_sources.includes(opt.id);
-          return (
-            <button
-              key={opt.id}
-              type="button"
-              onClick={() => toggle(opt.id)}
-              className={`
-                w-full text-left px-4 py-3 rounded-lg border transition-colors flex items-start gap-3
-                ${selected ? "border-foreground bg-foreground/5" : "border-border hover:border-foreground/30"}
-              `}
-            >
-              <div
-                className={`
-                  w-4 h-4 rounded border flex-shrink-0 mt-0.5 flex items-center justify-center
-                  ${selected ? "bg-foreground border-foreground" : "border-border"}
-                `}
-              >
-                {selected && <Check className="size-2.5 text-background" />}
-              </div>
-              <div>
-                <div className="text-[13px] font-medium text-foreground">{opt.label}</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">{opt.description}</div>
-              </div>
+        {lines.map((line, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <Input placeholder="Code (e.g. 4100)" className="w-24 h-9 text-[12px]" value={line.code} onChange={(e) => setLine(i, { code: e.target.value })} />
+            <Input placeholder="Name (e.g. Salary)" className="flex-1 h-9 text-[12px]" value={line.name} onChange={(e) => setLine(i, { name: e.target.value })} />
+            <Input placeholder="Monthly amount" className="w-32 h-9 text-[12px]" value={line.amount || ""} onChange={(e) => setLine(i, { amount: Number(e.target.value.replace(/[^0-9.]/g, "")) || 0 })} />
+            <button type="button" onClick={() => onChange({ incomes: lines.filter((_, j) => j !== i) })} disabled={lines.length === 1}>
+              <Trash2 className="size-4 text-destructive" />
             </button>
-          );
-        })}
+          </div>
+        ))}
+        <button type="button" onClick={() => onChange({ incomes: [...lines, { ...EMPTY_INCOME }] })}
+          className="flex items-center gap-1 text-[12px] font-medium text-foreground/70 hover:text-foreground px-1 py-1">
+          <Plus className="size-3.5" /> Add income source
+        </button>
       </div>
-
-      {data.income_sources.length === 0 && (
-        <p className="text-[12px] text-amber-600 bg-amber-50 rounded-md px-3 py-2 border border-amber-200">
-          Select at least one income source so we can set up the right accounts.
-        </p>
-      )}
     </div>
   );
 }
 
-function GoalsStep({
-  data,
-  onChange,
-}: {
-  data: OnboardingData;
-  onChange: (updates: Partial<OnboardingData>) => void;
-}) {
+function RiskStep({ data, onChange }: { data: WizardData; onChange: (u: Partial<WizardData>) => void }) {
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-semibold tracking-tight">Risk profile</h2>
+        <p className="text-sm text-muted-foreground mt-1">A few questions to score your risk tolerance for the AI advisor.</p>
+      </div>
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <Label className="text-[12px] font-medium">Investment time horizon (years)</Label>
+          <Input inputMode="numeric" placeholder="e.g. 15" value={data.time_horizon_years} onChange={(e) => onChange({ time_horizon_years: e.target.value.replace(/[^0-9]/g, "") })} className="h-9 text-[13px] w-32" />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-[12px] font-medium">If your portfolio dropped 20% in a month, you&apos;d…</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {DRAWDOWN_OPTIONS.map((opt) => (
+              <button key={opt.id} type="button" onClick={() => onChange({ drawdown_reaction: opt.id })}
+                className={`text-left px-3 py-2.5 rounded-lg border text-[12px] transition-colors ${data.drawdown_reaction === opt.id ? "border-foreground bg-foreground/5 font-medium" : "border-border hover:border-foreground/40"}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-[12px] font-medium">How stable is your income?</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {STABILITY_OPTIONS.map((opt) => (
+              <button key={opt.id} type="button" onClick={() => onChange({ income_stability: opt.id })}
+                className={`text-left px-3 py-2.5 rounded-lg border text-[12px] transition-colors ${data.income_stability === opt.id ? "border-foreground bg-foreground/5 font-medium" : "border-border hover:border-foreground/40"}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-[12px] font-medium">Investment experience</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {EXPERIENCE_OPTIONS.map((opt) => (
+              <button key={opt.id} type="button" onClick={() => onChange({ investment_experience: opt.id })}
+                className={`text-left px-3 py-2.5 rounded-lg border text-[12px] transition-colors ${data.investment_experience === opt.id ? "border-foreground bg-foreground/5 font-medium" : "border-border hover:border-foreground/40"}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GoalsStep({ data, onChange }: { data: WizardData; onChange: (u: Partial<WizardData>) => void }) {
+  const goals = data.goals;
+  function setGoal(i: number, patch: Partial<OnboardingGoalItem>) {
+    onChange({ goals: goals.map((g, j) => (j === i ? { ...g, ...patch } : g)) });
+  }
   return (
     <div className="space-y-5">
       <div>
         <h2 className="text-xl font-semibold tracking-tight">Your goals</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Tell us what you&apos;re working toward so the advisor can guide you there.
-        </p>
+        <p className="text-sm text-muted-foreground mt-1">What are you working toward? Add as many as you like — optional.</p>
       </div>
-
-      <div className="space-y-1.5">
-        <Label className="text-[12px] font-medium">What matters most right now?</Label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {GOAL_OPTIONS.map((opt) => {
-            const selected = data.primary_goal === opt.id;
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => onChange({ primary_goal: opt.id })}
-                className={`text-left px-3 py-2.5 rounded-lg border text-[12px] transition-colors ${
-                  selected ? "border-foreground bg-foreground/5" : "border-border hover:border-foreground/40"
-                }`}
-              >
-                <div className="font-medium text-foreground">{opt.label}</div>
-                <div className="text-muted-foreground mt-0.5">{opt.desc}</div>
+      <div className="space-y-3">
+        {goals.map((g, i) => (
+          <div key={i} className="border border-border rounded-lg p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <Input placeholder="Goal name" className="flex-1 h-9 text-[12px]" value={g.name} onChange={(e) => setGoal(i, { name: e.target.value })} />
+              <button type="button" onClick={() => onChange({ goals: goals.filter((_, j) => j !== i) })} disabled={goals.length === 1}>
+                <Trash2 className="size-4 text-destructive" />
               </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium">
-            Target amount <span className="text-muted-foreground font-normal">(LKR, optional)</span>
-          </Label>
-          <Input
-            inputMode="numeric"
-            placeholder="e.g. 25,000,000"
-            value={data.goal_target_amount}
-            onChange={(e) => onChange({ goal_target_amount: e.target.value.replace(/[^0-9.]/g, "") })}
-            className="h-9 text-[13px]"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium">
-            By year <span className="text-muted-foreground font-normal">(optional)</span>
-          </Label>
-          <Input
-            inputMode="numeric"
-            placeholder="e.g. 2040"
-            value={data.goal_target_year}
-            onChange={(e) => onChange({ goal_target_year: e.target.value.replace(/[^0-9]/g, "").slice(0, 4) })}
-            className="h-9 text-[13px]"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <Label className="text-[12px] font-medium">How do you feel about investment risk?</Label>
-        <div className="grid grid-cols-3 gap-2">
-          {RISK_OPTIONS.map((opt) => {
-            const selected = data.risk_appetite === opt.id;
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => onChange({ risk_appetite: opt.id })}
-                className={`text-left px-3 py-2.5 rounded-lg border text-[12px] transition-colors ${
-                  selected ? "border-foreground bg-foreground/5 font-medium" : "border-border hover:border-foreground/40"
-                }`}
-              >
-                <div className="font-medium text-foreground">{opt.label}</div>
-                <div className="text-muted-foreground mt-0.5 leading-tight">{opt.desc}</div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <Label className="text-[12px] font-medium">
-          What&apos;s your motivation? <span className="text-muted-foreground font-normal">(optional)</span>
-        </Label>
-        <textarea
-          placeholder="e.g. Retire by 50 and travel; give my kids a debt-free start."
-          value={data.motivation}
-          onChange={(e) => onChange({ motivation: e.target.value })}
-          rows={3}
-          className="w-full resize-none rounded-lg border border-border bg-card px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:border-foreground/40"
-        />
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {GOAL_KIND_OPTIONS.map((opt) => (
+                <button key={opt.id} type="button" onClick={() => setGoal(i, { kind: opt.id })}
+                  className={`px-2 py-1 rounded-full text-[11px] border transition-colors ${g.kind === opt.id ? "border-foreground bg-foreground/5 font-medium" : "border-border text-muted-foreground"}`}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input placeholder="Target amount (LKR)" className="h-9 text-[12px]" value={g.target_amount || ""} onChange={(e) => setGoal(i, { target_amount: Number(e.target.value.replace(/[^0-9.]/g, "")) || 0 })} />
+              <Input type="date" placeholder="Target date" className="h-9 text-[12px]" value={g.target_date ?? ""} onChange={(e) => setGoal(i, { target_date: e.target.value })} />
+            </div>
+          </div>
+        ))}
+        <button type="button" onClick={() => onChange({ goals: [...goals, { ...EMPTY_GOAL }] })}
+          className="flex items-center gap-1 text-[12px] font-medium text-foreground/70 hover:text-foreground px-1 py-1">
+          <Plus className="size-3.5" /> Add goal
+        </button>
       </div>
     </div>
   );
 }
 
-function ReviewStep({ data }: { data: OnboardingData }) {
-  const selectedSources = INCOME_SOURCE_OPTIONS.filter((o) =>
-    data.income_sources.includes(o.id)
-  );
-
-  const allAccounts = [
-    ...BASE_ACCOUNTS,
-    ...selectedSources.flatMap((s) => s.accounts),
-  ];
-
+function ReviewStep({ data }: { data: WizardData }) {
   return (
     <div className="space-y-5">
       <div>
         <h2 className="text-xl font-semibold tracking-tight">Review & complete</h2>
-        <p className="text-sm text-muted-foreground mt-1">Here&apos;s what we&apos;ll create when you click Finish.</p>
+        <p className="text-sm text-muted-foreground mt-1">Here&apos;s what we&apos;ll set up when you click Finish.</p>
       </div>
-
-      <div className="space-y-4">
-        <div className="bg-muted/40 rounded-xl p-4 space-y-3">
-          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Your profile</p>
-          <div className="space-y-1.5 text-[13px]">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Name</span>
-              <span className="font-medium">{data.name || "—"}</span>
-            </div>
-            {data.nic && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">NIC</span>
-                <span className="font-medium">{data.nic}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Residency</span>
-              <span className="font-medium">{data.residency === "resident" ? "Sri Lanka Resident" : "Non-Resident"}</span>
-            </div>
-            {data.employer && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Employer</span>
-                <span className="font-medium">{data.employer}</span>
-              </div>
-            )}
-            {data.ird_number && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">IRD No.</span>
-                <span className="font-medium">{data.ird_number}</span>
-              </div>
-            )}
-          </div>
+      <div className="space-y-3">
+        <div className="bg-muted/40 rounded-xl p-4 space-y-1.5 text-[13px]">
+          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Profile</p>
+          <div className="flex justify-between"><span className="text-muted-foreground">Name</span><span className="font-medium">{data.display_name || "—"}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Residency</span><span className="font-medium">{data.residency_status === "resident" ? "Sri Lanka Resident" : "Non-Resident"}</span></div>
         </div>
-
-        <div className="bg-muted/40 rounded-xl p-4 space-y-3">
-          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-            Accounts to be created ({allAccounts.length})
+        <div className="bg-muted/40 rounded-xl p-4 text-[13px]">
+          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+            Opening balances ({data.balances.filter((b) => b.code && b.amount).length})
           </p>
-          <div className="space-y-1 max-h-40 overflow-y-auto">
-            {allAccounts.map((account) => (
-              <div key={account} className="flex items-center gap-2 text-[12px]">
-                <div className="w-1 h-1 rounded-full bg-foreground/40 flex-shrink-0" />
-                <span className="text-foreground">{account}</span>
-              </div>
-            ))}
-          </div>
+          {data.balances.filter((b) => b.code && b.amount).length === 0 ? (
+            <p className="text-muted-foreground">None declared.</p>
+          ) : data.balances.filter((b) => b.code && b.amount).map((b, i) => (
+            <div key={i} className="flex justify-between"><span>{b.name || b.code}</span><span className="font-medium">{b.amount.toLocaleString()}</span></div>
+          ))}
+        </div>
+        <div className="bg-muted/40 rounded-xl p-4 text-[13px]">
+          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+            Income sources ({data.incomes.filter((i) => i.code && i.amount).length})
+          </p>
+          {data.incomes.filter((i) => i.code && i.amount).length === 0 ? (
+            <p className="text-muted-foreground">None declared.</p>
+          ) : data.incomes.filter((i) => i.code && i.amount).map((inc, i) => (
+            <div key={i} className="flex justify-between"><span>{inc.name || inc.code}</span><span className="font-medium">{inc.amount.toLocaleString()}/mo</span></div>
+          ))}
+        </div>
+        <div className="bg-muted/40 rounded-xl p-4 text-[13px]">
+          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Goals ({data.goals.filter((g) => g.name).length})</p>
+          {data.goals.filter((g) => g.name).length === 0 ? (
+            <p className="text-muted-foreground">None declared.</p>
+          ) : data.goals.filter((g) => g.name).map((g, i) => (
+            <div key={i} className="flex justify-between"><span>{g.name}</span><span className="font-medium">{g.target_amount ? g.target_amount.toLocaleString() : "—"}</span></div>
+          ))}
         </div>
       </div>
     </div>
@@ -513,25 +408,28 @@ function ReviewStep({ data }: { data: OnboardingData }) {
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-const DEFAULT_DATA: OnboardingData = {
-  name: "",
-  nic: "",
-  residency: "resident",
-  employer: "",
+const DEFAULT_DATA: WizardData = {
+  display_name: "",
+  date_of_birth: "",
+  dependents_count: "",
+  employment_status: "",
   employment_type: "",
+  residency_status: "resident",
+  employer: "",
   ird_number: "",
-  income_sources: [],
-  primary_goal: "",
-  goal_target_amount: "",
-  goal_target_year: "",
-  risk_appetite: "",
-  motivation: "",
+  balances: [{ ...EMPTY_BALANCE }],
+  incomes: [{ ...EMPTY_INCOME }],
+  time_horizon_years: "",
+  drawdown_reaction: "",
+  income_stability: "",
+  investment_experience: "",
+  goals: [{ ...EMPTY_GOAL }],
 };
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [data, setData] = useState<OnboardingData>(DEFAULT_DATA);
+  const [data, setData] = useState<WizardData>(DEFAULT_DATA);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -539,13 +437,13 @@ export default function OnboardingPage() {
     if (!getStoredToken()) router.replace("/login");
   }, [router]);
 
-  function update(updates: Partial<OnboardingData>) {
+  function update(updates: Partial<WizardData>) {
     setData((prev) => ({ ...prev, ...updates }));
   }
 
   function canAdvance() {
-    if (step === 1 && !data.name.trim()) return false;
-    if (step === 3 && data.income_sources.length === 0) return false;
+    if (step === 1 && !data.display_name.trim()) return false;
+    if (step === 4 && (!data.time_horizon_years || !data.drawdown_reaction || !data.income_stability || !data.investment_experience)) return false;
     return true;
   }
 
@@ -561,18 +459,43 @@ export default function OnboardingPage() {
     setLoading(true);
     setError("");
     try {
+      await updateProfileIdentity({
+        display_name: data.display_name,
+        date_of_birth: data.date_of_birth || undefined,
+        dependents_count: data.dependents_count ? Number(data.dependents_count) : undefined,
+        employment_status: data.employment_status || undefined,
+        employment_type: data.employment_type || undefined,
+        residency_status: data.residency_status,
+        employer: data.employer || undefined,
+        ird_number: data.ird_number || undefined,
+      });
+
+      const validBalances = data.balances.filter((b) => b.code && b.name && b.amount);
+      if (validBalances.length > 0) await declareBalanceSheet(validBalances);
+
+      const validIncomes = data.incomes.filter((i) => i.code && i.name && i.amount);
+      if (validIncomes.length > 0) await declareIncome(validIncomes);
+
+      await submitRiskQuestionnaire({
+        time_horizon_years: Number(data.time_horizon_years),
+        drawdown_reaction: data.drawdown_reaction,
+        income_stability: data.income_stability,
+        investment_experience: data.investment_experience,
+        dependents_count: data.dependents_count ? Number(data.dependents_count) : 0,
+      });
+
+      const validGoals = data.goals.filter((g) => g.name);
+      if (validGoals.length > 0) await declareGoals(validGoals);
+
+      // Legacy completion call — still the only thing that flips the
+      // onboarding_complete flag GET /onboarding/status checks, and it
+      // idempotently creates the base starter accounts (skips any that
+      // the balance-sheet/income steps above already created by code).
       const token = getStoredToken();
-      const payload = {
-        ...data,
-        goal_target_amount: data.goal_target_amount ? Number(data.goal_target_amount) : 0,
-      };
       const res = await fetch(`${API_URL}/onboarding/complete`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: data.display_name, income_sources: [] }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -592,25 +515,22 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-background ledger-paper flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-lg">
-        {/* Header */}
         <div className="mb-8 flex flex-col items-center gap-4">
           <div className="flex items-center gap-2">
             <Logo className="size-7" />
             <span className="font-semibold text-foreground">Salli</span>
           </div>
-          {step > 0 && (
-            <StepIndicator current={step} total={STEPS.length - 1} />
-          )}
+          {step > 0 && <StepIndicator current={step} total={STEPS.length - 1} />}
         </div>
 
-        {/* Card */}
         <div className="bg-card rounded-2xl ring-1 ring-foreground/8 shadow-sm p-6 md:p-8">
           {step === 0 && <WelcomeStep onNext={next} />}
-          {step === 1 && <AboutYouStep data={data} onChange={update} />}
-          {step === 2 && <WorkTaxStep data={data} onChange={update} />}
-          {step === 3 && <IncomeSourcesStep data={data} onChange={update} />}
-          {step === 4 && <GoalsStep data={data} onChange={update} />}
-          {step === 5 && <ReviewStep data={data} />}
+          {step === 1 && <IdentityStep data={data} onChange={update} />}
+          {step === 2 && <BalanceSheetStep data={data} onChange={update} />}
+          {step === 3 && <IncomeStep data={data} onChange={update} />}
+          {step === 4 && <RiskStep data={data} onChange={update} />}
+          {step === 5 && <GoalsStep data={data} onChange={update} />}
+          {step === 6 && <ReviewStep data={data} />}
 
           {error && (
             <p className="mt-4 text-[12px] text-rose-600 bg-rose-50 rounded-md px-3 py-2 border border-rose-200">
@@ -618,7 +538,6 @@ export default function OnboardingPage() {
             </p>
           )}
 
-          {/* Navigation — not shown on welcome step (it has its own button) */}
           {step > 0 && (
             <div className="flex items-center justify-between mt-6 pt-5 border-t border-border/60">
               <Button variant="outline" size="sm" onClick={back} className="gap-1">
@@ -627,20 +546,12 @@ export default function OnboardingPage() {
               </Button>
 
               {isLastStep ? (
-                <Button
-                  onClick={finish}
-                  disabled={loading}
-                  className="gap-1 px-6"
-                >
+                <Button onClick={finish} disabled={loading} className="gap-1 px-6">
                   {loading && <Loader2 className="size-3.5 animate-spin" />}
                   Finish setup
                 </Button>
               ) : (
-                <Button
-                  onClick={next}
-                  disabled={!canAdvance()}
-                  className="gap-1"
-                >
+                <Button onClick={next} disabled={!canAdvance()} className="gap-1">
                   Continue
                   <ChevronRight className="size-4" />
                 </Button>
@@ -649,7 +560,6 @@ export default function OnboardingPage() {
           )}
         </div>
 
-        {/* Step label */}
         {step > 0 && (
           <p className="text-center text-[11px] text-muted-foreground mt-4">
             Step {step} of {STEPS.length - 1} — {STEPS[step]}

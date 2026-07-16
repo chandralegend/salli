@@ -32,6 +32,7 @@ from salli.interfaces.api.routers import (
     onboarding,
     portfolio,
     reminders,
+    reports,
     statements,
     subscriptions,
     tax,
@@ -118,6 +119,7 @@ def create_app() -> FastAPI:
     app.include_router(portfolio.router)
     app.include_router(subscriptions.router)
     app.include_router(insurance.router)
+    app.include_router(reports.router)
 
     # ── Exception handlers ────────────────────────────────────────────────────
     @app.exception_handler(ValueError)

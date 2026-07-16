@@ -42,6 +42,11 @@ class LedgerRepository(ABC):
         ...
 
     @abstractmethod
+    async def get_account(self, user_id: str, account_id: str) -> Any | None:
+        """Return a single Account by ID (active or inactive), or None."""
+        ...
+
+    @abstractmethod
     async def save_account(self, user_id: str, account: Any) -> str:
         """Persist an Account and return its ID."""
         ...
@@ -56,6 +61,11 @@ class LedgerRepository(ABC):
     @abstractmethod
     async def deactivate_account(self, user_id: str, account_id: str) -> None:
         """Soft-delete an account by setting is_active=False."""
+        ...
+
+    @abstractmethod
+    async def reactivate_account(self, user_id: str, account_id: str) -> None:
+        """Reverse a soft-delete by setting is_active=True."""
         ...
 
 

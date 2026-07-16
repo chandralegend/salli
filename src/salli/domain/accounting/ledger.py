@@ -100,6 +100,28 @@ def net_worth(
     return assets + liabilities  # liabilities are negative, so addition subtracts them
 
 
+def account_running_balance(
+    entries: list[StoredJournalEntry], account_id: str
+) -> list[tuple[StoredJournalEntry, Decimal]]:
+    """
+    Chronological running balance for a single account. `entries` is expected to
+    already be sorted chronologically (as returned by the repository); each
+    result pairs an entry that touched this account with the cumulative balance
+    immediately after it. Entries with no posting to this account are skipped.
+    """
+    running = Decimal(0)
+    results: list[tuple[StoredJournalEntry, Decimal]] = []
+    for entry in entries:
+        contribution = sum(
+            (p.base_signed for p in entry.postings if p.account_id == account_id), Decimal(0)
+        )
+        if contribution == 0:
+            continue
+        running += contribution
+        results.append((entry, running))
+    return results
+
+
 NORMAL_BALANCE: dict[AccountType, Direction] = {
     "asset": Direction.DEBIT,
     "expense": Direction.DEBIT,

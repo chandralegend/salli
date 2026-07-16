@@ -46,6 +46,10 @@ class LedgerService:
         async with self._uow_factory() as uow:
             return await uow.ledger.get_accounts(user_id)
 
+    async def get_account(self, user_id: str, account_id: str) -> Account | None:
+        async with self._uow_factory() as uow:
+            return await uow.ledger.get_account(user_id, account_id)
+
     async def add_entry(
         self,
         user_id: str,
@@ -125,6 +129,57 @@ class LedgerService:
     async def deactivate_account(self, user_id: str, account_id: str) -> None:
         async with self._uow_factory() as uow:
             await uow.ledger.deactivate_account(user_id, account_id)
+
+    async def reactivate_account(self, user_id: str, account_id: str) -> None:
+        async with self._uow_factory() as uow:
+            await uow.ledger.reactivate_account(user_id, account_id)
+
+    async def get_account_overview(
+        self,
+        user_id: str,
+        account_id: str,
+        from_date: str | None = None,
+        to_date: str | None = None,
+    ) -> dict[str, Any] | None:
+        """Account detail + full-history running balance, sliced to [from_date, to_date]
+        for display — the running balance itself is always computed over the account's
+        entire history so figures stay historically accurate even under a date filter."""
+        async with self._uow_factory() as uow:
+            account = await uow.ledger.get_account(user_id, account_id)
+            if account is None:
+                return None
+            all_entries = await uow.ledger.get_entries(user_id)
+
+        history = ledger_ops.account_running_balance(all_entries, account_id)
+        current_balance = history[-1][1] if history else Decimal(0)
+
+        transactions = [
+            {
+                "entry_id": entry.id,
+                "entry_date": entry.entry_date,
+                "description": entry.description,
+                "source": entry.source,
+                "external_ref": entry.external_ref,
+                "running_balance": str(balance),
+            }
+            for entry, balance in history
+            if (from_date is None or entry.entry_date >= from_date)
+            and (to_date is None or entry.entry_date <= to_date)
+        ]
+
+        return {
+            "account": {
+                "id": account.id,
+                "code": account.code,
+                "name": account.name,
+                "type": account.type,
+                "currency": account.currency,
+                "parent_id": account.parent_id,
+                "is_active": account.is_active,
+            },
+            "current_balance": str(current_balance),
+            "transactions": transactions,
+        }
 
     async def reverse_entry(self, user_id: str, entry_id: str) -> str:
         """Create a reversing journal entry and mark the original as reversed."""

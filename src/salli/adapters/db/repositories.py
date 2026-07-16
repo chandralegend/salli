@@ -227,6 +227,19 @@ class SQLLedgerRepository(LedgerRepository):
         if row:
             row.is_active = False
 
+    async def reactivate_account(self, user_id: str, account_id: str) -> None:
+        stmt = select(AccountORM).where(AccountORM.id == account_id, AccountORM.user_id == user_id)
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row:
+            row.is_active = True
+
+    async def get_account(self, user_id: str, account_id: str) -> Account | None:
+        stmt = select(AccountORM).where(AccountORM.id == account_id, AccountORM.user_id == user_id)
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        return _account_from_orm(row) if row else None
+
 
 # ── TaxComputationRepository ──────────────────────────────────────────────────
 

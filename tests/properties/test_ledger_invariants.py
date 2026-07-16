@@ -9,7 +9,12 @@ from typing import Any
 from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
-from salli.domain.accounting.ledger import assert_trial_balance, build_reversing_entry
+from salli.domain.accounting.ledger import (
+    account_running_balance,
+    assert_trial_balance,
+    build_reversing_entry,
+    trial_balance,
+)
 from salli.domain.accounting.models import Direction, JournalEntry, Posting, StoredJournalEntry
 
 # ── strategies ────────────────────────────────────────────────────────────────
@@ -120,3 +125,27 @@ def test_base_signed_credit_negative(amount: Decimal):
         currency="LKR",
     )
     assert p.base_signed < Decimal(0)
+
+
+# ── invariant: an account's final running balance equals its trial-balance figure ─
+
+
+@given(entries=st.lists(balanced_entry(), min_size=0, max_size=20), acc=account_id)
+@settings(max_examples=200)
+def test_running_balance_final_value_matches_trial_balance(entries: list[JournalEntry], acc: str):
+    stored = [as_stored(e, id=f"e{i}") for i, e in enumerate(entries)]
+    history = account_running_balance(stored, acc)
+    expected = trial_balance(stored).get(acc, Decimal(0))
+    final = history[-1][1] if history else Decimal(0)
+    assert final == expected
+
+
+@given(entries=st.lists(balanced_entry(), min_size=1, max_size=20), acc=account_id)
+@settings(max_examples=200)
+def test_running_balance_only_includes_entries_touching_the_account(
+    entries: list[JournalEntry], acc: str
+):
+    stored = [as_stored(e, id=f"e{i}") for i, e in enumerate(entries)]
+    history = account_running_balance(stored, acc)
+    touching_ids = {e.id for e in stored if any(p.account_id == acc for p in e.postings)}
+    assert {e.id for e, _ in history} == touching_ids

@@ -6,6 +6,7 @@ import pytest
 
 from salli.domain.accounting.ledger import (
     account_balance,
+    account_running_balance,
     assert_trial_balance,
     build_reversing_entry,
     income_for_period,
@@ -180,3 +181,47 @@ def test_net_worth():
     # salary_income is income (credit-normal, negative in trial balance)
     worth = net_worth(entries, {"bank"}, set())
     assert worth == Decimal("300000")
+
+
+def test_account_running_balance_accumulates_chronologically():
+    e1 = make_stored(salary_entry(), id="e1")  # bank +300000
+    rent_entry = JournalEntry(
+        entry_date="2025-05-05",
+        description="Rent paid",
+        source="manual",
+        postings=[
+            Posting(
+                account_id="rent_expense",
+                direction=Direction.DEBIT,
+                amount=Decimal("50000"),
+                currency="LKR",
+            ),
+            Posting(
+                account_id="bank",
+                direction=Direction.CREDIT,
+                amount=Decimal("50000"),
+                currency="LKR",
+            ),
+        ],
+    )
+    e2 = make_stored(rent_entry, id="e2")
+
+    history = account_running_balance([e1, e2], "bank")
+    assert len(history) == 2
+    assert history[0][0].id == "e1"
+    assert history[0][1] == Decimal("300000")
+    assert history[1][0].id == "e2"
+    assert history[1][1] == Decimal("250000")
+
+
+def test_account_running_balance_skips_entries_not_touching_the_account():
+    e1 = make_stored(salary_entry(), id="e1")
+    history = account_running_balance([e1], "rent_expense")
+    assert history == []
+
+
+def test_account_running_balance_final_value_matches_account_balance():
+    e1 = make_stored(salary_entry(), id="e1")
+    history = account_running_balance([e1], "bank")
+    bank_postings = [p for p in e1.postings if p.account_id == "bank"]
+    assert history[-1][1] == account_balance(bank_postings)

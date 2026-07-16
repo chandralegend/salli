@@ -18,7 +18,7 @@ verified end-to-end and committed before moving on.
 | 6. Insurance | ✅ Done (7956cc8, e922ea8, f92b3b3, e4ed420, 354f47d, f0fa109) | see below |
 | 7. AI Advisor upgrades | ✅ Done (6fb7db4, 3ba21d6, 22b0fee, 868151e, d66d084, 0b95d74, 0ad0310, 8bf36a7, 95b57d8, d64ecb3) | see below |
 | 8. Reports & alerts | ✅ Done (0360b0d, a3bfd09, e4ac20e, d48ad3b, 4519851, d8fe246, 6f479e8) | see below |
-| 9+. Data portability | ⏳ Not started | sketched only, gets its own plan when its turn comes |
+| 9. Data portability | ✅ Done (64648a0, 1db9877, 6c3700e, 09d26c4, f701d98, c3f210f, 7e00d4d) | see below — **closes the original roadmap** |
 
 ---
 
@@ -479,9 +479,69 @@ as its own task rather than folded into this phase.
 
 ---
 
-## Roadmap (later — each gets its own detailed plan when its turn comes)
+## Phase 9 — Data portability ✅
 
-9. **Data portability** — export/delete-my-data, broader agent-write audit log.
+Scoped from the roadmap's one-liner ("export/delete-my-data, broader agent-write audit log")
+into two deliverables. Order chosen (over re-litigating earlier phases): Insurance → AI Advisor
+upgrades → Reports & alerts → Data portability, since export/delete-everything only makes sense
+once every data domain that could hold something actually exists.
+
+**Broader agent-write audit log**:
+
+- [x] `AuditLogORM` (table `audit_logs`: id/user_id/action/params (JSONB)/decision/created_at) +
+      `AuditLogRepository` port (`log`, `list`) + `SQLAuditLogRepository` adapter — migration
+      `32951ad2556e`
+- [x] Wired into the 3 existing approval-gated agent write tools (`create_account`,
+      `create_reminder`, `post_journal_entry` in `domain/agents/tools.py`): a `_log_audit` closure
+      logs `(user_id, action, params, decision)` right after `interrupt(...)` resolves, regardless
+      of approve/deny outcome, wrapped in try/except so a logging failure never blocks the tool's
+      actual action. `user_id` is now captured before the interrupt (previously only inside the
+      approved branch) so denied actions are attributable too
+- [x] `AgentService.get_audit_log(user_id, limit=100)`, `GET /agent/audit-log`, CLI
+      `agent audit-log` (decision color-coded green=approved/red=other)
+
+**Export-my-data / delete-my-account**:
+
+- [x] `DataPortabilityRepository` port (`delete_all(user_id) -> dict[str, int]`) +
+      `SQLDataPortabilityRepository` adapter. The one genuinely hard part: SQLAlchemy FKs default
+      to `NO ACTION`/`RESTRICT` in Postgres, so a naive per-table bulk delete can violate
+      referential integrity depending on order. A full 23-table inventory (researched via a
+      background Explore pass) found two tables needing to go *before* their FK targets —
+      `parsed_transactions` (→ `journal_entries`, no cascade) and `recurring_subscriptions`
+      (→ `accounts`, no cascade) — everything else either has an `ondelete="CASCADE"` or no
+      dependency on the tables above. `UserProfileORM` goes last (its PK *is* the user id; nothing
+      else FK's into it). Proved empirically with a disposable throwaway user populated across
+      both FK-sensitive relationships before deleting, never against the shared dev-user seed data
+- [x] `DataPortabilityService.export_all` composes over every existing domain service's own read
+      methods (no new queries) into one JSON-serializable dict; documented scope limits inline
+      (active-accounts-only, current-tax-year-only, chat content lives in the LangGraph
+      checkpointer and isn't included). `delete_account` calls the repository directly through a
+      dedicated `UnitOfWork`
+- [x] API: `GET /onboarding/export`, `DELETE /onboarding/account` (placed under the existing
+      `/onboarding` prefix alongside `GET/PATCH /onboarding/profile`, not a new router) — the
+      delete endpoint requires a `confirm_email` body field matching the authenticated account's
+      own email (case-insensitive), a deliberate friction point against an accidental or spoofed
+      call
+- [x] CLI: `profile export --output <file>`, `profile delete-account` (interactive
+      type-the-user-id-to-confirm prompt, or `--confirm` to skip it for scripted use)
+
+**Verified**: export against the real dev-user (read-only, safe); the delete endpoint's
+confirm_email mismatch path (400, dev-user untouched) via HTTP; the full deletion path via HTTP
+and via both CLI confirmation modes (interactive prompt and `--confirm`), each against a fresh
+disposable throwaway user seeded with FK-sensitive data beforehand, confirming rows across all
+23 tables are gone and the ordering fix holds end-to-end. Zero regressions: same 11 pre-existing
+test failures (222 passed, 2 skipped) and same pre-existing lint/pyright baseline (234 errors in
+`cli/main.py`, 728 across `src/`) before and after every commit in this phase.
+
+---
+
+## Roadmap status
+
+All originally-scoped phases (0 through 9) are now complete. The feature set sketched at the top
+of this file — CLI/API parity, Budget, Debt, Investment Portfolio, account/entry management,
+recurring subscriptions, Insurance, AI Advisor upgrades, Reports & alerts, and Data
+portability — is built, tested, and verified end-to-end. Further work should be scoped as a new
+plan rather than assumed from this file.
 
 ## Execution approach
 

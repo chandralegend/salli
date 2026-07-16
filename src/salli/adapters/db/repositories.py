@@ -30,6 +30,7 @@ from salli.adapters.db.models import (
     JournalEntryORM,
     ParsedTransactionORM,
     PostingORM,
+    RecurringSubscriptionORM,
     ReminderORM,
     StatementORM,
     SubscriptionORM,
@@ -48,6 +49,7 @@ from salli.application.ports import (
     GoalRepository,
     LedgerRepository,
     PortfolioRepository,
+    RecurringSubscriptionRepository,
     ReminderRepository,
     StatementRepository,
     SubscriptionRepository,
@@ -1361,6 +1363,108 @@ class SQLPortfolioRepository(PortfolioRepository):
         r = (
             await self._s.execute(
                 select(HoldingORM).where(HoldingORM.id == holding_id, HoldingORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+        if r:
+            await self._s.delete(r)
+
+
+# ── Recurring subscription repository ─────────────────────────────────────────
+
+
+def _recurring_subscription_to_dict(r: RecurringSubscriptionORM) -> dict[str, Any]:
+    return {
+        "id": r.id,
+        "user_id": r.user_id,
+        "name": r.name,
+        "amount_minor": r.amount_minor,
+        "frequency": r.frequency,
+        "next_due_date": r.next_due_date,
+        "account_id": r.account_id,
+        "grace_days": r.grace_days,
+        "amount_tolerance_pct": str(r.amount_tolerance_pct),
+        "is_active": r.is_active,
+        "created_at": r.created_at.isoformat(),
+        "updated_at": r.updated_at.isoformat(),
+    }
+
+
+class SQLRecurringSubscriptionRepository(RecurringSubscriptionRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def save(self, user_id: str, subscription: dict[str, Any]) -> str:
+        sid = subscription.get("id") or str(uuid.uuid4())
+        self._s.add(
+            RecurringSubscriptionORM(
+                id=sid,
+                user_id=user_id,
+                name=subscription["name"],
+                amount_minor=int(subscription["amount_minor"]),
+                frequency=subscription["frequency"],
+                next_due_date=subscription["next_due_date"],
+                account_id=subscription.get("account_id"),
+                grace_days=subscription.get("grace_days", 5),
+                amount_tolerance_pct=subscription.get("amount_tolerance_pct", 0.05),
+                is_active=subscription.get("is_active", True),
+            )
+        )
+        await self._s.flush()
+        return sid
+
+    async def get(self, user_id: str, subscription_id: str) -> dict[str, Any] | None:
+        r = (
+            await self._s.execute(
+                select(RecurringSubscriptionORM).where(
+                    RecurringSubscriptionORM.id == subscription_id,
+                    RecurringSubscriptionORM.user_id == user_id,
+                )
+            )
+        ).scalar_one_or_none()
+        return _recurring_subscription_to_dict(r) if r else None
+
+    async def list(self, user_id: str, active_only: bool = True) -> list[dict[str, Any]]:
+        stmt = select(RecurringSubscriptionORM).where(RecurringSubscriptionORM.user_id == user_id)
+        if active_only:
+            stmt = stmt.where(RecurringSubscriptionORM.is_active == True)  # noqa: E712
+        stmt = stmt.order_by(RecurringSubscriptionORM.created_at)
+        return [
+            _recurring_subscription_to_dict(r)
+            for r in (await self._s.execute(stmt)).scalars().all()
+        ]
+
+    async def update(self, user_id: str, subscription_id: str, updates: dict[str, Any]) -> None:
+        r = (
+            await self._s.execute(
+                select(RecurringSubscriptionORM).where(
+                    RecurringSubscriptionORM.id == subscription_id,
+                    RecurringSubscriptionORM.user_id == user_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if not r:
+            return
+        for k in (
+            "name",
+            "amount_minor",
+            "frequency",
+            "next_due_date",
+            "account_id",
+            "grace_days",
+            "amount_tolerance_pct",
+            "is_active",
+        ):
+            if k in updates and updates[k] is not None:
+                setattr(r, k, updates[k])
+        await self._s.flush()
+
+    async def delete(self, user_id: str, subscription_id: str) -> None:
+        r = (
+            await self._s.execute(
+                select(RecurringSubscriptionORM).where(
+                    RecurringSubscriptionORM.id == subscription_id,
+                    RecurringSubscriptionORM.user_id == user_id,
+                )
             )
         ).scalar_one_or_none()
         if r:

@@ -529,3 +529,37 @@ class HoldingORM(Base):
     )
 
     __table_args__ = (Index("ix_holdings_user_active", "user_id", "is_active"),)
+
+
+# ── Recurring subscription ────────────────────────────────────────────────────
+
+
+class RecurringSubscriptionORM(Base):
+    """A declared recurring-expense expectation, matched against posted ledger
+    entries at query time — never a live bank/merchant integration. Distinct from
+    the billing `SubscriptionORM` (Paddle plan/entitlement state for Salli itself);
+    this table is user-declared personal-finance data.
+    """
+
+    __tablename__ = "recurring_subscriptions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    frequency: Mapped[str] = mapped_column(String(20), nullable=False)
+    next_due_date: Mapped[str] = mapped_column(String(10), nullable=False)  # YYYY-MM-DD
+    account_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("accounts.id"), nullable=True
+    )
+    grace_days: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
+    amount_tolerance_pct: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False, default=0.05)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+
+    __table_args__ = (Index("ix_recurring_subscriptions_user_active", "user_id", "is_active"),)

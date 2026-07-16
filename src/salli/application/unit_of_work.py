@@ -20,6 +20,7 @@ from salli.adapters.db.repositories import (
     SQLGoalRepository,
     SQLLedgerRepository,
     SQLPortfolioRepository,
+    SQLRecurringSubscriptionRepository,
     SQLReminderRepository,
     SQLStatementRepository,
     SQLSubscriptionRepository,
@@ -38,6 +39,7 @@ from salli.application.ports import (
     GoalRepository,
     LedgerRepository,
     PortfolioRepository,
+    RecurringSubscriptionRepository,
     ReminderRepository,
     StatementRepository,
     SubscriptionRepository,
@@ -67,6 +69,7 @@ class UnitOfWork:
     budgets: BudgetRepository
     debts: DebtRepository
     holdings: PortfolioRepository
+    recurring_subscriptions: RecurringSubscriptionRepository
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._factory = session_factory
@@ -90,6 +93,7 @@ class UnitOfWork:
         self.budgets = SQLBudgetRepository(self._session)
         self.debts = SQLDebtRepository(self._session)
         self.holdings = SQLPortfolioRepository(self._session)
+        self.recurring_subscriptions = SQLRecurringSubscriptionRepository(self._session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

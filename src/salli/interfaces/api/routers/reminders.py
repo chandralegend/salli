@@ -1,13 +1,17 @@
 """
-Reminders router — filing calendar and custom reminders.
+Reminders router — filing calendar, custom reminders, and system-detected
+alerts (Reminder rows with alert_type/source_domain/source_id/severity set).
 
-GET  /reminders          — list reminders (optional ?status=pending|done)
-POST /reminders          — create a custom reminder
-POST /reminders/seed     — seed IRD filing deadlines for the current year
-PATCH /reminders/{id}/done — mark a reminder complete
+GET  /reminders             — list reminders (optional ?status, ?alerts_only)
+POST /reminders             — create a custom reminder
+POST /reminders/seed        — seed IRD filing deadlines for the current year
+POST /reminders/sync-alerts — detect and upsert Budget/Subscription/Insurance alerts
+PATCH /reminders/{id}/done  — mark a reminder complete
 """
 
 from __future__ import annotations
+
+import datetime
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -22,8 +26,11 @@ async def list_reminders(
     user_id: CurrentUser,
     svc: AppServices,
     status: str | None = None,
+    alerts_only: bool = False,
 ):
     reminders = await svc.reminders.list_reminders(user_id, status)
+    if alerts_only:
+        reminders = [r for r in reminders if r.get("alert_type")]
     return {"reminders": reminders}
 
 
@@ -47,6 +54,15 @@ async def seed_filing_calendar(
     """Seed the IRD filing deadlines for the given year of assessment."""
     created = await svc.reminders.seed_filing_calendar(user_id, year)
     return {"created": len(created), "ids": created}
+
+
+@router.post("/sync-alerts", status_code=201)
+async def sync_alerts(user_id: CurrentUser, svc: AppServices):
+    """Detect current Budget/Subscription/Insurance alert conditions and
+    upsert them as reminders. Idempotent — safe to call repeatedly."""
+    today = datetime.date.today().isoformat()
+    counts = await svc.reminders.sync_alerts(user_id, today)
+    return {"counts": counts, "total": sum(counts.values())}
 
 
 @router.patch("/{reminder_id}/done", status_code=204)

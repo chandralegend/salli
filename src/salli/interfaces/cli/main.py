@@ -648,10 +648,15 @@ def parse_post(
 @reminders_app.command("list")
 def reminders_list(
     status: str = typer.Option(None, "--status", help="Filter by status, e.g. 'pending'/'done'"),
+    alerts_only: bool = typer.Option(
+        False, "--alerts-only", help="Show only system-detected alerts, not user-created reminders"
+    ),
 ):
     """List reminders."""
     user_id = _require_user()
     reminders = asyncio.run(_services().reminders.list_reminders(user_id, status))
+    if alerts_only:
+        reminders = [r for r in reminders if r.get("alert_type")]
     if not reminders:
         console.print("[dim]No reminders found.[/dim]")
         return
@@ -660,12 +665,18 @@ def reminders_list(
     table.add_column("Kind")
     table.add_column("Due Date")
     table.add_column("Status")
+    table.add_column("Alert Type")
+    table.add_column("Severity")
     for r in reminders:
+        severity = r.get("severity") or ""
+        style = {"critical": "red", "warning": "yellow"}.get(severity, "")
         table.add_row(
             str(r.get("id", ""))[:8],
             r.get("kind", ""),
             str(r.get("due_date", "")),
             r.get("status", ""),
+            r.get("alert_type") or "",
+            f"[{style}]{severity}[/{style}]" if style else severity,
         )
     console.print(table)
 
@@ -709,6 +720,26 @@ def reminders_seed(
     user_id = _require_user()
     ids = asyncio.run(_services().reminders.seed_filing_calendar(user_id, year))
     console.print(f"[green]Seeded {len(ids)} reminder(s) for {year}.[/green]")
+
+
+@reminders_app.command("sync-alerts")
+def reminders_sync_alerts():
+    """Detect current Budget/Subscription/Insurance alert conditions and
+    upsert them as reminders. Safe to run repeatedly."""
+    import datetime
+
+    user_id = _require_user()
+    today = datetime.date.today().isoformat()
+    counts = asyncio.run(_services().reminders.sync_alerts(user_id, today))
+    if not counts:
+        console.print("[dim]No alert conditions detected.[/dim]")
+        return
+    table = Table(title="Alerts Synced")
+    table.add_column("Alert Type")
+    table.add_column("Count", justify="right")
+    for alert_type, count in counts.items():
+        table.add_row(alert_type, str(count))
+    console.print(table)
 
 
 # ── fi ─────────────────────────────────────────────────────────────────────────

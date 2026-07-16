@@ -97,7 +97,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         uow_factory=uow_factory,
     )
     parsing = ParsingService(uow_factory, storage)
-    reminders = ReminderService(uow_factory)
+    reminders = ReminderService(uow_factory, budget, subscription, insurance)
     reports = ReportService(ledger, fi)
 
     return Services(

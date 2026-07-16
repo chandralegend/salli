@@ -15,6 +15,8 @@ from salli.domain.accounting.models import (
     Source,
     StoredJournalEntry,
 )
+from salli.domain.subscription import engine as subscription_engine
+from salli.domain.subscription.models import Subscription
 
 
 def _q2(value: Decimal) -> Decimal:
@@ -132,6 +134,26 @@ class LedgerService:
                         "mime_type": doc["mime_type"],
                         "storage_key": doc.get("storage_key"),
                     }
+
+            # Subscription association is always derived at query time — never
+            # stored on the entry — per the immutable-journal-entry invariant.
+            accounts = await uow.ledger.get_accounts(user_id)
+            subscriptions = await uow.recurring_subscriptions.list(user_id, active_only=True)
+            possible_subscriptions: list[dict[str, Any]] = []
+            for s in subscriptions:
+                sub = Subscription(
+                    name=s["name"],
+                    amount=Decimal(s["amount_minor"]) / 100,
+                    frequency=s["frequency"],
+                    next_due_date=s["next_due_date"],
+                    account_id=s["account_id"],
+                    grace_days=s["grace_days"],
+                    amount_tolerance_pct=Decimal(s["amount_tolerance_pct"]),
+                )
+                matches = subscription_engine.find_matches(sub, [entry], accounts)
+                if any(m.entry_id == entry.id for m in matches):
+                    possible_subscriptions.append({"subscription_id": s["id"], "name": s["name"]})
+            provenance["possible_subscriptions"] = possible_subscriptions
 
         return provenance
 

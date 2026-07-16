@@ -563,3 +563,54 @@ class RecurringSubscriptionORM(Base):
     )
 
     __table_args__ = (Index("ix_recurring_subscriptions_user_active", "user_id", "is_active"),)
+
+
+# ── Insurance ─────────────────────────────────────────────────────────────────
+
+
+class PolicyORM(Base):
+    """A declared insurance policy — coverage/premium are user-entered, never
+    fetched from an insurer's API."""
+
+    __tablename__ = "policies"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    policy_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    provider: Mapped[str] = mapped_column(String(200), nullable=False)
+    coverage_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    premium_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    premium_frequency: Mapped[str] = mapped_column(String(20), nullable=False)
+    expiry_date: Mapped[str] = mapped_column(String(10), nullable=False)  # YYYY-MM-DD
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+
+    __table_args__ = (Index("ix_policies_user_active", "user_id", "is_active"),)
+
+
+class InsuranceTargetORM(Base):
+    """A declared desired coverage amount per policy type — at most one per
+    (user, policy_type), analogous to a budget category limit."""
+
+    __tablename__ = "insurance_targets"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    policy_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    target_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "policy_type", name="uq_insurance_targets_user_type"),
+    )

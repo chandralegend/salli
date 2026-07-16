@@ -453,3 +453,34 @@ class RecurringSubscriptionRepository(ABC):
 
     @abstractmethod
     async def delete(self, user_id: str, subscription_id: str) -> None: ...
+
+
+# ── Insurance ──────────────────────────────────────────────────────────────────
+
+
+class PolicyRepository(ABC):
+    @abstractmethod
+    async def save(self, user_id: str, policy: dict[str, Any]) -> str: ...
+
+    @abstractmethod
+    async def get(self, user_id: str, policy_id: str) -> dict[str, Any] | None: ...
+
+    @abstractmethod
+    async def list(self, user_id: str, active_only: bool = True) -> list[dict[str, Any]]: ...
+
+    @abstractmethod
+    async def update(self, user_id: str, policy_id: str, updates: dict[str, Any]) -> None: ...
+
+    @abstractmethod
+    async def delete(self, user_id: str, policy_id: str) -> None: ...
+
+
+class InsuranceTargetRepository(ABC):
+    @abstractmethod
+    async def upsert(self, user_id: str, policy_type: str, target_amount_minor: int) -> str: ...
+
+    @abstractmethod
+    async def list(self, user_id: str) -> list[dict[str, Any]]: ...
+
+    @abstractmethod
+    async def delete(self, user_id: str, policy_type: str) -> None: ...

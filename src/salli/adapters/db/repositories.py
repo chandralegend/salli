@@ -27,8 +27,10 @@ from salli.adapters.db.models import (
     FiScoreORM,
     GoalORM,
     HoldingORM,
+    InsuranceTargetORM,
     JournalEntryORM,
     ParsedTransactionORM,
+    PolicyORM,
     PostingORM,
     RecurringSubscriptionORM,
     ReminderORM,
@@ -47,7 +49,9 @@ from salli.application.ports import (
     FireStrategyRepository,
     FiScoreRepository,
     GoalRepository,
+    InsuranceTargetRepository,
     LedgerRepository,
+    PolicyRepository,
     PortfolioRepository,
     RecurringSubscriptionRepository,
     ReminderRepository,
@@ -1464,6 +1468,153 @@ class SQLRecurringSubscriptionRepository(RecurringSubscriptionRepository):
                 select(RecurringSubscriptionORM).where(
                     RecurringSubscriptionORM.id == subscription_id,
                     RecurringSubscriptionORM.user_id == user_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if r:
+            await self._s.delete(r)
+
+
+# ── Insurance repositories ─────────────────────────────────────────────────────
+
+
+def _policy_to_dict(r: PolicyORM) -> dict[str, Any]:
+    return {
+        "id": r.id,
+        "user_id": r.user_id,
+        "name": r.name,
+        "policy_type": r.policy_type,
+        "provider": r.provider,
+        "coverage_amount_minor": r.coverage_amount_minor,
+        "premium_amount_minor": r.premium_amount_minor,
+        "premium_frequency": r.premium_frequency,
+        "expiry_date": r.expiry_date,
+        "is_active": r.is_active,
+        "created_at": r.created_at.isoformat(),
+        "updated_at": r.updated_at.isoformat(),
+    }
+
+
+class SQLPolicyRepository(PolicyRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def save(self, user_id: str, policy: dict[str, Any]) -> str:
+        pid = policy.get("id") or str(uuid.uuid4())
+        self._s.add(
+            PolicyORM(
+                id=pid,
+                user_id=user_id,
+                name=policy["name"],
+                policy_type=policy["policy_type"],
+                provider=policy["provider"],
+                coverage_amount_minor=int(policy["coverage_amount_minor"]),
+                premium_amount_minor=int(policy["premium_amount_minor"]),
+                premium_frequency=policy["premium_frequency"],
+                expiry_date=policy["expiry_date"],
+                is_active=policy.get("is_active", True),
+            )
+        )
+        await self._s.flush()
+        return pid
+
+    async def get(self, user_id: str, policy_id: str) -> dict[str, Any] | None:
+        r = (
+            await self._s.execute(
+                select(PolicyORM).where(PolicyORM.id == policy_id, PolicyORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+        return _policy_to_dict(r) if r else None
+
+    async def list(self, user_id: str, active_only: bool = True) -> list[dict[str, Any]]:
+        stmt = select(PolicyORM).where(PolicyORM.user_id == user_id)
+        if active_only:
+            stmt = stmt.where(PolicyORM.is_active == True)  # noqa: E712
+        stmt = stmt.order_by(PolicyORM.created_at)
+        return [_policy_to_dict(r) for r in (await self._s.execute(stmt)).scalars().all()]
+
+    async def update(self, user_id: str, policy_id: str, updates: dict[str, Any]) -> None:
+        r = (
+            await self._s.execute(
+                select(PolicyORM).where(PolicyORM.id == policy_id, PolicyORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+        if not r:
+            return
+        for k in (
+            "name",
+            "policy_type",
+            "provider",
+            "coverage_amount_minor",
+            "premium_amount_minor",
+            "premium_frequency",
+            "expiry_date",
+            "is_active",
+        ):
+            if k in updates and updates[k] is not None:
+                setattr(r, k, updates[k])
+        await self._s.flush()
+
+    async def delete(self, user_id: str, policy_id: str) -> None:
+        r = (
+            await self._s.execute(
+                select(PolicyORM).where(PolicyORM.id == policy_id, PolicyORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+        if r:
+            await self._s.delete(r)
+
+
+def _insurance_target_to_dict(r: InsuranceTargetORM) -> dict[str, Any]:
+    return {
+        "id": r.id,
+        "user_id": r.user_id,
+        "policy_type": r.policy_type,
+        "target_amount_minor": r.target_amount_minor,
+        "created_at": r.created_at.isoformat(),
+        "updated_at": r.updated_at.isoformat(),
+    }
+
+
+class SQLInsuranceTargetRepository(InsuranceTargetRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def upsert(self, user_id: str, policy_type: str, target_amount_minor: int) -> str:
+        r = (
+            await self._s.execute(
+                select(InsuranceTargetORM).where(
+                    InsuranceTargetORM.user_id == user_id,
+                    InsuranceTargetORM.policy_type == policy_type,
+                )
+            )
+        ).scalar_one_or_none()
+        if r:
+            r.target_amount_minor = target_amount_minor
+            await self._s.flush()
+            return r.id
+        tid = str(uuid.uuid4())
+        self._s.add(
+            InsuranceTargetORM(
+                id=tid,
+                user_id=user_id,
+                policy_type=policy_type,
+                target_amount_minor=target_amount_minor,
+            )
+        )
+        await self._s.flush()
+        return tid
+
+    async def list(self, user_id: str) -> list[dict[str, Any]]:
+        stmt = select(InsuranceTargetORM).where(InsuranceTargetORM.user_id == user_id)
+        return [_insurance_target_to_dict(r) for r in (await self._s.execute(stmt)).scalars().all()]
+
+    async def delete(self, user_id: str, policy_type: str) -> None:
+        r = (
+            await self._s.execute(
+                select(InsuranceTargetORM).where(
+                    InsuranceTargetORM.user_id == user_id,
+                    InsuranceTargetORM.policy_type == policy_type,
                 )
             )
         ).scalar_one_or_none()

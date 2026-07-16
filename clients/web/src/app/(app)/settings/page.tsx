@@ -2,14 +2,26 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/auth";
 import { useSubscription, useBillingPortal } from "@/hooks/useBilling";
 import { PageShell, PageHeader, CardContainer } from "@/components/ui/page-shell";
 import { UsageMeter } from "@/components/billing/UsageMeter";
 import { UpgradeDialog } from "@/components/billing/UpgradeDialog";
+import { downloadDataExport, decodeEmailFromToken, useDeleteAccount } from "@/hooks/useDataPortability";
 import { toast } from "sonner";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://salli.leafmonkey.org";
@@ -42,9 +54,41 @@ export default function SettingsPage() {
   const portal = useBillingPortal();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
 
+  const [exporting, setExporting] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const deleteAccount = useDeleteAccount();
+  const accountEmail = decodeEmailFromToken(token);
+
   function handleLogout() {
     logout();
     router.replace("/login");
+  }
+
+  async function handleExportData() {
+    setExporting(true);
+    try {
+      await downloadDataExport();
+      toast.success("Export downloaded");
+    } catch (e) {
+      toast.error(`Export failed: ${e instanceof Error ? e.message : "Unknown error"}`);
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    try {
+      await deleteAccount.mutateAsync(confirmEmail);
+      toast.success("Account deleted");
+      logout();
+      router.replace("/login");
+    } catch (e) {
+      toast.error(`Delete failed: ${e instanceof Error ? e.message : "Unknown error"}`);
+    } finally {
+      setDeleteOpen(false);
+      setConfirmEmail("");
+    }
   }
 
   function handleRedoOnboarding() {
@@ -154,6 +198,39 @@ export default function SettingsPage() {
           </button>
         </CardContainer>
 
+        {/* Danger Zone */}
+        <CardContainer>
+          <SectionLabel>Danger Zone</SectionLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4, color: "var(--foreground)" }}>Export my data</div>
+              <p style={{ fontSize: 13, color: "var(--muted-foreground)", marginBottom: 10, lineHeight: 1.5 }}>
+                Download everything Salli has stored about you as one JSON file.
+              </p>
+              <button
+                onClick={handleExportData}
+                disabled={exporting}
+                style={{ padding: "10px 22px", border: "1.5px solid var(--border)", borderRadius: 999, background: "var(--card)", fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", color: "var(--foreground)", display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                <Download className="size-3.5" /> {exporting ? "Exporting…" : "Export my data"}
+              </button>
+            </div>
+            <div style={{ height: 1, background: "var(--border)" }} />
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4, color: "#DC2626" }}>Delete my account</div>
+              <p style={{ fontSize: 13, color: "var(--muted-foreground)", marginBottom: 10, lineHeight: 1.5 }}>
+                Permanently delete every row Salli has stored for you. This cannot be undone.
+              </p>
+              <button
+                onClick={() => setDeleteOpen(true)}
+                style={{ padding: "10px 22px", background: "#DC2626", color: "#fff", border: "none", borderRadius: 999, fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+              >
+                Delete my account
+              </button>
+            </div>
+          </div>
+        </CardContainer>
+
         {/* Legal footer */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, paddingTop: 8, paddingBottom: 4 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 12, color: "var(--muted-foreground)" }}>
@@ -169,6 +246,34 @@ export default function SettingsPage() {
         </div>
 
       </div>
+
+      {/* ── Delete Account Confirm ── */}
+      <AlertDialog open={deleteOpen} onOpenChange={(open) => { setDeleteOpen(open); if (!open) setConfirmEmail(""); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes every row Salli has stored for you — accounts, entries,
+              budgets, debts, holdings, policies, everything. This cannot be undone. Type your
+              account email{accountEmail ? <> (<strong>{accountEmail}</strong>)</> : ""} to confirm.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex flex-col gap-1.5 py-2">
+            <Label>Email</Label>
+            <Input value={confirmEmail} onChange={(e) => setConfirmEmail(e.target.value)} placeholder="you@example.com" />
+          </div>
+          <div className="flex justify-end gap-2">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={!confirmEmail || deleteAccount.isPending}
+              onClick={handleDeleteAccount}
+            >
+              {deleteAccount.isPending ? "Deleting…" : "Permanently delete"}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageShell>
   );
 }

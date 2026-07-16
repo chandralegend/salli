@@ -102,11 +102,14 @@ def _make_services_with_income(income: Decimal = Decimal("3_000_000")):
 
 @pytest.mark.asyncio
 async def test_get_accounts_returns_list():
+    from salli.domain.agents.tools import set_current_user
+
+    set_current_user("u1")
     ledger_svc, tax_svc = _make_services_with_income()
     tools = make_tools(ledger_svc, tax_svc)
     get_accounts = next(t for t in tools if t.name == "get_accounts")
 
-    result = await get_accounts.ainvoke({"user_id": "u1"})
+    result = await get_accounts.ainvoke({})
     assert "accounts" in result
     assert len(result["accounts"]) == 1
     assert result["accounts"][0]["type"] == "income"

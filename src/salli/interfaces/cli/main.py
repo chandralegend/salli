@@ -1344,6 +1344,32 @@ def agent_sessions(
     console.print(table)
 
 
+@agent_app.command("audit-log")
+def agent_audit_log(
+    limit: int = typer.Option(100, "--limit"),
+):
+    """Show every agent-initiated write decision (approved or denied)."""
+    user_id = _require_user()
+    entries = asyncio.run(_services().agent.get_audit_log(user_id, limit))
+    if not entries:
+        console.print("[dim]No audit log entries found.[/dim]")
+        return
+    table = Table(title="Agent Write Audit Log")
+    table.add_column("When")
+    table.add_column("Action")
+    table.add_column("Decision")
+    table.add_column("Params")
+    for e in entries:
+        style = "green" if e.get("decision") == "approved" else "red"
+        table.add_row(
+            str(e.get("created_at", "")),
+            e.get("action", ""),
+            f"[{style}]{e.get('decision', '')}[/{style}]",
+            str(e.get("params", {}))[:60],
+        )
+    console.print(table)
+
+
 @agent_app.command("history")
 def agent_history(
     thread_id: str = typer.Argument(..., help="Thread ID to show the conversation for"),

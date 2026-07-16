@@ -331,6 +331,14 @@ class AgentService:
         async with self._uow_factory() as uow:
             return await uow.agent_sessions.list(user_id, limit=limit)
 
+    async def get_audit_log(self, user_id: str, limit: int = 100) -> list[dict[str, Any]]:
+        """Every agent-initiated write decision (approved or denied) recorded
+        by create_account/create_reminder/post_journal_entry."""
+        if not self._uow_factory:
+            return []
+        async with self._uow_factory() as uow:
+            return await uow.audit_log.list(user_id, limit=limit)
+
     async def delete_session(self, user_id: str, thread_id: str) -> None:
         if not self._uow_factory:
             return

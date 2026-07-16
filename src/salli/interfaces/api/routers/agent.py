@@ -52,7 +52,13 @@ async def _emit_events(
             if event_type == "token":
                 yield _sse({"type": "token", "content": payload})
             elif event_type == "subagent_token":
-                yield _sse({"type": "subagent_token", "agent": payload["agent"], "content": payload["content"]})  # type: ignore[index]
+                yield _sse(
+                    {
+                        "type": "subagent_token",
+                        "agent": payload["agent"],
+                        "content": payload["content"],
+                    }
+                )  # type: ignore[index]
             elif event_type == "subagent_start":
                 yield _sse({"type": "subagent_start", "agent": payload["agent"]})  # type: ignore[index]
             elif event_type == "subagent_end":
@@ -115,9 +121,7 @@ async def chat(body: ChatRequest, user_id: CurrentUser, email: CurrentEmail, svc
     async def _generate_title_bg():
         ai_text = "".join(ai_acc)[:500]
         if ai_text:
-            await svc.agent._try_generate_title(
-                user_id, body.thread_id, body.message, ai_text
-            )
+            await svc.agent._try_generate_title(user_id, body.thread_id, body.message, ai_text)
 
     return StreamingResponse(
         _emit_events(
@@ -211,6 +215,13 @@ async def list_sessions(user_id: CurrentUser, svc: AppServices, limit: int = 50)
     """Return the user's conversation sessions sorted by most recent activity."""
     sessions = await svc.agent.list_sessions(user_id=user_id, limit=limit)
     return {"sessions": sessions}
+
+
+@router.get("/audit-log")
+async def get_audit_log(user_id: CurrentUser, svc: AppServices, limit: int = 100):
+    """Every agent-initiated write decision (approved or denied)."""
+    entries = await svc.agent.get_audit_log(user_id=user_id, limit=limit)
+    return {"entries": entries}
 
 
 @router.delete("/sessions/{thread_id}", status_code=204)

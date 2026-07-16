@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useScroogePanel } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { Sun, Moon, Settings, LayoutGrid, BookOpen, Percent, TrendingUp, MessageCircle, FileText, Bell, Pin, PinOff } from "lucide-react";
+import { Sun, Moon, Settings, LayoutGrid, BookOpen, Percent, TrendingUp, MessageCircle, FileText, Bell, Pin, PinOff, MoreHorizontal } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 const NAV_PRIMARY = [
@@ -40,6 +40,11 @@ const NAV_SECONDARY = [
     href: "/reminders",
     label: "Reminders",
     icon: <Bell className="size-[17px]" />,
+  },
+  {
+    href: "/more",
+    label: "More",
+    icon: <MoreHorizontal className="size-[17px]" />,
   },
 ];
 

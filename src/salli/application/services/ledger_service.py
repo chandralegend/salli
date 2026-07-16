@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Callable
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from salli.domain.accounting import ledger as ledger_ops
@@ -15,6 +15,10 @@ from salli.domain.accounting.models import (
     Source,
     StoredJournalEntry,
 )
+
+
+def _q2(value: Decimal) -> Decimal:
+    return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 class LedgerService:
@@ -160,7 +164,7 @@ class LedgerService:
                 "description": entry.description,
                 "source": entry.source,
                 "external_ref": entry.external_ref,
-                "running_balance": str(balance),
+                "running_balance": str(_q2(balance)),
             }
             for entry, balance in history
             if (from_date is None or entry.entry_date >= from_date)
@@ -177,7 +181,7 @@ class LedgerService:
                 "parent_id": account.parent_id,
                 "is_active": account.is_active,
             },
-            "current_balance": str(current_balance),
+            "current_balance": str(_q2(current_balance)),
             "transactions": transactions,
         }
 

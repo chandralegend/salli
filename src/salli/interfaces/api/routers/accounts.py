@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
 from salli.interfaces.api.deps import AppServices, CurrentUser
@@ -55,6 +55,43 @@ async def add_account(body: AddAccountRequest, user_id: CurrentUser, svc: AppSer
         parent_id=body.parent_id,
     )
     return {"id": account_id}
+
+
+@router.get("/{account_id}")
+async def get_account(account_id: str, user_id: CurrentUser, svc: AppServices):
+    account = await svc.ledger.get_account(user_id, account_id)
+    if account is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+    return {
+        "id": account.id,
+        "code": account.code,
+        "name": account.name,
+        "type": account.type,
+        "currency": account.currency,
+        "parent_id": account.parent_id,
+        "is_active": account.is_active,
+    }
+
+
+@router.get("/{account_id}/overview")
+async def get_account_overview(
+    account_id: str,
+    user_id: CurrentUser,
+    svc: AppServices,
+    from_date: str | None = None,
+    to_date: str | None = None,
+):
+    """Account detail, current balance, and running-balance transaction history."""
+    overview = await svc.ledger.get_account_overview(user_id, account_id, from_date, to_date)
+    if overview is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+    return overview
+
+
+@router.post("/{account_id}/reactivate")
+async def reactivate_account(account_id: str, user_id: CurrentUser, svc: AppServices):
+    await svc.ledger.reactivate_account(user_id, account_id)
+    return {"id": account_id, "is_active": True}
 
 
 @router.patch("/{account_id}", status_code=200)

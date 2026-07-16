@@ -42,6 +42,7 @@ subscription_app = typer.Typer(help="Recurring subscriptions and missed-charge/p
 insurance_app = typer.Typer(help="Insurance policy inventory and coverage-gap analysis")
 insurance_policy_app = typer.Typer(help="Insurance policies")
 insurance_target_app = typer.Typer(help="Declared coverage targets")
+reports_app = typer.Typer(help="Exportable statements: balance sheet, net worth, goal progress")
 
 app.add_typer(accounts_app, name="accounts")
 app.add_typer(entry_app, name="entry")
@@ -65,6 +66,7 @@ app.add_typer(subscription_app, name="subscription")
 app.add_typer(insurance_app, name="insurance")
 insurance_app.add_typer(insurance_policy_app, name="policy")
 insurance_app.add_typer(insurance_target_app, name="target")
+app.add_typer(reports_app, name="reports")
 
 
 def _services():
@@ -2268,6 +2270,105 @@ def insurance_report():
                 str(alert["days_until_expiry"]),
             )
         console.print(table)
+
+
+# ── reports ────────────────────────────────────────────────────────────────────
+
+
+@reports_app.command("balance-sheet")
+def reports_balance_sheet():
+    """Show the balance sheet: assets, liabilities, equity, and net worth."""
+    user_id = _require_user()
+    report = asyncio.run(_services().reports.get_balance_sheet(user_id))
+
+    for section, label in (
+        ("assets", "Assets"),
+        ("liabilities", "Liabilities"),
+        ("equity", "Equity"),
+    ):
+        lines = report.get(section) or []
+        if not lines:
+            continue
+        table = Table(title=label)
+        table.add_column("Code")
+        table.add_column("Account")
+        table.add_column("Balance", justify="right")
+        for line in lines:
+            table.add_row(line["code"], line["name"], line["balance"])
+        console.print(table)
+
+    console.print(f"\n[bold]Total Assets:[/bold]      {report['total_assets']}")
+    console.print(f"[bold]Total Liabilities:[/bold] {report['total_liabilities']}")
+    console.print(f"[bold]Net Worth:[/bold]         {report['net_worth']}\n")
+
+
+@reports_app.command("net-worth")
+def reports_net_worth():
+    """Show current net worth and its historical trend."""
+    user_id = _require_user()
+    report = asyncio.run(_services().reports.get_net_worth_statement(user_id))
+
+    console.print(f"\n[bold]Current Net Worth:[/bold] {report['current_net_worth']}")
+    console.print(f"[dim]As of: {report['as_of']}[/dim]\n")
+
+    trend = report.get("trend") or []
+    if trend:
+        table = Table(title="Net Worth Trend")
+        table.add_column("Date")
+        table.add_column("Net Worth", justify="right")
+        for point in trend[-12:]:
+            table.add_row(str(point["date"]), str(point["net_worth"]))
+        console.print(table)
+
+
+@reports_app.command("goal-progress")
+def reports_goal_progress():
+    """Show progress toward all active FI goals."""
+    user_id = _require_user()
+    report = asyncio.run(_services().reports.get_goal_progress_report(user_id))
+
+    goals = report.get("goals") or []
+    if not goals:
+        console.print("[dim]No goals found. Use 'salli fi goals add' to create one.[/dim]")
+        return
+
+    table = Table(title="Goal Progress")
+    table.add_column("Name")
+    table.add_column("Kind")
+    table.add_column("Target", justify="right")
+    table.add_column("Current", justify="right")
+    table.add_column("Progress", justify="right")
+    for g in goals:
+        pct = f"{g['progress'] * 100:.1f}%"
+        style = "green" if g["progress"] >= 1.0 else "yellow"
+        table.add_row(
+            g["name"],
+            g["kind"],
+            g["target_amount"],
+            g["current_amount"],
+            f"[{style}]{pct}[/{style}]",
+        )
+    console.print(table)
+    console.print(
+        f"\n[bold]Completed:[/bold] {report['completed_count']}  "
+        f"[bold]In progress:[/bold] {report['in_progress_count']}"
+    )
+
+
+@reports_app.command("export")
+def reports_export(
+    report_type: str = typer.Argument(..., help="balance-sheet|net-worth|goal-progress"),
+    output: str = typer.Option(..., "--output", "-o", help="Output CSV file path"),
+):
+    """Export a report as CSV."""
+    if report_type not in ("balance-sheet", "net-worth", "goal-progress"):
+        console.print(f"[red]Unknown report type '{report_type}'.[/red]")
+        raise typer.Exit(1)
+    user_id = _require_user()
+    csv_bytes = asyncio.run(_services().reports.export_csv(report_type, user_id))
+    with open(output, "wb") as f:
+        f.write(csv_bytes)
+    console.print(f"[green]Exported {report_type} to:[/green] {output}")
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────

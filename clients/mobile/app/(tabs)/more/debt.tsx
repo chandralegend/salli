@@ -22,10 +22,16 @@ export default function DebtScreen() {
   const [extra, setExtra] = useState(10000);
   const debts = useDebts();
   const plan = usePayoffPlan(extra, strategy);
+  // Baseline (no extra payment) — lets us show interest saved by paying extra.
+  const basePlan = usePayoffPlan(0, strategy);
 
   const allDebts = debts.data ?? [];
   const totalOutstanding = allDebts.reduce((sum, d) => sum + Number(d.principal), 0);
   const totalMinPayment = allDebts.reduce((sum, d) => sum + Number(d.minimum_payment), 0);
+  const interestSaved =
+    basePlan.data && plan.data
+      ? Math.max(0, Number(basePlan.data.total_interest_paid) - Number(plan.data.total_interest_paid))
+      : null;
 
   const visibleDebts = allDebts.filter((d) => {
     if (filter === "Active" && !d.is_active) return false;
@@ -95,9 +101,9 @@ export default function DebtScreen() {
                   <Text className="font-sans-bold text-[13px] text-white">{plan.data?.months_to_payoff ?? "—"} mo</Text>
                 </View>
                 <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
-                  <Text className="mb-1 text-[10px] text-white/35">Total Interest</Text>
+                  <Text className="mb-1 text-[10px] text-white/35">Interest Saved</Text>
                   <Text className="font-sans-bold text-[13px] text-salli-accent">
-                    Rs. {plan.data ? formatLKRAbbrev(plan.data.total_interest_paid) : "—"}
+                    Rs. {interestSaved !== null ? formatLKRAbbrev(interestSaved) : "—"}
                   </Text>
                 </View>
               </View>
@@ -223,7 +229,11 @@ export default function DebtScreen() {
                 <Text className="font-sans-bold text-[20px] tracking-tight text-foreground">
                   Rs. {plan.data ? formatLKRAbbrev(plan.data.total_interest_paid) : "—"}
                 </Text>
-                <Text className="mt-0.5 text-[11px] text-salli-accent">saved</Text>
+                <Text className="mt-0.5 text-[11px] text-salli-accent">
+                  {interestSaved !== null && interestSaved > 0
+                    ? `saved Rs. ${formatLKRAbbrev(interestSaved)}`
+                    : "with extra payments"}
+                </Text>
               </Card>
             </View>
 

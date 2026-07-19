@@ -1,6 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
+  ArrowDownLeft,
   ArrowUpRight,
   Bell,
   ChevronLeft,
@@ -8,7 +9,6 @@ import {
   PiggyBank,
   Plus,
   Settings,
-  TrendingUp,
   Upload,
 } from "lucide-react-native";
 import { Pressable, Text, View } from "react-native";
@@ -28,10 +28,12 @@ export default function DashboardScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
-  const { netWorth, fiScore, tax, accounts, entries, budgetSummary } = useDashboard();
+  const { netWorth, fiScore, tax, accounts, entries, budgetSummary, balances, incomeYtd, expensesYtd } =
+    useDashboard();
   const requestQuickAddEntry = useSalliStore((s) => s.requestQuickAddEntry);
 
   const topAccount = accounts.find((a) => a.type === "asset");
+  const topAccountBalance = topAccount ? balances[topAccount.id] : undefined;
 
   const trend = netWorth?.trend ?? [];
   const prevNetWorth = trend.length >= 2 ? Number(trend[trend.length - 2].net_worth) : null;
@@ -48,7 +50,7 @@ export default function DashboardScreen() {
         locations={[0, 0.28, 0.52, 0.78, 1]}
         style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400 }}
       />
-      <PageShell contentContainerStyle={{ paddingTop: insets.top }}>
+      <PageShell transparent contentContainerStyle={{ paddingTop: insets.top }}>
         <View className="flex-row items-center px-4 pt-2">
           <AvatarMoreButton initial="D" />
           <View className="flex-1 flex-row items-center justify-center gap-2.5">
@@ -91,8 +93,21 @@ export default function DashboardScreen() {
         </View>
 
         <View className="flex-row gap-1.5 px-3.5 pb-3.5">
-          <StatTile onDark label="Income" value={tax ? formatLKRAbbrev(tax.gross_income) : "—"} hint="YTD" className="flex-1" />
-          <StatTile onDark label="Expenses" value="—" hint="YTD" className="flex-1" />
+          <StatTile
+            onDark
+            label="Income"
+            value={incomeYtd != null ? formatLKRAbbrev(incomeYtd) : "—"}
+            hint="YTD"
+            className="flex-1"
+          />
+          <StatTile
+            onDark
+            label="Expenses"
+            value={expensesYtd != null ? formatLKRAbbrev(expensesYtd) : "—"}
+            hint="YTD"
+            valueClassName="text-white/70"
+            className="flex-1"
+          />
           <StatTile
             onDark
             label="Tax"
@@ -106,7 +121,7 @@ export default function DashboardScreen() {
             value={
               fiScore ? (
                 <Text className="font-sans-bold text-[14px] text-white">
-                  {fiScore.overall_score}
+                  {Number(fiScore.overall_score).toFixed(0)}
                   <Text className="font-sans text-[10px] text-white/30">/100</Text>
                 </Text>
               ) : (
@@ -186,8 +201,15 @@ export default function DashboardScreen() {
               </View>
               <View className="flex-1">
                 <Text className="font-sans-semibold text-[14px] text-foreground">{topAccount.name}</Text>
-                <Text className="text-[12px] text-foreground/35">Asset · {topAccount.currency}</Text>
+                <Text className="text-[12px] capitalize text-foreground/35">
+                  {topAccount.type} · {topAccount.currency}
+                </Text>
               </View>
+              {topAccountBalance != null ? (
+                <Text className="font-sans-semibold text-[14px] text-foreground">
+                  Rs. {formatLKRAbbrev(topAccountBalance)}
+                </Text>
+              ) : null}
             </Card>
           ) : (
             <Card className="items-center p-5">
@@ -217,17 +239,24 @@ export default function DashboardScreen() {
                 const debitAcc = accounts.find((a) => a.id === debit?.account_id);
                 const creditAcc = accounts.find((a) => a.id === credit?.account_id);
                 const isIncome = debitAcc?.type === "asset" && creditAcc?.type === "income";
+                const EntryIcon = isIncome ? ArrowDownLeft : ArrowUpRight;
                 return (
                   <Card
                     key={entry.id}
                     className="flex-row items-center gap-2.5 rounded-[16px] border-foreground/[0.08] p-3"
                   >
                     <View className="h-[38px] w-[38px] items-center justify-center rounded-[12px] bg-foreground/[0.06]">
-                      <TrendingUp size={17} color={colors.mutedForeground} strokeWidth={2} />
+                      <EntryIcon
+                        size={17}
+                        color={isIncome ? "#FFFFFF" : "rgba(255,255,255,0.5)"}
+                        strokeWidth={2}
+                      />
                     </View>
                     <View className="flex-1">
                       <Text className="font-sans-semibold text-[13px] text-foreground">{entry.description}</Text>
-                      <Text className="text-[11px] capitalize text-foreground/30">{entry.source} · {entry.entry_date}</Text>
+                      <Text className="text-[11px] text-foreground/30">
+                        {isIncome ? "Income" : "Expense"} · {entry.entry_date}
+                      </Text>
                     </View>
                     <Text className={cn("font-sans-bold text-[14px]", isIncome ? "text-foreground" : "text-foreground/50")}>
                       {isIncome ? "+" : "−"}Rs. {formatLKR(debit?.amount ?? "0", 0)}

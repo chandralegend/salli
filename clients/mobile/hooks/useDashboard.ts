@@ -5,9 +5,11 @@ import {
   getLatestTaxLatestGet,
   getNetWorthStatementReportsNetWorthGet,
   getScoreFiScoreGet,
+  incomeStatementLedgerIncomeStatementGet,
   listAccountsAccountsGet,
   listBudgetsBudgetGet,
   listEntriesEntriesGet,
+  trialBalanceLedgerTrialBalanceGet,
 } from "@/lib/api/sdk.gen";
 
 export type Account = {
@@ -106,6 +108,30 @@ export function useDashboard() {
     },
   });
 
+  // Per-account balances for the Accounts card (the list endpoint omits balances).
+  const trialBalance = useQuery({
+    queryKey: ["trial-balance"],
+    queryFn: async () => {
+      const { data } = await trialBalanceLedgerTrialBalanceGet({ throwOnError: true });
+      return (data as unknown as { balances: Record<string, string> }).balances;
+    },
+  });
+
+  // Year-to-date income & expense totals for the two hero tiles.
+  const incomeStatement = useQuery({
+    queryKey: ["income-statement", "ytd"],
+    queryFn: async () => {
+      const now = new Date();
+      const from = `${now.getFullYear()}-01-01`;
+      const to = now.toISOString().slice(0, 10);
+      const { data } = await incomeStatementLedgerIncomeStatementGet({
+        query: { from_date: from, to_date: to },
+        throwOnError: true,
+      });
+      return data as unknown as { income: Record<string, string>; expenses: Record<string, string> };
+    },
+  });
+
   const budgets = useQuery({
     queryKey: ["budgets"],
     queryFn: async () => {
@@ -127,6 +153,9 @@ export function useDashboard() {
     enabled: Boolean(latestBudgetId),
   });
 
+  const sumValues = (m?: Record<string, string>) =>
+    m ? Object.values(m).reduce((s, v) => s + Number(v), 0) : null;
+
   return {
     isLoading: netWorth.isLoading || fiScore.isLoading || accounts.isLoading || entries.isLoading,
     netWorth: netWorth.data,
@@ -135,5 +164,8 @@ export function useDashboard() {
     accounts: accounts.data ?? [],
     entries: entries.data ?? [],
     budgetSummary: budgetSummary.data,
+    balances: trialBalance.data ?? {},
+    incomeYtd: sumValues(incomeStatement.data?.income),
+    expensesYtd: sumValues(incomeStatement.data?.expenses),
   };
 }

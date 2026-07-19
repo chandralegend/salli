@@ -610,6 +610,8 @@ async def seed(token: str) -> None:
         m_start = today.replace(day=1)
         m_end = today.replace(day=calendar.monthrange(today.year, today.month)[1])
         ms, me = m_start.isoformat(), m_end.isoformat()
+        # Current-month salary so income-vs-expense / "saved this month" are realistic.
+        await entry(client, m_start.replace(day=1).isoformat(), "Salary — current month", [("1001",  1, "120000.00"), ("4000", -1, "120000.00")])
         # Partial-month expenses landing around ~57% of the total limit.
         await entry(client, ms,                     "Monthly rent",           [("5000",  1, "45000.00"), ("1001", -1, "45000.00")])
         await entry(client, m_start.replace(day=5).isoformat(),  "Keells groceries",  [("5040",  1, "12500.00"), ("1001", -1, "12500.00")])

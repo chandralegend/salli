@@ -51,10 +51,10 @@ export function useNetWorthStatement() {
   });
 }
 
-export function useIncomeStatement() {
+export function useIncomeStatement(range?: { from: string; to: string }) {
   const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+  const from = range?.from ?? new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  const to = range?.to ?? new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
   return useQuery({
     queryKey: ["income-statement", from, to],
     queryFn: async () => {

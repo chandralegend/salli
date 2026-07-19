@@ -15,25 +15,44 @@ const PERIODS = ["Jul 2026", "Jun 2026", "YTD", "AY 25/26"] as const;
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-function monthLabel(iso?: string | null) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-}
-
 function currentMonthLabel() {
   const d = new Date();
   return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+const iso = (d: Date) => d.toISOString().slice(0, 10);
+
+/** Maps a period pill to an income-statement date range + a display label. */
+function periodRange(period: string): { from: string; to: string; label: string } {
+  const now = new Date();
+  const y = now.getFullYear();
+  if (period === "YTD") return { from: `${y}-01-01`, to: iso(now), label: `${y} YTD` };
+  if (period === "AY 25/26") return { from: "2025-04-01", to: "2026-03-31", label: "AY 2025/26" };
+  if (period === "Jun 2026" || /^[A-Za-z]{3} \d{4}$/.test(period)) {
+    // A specific month pill, e.g. "Jun 2026".
+    const [mon, yr] = period.split(" ");
+    const m = MONTHS.indexOf(mon);
+    if (m >= 0) {
+      const yn = Number(yr);
+      return { from: iso(new Date(yn, m, 1)), to: iso(new Date(yn, m + 1, 0)), label: period };
+    }
+  }
+  // Default: current month.
+  return {
+    from: iso(new Date(y, now.getMonth(), 1)),
+    to: iso(new Date(y, now.getMonth() + 1, 0)),
+    label: currentMonthLabel(),
+  };
 }
 
 export default function ReportsScreen() {
   const colors = useThemeColors();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Balance Sheet");
   const [period, setPeriod] = useState<(typeof PERIODS)[number]>("Jul 2026");
+  const range = periodRange(period);
   const balanceSheet = useBalanceSheet();
   const netWorth = useNetWorthStatement();
-  const income = useIncomeStatement();
+  const income = useIncomeStatement(range);
 
   const trend = netWorth.data?.trend ?? [];
   const nwDelta =
@@ -149,7 +168,7 @@ export default function ReportsScreen() {
 
           <Card className="mt-2.5 p-4">
             <Text className="mb-3 font-sans-semibold text-[13px] text-foreground">
-              Income vs Expense · {currentMonthLabel()}
+              Income vs Expense · {range.label}
             </Text>
             <View className="gap-2.5">
               <View>
@@ -218,7 +237,7 @@ export default function ReportsScreen() {
         <View className="px-4 pt-2.5">
           <Card className="bg-salli-navy-card p-[18px]">
             <Text className="mb-1.5 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
-              Net Income · {income.data ? monthLabel(income.data.from_date) : currentMonthLabel()}
+              Net Income · {range.label}
             </Text>
             <View className="flex-row items-baseline gap-1">
               <Text className="font-sans-semibold text-[18px] text-white/40">Rs.</Text>

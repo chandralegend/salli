@@ -44,18 +44,32 @@ export default function BillingScreen() {
       <View className="px-4 pt-3">
         <View className="overflow-hidden rounded-card border border-foreground/10">
           <View className="bg-salli-navy-card px-4 pb-4 pt-3.5">
-            <Text className="mb-2.5 text-[12px] text-white/60 capitalize">
+            <Text className="mb-3 text-[11px] font-sans-medium uppercase tracking-wide text-white/50 capitalize">
               {entitlements.data?.plan_name ?? "Free"} Plan
             </Text>
-            <View className="flex-row flex-wrap gap-1.5">
-              {(entitlements.data?.usage ?? []).map((u) => (
-                <View key={u.metric} className="flex-row items-center gap-1.5 rounded-pill bg-white/10 px-3 py-1.5">
-                  <Text className="text-[11px] capitalize text-white/50">{u.metric.replace(/_/g, " ")}</Text>
-                  <Text className="font-sans-bold text-[11px] text-white">
-                    {u.used}/{u.limit}
-                  </Text>
-                </View>
-              ))}
+            <View className="gap-3">
+              {(entitlements.data?.usage ?? []).map((u) => {
+                const limit = Number(u.limit);
+                const used = Number(u.used);
+                const pct = Number.isFinite(limit) && limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+                const near = pct >= 80;
+                return (
+                  <View key={u.metric}>
+                    <View className="mb-1.5 flex-row justify-between">
+                      <Text className="text-[11px] capitalize text-white/50">{u.metric.replace(/_/g, " ")}</Text>
+                      <Text className="font-sans-semibold text-[11px] text-white">
+                        {u.used}/{u.limit}
+                      </Text>
+                    </View>
+                    <View className="h-1.5 overflow-hidden rounded-pill bg-white/10">
+                      <View
+                        className={cn("h-full rounded-pill", near ? "bg-destructive" : "bg-white")}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
             </View>
           </View>
         </View>

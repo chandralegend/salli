@@ -105,7 +105,7 @@ function ApprovalCard({
     ([k]) => !["type", "action", "tool", "params"].includes(k),
   );
   return (
-    <View className="ml-[34px] rounded-[16px] border border-foreground/[0.12] bg-card p-3">
+    <View className="rounded-[16px] border border-foreground/[0.12] bg-card p-3">
       <View className="mb-2.5 flex-row items-center gap-2">
         <View className="h-[22px] w-[22px] items-center justify-center rounded-[6px] bg-foreground/[0.08]">
           <Bell size={11} color={colors.mutedForeground} strokeWidth={2} />
@@ -409,13 +409,8 @@ export default function AgentScreen() {
                         onResolve={resolveApproval}
                       />
                     ) : (
-                      <View key={i} className="flex-row items-start gap-2">
-                        <View className="mt-0.5 h-[26px] w-[26px] items-center justify-center rounded-full bg-salli-accent">
-                          <PiggyBank size={12} color="#FFFFFF" strokeWidth={2} />
-                        </View>
-                        <View className="max-w-[85%] rounded-[18px] rounded-tl-[4px] border border-foreground/[0.08] bg-card px-3.5 py-2">
-                          <AssistantMarkdown content={part.content} />
-                        </View>
+                      <View key={i} className="pl-0.5 pr-1">
+                        <AssistantMarkdown content={part.content} />
                       </View>
                     ),
                   )}

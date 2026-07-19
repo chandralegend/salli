@@ -155,6 +155,9 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
+  // Comfortable top breathing room even on notchless devices / web preview,
+  // where the safe-area inset is 0 and content would otherwise hug the edge.
+  const topPad = Math.max(insets.top, 24);
   const setOnboardingComplete = useSalliStore((s) => s.setOnboardingComplete);
   const [step, setStep] = useState(0); // 0 = Welcome, 1..5 = the 5 labeled steps
   const [saving, setSaving] = useState(false);
@@ -312,7 +315,7 @@ export default function OnboardingScreen() {
   // ── Step 0: Welcome ──────────────────────────────────────────────────────
   if (step === 0) {
     return (
-      <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+      <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <View className="flex-1 px-6 pt-4" style={{ paddingBottom: insets.bottom + 16 }}>
           <View className="mb-5 items-center">
             <Logo size={56} radius={18} />
@@ -365,7 +368,7 @@ export default function OnboardingScreen() {
   // ── Step 1: About You ────────────────────────────────────────────────────
   if (step === 1) {
     return (
-      <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+      <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={0} onBack={() => setStep(0)} />
           <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled">
@@ -431,7 +434,7 @@ export default function OnboardingScreen() {
   // ── Step 2: Income ───────────────────────────────────────────────────────
   if (step === 2) {
     return (
-      <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+      <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={1} onBack={handleBack} />
           <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled">
@@ -499,7 +502,7 @@ export default function OnboardingScreen() {
   // ── Step 3: Risk ─────────────────────────────────────────────────────────
   if (step === 3) {
     return (
-      <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+      <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={2} onBack={handleBack} />
           <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled">
@@ -602,7 +605,7 @@ export default function OnboardingScreen() {
       setGoals((prev) => prev.map((g, idx) => (idx === i ? { ...g, ...patch } : g)));
 
     return (
-      <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+      <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={3} onBack={handleBack} />
           <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled">
@@ -677,7 +680,7 @@ export default function OnboardingScreen() {
   const validGoals = goals.filter((g) => g.name.trim());
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+    <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
       <StepHeader index={4} onBack={handleBack} />
       <ScrollView className="flex-1 px-5">
         <StepTitle title="Review Setup" subtitle="Confirm — we'll post opening balances as ledger entries." />

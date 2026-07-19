@@ -41,6 +41,8 @@ export type FiScore = {
   fi_number: string;
   net_worth: string;
   progress_to_fi: string;
+  debt_to_asset: string;
+  emergency_fund_months: string;
   components: { label: string; score: string; weight: string; detail: string }[];
 };
 

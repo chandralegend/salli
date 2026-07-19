@@ -1,6 +1,7 @@
-import { Info, Sparkles, Trash2 } from "lucide-react-native";
+import { Check, Info, Sparkles, Trash2 } from "lucide-react-native";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import Svg, { Circle } from "react-native-svg";
 
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
@@ -16,6 +17,7 @@ import {
   useLatestAdvisorReport,
   useRunAdvisor,
 } from "@/hooks/useFi";
+import { useBalanceSheet } from "@/hooks/useReports";
 import { formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -26,6 +28,79 @@ function ProgressBar({ pct }: { pct: number }) {
   return (
     <View className="h-1.5 overflow-hidden rounded-pill bg-foreground/10">
       <View className="h-full rounded-pill bg-salli-accent" style={{ width: `${Math.min(100, Math.max(0, pct * 100))}%` }} />
+    </View>
+  );
+}
+
+/** Conic-style progress ring (mockup's FI Score badge): a thin accent arc that
+ * fills to `score`%, with the integer score centered in the hole. */
+function ScoreRing({ score }: { score: number }) {
+  const size = 48;
+  const sw = 6;
+  const r = (size - sw) / 2;
+  const c = 2 * Math.PI * r;
+  const pct = Math.min(100, Math.max(0, score)) / 100;
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      <Svg width={size} height={size} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.07)" strokeWidth={sw} fill="none" />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke="#2563EB"
+          strokeWidth={sw}
+          fill="none"
+          strokeDasharray={`${c * pct} ${c}`}
+          strokeLinecap="round"
+        />
+      </Svg>
+      <Text className="font-sans-bold text-[14px] text-foreground">{score.toFixed(0)}</Text>
+    </View>
+  );
+}
+
+type MilestoneStatus = "completed" | "current" | "upcoming";
+type Milestone = { label: string; subtitle: string; status: MilestoneStatus };
+
+/** One milestone row: status circle (filled check / ring+dot / faint) + text. */
+function MilestoneRow({ milestone }: { milestone: Milestone }) {
+  const { status, label, subtitle } = milestone;
+  return (
+    <View className="flex-row items-start gap-3">
+      {status === "completed" ? (
+        <View className="mt-0.5 h-[22px] w-[22px] items-center justify-center rounded-full bg-salli-accent">
+          <Check size={9} color="#FFFFFF" strokeWidth={3} />
+        </View>
+      ) : status === "current" ? (
+        <View className="mt-0.5 h-[22px] w-[22px] items-center justify-center rounded-full border-2 border-salli-accent">
+          <View className="h-[7px] w-[7px] rounded-full bg-salli-accent" />
+        </View>
+      ) : (
+        <View className="mt-0.5 h-[22px] w-[22px] rounded-full border-[1.5px] border-foreground/10" />
+      )}
+      <View className="flex-1">
+        <Text
+          className={cn(
+            "font-sans-medium text-[13px]",
+            status === "completed"
+              ? "text-foreground/50 line-through"
+              : status === "current"
+                ? "text-foreground"
+                : "text-foreground/35",
+          )}
+        >
+          {label}
+        </Text>
+        <Text
+          className={cn(
+            "mt-0.5 text-[11px]",
+            status === "current" ? "text-salli-accent" : "text-foreground/25",
+          )}
+        >
+          {subtitle}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -42,6 +117,7 @@ export default function FinancialIndependenceScreen() {
   const { deleteGoal } = useFiGoalMutations();
   const advisorReport = useLatestAdvisorReport();
   const runAdvisor = useRunAdvisor();
+  const balanceSheet = useBalanceSheet();
 
   // `fire_year_base` may be a calendar year (e.g. 2044) or a years-from-now count
   // depending on the engine; normalize both into a years count + a freedom year,
@@ -50,6 +126,49 @@ export default function FinancialIndependenceScreen() {
   const fireBaseRaw = Number(projections.data?.fire_year_base ?? 0);
   const yearsToFi = fireBaseRaw > 1900 ? Math.max(0, fireBaseRaw - nowYear) : Math.max(0, fireBaseRaw);
   const freedomYear = nowYear + Math.round(yearsToFi);
+  const targetAge = strategy.data?.target_age ?? null;
+
+  // Milestones (mockup's TIER 3) — synthesized from real figures: emergency-fund
+  // coverage, outstanding liabilities, and net-worth progress. The first
+  // not-yet-met milestone is marked "current"; the rest "upcoming".
+  const monthlyExp = Number(fiScore.data?.monthly_expenses ?? 0);
+  const netWorthNum = Number(fiScore.data?.net_worth ?? 0);
+  const efMonths = Number(fiScore.data?.emergency_fund_months ?? 0);
+  const efCurrent = efMonths * monthlyExp;
+  const liabilities = balanceSheet.data ? Number(balanceSheet.data.total_liabilities) : 0;
+  const rawMilestones: { label: string; done: boolean; subtitle: (s: MilestoneStatus) => string }[] = [
+    {
+      label: "3-month Emergency Fund",
+      done: efMonths >= 3,
+      subtitle: (s) =>
+        s === "completed"
+          ? `Rs. ${formatLKRAbbrev(monthlyExp * 3)} · Completed`
+          : `Rs. ${formatLKRAbbrev(Math.min(efCurrent, monthlyExp * 3))} of Rs. ${formatLKRAbbrev(monthlyExp * 3)}`,
+    },
+    {
+      label: "6-month Emergency Fund",
+      done: efMonths >= 6,
+      subtitle: (s) =>
+        s === "completed"
+          ? `Rs. ${formatLKRAbbrev(monthlyExp * 6)} · Completed`
+          : `Rs. ${formatLKRAbbrev(Math.min(efCurrent, monthlyExp * 6))} of Rs. ${formatLKRAbbrev(monthlyExp * 6)}${s === "current" ? " · In progress" : ""}`,
+    },
+    {
+      label: "Debt-free",
+      done: liabilities <= 0,
+      subtitle: () => (liabilities > 0 ? `Rs. ${formatLKRAbbrev(liabilities)} outstanding` : "No liabilities"),
+    },
+    {
+      label: "Rs. 1 Cr Net Worth",
+      done: netWorthNum >= 1e7,
+      subtitle: () => `Rs. ${formatLKRAbbrev(netWorthNum)} · ${Math.round((netWorthNum / 1e7) * 100)}% funded`,
+    },
+  ];
+  const firstPendingIdx = rawMilestones.findIndex((m) => !m.done);
+  const milestones: Milestone[] = rawMilestones.map((m, i) => {
+    const status: MilestoneStatus = m.done ? "completed" : i === firstPendingIdx ? "current" : "upcoming";
+    return { label: m.label, status, subtitle: m.subtitle(status) };
+  });
 
   return (
     <PageShell>
@@ -97,6 +216,12 @@ export default function FinancialIndependenceScreen() {
             </View>
             <View className="mb-3.5 flex-row items-center gap-1.5">
               <Text className="text-[11px] text-white/30">4% SWR</Text>
+              {targetAge ? (
+                <>
+                  <Text className="text-[11px] text-white/15">·</Text>
+                  <Text className="text-[11px] text-white/30">Target age {targetAge}</Text>
+                </>
+              ) : null}
             </View>
             <View className="flex-row gap-1.5">
               <View className="flex-1 rounded-[10px] bg-white/[0.06] px-2.5 py-2">
@@ -146,6 +271,19 @@ export default function FinancialIndependenceScreen() {
             </Card>
           </View>
 
+          {/* TIER 3 — Milestones */}
+          <Card className="p-4">
+            <View className="mb-3.5 flex-row items-center gap-1.5">
+              <Text className="font-sans-semibold text-[14px] text-foreground">Milestones</Text>
+              <Info size={12} color="rgba(255,255,255,0.25)" strokeWidth={2} />
+            </View>
+            <View className="gap-3">
+              {milestones.map((m) => (
+                <MilestoneRow key={m.label} milestone={m} />
+              ))}
+            </View>
+          </Card>
+
           {/* TIER 4 — FI Score */}
           <Card className="p-4">
             <View className="mb-3 flex-row items-center justify-between">
@@ -158,24 +296,27 @@ export default function FinancialIndependenceScreen() {
                   <Text className="mt-0.5 text-[11px] text-foreground/30">Grade {fiScore.data.grade}</Text>
                 ) : null}
               </View>
-              <View className="h-12 w-12 items-center justify-center rounded-full bg-foreground/[0.07]">
-                <View className="h-9 w-9 items-center justify-center rounded-full bg-card">
-                  <Text className="font-sans-bold text-[14px] text-foreground">
-                    {fiScore.data ? Number(fiScore.data.overall_score).toFixed(0) : "—"}
-                  </Text>
+              {fiScore.data ? (
+                <ScoreRing score={Number(fiScore.data.overall_score)} />
+              ) : (
+                <View className="h-12 w-12 items-center justify-center rounded-full bg-foreground/[0.07]">
+                  <Text className="text-foreground/40">—</Text>
                 </View>
-              </View>
+              )}
             </View>
-            <View className="gap-2.5">
-              {(fiScore.data?.components ?? []).map((c) => (
-                <View key={c.label}>
-                  <View className="mb-1 flex-row justify-between">
-                    <Text className="text-[12px] text-foreground/50">{c.label}</Text>
-                    <Text className="text-[12px] font-sans-medium text-foreground">{Number(c.score).toFixed(0)}</Text>
-                  </View>
-                  <ProgressBar pct={Number(c.score) / 100} />
-                </View>
-              ))}
+            <View className="flex-row gap-1.5">
+              <View className="flex-1 rounded-[10px] border border-foreground/[0.06] bg-foreground/[0.04] px-2.5 py-2.5">
+                <Text className="mb-1.5 text-[10px] text-foreground/35">Savings Rate</Text>
+                <Text className="font-sans-bold text-[18px] leading-[18px] text-foreground">
+                  {fiScore.data ? formatPct(fiScore.data.savings_rate, 0) : "—"}
+                </Text>
+              </View>
+              <View className="flex-1 rounded-[10px] border border-foreground/[0.06] bg-foreground/[0.04] px-2.5 py-2.5">
+                <Text className="mb-1.5 text-[10px] text-foreground/35">Debt-to-Asset</Text>
+                <Text className="font-sans-bold text-[18px] leading-[18px] text-foreground">
+                  {fiScore.data ? formatPct(fiScore.data.debt_to_asset, 0) : "—"}
+                </Text>
+              </View>
             </View>
           </Card>
         </View>

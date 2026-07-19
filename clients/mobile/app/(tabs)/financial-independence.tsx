@@ -59,7 +59,13 @@ export default function FinancialIndependenceScreen() {
         ))}
       </View>
 
-      {tab === "Overview" ? (
+      {tab === "Overview" && fiScore.isLoading ? (
+        <View className="items-center pt-16">
+          <ActivityIndicator color={colors.accent} />
+        </View>
+      ) : null}
+
+      {tab === "Overview" && !fiScore.isLoading ? (
         <View className="gap-3 px-4 pt-3.5">
           <Card className="p-5">
             <Text className="mb-1.5 text-[11px] font-sans-medium uppercase tracking-wide text-foreground/35">
@@ -238,6 +244,10 @@ export default function FinancialIndependenceScreen() {
           )}
         </View>
       ) : null}
+
+      <Text className="mt-4 px-8 text-center text-[11px] leading-4 text-foreground/25">
+        Planning estimates only · Not financial advice · Numbers from deterministic engine
+      </Text>
     </PageShell>
   );
 }

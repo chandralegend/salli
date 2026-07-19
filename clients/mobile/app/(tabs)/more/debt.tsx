@@ -147,6 +147,10 @@ export default function DebtScreen() {
               <Text className="mt-0.5 text-[11px] text-salli-accent">saved</Text>
             </Card>
           </View>
+
+          <Text className="mt-3 px-2 text-center text-[11px] leading-4 text-foreground/25">
+            Planning estimate only · Assumes fixed APR and on-time payments
+          </Text>
         </View>
       )}
     </PageShell>

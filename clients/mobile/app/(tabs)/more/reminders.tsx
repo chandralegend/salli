@@ -1,6 +1,6 @@
 import { ArrowUpDown, Calendar, Check, ChevronRight, Plus, Search } from "lucide-react-native";
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 
 import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
@@ -29,12 +29,22 @@ export default function RemindersScreen() {
   const reminders = useReminders();
   const { markDone, seed } = useReminderMutations();
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
+  const [search, setSearch] = useState("");
 
-  const items = reminders.data ?? [];
+  const q = search.trim().toLowerCase();
+  const items = (reminders.data ?? []).filter(
+    (r) => !q || r.kind.replace(/_/g, " ").toLowerCase().includes(q),
+  );
   const overdue = items.filter((r) => r.status === "pending" && statusMeta(r).label === "Overdue");
   const dueSoon = items.filter((r) => r.status === "pending" && statusMeta(r).label === "Due Soon");
   const upcoming = items.filter((r) => r.status === "pending" && statusMeta(r).label === "Upcoming");
   const completed = items.filter((r) => r.status === "done");
+
+  // Every reminder in Salli is an IRD filing reminder, so "IRD" behaves as "All".
+  const showOverdue = filter === "All" || filter === "IRD" || filter === "Overdue";
+  const showDueSoon = filter === "All" || filter === "IRD" || filter === "Due Soon";
+  const showUpcoming = filter === "All" || filter === "IRD";
+  const showCompleted = filter === "All" || filter === "IRD";
 
   const Row = ({ r, kind }: { r: Reminder; kind: RowKind }) => {
     const done = kind === "completed";
@@ -176,7 +186,13 @@ export default function RemindersScreen() {
       <View className="mb-2 flex-row items-center gap-2 px-4">
         <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
           <Search size={13} color="rgba(128,128,128,0.4)" strokeWidth={2} />
-          <Text className="text-[13px] text-foreground/20">Search...</Text>
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search..."
+            placeholderTextColor="rgba(128,128,128,0.4)"
+            className="flex-1 text-[13px] text-foreground"
+          />
         </View>
         <View className="h-[38px] flex-row items-center gap-1.5 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
           <ArrowUpDown size={13} color="rgba(128,128,128,0.5)" strokeWidth={2} />
@@ -227,10 +243,21 @@ export default function RemindersScreen() {
               <Calendar size={13} color="rgba(128,128,128,0.6)" strokeWidth={2} />
               <Text className="text-[12px] text-foreground/40">Seed IRD Filing Calendar</Text>
             </Pressable>
-            <Section title="Overdue" data={overdue} kind="overdue" />
-            <Section title="Due This Month" data={dueSoon} kind="dueSoon" />
-            <Section title="Upcoming" data={upcoming} kind="upcoming" />
-            <Section title="Completed" data={completed} kind="completed" />
+            {showOverdue ? <Section title="Overdue" data={overdue} kind="overdue" /> : null}
+            {showDueSoon ? <Section title="Due This Month" data={dueSoon} kind="dueSoon" /> : null}
+            {showUpcoming ? <Section title="Upcoming" data={upcoming} kind="upcoming" /> : null}
+            {showCompleted ? <Section title="Completed" data={completed} kind="completed" /> : null}
+            {(showOverdue ? overdue.length : 0) +
+              (showDueSoon ? dueSoon.length : 0) +
+              (showUpcoming ? upcoming.length : 0) +
+              (showCompleted ? completed.length : 0) ===
+            0 ? (
+              <View className="items-center rounded-card border border-foreground/[0.08] bg-card p-6">
+                <Text className="text-center text-[13px] text-foreground/35">
+                  No reminders match {q ? `“${search}”` : `the ${filter} filter`}.
+                </Text>
+              </View>
+            ) : null}
           </>
         )}
       </View>

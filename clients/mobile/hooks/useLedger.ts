@@ -64,8 +64,9 @@ export function useLedgerMutations() {
         description: input.description,
         source: "manual",
         postings: [
+          // Direction enum: DEBIT = 1, CREDIT = -1 (not 2).
           { account_id: input.debitAccountId, direction: 1, amount: input.amount, currency: "LKR" },
-          { account_id: input.creditAccountId, direction: 2, amount: input.amount, currency: "LKR" },
+          { account_id: input.creditAccountId, direction: -1, amount: input.amount, currency: "LKR" },
         ],
       },
       throwOnError: true,

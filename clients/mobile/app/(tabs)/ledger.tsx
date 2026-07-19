@@ -145,7 +145,7 @@ export default function LedgerScreen() {
                   <View className="gap-1.5">
                     {dayEntries.map((entry) => {
                       const debit = entry.postings.find((p) => p.direction === 1);
-                      const credit = entry.postings.find((p) => p.direction === 2);
+                      const credit = entry.postings.find((p) => p.direction === -1);
                       const debitAcc = accounts.data?.find((a) => a.id === debit?.account_id);
                       const creditAcc = accounts.data?.find((a) => a.id === credit?.account_id);
                       const isIncome = debitAcc?.type === "asset" && creditAcc?.type === "income";

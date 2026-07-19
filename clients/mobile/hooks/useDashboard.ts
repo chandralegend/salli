@@ -25,7 +25,8 @@ export type JournalEntry = {
   description: string;
   source: "manual" | "statement";
   reversed_by: string | null;
-  postings: { account_id: string; direction: 1 | 2; amount: string; currency: string }[];
+  // Direction enum: DEBIT = 1, CREDIT = -1 (not 2 — a common wrong assumption).
+  postings: { account_id: string; direction: 1 | -1; amount: string; currency: string }[];
 };
 
 export type FiScore = {

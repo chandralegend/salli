@@ -1,5 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { CreditCard, Plus } from "lucide-react-native";
+import {
+  Car,
+  CreditCard,
+  Home,
+  type LucideIcon,
+  Plus,
+  ShoppingBag,
+  Utensils,
+  Wallet,
+  Wifi,
+  Zap,
+} from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
@@ -20,6 +31,18 @@ const PRESETS: { label: string; value: number }[] = [
   { label: "1L", value: 100000 },
   { label: "1.2L", value: 120000 },
 ];
+
+/** Best-effort icon for a category name, matching the mockup's per-row glyphs. */
+function categoryIcon(name: string): LucideIcon {
+  const n = name.toLowerCase();
+  if (/food|grocer|supermarket/.test(n)) return ShoppingBag;
+  if (/rent|hous|mortgage|home/.test(n)) return Home;
+  if (/transport|fuel|travel|vehicle|car/.test(n)) return Car;
+  if (/dining|restaurant|entertain|cafe/.test(n)) return Utensils;
+  if (/electric|water|util|ceb/.test(n)) return Zap;
+  if (/internet|mobile|phone|subscription|stream/.test(n)) return Wifi;
+  return Wallet;
+}
 
 function monthRange() {
   const now = new Date();
@@ -83,63 +106,111 @@ export default function BudgetScreen() {
       />
 
       {latestBudget && summary.data ? (
-        <View className="px-4 pt-3">
-          <Card className="p-4">
-            <View className="mb-2.5 flex-row justify-between">
-              <Text className="font-sans-semibold text-[14px] text-foreground">Total Limit</Text>
-              <Text className="font-sans-bold text-[14px] text-foreground">
-                Rs. {formatLKRAbbrev(summary.data.total_limit)}
-              </Text>
-            </View>
-            <View className="mb-2.5 flex-row justify-between">
-              <Text className="text-[13px] text-foreground/50">Total Actual</Text>
-              <Text className="font-sans-medium text-[13px] text-foreground">
-                Rs. {formatLKRAbbrev(summary.data.total_actual)}
-              </Text>
-            </View>
-            <View className="flex-row justify-between border-t border-foreground/[0.08] pt-2.5">
-              <Text className="text-[13px] text-foreground/50">Variance</Text>
-              <Text
-                className={cn(
-                  "font-sans-bold text-[13px]",
-                  Number(summary.data.total_variance) < 0 ? "text-destructive" : "text-salli-accent",
-                )}
-              >
-                Rs. {formatLKR(summary.data.total_variance, 0)}
-              </Text>
-            </View>
-          </Card>
-
-          <Card className="mt-2.5 overflow-hidden p-0">
-            {summary.data.lines.map((line, i) => (
-              <View
-                key={i}
-                className={cn("px-4 py-3", i < summary.data!.lines.length - 1 && "border-b border-foreground/[0.05]")}
-              >
-                <View className="mb-1.5 flex-row justify-between">
-                  <Text className="font-sans-medium text-[13px] text-foreground">{line.category}</Text>
-                  <Text
+        (() => {
+          const spent = Number(summary.data.total_actual);
+          const limit = Number(summary.data.total_limit);
+          const remaining = limit - spent;
+          const usedPct = limit > 0 ? Math.round((spent / limit) * 100) : 0;
+          const over = remaining < 0;
+          return (
+            <View className="px-4 pt-3.5">
+              {/* hero — spend vs limit */}
+              <Card className="bg-salli-navy-card p-[18px]">
+                <Text className="mb-1.5 text-[10px] font-sans-medium uppercase tracking-wide text-white/40">
+                  Monthly Budget
+                </Text>
+                <View className="mb-2.5 flex-row items-start justify-between">
+                  <View className="flex-row items-baseline gap-1.5">
+                    <Text className="font-sans-semibold text-[20px] text-white/35">Rs.</Text>
+                    <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
+                      {formatLKRAbbrev(spent)}
+                    </Text>
+                  </View>
+                  <View
                     className={cn(
-                      "font-sans-semibold text-[12px]",
-                      Number(line.variance) < 0 ? "text-destructive" : "text-salli-accent",
+                      "mt-1 rounded-[8px] border px-2.5 py-1",
+                      over
+                        ? "border-destructive/30 bg-destructive/20"
+                        : "border-salli-accent/30 bg-salli-accent/20",
                     )}
                   >
-                    {Number(line.variance) < 0 ? "Over" : "OK"}
-                  </Text>
+                    <Text
+                      className={cn(
+                        "text-[11px] font-sans-semibold",
+                        over ? "text-destructive" : "text-salli-accent",
+                      )}
+                    >
+                      {usedPct}% used
+                    </Text>
+                  </View>
                 </View>
-                <View className="h-1.5 overflow-hidden rounded-pill bg-foreground/10">
+                <View className="mb-2 h-[5px] overflow-hidden rounded-pill bg-white/[0.08]">
                   <View
-                    className={cn("h-full rounded-pill", Number(line.actual_amount) > Number(line.limit_amount) ? "bg-destructive" : "bg-salli-accent")}
-                    style={{ width: `${Math.min(100, (Number(line.actual_amount) / Number(line.limit_amount || 1)) * 100)}%` }}
+                    className={cn("h-full rounded-pill", over ? "bg-destructive" : "bg-salli-accent")}
+                    style={{ width: `${Math.min(100, usedPct)}%` }}
                   />
                 </View>
-                <Text className="mt-1 text-[11px] text-foreground/30">
-                  Rs. {formatLKR(line.actual_amount, 0)} of Rs. {formatLKR(line.limit_amount, 0)}
+                <View className="flex-row justify-between">
+                  <Text className="text-[11px] text-white/30">of Rs. {formatLKRAbbrev(limit)}</Text>
+                  <Text className="text-[11px] text-white/30">
+                    Rs. {formatLKRAbbrev(Math.abs(remaining))} {over ? "over" : "remaining"}
+                  </Text>
+                </View>
+              </Card>
+
+              {/* category limits */}
+              <View className="mb-2 mt-3 flex-row items-center justify-between">
+                <Text className="text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                  Category Limits
                 </Text>
+                <Text className="text-[11px] text-foreground/25">{currentMonthLabel()}</Text>
               </View>
-            ))}
-          </Card>
-        </View>
+
+              <View className="gap-1.5">
+                {summary.data.lines.map((line, i) => {
+                  const actual = Number(line.actual_amount);
+                  const lim = Number(line.limit_amount);
+                  const lineOver = actual > lim;
+                  const share = lim > 0 ? Math.min(100, (actual / lim) * 100) : 0;
+                  const Icon = categoryIcon(line.category);
+                  return (
+                    <View
+                      key={i}
+                      className="flex-row items-center gap-2.5 rounded-control border border-foreground/[0.08] bg-card px-3.5 py-[11px]"
+                    >
+                      <View
+                        className={cn(
+                          "h-8 w-8 items-center justify-center rounded-[9px]",
+                          lineOver ? "border border-destructive/20 bg-destructive/[0.12]" : "bg-foreground/[0.06]",
+                        )}
+                      >
+                        <Icon
+                          size={13}
+                          color={lineOver ? "#ef4444" : "rgba(128,128,128,0.7)"}
+                          strokeWidth={2.5}
+                        />
+                      </View>
+                      <View className="flex-1">
+                        <View className="flex-row items-center justify-between">
+                          <Text className="font-sans-semibold text-[13px] text-foreground">{line.category}</Text>
+                          <Text className="text-[11px] text-foreground/30">
+                            Rs. {formatLKR(actual, 0)} / {formatLKRAbbrev(lim)}
+                          </Text>
+                        </View>
+                        <View className="mt-[5px] h-[3px] overflow-hidden rounded-pill bg-foreground/[0.06]">
+                          <View
+                            className={cn("h-full rounded-pill", lineOver ? "bg-destructive" : "bg-salli-accent")}
+                            style={{ width: `${share}%` }}
+                          />
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          );
+        })()
       ) : (
         <View className="px-4 pt-3.5">
           {/* hero */}

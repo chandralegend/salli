@@ -8,11 +8,37 @@ import { PillButton } from "@/components/ui/pill-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { StatTile } from "@/components/ui/stat-tile";
 import { useComputeTax, useLatestTax } from "@/hooks/useTax";
-import { formatLKR, formatLKRAbbrev } from "@/lib/format";
+import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const YEARS = ["2024/25", "2025/26"];
+
+/** IRD individual income-tax return is due 30 Sep following the year of assessment. */
+function dueDateLabel(packYear: string): string {
+  const end = Number(packYear.split("/")[0]) + 1; // "2025/26" → 2026
+  return Number.isFinite(end) ? `Due 30 Sep ${end}` : "";
+}
+
+type BandStatus = "full" | "partial" | "unused";
+
+/** Derives how much of a progressive band was consumed, from its label + amount.
+ * Band labels look like "LKR 0 – LKR 1,000,000 · 6%" or "LKR 2,500,000 – balance · 36%". */
+function bandUsage(band: string, taxableInBand: string): { status: BandStatus; detail: string } {
+  const taxable = Number(taxableInBand);
+  if (!(taxable > 0)) return { status: "unused", detail: "Not reached" };
+  const nums = (band.match(/[\d,]+/g) ?? [])
+    .map((n) => Number(n.replace(/,/g, "")))
+    .filter((n) => Number.isFinite(n));
+  const open = /balance/i.test(band);
+  if (open || nums.length < 2) return { status: "full", detail: "Applied to top band" };
+  const width = nums[1] - nums[0];
+  if (width > 0 && taxable >= width - 1) return { status: "full", detail: "Full band applied" };
+  return {
+    status: "partial",
+    detail: `Rs. ${formatLKRAbbrev(taxable)} of Rs. ${formatLKRAbbrev(width)} used`,
+  };
+}
 
 export default function TaxScreen() {
   const colors = useThemeColors();
@@ -61,7 +87,10 @@ export default function TaxScreen() {
                 {formatLKR(tax.data.tax_payable, 0)}
               </Text>
             </View>
-            <Text className="mb-3.5 text-[11px] text-white/30">Pack v{tax.data.pack_version}</Text>
+            <Text className="mb-3.5 text-[11px] text-white/30">
+              Eff. rate {formatPct(Number(tax.data.tax_payable) / Number(tax.data.gross_income || 1), 2)} ·{" "}
+              {dueDateLabel(tax.data.pack_year)}
+            </Text>
             <View className="flex-row gap-1.5">
               <StatTile onDark className="flex-1" label="Gross Income" value={`Rs. ${formatLKRAbbrev(tax.data.gross_income)}`} />
               <StatTile onDark className="flex-1" label="Taxable" value={`Rs. ${formatLKRAbbrev(tax.data.taxable_income)}`} />
@@ -86,25 +115,62 @@ export default function TaxScreen() {
               <Text className="text-[11px] text-foreground/25">IRD · AY {tax.data.pack_year}</Text>
             </View>
             <View className="px-4">
-              {tax.data.band_workings.map((band, i) => (
-                <View
-                  key={i}
-                  className={cn(
-                    "flex-row items-center gap-2.5 py-2.5",
-                    i < tax.data!.band_workings.length - 1 && "border-b border-foreground/[0.05]",
-                  )}
-                >
-                  <View className={cn("h-[34px] w-[3px] rounded-pill", Number(band.taxable_in_band) > 0 ? "bg-salli-accent" : "bg-foreground/10")} />
-                  <View className="flex-1">
-                    <Text className="font-sans-medium text-[12px] text-foreground">
-                      {band.band} · {band.rate}
-                    </Text>
+              {tax.data.band_workings.map((band, i) => {
+                const { status, detail } = bandUsage(band.band, band.taxable_in_band);
+                const used = status !== "unused";
+                return (
+                  <View
+                    key={i}
+                    className={cn(
+                      "flex-row items-center gap-2.5 py-2.5",
+                      i < tax.data!.band_workings.length - 1 && "border-b border-foreground/[0.05]",
+                    )}
+                  >
+                    <View
+                      className={cn(
+                        "h-[34px] w-[3px] rounded-pill",
+                        status === "full"
+                          ? "bg-salli-accent"
+                          : status === "partial"
+                            ? "bg-salli-accent/50"
+                            : "bg-foreground/10",
+                      )}
+                    />
+                    <View className="flex-1">
+                      <Text className={cn("font-sans-medium text-[12px]", used ? "text-foreground" : "text-foreground/30")}>
+                        {band.band} · {band.rate}
+                      </Text>
+                      <Text className={cn("text-[11px]", used ? "text-foreground/30" : "text-foreground/20")}>
+                        {detail}
+                      </Text>
+                    </View>
+                    <View className="items-end gap-1">
+                      <Text className={cn("font-sans-semibold text-[12px]", used ? "text-foreground" : "text-foreground/25")}>
+                        {Number(band.tax) > 0 ? `Rs. ${formatLKR(band.tax, 0)}` : "—"}
+                      </Text>
+                      <View
+                        className={cn(
+                          "rounded-[4px] px-1.5 py-px",
+                          status === "full"
+                            ? "bg-salli-accent/15"
+                            : status === "partial"
+                              ? "bg-foreground/[0.07]"
+                              : "bg-foreground/[0.05]",
+                        )}
+                      >
+                        <Text
+                          className={cn(
+                            "text-[10px] font-sans-medium capitalize",
+                            status === "full" ? "text-salli-accent" : "text-foreground/40",
+                          )}
+                        >
+                          {status}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-                  <Text className="font-sans-semibold text-[12px] text-foreground">
-                    {Number(band.tax) > 0 ? `Rs. ${formatLKR(band.tax, 0)}` : "—"}
-                  </Text>
-                </View>
-              ))}
+                );
+              })}
               <View className="flex-row justify-between py-2.5">
                 <Text className="font-sans-semibold text-[12px] text-foreground/45">Gross Tax</Text>
                 <Text className="font-sans-bold text-[14px] text-foreground">

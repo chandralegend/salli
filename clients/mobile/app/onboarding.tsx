@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import {
   Briefcase,
+  Calendar,
   ChevronLeft,
   ChevronRight,
   LineChart,
@@ -38,6 +39,13 @@ const WELCOME_ITEMS = [
 ];
 
 const EMPLOYMENT_OPTIONS = ["employed", "self_employed", "student", "retired"] as const;
+
+const EMPLOYMENT_LABELS: Record<(typeof EMPLOYMENT_OPTIONS)[number], string> = {
+  employed: "Employed",
+  self_employed: "Self-employed",
+  student: "Student",
+  retired: "Retired",
+};
 
 const INCOME_SOURCES = [
   { key: "employment", label: "Employment", code: "4100", accountName: "Employment Income" },
@@ -88,14 +96,22 @@ function StepHeader({ index, onBack }: { index: number; onBack: () => void }) {
           <ChevronLeft size={14} color={colors.foreground} strokeWidth={2} />
         </Pressable>
         <Text className="font-sans-medium text-[13px] text-foreground/35">
-          {index + 1} of {STEP_LABELS.length}
+          {index + 2} of 6
         </Text>
         <View style={{ width: 34 }} />
       </View>
 
+      {/* 6 bars: bar 0 = Welcome (already done), bars 1-5 = the labeled steps.
+          Global position of the current labeled step is index+1. */}
       <View className="flex-row gap-1 px-4 pb-1 pt-3">
-        {STEP_LABELS.map((_, i) => (
-          <View key={i} className={cn("h-[3px] flex-1 rounded-pill", i <= index ? "bg-salli-accent" : "bg-foreground/[0.15]")} />
+        {Array.from({ length: 6 }).map((_, g) => (
+          <View
+            key={g}
+            className={cn(
+              "h-[3px] flex-1 rounded-pill",
+              g < index + 1 ? "bg-salli-accent opacity-50" : g === index + 1 ? "bg-salli-accent" : "bg-foreground/[0.15]",
+            )}
+          />
         ))}
       </View>
       <View className="flex-row justify-between px-4">
@@ -270,7 +286,7 @@ export default function OnboardingScreen() {
       <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
         <View className="flex-1 px-6 pt-4" style={{ paddingBottom: insets.bottom + 16 }}>
           <View className="mb-5 items-center">
-            <Logo size={56} />
+            <Logo size={56} radius={18} />
             <Text className="mb-1.5 mt-3 text-center font-sans-bold text-[26px] tracking-tight text-foreground">
               Welcome to Salli
             </Text>
@@ -327,7 +343,13 @@ export default function OnboardingScreen() {
             <StepTitle title="About You" subtitle="Used to compute your IRD tax and FIRE plan." />
             <View className="gap-2">
               <TextField label="Full Name *" active value={fullName} onChangeText={setFullName} placeholder="Your full name" />
-              <TextField label="Date of Birth *" value={dateOfBirth} onChangeText={setDateOfBirth} placeholder="YYYY-MM-DD" />
+              <TextField
+                label="Date of Birth *"
+                value={dateOfBirth}
+                onChangeText={setDateOfBirth}
+                placeholder="YYYY-MM-DD"
+                rightIcon={<Calendar size={15} color={colors.foreground} strokeWidth={2} style={{ opacity: 0.2 }} />}
+              />
 
               <View>
                 <Text className="mb-1.5 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">Tax Residency *</Text>
@@ -338,7 +360,7 @@ export default function OnboardingScreen() {
                       onPress={() => setResidency(value)}
                       className={cn("h-9 flex-1 items-center justify-center rounded-pill", residency === value && "bg-salli-accent")}
                     >
-                      <Text className={cn("text-[13px] font-sans-semibold", residency === value ? "text-white" : "text-foreground/35")}>
+                      <Text className={cn("text-[13px]", residency === value ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/35")}>
                         {value === "resident" ? "Sri Lankan Resident" : "Non-Resident"}
                       </Text>
                     </Pressable>
@@ -351,13 +373,20 @@ export default function OnboardingScreen() {
                 <View className="flex-row flex-wrap gap-1.5">
                   {EMPLOYMENT_OPTIONS.map((opt) => (
                     <Chip key={opt} selected={employment === opt} onPress={() => setEmployment(opt)}>
-                      {opt.replace("_", "-")}
+                      {EMPLOYMENT_LABELS[opt]}
                     </Chip>
                   ))}
                 </View>
               </View>
 
-              <TextField label="IRD Number" optionalHint="optional" value={irdNumber} onChangeText={setIrdNumber} placeholder="Add for accurate tax pre-fill" />
+              <TextField
+                label="IRD Number"
+                optionalHint="optional"
+                value={irdNumber}
+                onChangeText={setIrdNumber}
+                placeholder="Add for accurate tax pre-fill"
+                rightIcon={<ChevronRight size={13} color={colors.foreground} strokeWidth={2} style={{ opacity: 0.2 }} />}
+              />
 
               <PillButton className="mt-1" loading={saving} disabled={!fullName || !dateOfBirth} onPress={handleAboutYouContinue}>
                 <Text className="font-sans-semibold text-[15px] text-primary-foreground">Continue to Income</Text>

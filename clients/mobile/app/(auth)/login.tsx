@@ -57,9 +57,9 @@ export default function LoginScreen() {
       />
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-          <View className="items-center px-6 pb-13 pt-16">
+          <View className="items-center px-6 pb-13 pt-[60px]">
             <Logo size={80} />
-            <Text className="mt-5 font-sans-extrabold text-[38px] tracking-tighter text-white">
+            <Text className="mt-[22px] font-sans-extrabold text-[38px] tracking-tighter text-white">
               Salli
             </Text>
             <Text className="mt-2.5 text-center text-[14px] leading-5 text-white/45">
@@ -69,6 +69,7 @@ export default function LoginScreen() {
 
           <View className="gap-2.5 px-6">
             <TextField
+              className="rounded-[16px] px-[18px] py-[14px]"
               label="Email"
               value={email}
               onChangeText={setEmail}
@@ -78,6 +79,7 @@ export default function LoginScreen() {
               placeholder="you@example.com"
             />
             <TextField
+              className="rounded-[16px] px-[18px] py-[14px]"
               label="Password"
               value={password}
               onChangeText={setPassword}
@@ -93,12 +95,12 @@ export default function LoginScreen() {
             ) : null}
 
             <PillButton
-              className="mt-1"
+              className="mt-1 h-[54px]"
               loading={loading}
               disabled={!email || !password}
               onPress={handleSignIn}
             >
-              Sign in
+              <Text className="font-sans-semibold text-[17px] text-black">Sign in</Text>
             </PillButton>
 
             <Pressable
@@ -114,8 +116,12 @@ export default function LoginScreen() {
               <View className="h-px flex-1 bg-white/10" />
             </View>
 
-            <PillButton variant="secondary" onPress={() => router.push("/(auth)/signup")}>
-              Create account
+            <PillButton
+              variant="secondary"
+              className="h-[54px]"
+              onPress={() => router.push("/(auth)/signup")}
+            >
+              <Text className="font-sans-semibold text-[17px] text-white">Create account</Text>
             </PillButton>
 
             {!supabaseReady ? (

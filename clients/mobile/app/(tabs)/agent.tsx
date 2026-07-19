@@ -1,4 +1,4 @@
-import { PiggyBank, SendHorizontal, SquarePen } from "lucide-react-native";
+import { Bell, Check, LoaderCircle, Paperclip, PiggyBank, SendHorizontal, SquarePen } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
@@ -200,6 +200,13 @@ export default function AgentScreen() {
             data={messages}
             keyExtractor={(m) => m.id}
             contentContainerStyle={{ padding: 14, gap: 12 }}
+            ListHeaderComponent={
+              <View className="flex-row items-center gap-2.5">
+                <View className="h-px flex-1 bg-foreground/[0.08]" />
+                <Text className="text-[11px] text-foreground/20">Today</Text>
+                <View className="h-px flex-1 bg-foreground/[0.08]" />
+              </View>
+            }
             renderItem={({ item }) =>
               item.role === "user" ? (
                 <View className="flex-row justify-end">
@@ -211,19 +218,26 @@ export default function AgentScreen() {
                 <View className="gap-1.5 pl-0.5">
                   {item.parts.map((part, i) =>
                     part.kind === "tool_call" ? (
-                      <View key={i} className="flex-row items-center gap-1.5">
-                        <View className="h-[7px] w-[7px] rounded-full border border-foreground/25" />
+                      <View key={i} className="flex-row items-center gap-[7px] pl-0.5">
+                        <LoaderCircle size={11} color="rgba(255,255,255,0.25)" strokeWidth={2} />
                         <Text className="text-[11px] text-foreground/25">
                           {part.agent ? `${part.agent}: ` : ""}
                           {part.name.replace(/_/g, " ")}
                         </Text>
+                        {part.done ? <Check size={9} color="rgba(255,255,255,0.3)" strokeWidth={2.5} /> : null}
                       </View>
                     ) : part.kind === "approval" ? (
-                      <View key={i} className="ml-8 rounded-[16px] border border-foreground/10 bg-card p-3">
-                        <Text className="mb-2.5 font-sans-semibold text-[12px] text-foreground">
-                          Proposed action
-                        </Text>
-                        <View className="mb-2.5 gap-1 rounded-[9px] bg-foreground/[0.04] px-2.5 py-2">
+                      <View key={i} className="ml-[34px] rounded-[16px] border border-foreground/[0.12] bg-card p-3">
+                        <View className="mb-2.5 flex-row items-center gap-2">
+                          <View className="h-[22px] w-[22px] items-center justify-center rounded-[6px] bg-foreground/[0.08]">
+                            <Bell size={11} color="rgba(255,255,255,0.6)" strokeWidth={2} />
+                          </View>
+                          <View>
+                            <Text className="font-sans-semibold text-[12px] text-foreground">Proposed action</Text>
+                            <Text className="text-[10px] text-foreground/25">Approve to proceed</Text>
+                          </View>
+                        </View>
+                        <View className="mb-2.5 gap-1.5 rounded-[9px] bg-foreground/[0.04] px-2.5 py-2">
                           {Object.entries(part.action).map(([k, v]) => (
                             <View key={k} className="flex-row justify-between">
                               <Text className="text-[11px] text-foreground/35 capitalize">
@@ -284,6 +298,7 @@ export default function AgentScreen() {
 
         <View className="border-t border-foreground/[0.08] px-3.5 pb-2 pt-2" style={{ paddingBottom: insets.bottom + 8 }}>
           <View className="flex-row items-center gap-2.5 rounded-[20px] border border-foreground/10 bg-card py-1.5 pl-3.5 pr-1.5">
+            <Paperclip size={17} color="rgba(255,255,255,0.3)" strokeWidth={1.8} />
             <TextInput
               value={input}
               onChangeText={setInput}

@@ -1,4 +1,4 @@
-import { Sparkles, Trash2 } from "lucide-react-native";
+import { Info, Sparkles, Trash2 } from "lucide-react-native";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
@@ -43,10 +43,19 @@ export default function FinancialIndependenceScreen() {
   const advisorReport = useLatestAdvisorReport();
   const runAdvisor = useRunAdvisor();
 
+  // `fire_year_base` may be a calendar year (e.g. 2044) or a years-from-now count
+  // depending on the engine; normalize both into a years count + a freedom year,
+  // and never render a null/negative value.
+  const nowYear = new Date().getFullYear();
+  const fireBaseRaw = Number(projections.data?.fire_year_base ?? 0);
+  const yearsToFi = fireBaseRaw > 1900 ? Math.max(0, fireBaseRaw - nowYear) : Math.max(0, fireBaseRaw);
+  const freedomYear = nowYear + Math.round(yearsToFi);
+
   return (
     <PageShell>
-      <View className="px-5 pt-2.5">
-        <Text className="font-sans-bold text-[22px] text-foreground">Financial Independence</Text>
+      <View className="flex-row items-center px-5 pb-1 pt-2.5">
+        <Text className="flex-1 font-sans-bold text-[20px] text-foreground">Financial Independence</Text>
+        <Info size={18} color={colors.mutedForeground} strokeWidth={2} />
       </View>
 
       <View className="mx-4 mt-3 flex-row border-b border-foreground/[0.08]">
@@ -66,47 +75,96 @@ export default function FinancialIndependenceScreen() {
       ) : null}
 
       {tab === "Overview" && !fiScore.isLoading ? (
-        <View className="gap-3 px-4 pt-3.5">
-          <Card className="p-5">
-            <Text className="mb-1.5 text-[11px] font-sans-medium uppercase tracking-wide text-foreground/35">
-              Freedom Number
-            </Text>
-            <Text className="mb-2 text-[12px] leading-4 text-foreground/30">
-              The savings target where investment returns cover your lifestyle — permanently.
-            </Text>
-            <View className="mb-3 flex-row items-baseline gap-1">
-              <Text className="font-sans-bold text-[20px] text-foreground/40">Rs.</Text>
-              <Text className="font-sans-extrabold text-[36px] tracking-tighter text-foreground">
+        <View className="gap-2.5 px-4 pt-3">
+          {/* TIER 1 — Freedom Number (navy hero card) */}
+          <View className="rounded-card border border-foreground/[0.08] bg-salli-navy-card p-[18px]">
+            <View className="mb-2 flex-row items-center gap-1.5">
+              <Text className="text-[11px] font-sans-semibold uppercase tracking-wide text-white/50">
+                Freedom Number
+              </Text>
+              <Info size={13} color="rgba(255,255,255,0.3)" strokeWidth={2} />
+            </View>
+            <View className="mb-2.5 rounded-[8px] border border-white/10 bg-white/[0.06] px-2.5 py-1.5">
+              <Text className="text-[11px] leading-4 text-white/45">
+                The savings target where investment returns cover your lifestyle — permanently.
+              </Text>
+            </View>
+            <View className="mb-1.5 flex-row items-baseline gap-1">
+              <Text className="font-sans-bold text-[22px] text-white/45">Rs.</Text>
+              <Text className="font-sans-extrabold text-[42px] leading-[42px] tracking-tighter text-white">
                 {projections.data ? formatLKRAbbrev(projections.data.fi_number) : "—"}
               </Text>
             </View>
-            <Text className="mb-3 text-[12px] text-foreground/30">4% SWR</Text>
-            <ProgressBar pct={Number(fiScore.data?.progress_to_fi ?? 0)} />
-            <Text className="mt-1.5 text-[11px] text-foreground/30">
-              Funded {fiScore.data ? formatPct(fiScore.data.progress_to_fi) : "—"}
-            </Text>
-          </Card>
-
-          <View className="flex-row gap-2.5">
-            <StatTile
-              className="flex-1"
-              label="Net Worth"
-              value={fiScore.data ? `Rs. ${formatLKRAbbrev(fiScore.data.net_worth)}` : "—"}
-            />
-            <StatTile
-              className="flex-1"
-              label="Savings Rate"
-              value={fiScore.data ? formatPct(fiScore.data.savings_rate) : "—"}
-            />
+            <View className="mb-3.5 flex-row items-center gap-1.5">
+              <Text className="text-[11px] text-white/30">4% SWR</Text>
+            </View>
+            <View className="flex-row gap-1.5">
+              <View className="flex-1 rounded-[10px] bg-white/[0.06] px-2.5 py-2">
+                <Text className="mb-1 text-[10px] text-white/30">Funded</Text>
+                <Text className="font-sans-bold text-[15px] leading-[15px] text-salli-accent">
+                  {fiScore.data ? formatPct(fiScore.data.progress_to_fi) : "—"}
+                </Text>
+              </View>
+              <View className="flex-1 rounded-[10px] bg-white/[0.06] px-2.5 py-2">
+                <Text className="mb-1 text-[10px] text-white/30">Net Worth</Text>
+                <Text className="font-sans-bold text-[15px] leading-[15px] text-white">
+                  {fiScore.data ? `Rs. ${formatLKRAbbrev(fiScore.data.net_worth)}` : "—"}
+                </Text>
+              </View>
+              <View className="flex-1 rounded-[10px] bg-white/[0.06] px-2.5 py-2">
+                <Text className="mb-1 text-[10px] text-white/30">Target</Text>
+                <Text className="font-sans-bold text-[15px] leading-[15px] text-white/40">
+                  {projections.data ? `Rs. ${formatLKRAbbrev(projections.data.fi_number)}` : "—"}
+                </Text>
+              </View>
+            </View>
           </View>
 
-          <Card className="p-4">
-            <View className="mb-2.5 flex-row items-center justify-between">
-              <Text className="font-sans-semibold text-[14px] text-foreground">FI Score</Text>
-              <Text className="font-sans-bold text-[18px] text-foreground">
-                {fiScore.data ? Number(fiScore.data.overall_score).toFixed(0) : "—"}
-                <Text className="text-[11px] font-sans text-foreground/30">/100</Text>
+          {/* TIER 2 — Key metrics */}
+          <View className="flex-row gap-2">
+            <Card className="flex-1 p-3.5">
+              <View className="mb-1.5 flex-row items-center gap-1.5">
+                <Text className="text-[11px] font-sans-medium text-foreground/40">Years to FI</Text>
+                <Info size={11} color="rgba(255,255,255,0.2)" strokeWidth={2} />
+              </View>
+              <Text className="mb-1 font-sans-extrabold text-[28px] leading-[28px] tracking-tight text-foreground">
+                {projections.data ? yearsToFi.toFixed(1) : "—"}
               </Text>
+              <Text className="text-[10px] text-foreground/20">
+                {projections.data ? `Freedom by ${freedomYear} · base case` : "base case"}
+              </Text>
+            </Card>
+            <Card className="flex-1 p-3.5">
+              <View className="mb-1.5 flex-row items-center gap-1.5">
+                <Text className="text-[11px] font-sans-medium text-foreground/40">Savings Rate</Text>
+                <Info size={11} color="rgba(255,255,255,0.2)" strokeWidth={2} />
+              </View>
+              <Text className="mb-1 font-sans-extrabold text-[28px] leading-[28px] tracking-tight text-foreground">
+                {fiScore.data ? formatPct(fiScore.data.savings_rate, 0) : "—"}
+              </Text>
+              <Text className="text-[10px] text-foreground/20">% of income saved · aim 40%+</Text>
+            </Card>
+          </View>
+
+          {/* TIER 4 — FI Score */}
+          <Card className="p-4">
+            <View className="mb-3 flex-row items-center justify-between">
+              <View>
+                <View className="flex-row items-center gap-1.5">
+                  <Text className="font-sans-semibold text-[14px] text-foreground">FI Score</Text>
+                  <Info size={12} color="rgba(255,255,255,0.25)" strokeWidth={2} />
+                </View>
+                {fiScore.data?.grade ? (
+                  <Text className="mt-0.5 text-[11px] text-foreground/30">Grade {fiScore.data.grade}</Text>
+                ) : null}
+              </View>
+              <View className="h-12 w-12 items-center justify-center rounded-full bg-foreground/[0.07]">
+                <View className="h-9 w-9 items-center justify-center rounded-full bg-card">
+                  <Text className="font-sans-bold text-[14px] text-foreground">
+                    {fiScore.data ? Number(fiScore.data.overall_score).toFixed(0) : "—"}
+                  </Text>
+                </View>
+              </View>
             </View>
             <View className="gap-2.5">
               {(fiScore.data?.components ?? []).map((c) => (

@@ -1,4 +1,4 @@
-import { X } from "lucide-react-native";
+import { Camera, FileText, ShoppingBag, X } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { KeyboardAvoidingView, Modal as RNModal, Platform, Pressable, ScrollView, Text, View } from "react-native";
 
@@ -115,21 +115,31 @@ export function NewEntryModal({ visible, onClose, accounts }: NewEntryModalProps
               ))}
             </View>
 
-            <Card inset className="mt-4 px-5 pb-4 pt-5">
-              <Text className="mb-2.5 text-[11px] font-sans-medium uppercase tracking-wide text-foreground/40">
+            <Card className="mt-4 border-foreground/[0.08] bg-salli-navy-card px-5 pb-4 pt-5">
+              <Text className="mb-2.5 text-[11px] font-sans-medium uppercase tracking-wide text-white/40">
                 Amount
               </Text>
-              <View className="flex-row items-baseline gap-1.5">
-                <Text className="font-sans-semibold text-[22px] text-foreground/35">Rs.</Text>
+              <View className="mb-3.5 flex-row items-baseline gap-1.5">
+                <Text className="font-sans-semibold text-[22px] text-white/35">Rs.</Text>
                 <TextField
                   label=""
                   value={amount}
                   onChangeText={setAmount}
                   keyboardType="decimal-pad"
                   placeholder="0"
+                  placeholderTextColor="rgba(255,255,255,0.25)"
                   className="flex-1 border-0 bg-transparent p-0"
-                  style={{ fontSize: 40, fontFamily: "Inter_800ExtraBold", letterSpacing: -1.5 }}
+                  style={{ fontSize: 44, fontFamily: "Inter_800ExtraBold", letterSpacing: -2, color: "#FFFFFF" }}
                 />
+              </View>
+              <View className="flex-row flex-wrap gap-1.5">
+                <View className="flex-row items-center gap-1.5 rounded-pill border border-salli-accent/40 bg-salli-accent/25 px-3 py-1">
+                  <ShoppingBag size={11} color="#2563EB" strokeWidth={2.5} />
+                  <Text className="font-sans-semibold text-[12px] text-salli-accent">Food &amp; Groceries</Text>
+                </View>
+                <View className="rounded-pill border border-white/10 bg-white/[0.07] px-3 py-1">
+                  <Text className="font-sans-medium text-[12px] text-white/35">+ Tag</Text>
+                </View>
               </View>
             </Card>
 
@@ -189,10 +199,34 @@ export function NewEntryModal({ visible, onClose, accounts }: NewEntryModalProps
               </View>
             </View>
 
-            <View className="mb-2 mt-4 flex-row items-center gap-2 rounded-control border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
+            <Text className="mb-1.5 mt-4 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+              Attachments
+            </Text>
+            <View className="flex-row items-center gap-2">
+              <View className="relative h-14 w-14 overflow-hidden rounded-[12px] border border-foreground/10 bg-card">
+                <View className="absolute inset-0 items-center justify-center gap-0.5">
+                  <FileText size={20} color="rgba(255,255,255,0.25)" strokeWidth={1.5} />
+                  <Text className="text-[8px] font-sans-medium text-foreground/20">receipt.jpg</Text>
+                </View>
+                <View className="absolute right-1 top-1 h-3.5 w-3.5 items-center justify-center rounded-full bg-black/60">
+                  <X size={7} color="rgba(255,255,255,0.6)" strokeWidth={3} />
+                </View>
+              </View>
+              <View className="h-14 w-14 items-center justify-center gap-0.5 rounded-[12px] border border-dashed border-foreground/15 bg-card">
+                <Camera size={18} color="rgba(255,255,255,0.3)" strokeWidth={2} />
+                <Text className="text-[8px] font-sans-medium text-foreground/20">Photo</Text>
+              </View>
+              <View className="h-14 w-14 items-center justify-center gap-0.5 rounded-[12px] border border-dashed border-foreground/15 bg-card">
+                <FileText size={18} color="rgba(255,255,255,0.3)" strokeWidth={2} />
+                <Text className="text-[8px] font-sans-medium text-foreground/20">Doc</Text>
+              </View>
+            </View>
+
+            <View className="mb-2 mt-2.5 flex-row items-center gap-2 px-0.5">
+              <View className="h-2 w-2 rounded-full bg-salli-accent" />
               <Text className="flex-1 text-[11px] leading-4 text-foreground/30">
                 {debitAccount && creditAccount
-                  ? `Entry balanced · Dr = Cr = Rs. ${amount || 0}`
+                  ? `Entry balanced · Dr = Cr = Rs. ${amount || 0} · immutable once posted`
                   : "Pick a debit and credit account to balance this entry."}
               </Text>
             </View>

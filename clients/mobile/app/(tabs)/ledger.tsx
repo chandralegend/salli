@@ -1,4 +1,4 @@
-import { Plus, Search } from "lucide-react-native";
+import { ArrowDown, Plus, Search } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
@@ -113,6 +113,10 @@ export default function LedgerScreen() {
                 className="flex-1 text-[13px] text-foreground"
               />
             </View>
+            <View className="h-[38px] flex-row items-center gap-1.5 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
+              <ArrowDown size={13} color={colors.mutedForeground} strokeWidth={2} />
+              <Text className="font-sans-medium text-[12px] text-foreground/40">Date</Text>
+            </View>
           </View>
           <View className="flex-row flex-wrap gap-1.5 px-4 pb-2.5">
             {TYPE_FILTERS.map((f) => (
@@ -155,7 +159,7 @@ export default function LedgerScreen() {
                         <Pressable
                           key={entry.id}
                           onLongPress={() => !reversed && reverseEntry(entry.id)}
-                          className={cn("flex-row gap-2.5 rounded-card border border-foreground/10 bg-card p-3", reversed && "opacity-40")}
+                          className={cn("flex-row gap-2.5 rounded-[14px] border border-foreground/[0.08] bg-card p-3", reversed && "opacity-40")}
                         >
                           <View
                             className={cn("mt-0.5 h-9 w-[3px] rounded-pill", isIncome ? "bg-salli-accent" : "bg-foreground/15")}

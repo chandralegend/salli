@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { AlertTriangle, ChevronRight, Download, LogOut } from "lucide-react-native";
+import { AlertTriangle, Check, ChevronRight, Download, LogOut } from "lucide-react-native";
 import { Alert, Pressable, Text, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
@@ -11,6 +11,20 @@ import { logout } from "@/lib/auth";
 import { useDarkModeToggle, useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
+const PLUS_FEATURES: { lead: string; rest: string }[] = [
+  { lead: "500 AI messages/mo", rest: "25× Scrooge conversations" },
+  { lead: "50 bank statement uploads", rest: "any Sri Lankan bank" },
+  { lead: "Unlimited FIRE advisor", rest: "run your strategy anytime" },
+];
+
+function formatShortDate(iso?: string | null) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[d.getMonth()]} ${d.getDate()}`;
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
   const colors = useThemeColors();
@@ -19,6 +33,9 @@ export default function SettingsScreen() {
   const entitlements = useEntitlements();
 
   const isFree = entitlements.data?.plan === "free";
+  const usage = entitlements.data?.usage ?? [];
+  const messages = usage.find((u) => u.metric === "messages");
+  const resetsAt = formatShortDate(usage[0]?.resets_at ?? entitlements.data?.current_period_end);
 
   return (
     <PageShell>
@@ -43,25 +60,58 @@ export default function SettingsScreen() {
         </Card>
 
         {isFree ? (
-          <Card className="overflow-hidden bg-salli-navy-card p-0">
-            <View className="px-4 pb-4 pt-3.5">
+          <View className="overflow-hidden rounded-card border border-foreground/10">
+            {/* usage header */}
+            <View style={{ backgroundColor: "#0E1A60" }} className="px-4 pb-4 pt-3.5">
               <View className="mb-2.5 flex-row items-center justify-between">
-                <Text className="text-[12px] text-white/60">Free Plan</Text>
+                <Text className="text-[12px] font-sans-medium text-white/60">
+                  Free Plan{resetsAt ? ` · Resets ${resetsAt}` : ""}
+                </Text>
+                {messages ? (
+                  <View className="rounded-pill bg-white/15 px-2.5 py-0.5">
+                    <Text className="font-sans-bold text-[11px] text-white">⚠ {messages.remaining} messages left</Text>
+                  </View>
+                ) : null}
               </View>
               <View className="flex-row flex-wrap gap-1.5">
-                {(entitlements.data?.usage ?? []).map((u) => (
-                  <View key={u.metric} className="flex-row items-center gap-1.5 rounded-pill bg-white/10 px-3 py-1.5">
-                    <Text className="text-[11px] capitalize text-white/50">{u.metric.replace(/_/g, " ")}</Text>
-                    <Text className="font-sans-bold text-[11px] text-white">
-                      {u.used}/{u.limit}
+                {usage.map((u) => {
+                  const dim = u.remaining <= 0;
+                  return (
+                    <View
+                      key={u.metric}
+                      className={cn(
+                        "flex-row items-center gap-1.5 rounded-pill px-3 py-1.5",
+                        dim ? "bg-white/[0.06]" : "bg-white/10",
+                      )}
+                    >
+                      <Text className={cn("text-[11px] capitalize", dim ? "text-white/30" : "text-white/50")}>
+                        {u.metric.replace(/_/g, " ")}
+                      </Text>
+                      <Text className={cn("font-sans-bold text-[11px]", dim ? "text-white/40" : "text-white")}>
+                        {u.used}/{u.limit}
+                        {dim ? " used" : ""}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+            {/* upgrade pitch */}
+            <View style={{ backgroundColor: "#0A1040" }} className="px-4 pb-4 pt-[18px]">
+              <Text className="mb-1 font-sans-bold text-[18px] text-white">Unlock Plus</Text>
+              <Text className="mb-4 text-[13px] text-white/45">Everything you need to master your finances.</Text>
+              <View className="mb-[18px] gap-2.5">
+                {PLUS_FEATURES.map((f) => (
+                  <View key={f.lead} className="flex-row items-start gap-2.5">
+                    <View className="mt-px h-[18px] w-[18px] items-center justify-center rounded-full bg-white/[0.12]">
+                      <Check size={9} color="#FFFFFF" strokeWidth={3} />
+                    </View>
+                    <Text className="flex-1 text-[13px] leading-[18px] text-white/70">
+                      <Text className="font-sans-semibold text-white">{f.lead}</Text> — {f.rest}
                     </Text>
                   </View>
                 ))}
               </View>
-            </View>
-            <View className="bg-salli-hero-2/40 px-4 pb-4 pt-4">
-              <Text className="mb-1 font-sans-bold text-[18px] text-white">Unlock Plus</Text>
-              <Text className="mb-3.5 text-[13px] text-white/45">Everything you need to master your finances.</Text>
               <Pressable
                 onPress={() => router.push("/(tabs)/more/billing")}
                 className="h-[50px] flex-row items-center justify-center gap-1.5 rounded-pill bg-white"
@@ -69,8 +119,9 @@ export default function SettingsScreen() {
                 <Text className="font-sans-bold text-[15px] text-black">Upgrade to Plus</Text>
                 <Text className="text-[14px] text-black/40">· $9/mo</Text>
               </Pressable>
+              <Text className="mt-2 text-center text-[11px] text-white/25">Cancel anytime · Secure checkout</Text>
             </View>
-          </Card>
+          </View>
         ) : null}
 
         <Card className="overflow-hidden p-0">

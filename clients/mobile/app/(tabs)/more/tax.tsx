@@ -1,4 +1,4 @@
-import { Bell, Download } from "lucide-react-native";
+import { Bell, Download, Info } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
@@ -83,6 +83,7 @@ export default function TaxScreen() {
           <Card className="mt-2.5 overflow-hidden p-0">
             <View className="flex-row items-center justify-between border-b border-foreground/[0.06] px-4 py-3">
               <Text className="font-sans-semibold text-[13px] text-foreground">Progressive Tax Bands</Text>
+              <Text className="text-[11px] text-foreground/25">IRD · AY {tax.data.pack_year}</Text>
             </View>
             <View className="px-4">
               {tax.data.band_workings.map((band, i) => (
@@ -141,9 +142,12 @@ export default function TaxScreen() {
             Recompute
           </PillButton>
 
-          <Text className="mt-3 text-center text-[11px] leading-4 text-foreground/25">
-            Deterministic engine · Planning estimate only · Not financial advice
-          </Text>
+          <View className="mt-2.5 flex-row items-start gap-2 rounded-[12px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
+            <Info size={13} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
+            <Text className="flex-1 text-[11px] leading-4 text-foreground/30">
+              Deterministic engine · Planning estimate only · Not financial advice
+            </Text>
+          </View>
         </View>
       )}
     </PageShell>

@@ -39,16 +39,16 @@ export default function SignupScreen() {
       <LinearGradient
         colors={["#0B20E0", "#0912B0", "#060A6A", "#020518", "#000000"]}
         locations={[0, 0.3, 0.55, 0.8, 1]}
-        style={{ position: "absolute", top: 0, left: 0, right: 0, height: 300 }}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, height: 430 }}
       />
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-          <View className="items-center px-6 pb-10 pt-16">
-            <Logo size={56} />
-            <Text className="mt-4 font-sans-bold text-[26px] tracking-tight text-white">
+          <View className="items-center px-6 pb-13 pt-[60px]">
+            <Logo size={80} />
+            <Text className="mt-[22px] font-sans-bold text-[26px] tracking-tight text-white">
               Create account
             </Text>
-            <Text className="mt-1.5 text-center text-[13px] text-white/45">
+            <Text className="mt-2.5 text-center text-[13px] text-white/45">
               Set up your Salli account to get started.
             </Text>
           </View>
@@ -64,13 +64,14 @@ export default function SignupScreen() {
               <Text className="text-center text-[13px] text-white/40">
                 We&apos;ve sent a confirmation link to {email}.
               </Text>
-              <PillButton className="mt-3 w-full" onPress={() => router.replace("/(auth)/login")}>
-                Back to sign in
+              <PillButton className="mt-3 h-[54px] w-full" onPress={() => router.replace("/(auth)/login")}>
+                <Text className="font-sans-semibold text-[17px] text-black">Back to sign in</Text>
               </PillButton>
             </View>
           ) : (
             <View className="gap-2.5 px-6">
               <TextField
+                className="rounded-[16px] px-[18px] py-[14px]"
                 label="Email"
                 value={email}
                 onChangeText={setEmail}
@@ -80,6 +81,7 @@ export default function SignupScreen() {
                 placeholder="you@example.com"
               />
               <TextField
+                className="rounded-[16px] px-[18px] py-[14px]"
                 label="Password"
                 optionalHint="min 8 characters"
                 value={password}
@@ -96,12 +98,12 @@ export default function SignupScreen() {
               ) : null}
 
               <PillButton
-                className="mt-1"
+                className="mt-1 h-[54px]"
                 loading={loading}
                 disabled={!email || !password}
                 onPress={handleSignUp}
               >
-                Create account
+                <Text className="font-sans-semibold text-[17px] text-black">Create account</Text>
               </PillButton>
 
               <Pressable className="items-center py-2" onPress={() => router.replace("/(auth)/login")}>

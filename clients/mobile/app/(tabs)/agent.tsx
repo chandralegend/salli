@@ -1,4 +1,15 @@
-import { Bell, Check, LoaderCircle, Menu, Paperclip, PiggyBank, Send, SquarePen, Trash2 } from "lucide-react-native";
+import {
+  ArrowUpRight,
+  Bell,
+  Check,
+  LoaderCircle,
+  Menu,
+  Paperclip,
+  PiggyBank,
+  Send,
+  SquarePen,
+  Trash2,
+} from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
@@ -85,6 +96,7 @@ function ApprovalCard({
   resolved?: "approved" | "denied";
   onResolve: (d: "approved" | "denied") => void;
 }) {
+  const colors = useThemeColors();
   const toolName = String(action.action ?? action.type ?? action.tool ?? "action");
   const rawParams = (
     action.params && typeof action.params === "object" ? action.params : action
@@ -96,7 +108,7 @@ function ApprovalCard({
     <View className="ml-[34px] rounded-[16px] border border-foreground/[0.12] bg-card p-3">
       <View className="mb-2.5 flex-row items-center gap-2">
         <View className="h-[22px] w-[22px] items-center justify-center rounded-[6px] bg-foreground/[0.08]">
-          <Bell size={11} color="rgba(255,255,255,0.6)" strokeWidth={2} />
+          <Bell size={11} color={colors.mutedForeground} strokeWidth={2} />
         </View>
         <View className="flex-1">
           <Text className="font-sans-semibold text-[12px] text-foreground">Proposed action</Text>
@@ -235,16 +247,31 @@ export default function AgentScreen() {
           });
           break;
         case "error":
-          if (event.message.toLowerCase().includes("quota")) {
-            setQuotaBanner("Monthly messages used up — upgrade to continue.");
+          setStreaming(false);
+          if (/quota|limit|upgrade/i.test(event.message)) {
+            setQuotaBanner("You've used all your monthly Scrooge messages — upgrade to keep chatting.");
             setMessages((prev) => prev.slice(0, -2)); // remove the attempted user + empty assistant turn
           }
-          setStreaming(false);
           break;
       }
     },
     [appendToLastAssistant],
   );
+
+  /** Turns a transport/stream error into either the friendly quota banner or a
+   * plain-language notice — never a raw JSON dump in the chat. */
+  const handleStreamError = useCallback((message: string) => {
+    setStreaming(false);
+    if (/quota|limit|upgrade/i.test(message)) {
+      setQuotaBanner("You've used all your monthly Scrooge messages — upgrade to keep chatting.");
+      setMessages((prev) => prev.slice(0, -2)); // drop the attempted user + empty assistant turn
+      return;
+    }
+    appendToLastAssistant((parts) => [
+      ...parts,
+      { kind: "text", content: "Something went wrong reaching Scrooge. Please try again." },
+    ]);
+  }, [appendToLastAssistant]);
 
   const send = (text: string) => {
     const trimmed = text.trim();
@@ -262,10 +289,7 @@ export default function AgentScreen() {
       "/agent/chat",
       { thread_id: threadIdRef.current, message: trimmed },
       handleEvent,
-      (message) => {
-        setStreaming(false);
-        appendToLastAssistant((parts) => [...parts, { kind: "text", content: `⚠ ${message}` }]);
-      },
+      handleStreamError,
     );
   };
 
@@ -285,7 +309,7 @@ export default function AgentScreen() {
       "/agent/resume",
       { thread_id: threadIdRef.current, decision, workflow: "chat" },
       handleEvent,
-      () => setStreaming(false),
+      handleStreamError,
     );
   };
 
@@ -321,21 +345,26 @@ export default function AgentScreen() {
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
         {messages.length === 0 ? (
-          <View className="flex-1 items-center justify-center gap-3 px-8">
-            <View className="h-14 w-14 items-center justify-center rounded-full bg-salli-accent/15">
-              <PiggyBank size={24} color={colors.accent} strokeWidth={1.8} />
+          <View className="flex-1 items-center justify-center px-6">
+            <View className="h-[68px] w-[68px] items-center justify-center rounded-full border border-salli-accent/25 bg-salli-accent/15">
+              <PiggyBank size={30} color={colors.accent} strokeWidth={1.8} />
             </View>
-            <Text className="text-center font-sans-semibold text-[15px] text-foreground">
-              Ask Scrooge anything about your money.
+            <Text className="mt-4 text-center font-sans-bold text-[19px] text-foreground">Meet Scrooge</Text>
+            <Text className="mt-1.5 text-center text-[13px] leading-5 text-foreground/40">
+              Your AI advisor for tax, budgets, and FIRE. Every number comes from the deterministic engine — not guessed.
             </Text>
-            <View className="mt-1 flex-row flex-wrap justify-center gap-1.5">
+            <View className="mt-5 w-full gap-2">
+              <Text className="pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/25">
+                Try asking
+              </Text>
               {SUGGESTED_PROMPTS.map((p) => (
                 <Pressable
                   key={p}
                   onPress={() => send(p)}
-                  className="rounded-pill border border-foreground/10 bg-card px-3 py-1.5"
+                  className="flex-row items-center justify-between rounded-control border border-foreground/[0.08] bg-card px-4 py-3"
                 >
-                  <Text className="text-[12px] text-foreground/60">{p}</Text>
+                  <Text className="flex-1 text-[13px] text-foreground/70">{p}</Text>
+                  <ArrowUpRight size={15} color={colors.mutedForeground} strokeWidth={2} />
                 </Pressable>
               ))}
             </View>
@@ -365,12 +394,12 @@ export default function AgentScreen() {
                   {item.parts.map((part, i) =>
                     part.kind === "tool_call" ? (
                       <View key={i} className="flex-row items-center gap-[7px] pl-0.5">
-                        <LoaderCircle size={11} color="rgba(255,255,255,0.25)" strokeWidth={2} />
-                        <Text className="text-[11px] text-foreground/25">
-                          {part.agent ? `${part.agent}: ` : ""}
+                        <LoaderCircle size={11} color={colors.mutedForeground} strokeWidth={2} />
+                        <Text className="text-[11px] capitalize text-foreground/30">
+                          {part.agent ? `${part.agent.replace(/_/g, " ")}: ` : ""}
                           {part.name.replace(/_/g, " ")}
                         </Text>
-                        {part.done ? <Check size={9} color="rgba(255,255,255,0.3)" strokeWidth={2.5} /> : null}
+                        {part.done ? <Check size={9} color={colors.accent} strokeWidth={2.5} /> : null}
                       </View>
                     ) : part.kind === "approval" ? (
                       <ApprovalCard
@@ -384,7 +413,7 @@ export default function AgentScreen() {
                         <View className="mt-0.5 h-[26px] w-[26px] items-center justify-center rounded-full bg-salli-accent">
                           <PiggyBank size={12} color="#FFFFFF" strokeWidth={2} />
                         </View>
-                        <View className="max-w-[85%] rounded-[18px] rounded-tl-[4px] border border-foreground/[0.08] bg-card px-3.5 py-1">
+                        <View className="max-w-[85%] rounded-[18px] rounded-tl-[4px] border border-foreground/[0.08] bg-card px-3.5 py-2">
                           <AssistantMarkdown content={part.content} />
                         </View>
                       </View>
@@ -402,9 +431,9 @@ export default function AgentScreen() {
           </View>
         ) : null}
 
-        <View className="border-t border-foreground/[0.08] px-3.5 pb-2 pt-2" style={{ paddingBottom: insets.bottom + 8 }}>
+        <View className="border-t border-foreground/[0.08] px-3.5 pt-2" style={{ paddingBottom: insets.bottom + 64 + 10 }}>
           <View className="flex-row items-center gap-2.5 rounded-[20px] border border-foreground/10 bg-card py-1.5 pl-3.5 pr-1.5">
-            <Paperclip size={17} color="rgba(255,255,255,0.3)" strokeWidth={1.8} />
+            <Paperclip size={17} color={colors.mutedForeground} strokeWidth={1.8} />
             <TextInput
               value={input}
               onChangeText={setInput}

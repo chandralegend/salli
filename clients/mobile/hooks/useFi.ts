@@ -7,18 +7,28 @@ import {
   getProjectionsFiProjectionsGet,
   getScoreFiScoreGet,
   getStrategyFiStrategyGet,
+  getSurplusBreakdownFiSurplusGet,
   latestReportAdvisorReportsLatestGet,
   listGoalsFiGoalsGet,
   runAdvisorAdvisorRunPost,
 } from "@/lib/api/sdk.gen";
 import type { FiScore } from "./useDashboard";
 
+export type FiProjectionPoint = { year: number; conservative: string; base: string; growth: string };
 export type FiProjections = {
+  points: FiProjectionPoint[];
   fi_number: string;
   fire_year_conservative: number | string;
   fire_year_base: number | string;
   fire_year_growth: number | string;
   current_portfolio: string;
+};
+
+export type FiSurplus = {
+  gross_monthly_income: string;
+  gross_monthly_expenses: string;
+  monthly_surplus: string;
+  savings_rate: string;
 };
 
 export type FiStrategy = {
@@ -76,6 +86,16 @@ export function useFiProjections() {
     queryFn: async () => {
       const { data } = await getProjectionsFiProjectionsGet({ throwOnError: true });
       return data as unknown as FiProjections;
+    },
+  });
+}
+
+export function useFiSurplus() {
+  return useQuery({
+    queryKey: ["fi-surplus"],
+    queryFn: async () => {
+      const { data } = await getSurplusBreakdownFiSurplusGet({ throwOnError: true });
+      return data as unknown as FiSurplus;
     },
   });
 }

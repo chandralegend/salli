@@ -8,13 +8,24 @@ type StatTileProps = {
   value: ReactNode;
   hint?: string;
   valueClassName?: string;
+  labelClassName?: string;
+  hintClassName?: string;
   className?: string;
   onDark?: boolean; // sitting over the hero gradient (Dashboard) — always translucent-white
 };
 
 /** The mockup's small grid stat cell: uppercase label, bold value, faint hint —
  * used in Dashboard's 4-tile row, Tax's 3-col grid, Budget Setup's 3-col grid. */
-export function StatTile({ label, value, hint, valueClassName, className, onDark }: StatTileProps) {
+export function StatTile({
+  label,
+  value,
+  hint,
+  valueClassName,
+  labelClassName,
+  hintClassName,
+  className,
+  onDark,
+}: StatTileProps) {
   return (
     <View
       className={cn(
@@ -27,6 +38,7 @@ export function StatTile({ label, value, hint, valueClassName, className, onDark
         className={cn(
           "mb-1 text-[9px] font-sans-medium uppercase tracking-wide",
           onDark ? "text-white/40" : "text-foreground/40",
+          labelClassName,
         )}
       >
         {label}
@@ -45,7 +57,13 @@ export function StatTile({ label, value, hint, valueClassName, className, onDark
         value
       )}
       {hint ? (
-        <Text className={cn("mt-0.5 text-[9px] font-sans", onDark ? "text-white/20" : "text-foreground/20")}>
+        <Text
+          className={cn(
+            "mt-0.5 text-[9px] font-sans",
+            onDark ? "text-white/20" : "text-foreground/20",
+            hintClassName,
+          )}
+        >
           {hint}
         </Text>
       ) : null}

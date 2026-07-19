@@ -92,45 +92,60 @@ export default function DashboardScreen() {
           ) : null}
         </View>
 
-        <View className="flex-row gap-1.5 px-3.5 pb-3.5">
-          <StatTile
-            onDark
-            label="Income"
-            value={incomeYtd != null ? formatLKRAbbrev(incomeYtd) : "—"}
-            hint="YTD"
-            className="flex-1"
-          />
-          <StatTile
-            onDark
-            label="Expenses"
-            value={expensesYtd != null ? formatLKRAbbrev(expensesYtd) : "—"}
-            hint="YTD"
-            valueClassName="text-white/70"
-            className="flex-1"
-          />
-          <StatTile
-            onDark
-            label="Tax"
-            value={tax ? formatLKRAbbrev(tax.tax_payable) : "—"}
-            hint="AY 25/26"
-            className="flex-1"
-          />
-          <StatTile
-            onDark
-            label="FI Score"
-            value={
-              fiScore ? (
-                <Text className="font-sans-bold text-[14px] text-white">
-                  {Number(fiScore.overall_score).toFixed(0)}
-                  <Text className="font-sans text-[10px] text-white/30">/100</Text>
-                </Text>
-              ) : (
-                "—"
-              )
-            }
-            hint={fiScore ? `Grade ${fiScore.grade}` : undefined}
-            className="flex-1"
-          />
+        <View className="gap-2 px-4 pb-3.5">
+          <View className="flex-row gap-2">
+            <StatTile
+              onDark
+              label="Income"
+              value={incomeYtd != null ? formatLKRAbbrev(incomeYtd) : "—"}
+              hint="YTD"
+              className="flex-1 p-4"
+              labelClassName="text-[10px]"
+              hintClassName="text-[10px]"
+              valueClassName="text-[24px]"
+            />
+            <StatTile
+              onDark
+              label="Expenses"
+              value={expensesYtd != null ? formatLKRAbbrev(expensesYtd) : "—"}
+              hint="YTD"
+              valueClassName="text-white/70 text-[24px]"
+              className="flex-1 p-4"
+              labelClassName="text-[10px]"
+              hintClassName="text-[10px]"
+            />
+          </View>
+          <View className="flex-row gap-2">
+            <StatTile
+              onDark
+              label="Tax"
+              value={tax ? formatLKRAbbrev(tax.tax_payable) : "—"}
+              hint="AY 25/26"
+              className="flex-1 p-4"
+              labelClassName="text-[10px]"
+              hintClassName="text-[10px]"
+              valueClassName="text-[24px]"
+            />
+            <StatTile
+              onDark
+              label="FI Score"
+              value={
+                fiScore ? (
+                  <Text className="font-sans-bold text-[24px] tracking-tight text-white">
+                    {Number(fiScore.overall_score).toFixed(0)}
+                    <Text className="font-sans text-[12px] text-white/30">/100</Text>
+                  </Text>
+                ) : (
+                  "—"
+                )
+              }
+              hint={fiScore ? `Grade ${fiScore.grade}` : undefined}
+              className="flex-1 p-4"
+              labelClassName="text-[10px]"
+              hintClassName="text-[10px]"
+              valueClassName="text-[24px]"
+            />
+          </View>
         </View>
 
         <View className="flex-row gap-2 px-4 pb-3.5">
@@ -253,8 +268,10 @@ export default function DashboardScreen() {
                       />
                     </View>
                     <View className="flex-1">
-                      <Text className="font-sans-semibold text-[13px] text-foreground">{entry.description}</Text>
-                      <Text className="text-[11px] text-foreground/30">
+                      <Text numberOfLines={1} className="font-sans-semibold text-[13px] text-foreground">
+                        {entry.description}
+                      </Text>
+                      <Text numberOfLines={1} className="text-[11px] text-foreground/30">
                         {isIncome ? "Income" : "Expense"} · {entry.entry_date}
                       </Text>
                     </View>

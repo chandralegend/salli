@@ -105,6 +105,9 @@ async def clear_user_data(user_ids: list[str]) -> None:
                 await s.execute(text("DELETE FROM budgets         WHERE user_id = :u"), {"u": uid})
                 await s.execute(text("DELETE FROM debts           WHERE user_id = :u"), {"u": uid})
                 await s.execute(text("DELETE FROM holdings        WHERE user_id = :u"), {"u": uid})
+                await s.execute(text("DELETE FROM recurring_subscriptions WHERE user_id = :u"), {"u": uid})
+                await s.execute(text("DELETE FROM policies        WHERE user_id = :u"), {"u": uid})
+                await s.execute(text("DELETE FROM insurance_targets       WHERE user_id = :u"), {"u": uid})
                 await s.execute(text("DELETE FROM documents       WHERE user_id = :u"), {"u": uid})
                 await s.execute(text("DELETE FROM agent_documents WHERE user_id = :u"), {"u": uid})
                 await s.execute(text("DELETE FROM agent_sessions  WHERE user_id = :u"), {"u": uid})
@@ -188,6 +191,33 @@ async def mkholding(client: httpx.AsyncClient, symbol: str, name: str,
     r = await client.post("/portfolio/", json={
         "symbol": symbol, "name": name, "asset_class": asset_class,
         "cost_basis": cost_basis, "current_value": current_value,
+    })
+    r.raise_for_status()
+
+
+async def mkpolicy(client: httpx.AsyncClient, name: str, policy_type: str, provider: str,
+                    coverage_amount: float, premium_amount: float, premium_frequency: str,
+                    expiry_date: str) -> None:
+    r = await client.post("/insurance/policies", json={
+        "name": name, "policy_type": policy_type, "provider": provider,
+        "coverage_amount": coverage_amount, "premium_amount": premium_amount,
+        "premium_frequency": premium_frequency, "expiry_date": expiry_date,
+    })
+    r.raise_for_status()
+
+
+async def mktarget(client: httpx.AsyncClient, policy_type: str, target_amount: float) -> None:
+    r = await client.put("/insurance/targets", json={
+        "policy_type": policy_type, "target_amount": target_amount,
+    })
+    r.raise_for_status()
+
+
+async def mksubscription(client: httpx.AsyncClient, name: str, amount: float,
+                          frequency: str, next_due_date: str) -> None:
+    r = await client.post("/subscriptions/", json={
+        "name": name, "amount": amount, "frequency": frequency,
+        "next_due_date": next_due_date, "grace_days": 3, "amount_tolerance_pct": 0.1,
     })
     r.raise_for_status()
 
@@ -601,6 +631,25 @@ async def seed(token: str) -> None:
         await mkholding(client, "TBILL",  "Treasury Bill 1yr",    "fixed_income", 300_000, 324_000)
         await mkholding(client, "USDT",   "USDT Stablecoin",      "crypto",        50_000,  51_500)
         print("✓  4 holdings\n")
+
+        # ── 5b. Insurance policies + coverage targets ─────────────────────────
+        print("── Creating insurance policies + targets ─────────────────────")
+        await mkpolicy(client, "AIA Life Protect",     "life",   "AIA",      5_000_000, 45_000,  "annual",  "2027-06-01")
+        await mkpolicy(client, "Ceylinco Health Plus", "health", "Ceylinco", 1_500_000, 8_000,   "monthly", "2026-08-15")
+        await mkpolicy(client, "Allianz Motor",        "motor",  "Allianz",    420_000, 32_000,  "annual",  "2026-11-30")
+        await mktarget(client, "life",   10_000_000)
+        await mktarget(client, "health",  2_000_000)
+        await mktarget(client, "motor",     420_000)
+        print("✓  3 policies + 3 targets\n")
+
+        # ── 5c. Recurring subscriptions ───────────────────────────────────────
+        print("── Creating subscriptions ────────────────────────────────────")
+        nm = date_cls.today()
+        await mksubscription(client, "Netflix Premium",  1_990, "monthly", nm.replace(day=min(nm.day, 20)).isoformat())
+        await mksubscription(client, "Spotify Family",   1_490, "monthly", nm.replace(day=min(nm.day, 12)).isoformat())
+        await mksubscription(client, "Coursera Plus",   12_500, "annual",  f"{nm.year}-11-07")
+        await mksubscription(client, "iCloud+ 200GB",      350, "monthly", nm.replace(day=min(nm.day, 5)).isoformat())
+        print("✓  4 subscriptions\n")
 
         # ── 6. Current-month budget + spending ────────────────────────────────
         # Uses the live current month so the Budget/Dashboard "this month" views

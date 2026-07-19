@@ -119,7 +119,11 @@ class DataPortabilityService:
         import dataclasses
         import json
 
-        return json.loads(json.dumps(dataclasses.asdict(computation), default=str))
+        # TaxComputationRepository.get_latest() deserializes the stored JSON as a
+        # plain dict rather than reconstructing the TaxComputation dataclass.
+        if dataclasses.is_dataclass(computation) and not isinstance(computation, type):
+            computation = dataclasses.asdict(computation)
+        return json.loads(json.dumps(computation, default=str))
 
     async def delete_account(self, user_id: str) -> dict[str, int]:
         """Permanently delete every row belonging to this user. Irreversible."""

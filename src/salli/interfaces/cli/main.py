@@ -8,6 +8,7 @@ The CLI and the FastAPI layer share the same services via composition.py.
 from __future__ import annotations
 
 import asyncio
+from contextlib import asynccontextmanager
 
 import typer
 from rich.console import Console
@@ -74,6 +75,30 @@ def _services():
     from salli.config import get_settings
 
     return build_services(get_settings())
+
+
+@asynccontextmanager
+async def _agent_services():
+    """
+    Build services with a PostgreSQL-backed LangGraph checkpointer.
+
+    Agent conversations and human-in-the-loop workflows (return prep, briefing)
+    persist state via the checkpointer — without one, aget_state()/interrupt()
+    raise 'No checkpointer set'. The FastAPI app wires this up once at startup
+    (see interfaces/api/main.py); each CLI invocation is a fresh process, so it
+    opens and tears down its own checkpointer connection per command.
+    """
+    from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+
+    from salli.composition import build_services
+    from salli.config import get_settings
+
+    settings = get_settings()
+    pg_url = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
+
+    async with AsyncPostgresSaver.from_conn_string(pg_url) as checkpointer:
+        await checkpointer.setup()
+        yield build_services(settings, checkpointer=checkpointer)
 
 
 # ── accounts ──────────────────────────────────────────────────────────────────
@@ -442,43 +467,40 @@ def tax_prepare_return(
     """Run the return preparation workflow (pauses for review before finalizing)."""
 
     user_id = _require_user()
-    svc = _services()
 
     async def _run():
-        result = await svc.agent.prepare_return(user_id, year=year, thread_id=thread_id)
-        return result
+        async with _agent_services() as svc:
+            result = await svc.agent.prepare_return(user_id, year=year, thread_id=thread_id)
+            draft = result.get("draft_return", {})
+            tid = result.get("thread_id", "")
 
-    result = asyncio.run(_run())
-    draft = result.get("draft_return", {})
-    tid = result.get("thread_id", "")
+            console.print(f"\n[bold]Draft Return — {year}[/bold]  (thread: {tid})\n")
+            for cage, value in draft.items():
+                if cage == "note":
+                    continue
+                console.print(f"  {cage:<40} {value}")
+            if draft.get("note"):
+                console.print(f"\n[dim]{draft['note']}[/dim]")
 
-    console.print(f"\n[bold]Draft Return — {year}[/bold]  (thread: {tid})\n")
-    for cage, value in draft.items():
-        if cage == "note":
-            continue
-        console.print(f"  {cage:<40} {value}")
-    if draft.get("note"):
-        console.print(f"\n[dim]{draft['note']}[/dim]")
+            console.print(
+                "\nApprove this draft? "
+                "[[green]approve[/green]/[yellow]edit[/yellow]/[red]reject[/red]]"
+            )
+            decision = input("> ").strip().lower()
+            if decision not in ("approve", "edit", "reject"):
+                decision = "reject"
 
-    console.print(
-        "\nApprove this draft? [[green]approve[/green]/[yellow]edit[/yellow]/[red]reject[/red]]"
-    )
-    decision = input("> ").strip().lower()
-    if decision not in ("approve", "edit", "reject"):
-        decision = "reject"
+            final = await svc.agent.resume_return(tid, decision)
+            if final.get("error"):
+                console.print(f"[yellow]{final['error']}[/yellow]")
+            else:
+                ws = final.get("worksheet", {})
+                console.print("\n[bold green]Return worksheet ready.[/bold green]")
+                console.print(f"  Status: {ws.get('status')}")
+                if ws.get("instructions"):
+                    console.print(f"\n{ws['instructions']}")
 
-    async def _resume():
-        return await svc.agent.resume_return(tid, decision)
-
-    final = asyncio.run(_resume())
-    if final.get("error"):
-        console.print(f"[yellow]{final['error']}[/yellow]")
-    else:
-        ws = final.get("worksheet", {})
-        console.print("\n[bold green]Return worksheet ready.[/bold green]")
-        console.print(f"  Status: {ws.get('status')}")
-        if ws.get("instructions"):
-            console.print(f"\n{ws['instructions']}")
+    asyncio.run(_run())
 
 
 @tax_app.command("packs")
@@ -638,8 +660,16 @@ def parse_post(
 ):
     """Post specific approved transactions to the ledger."""
     user_id = _require_user()
-    asyncio.run(_services().parsing.post_approved(user_id, ids))
-    console.print(f"[green]Posted {len(ids)} transaction(s).[/green]")
+    svc = _services()
+
+    async def _run() -> list[str]:
+        pending = await svc.parsing.get_pending(user_id)
+        pending_dicts = [{"id": str(txn.id)} for txn in pending]
+        resolved_ids = [_resolve_id(pending_dicts, id_, "pending transaction") for id_ in ids]
+        return await svc.parsing.post_approved(user_id, resolved_ids)
+
+    entry_ids = asyncio.run(_run())
+    console.print(f"[green]Posted {len(entry_ids)} transaction(s).[/green]")
 
 
 # ── reminders ─────────────────────────────────────────────────────────────────
@@ -1169,49 +1199,49 @@ def advisor_briefing(
 ):
     """Run the monthly financial-health briefing workflow (pauses for review before persisting)."""
     user_id = _require_user()
-    svc = _services()
 
     async def _run():
-        return await svc.agent.prepare_briefing(user_id, email=None, thread_id=thread_id)
+        async with _agent_services() as svc:
+            result = await svc.agent.prepare_briefing(user_id, email=None, thread_id=thread_id)
+            tid = result.get("thread_id", "")
 
-    result = asyncio.run(_run())
-    tid = result.get("thread_id", "")
+            if result.get("error"):
+                console.print(f"[yellow]{result['error']}[/yellow]")
+                return
 
-    if result.get("error"):
-        console.print(f"[yellow]{result['error']}[/yellow]")
-        return
+            briefing = result.get("briefing", {})
+            console.print(f"\n[bold]Monthly Briefing[/bold]  (thread: {tid})\n")
+            console.print(f"  {briefing.get('summary', '')}\n")
+            console.print(f"  [dim]{briefing.get('fire_tier_assessment', '')}[/dim]\n")
 
-    briefing = result.get("briefing", {})
-    console.print(f"\n[bold]Monthly Briefing[/bold]  (thread: {tid})\n")
-    console.print(f"  {briefing.get('summary', '')}\n")
-    console.print(f"  [dim]{briefing.get('fire_tier_assessment', '')}[/dim]\n")
+            recs = briefing.get("recommendations") or []
+            if recs:
+                table = Table(title="Recommendations")
+                table.add_column("Priority", justify="right")
+                table.add_column("Title")
+                table.add_column("Rationale")
+                for r in recs:
+                    table.add_row(
+                        str(r.get("priority", "")), r.get("title", ""), r.get("rationale", "")
+                    )
+                console.print(table)
 
-    recs = briefing.get("recommendations") or []
-    if recs:
-        table = Table(title="Recommendations")
-        table.add_column("Priority", justify="right")
-        table.add_column("Title")
-        table.add_column("Rationale")
-        for r in recs:
-            table.add_row(str(r.get("priority", "")), r.get("title", ""), r.get("rationale", ""))
-        console.print(table)
+            console.print(
+                "\nApprove this briefing? "
+                "[[green]approve[/green]/[yellow]edit[/yellow]/[red]reject[/red]]"
+            )
+            decision = input("> ").strip().lower()
+            if decision not in ("approve", "edit", "reject"):
+                decision = "reject"
 
-    console.print(
-        "\nApprove this briefing? [[green]approve[/green]/[yellow]edit[/yellow]/[red]reject[/red]]"
-    )
-    decision = input("> ").strip().lower()
-    if decision not in ("approve", "edit", "reject"):
-        decision = "reject"
+            final = await svc.agent.resume_briefing(tid, decision)
+            if final.get("error"):
+                console.print(f"[yellow]{final['error']}[/yellow]")
+            else:
+                console.print("\n[bold green]Briefing saved as an advisory report.[/bold green]")
+                console.print(f"  Report ID: {final.get('report', {}).get('id')}")
 
-    async def _resume():
-        return await svc.agent.resume_briefing(tid, decision)
-
-    final = asyncio.run(_resume())
-    if final.get("error"):
-        console.print(f"[yellow]{final['error']}[/yellow]")
-    else:
-        console.print("\n[bold green]Briefing saved as an advisory report.[/bold green]")
-        console.print(f"  Report ID: {final.get('report', {}).get('id')}")
+    asyncio.run(_run())
 
 
 # ── documents ──────────────────────────────────────────────────────────────────
@@ -1398,10 +1428,29 @@ def agent_history(
 ):
     """Print the full message history for a chat thread."""
     user_id = _require_user()
-    history = asyncio.run(_services().agent.get_history(user_id, thread_id))
+
+    async def _run():
+        async with _agent_services() as svc:
+            sessions = await svc.agent.list_sessions(user_id, 1000)
+            resolved = _resolve_id([{"id": s["thread_id"]} for s in sessions], thread_id, "thread")
+            return await svc.agent.get_history(user_id, resolved)
+
+    history = asyncio.run(_run())
     if not history:
         console.print("[dim]No history found for that thread.[/dim]")
         return
+
+    def _print_part(part: dict, indent: str = "  ") -> None:
+        part_type = part.get("type")
+        if part_type in ("text", "token"):
+            console.print(f"{indent}{part.get('content', '')}")
+        elif part_type == "tool_call":
+            console.print(f"{indent}[dim]▸ {part.get('name', '')}[/dim]")
+        elif part_type == "subagent_section":
+            console.print(f"{indent}[dim]▸ subagent: {part.get('agent', '')}[/dim]")
+            for sub_part in part.get("parts", []):
+                _print_part(sub_part, indent=indent + "  ")
+
     for msg in history:
         role = msg.get("role", "")
         if role == "user":
@@ -1409,12 +1458,7 @@ def agent_history(
         else:
             console.print("\n[bold green]Salli:[/bold green]")
             for part in msg.get("parts", []):
-                if part.get("type") == "text":
-                    console.print(f"  {part.get('text', '')}")
-                elif part.get("type") == "tool_call":
-                    console.print(f"  [dim]▸ {part.get('name', '')}[/dim]")
-                elif part.get("type") == "subagent_section":
-                    console.print(f"  [dim]▸ subagent: {part.get('name', '')}[/dim]")
+                _print_part(part)
 
 
 @agent_app.command("resume")
@@ -1422,14 +1466,21 @@ def agent_resume(
     thread_id: str = typer.Argument(..., help="Thread ID to continue chatting in"),
 ):
     """Resume an interactive chat REPL in an existing thread."""
-    _run_agent_chat(None, thread_id=thread_id)
+    user_id = _require_user()
+
+    async def _resolve() -> str:
+        async with _agent_services() as svc:
+            sessions = await svc.agent.list_sessions(user_id, 1000)
+            return _resolve_id([{"id": s["thread_id"]} for s in sessions], thread_id, "thread")
+
+    resolved_thread_id = asyncio.run(_resolve())
+    _run_agent_chat(None, thread_id=resolved_thread_id)
 
 
 def _run_agent_chat(priming_message: str | None, thread_id: str | None = None):
     import uuid
 
     user_id = _require_user()
-    svc = _services()
 
     if thread_id is None:
         thread_id = str(uuid.uuid4())
@@ -1439,7 +1490,7 @@ def _run_agent_chat(priming_message: str | None, thread_id: str | None = None):
         "[dim]Type your question. 'quit' to exit.[/dim]\n"
     )
 
-    async def _stream_one(msg: str) -> None:
+    async def _stream_one(svc, msg: str) -> None:
         console.print("[bold green]Salli:[/bold green] ", end="")
         async for event_type, payload in svc.agent.stream_chat(user_id, msg, thread_id=thread_id):
             if event_type == "token":
@@ -1452,21 +1503,25 @@ def _run_agent_chat(priming_message: str | None, thread_id: str | None = None):
                 break
         console.print()
 
-    if priming_message:
-        asyncio.run(_stream_one(priming_message))
+    async def _run() -> None:
+        async with _agent_services() as svc:
+            if priming_message:
+                await _stream_one(svc, priming_message)
 
-    while True:
-        try:
-            user_input = input("\nYou: ").strip()
-        except (EOFError, KeyboardInterrupt):
-            console.print("\n[dim]Goodbye.[/dim]")
-            break
-        if user_input.lower() in ("quit", "exit", "q"):
-            console.print("[dim]Goodbye.[/dim]")
-            break
-        if not user_input:
-            continue
-        asyncio.run(_stream_one(user_input))
+            while True:
+                try:
+                    user_input = input("\nYou: ").strip()
+                except (EOFError, KeyboardInterrupt):
+                    console.print("\n[dim]Goodbye.[/dim]")
+                    break
+                if user_input.lower() in ("quit", "exit", "q"):
+                    console.print("[dim]Goodbye.[/dim]")
+                    break
+                if not user_input:
+                    continue
+                await _stream_one(svc, user_input)
+
+    asyncio.run(_run())
 
 
 # ── profile ───────────────────────────────────────────────────────────────────
@@ -1983,7 +2038,9 @@ def portfolio_delete(
 @portfolio_app.command("summary")
 def portfolio_summary(
     target: list[str] = typer.Option(
-        [], "--target", help="ASSET_CLASS:PCT (repeat); omit to skip rebalancing alerts"
+        [],
+        "--target",
+        help="ASSET_CLASS:FRACTION, e.g. equity:0.7 (repeat); omit to skip rebalancing alerts",
     ),
 ):
     """Show allocation by asset class, total gain/ROI, and rebalancing alerts."""
@@ -1997,7 +2054,7 @@ def portfolio_summary(
             try:
                 asset_class, pct = raw.split(":", 1)
             except ValueError:
-                console.print(f"[red]Invalid format '{raw}'. Use ASSET_CLASS:PCT[/red]")
+                console.print(f"[red]Invalid format '{raw}'. Use ASSET_CLASS:FRACTION[/red]")
                 raise typer.Exit(1)
             target_allocation[asset_class.strip()] = Decimal(pct.strip())
 

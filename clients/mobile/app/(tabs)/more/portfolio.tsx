@@ -130,7 +130,7 @@ export default function PortfolioScreen() {
                   {Object.entries(grouped).map(([assetClass, items]) => (
                     <View key={assetClass}>
                       <Text className="mb-1.5 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
-                        {assetClass}
+                        {assetClass.replace(/_/g, " ")}
                       </Text>
                       <View className="gap-1.5">
                         {(items ?? []).map((h) => {
@@ -168,7 +168,9 @@ export default function PortfolioScreen() {
                 {(summary.data?.allocation ?? []).map((a) => (
                   <Card key={a.asset_class} className="p-3.5">
                     <View className="mb-1.5 flex-row items-center justify-between">
-                      <Text className="font-sans-semibold text-[13px] capitalize text-foreground">{a.asset_class}</Text>
+                      <Text className="font-sans-semibold text-[13px] capitalize text-foreground">
+                        {a.asset_class.replace(/_/g, " ")}
+                      </Text>
                       <Text className="font-sans-bold text-[13px] text-salli-accent">{formatPct(a.pct_of_portfolio, 1)}</Text>
                     </View>
                     <View className="h-1.5 overflow-hidden rounded-pill bg-foreground/10">

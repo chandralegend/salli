@@ -1,5 +1,7 @@
 import {
   Check,
+  ChevronDown,
+  ChevronUp,
   Home,
   Info,
   type LucideIcon,
@@ -16,7 +18,7 @@ import {
 import { useState } from "react";
 import { ActivityIndicator, Modal, Pressable, Text, TextInput, View } from "react-native";
 import Markdown from "react-native-markdown-display";
-import Svg, { Circle, Line, Polyline } from "react-native-svg";
+import Svg, { Circle, Line, Path, Polyline } from "react-native-svg";
 
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
@@ -39,7 +41,10 @@ import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useThemeColors, useThemeVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-const TABS = ["Overview", "Strategy", "Goals"] as const;
+const TABS = ["Overview", "Strategy", "Goals", "Mentor"] as const;
+
+/** Distinct-but-on-brand colours for allocation pie segments. */
+const PIE_COLORS = ["#2563EB", "#60A5FA", "#1E40AF", "#93C5FD", "#3B82F6", "#1D4ED8", "#BFDBFE"];
 
 const GOAL_ICON: Record<string, LucideIcon> = {
   emergency_fund: Wallet,
@@ -72,6 +77,46 @@ function ProjectionChart({ projections }: { projections: FiProjections }) {
       <Polyline points={line("conservative")} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={2} strokeDasharray="4 3" strokeLinejoin="round" />
       <Polyline points={line("base")} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={2} strokeDasharray="4 3" strokeLinejoin="round" />
       <Polyline points={line("growth")} fill="none" stroke="#2563EB" strokeWidth={2.5} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+/** Donut of allocation buckets with tappable segments (annular sectors) — each
+ * slice opens a detail drawer. `active` gets a subtle outward emphasis. */
+function AllocationDonut({
+  buckets,
+  onSelect,
+}: {
+  buckets: { name: string; target_pct: string }[];
+  onSelect: (i: number) => void;
+}) {
+  const size = 156;
+  const cx = size / 2;
+  const cy = size / 2;
+  const R = size / 2;
+  const rIn = R - 28;
+  const pt = (r: number, deg: number): [number, number] => {
+    const t = (deg * Math.PI) / 180;
+    return [cx + r * Math.sin(t), cy - r * Math.cos(t)];
+  };
+  const gap = 1.2; // degrees between slices
+  let d0 = 0;
+  return (
+    <Svg width={size} height={size}>
+      {buckets.map((b, i) => {
+        const frac = Math.max(0, Math.min(1, Number(b.target_pct)));
+        const start = d0 + gap;
+        const end = d0 + frac * 360 - gap;
+        d0 += frac * 360;
+        if (end <= start) return null;
+        const [ox0, oy0] = pt(R, start);
+        const [ox1, oy1] = pt(R, end);
+        const [ix1, iy1] = pt(rIn, end);
+        const [ix0, iy0] = pt(rIn, start);
+        const large = end - start > 180 ? 1 : 0;
+        const dPath = `M ${ox0} ${oy0} A ${R} ${R} 0 ${large} 1 ${ox1} ${oy1} L ${ix1} ${iy1} A ${rIn} ${rIn} 0 ${large} 0 ${ix0} ${iy0} Z`;
+        return <Path key={b.name} d={dPath} fill={PIE_COLORS[i % PIE_COLORS.length]} onPress={() => onSelect(i)} />;
+      })}
     </Svg>
   );
 }
@@ -161,6 +206,8 @@ export default function FinancialIndependenceScreen() {
   const colors = useThemeColors();
   const themeVars = useThemeVars();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Overview");
+  const [strategyOpen, setStrategyOpen] = useState(true);
+  const [selectedBucket, setSelectedBucket] = useState<number | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newAmount, setNewAmount] = useState("");
@@ -441,38 +488,30 @@ export default function FinancialIndependenceScreen() {
             </Card>
           ) : (
             <>
-              {/* Allocation buckets */}
-              <View>
-                <Text className="mb-2 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
-                  Allocation Buckets{surplus.data ? ` · Rs. ${formatLKRAbbrev(surplus.data.monthly_surplus)}/mo surplus` : ""}
+              {/* Allocation — tappable donut (slices open a detail drawer) */}
+              <Card className="p-4">
+                <Text className="text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                  Allocation{surplus.data ? ` · Rs. ${formatLKRAbbrev(surplus.data.monthly_surplus)}/mo surplus` : ""}
                 </Text>
-                <View className="gap-1.5">
-                  {strategy.data.buckets.map((bucket, i) => {
-                    const dot = i === 0 ? "#2563EB" : i === 1 ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.25)";
-                    const route = surplus.data ? Number(surplus.data.monthly_surplus) * Number(bucket.target_pct) : null;
-                    return (
-                      <Card key={bucket.name} className="p-3.5">
-                        <View className="mb-1.5 flex-row items-center justify-between">
-                          <View className="flex-row items-center gap-2">
-                            <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: dot }} />
-                            <Text className="font-sans-semibold text-[13px] text-foreground">{bucket.name}</Text>
-                          </View>
-                          <Text className="font-sans-bold text-[13px] text-foreground">{formatPct(bucket.target_pct, 0)}</Text>
-                        </View>
-                        <ProgressBar pct={Number(bucket.target_pct)} />
-                        <Text className="mt-1.5 text-[11px] text-foreground/35">
-                          {route !== null ? `Route Rs. ${formatLKR(route, 0)}/month` : bucket.description}
-                        </Text>
-                      </Card>
-                    );
-                  })}
+                <View className="my-2 h-[156px] w-[156px] items-center justify-center self-center">
+                  <AllocationDonut buckets={strategy.data.buckets} onSelect={setSelectedBucket} />
+                  <View pointerEvents="none" style={{ position: "absolute", alignItems: "center" }}>
+                    <Text className="font-sans-extrabold text-[16px] leading-5 text-foreground">
+                      {surplus.data ? `Rs. ${formatLKRAbbrev(surplus.data.monthly_surplus)}` : "—"}
+                    </Text>
+                    <Text className="text-[10px] text-foreground/35">surplus/mo</Text>
+                  </View>
                 </View>
-              </View>
+                <Text className="text-center text-[11px] text-foreground/30">Tap a slice to see how each bucket works</Text>
+              </Card>
 
-              {/* Scrooge's Strategy panel */}
+              {/* Scrooge's Strategy — collapsible */}
               {strategy.data.ai_rationale ? (
-                <View className="rounded-[16px] border border-salli-accent/20 bg-card p-3.5">
-                  <View className="mb-2 flex-row items-center gap-2">
+                <View className="rounded-[16px] border border-salli-accent/20 bg-card">
+                  <Pressable
+                    onPress={() => setStrategyOpen((o) => !o)}
+                    className="flex-row items-center gap-2 p-3.5"
+                  >
                     <View className="h-[26px] w-[26px] items-center justify-center rounded-[8px] bg-salli-accent/15">
                       <PiggyBank size={14} color={colors.accent} strokeWidth={2} />
                     </View>
@@ -480,29 +519,38 @@ export default function FinancialIndependenceScreen() {
                     <Text className="text-[10px] capitalize text-foreground/30">
                       {strategy.data.fire_style} · v{strategy.data.version}
                     </Text>
-                  </View>
-                  <View className="mb-2.5">
-                    <Markdown
-                      style={{
-                        body: { color: "rgba(200,200,200,0.75)", fontSize: 12, lineHeight: 18, fontFamily: "Inter_400Regular" },
-                        heading1: { color: colors.foreground, fontFamily: "Inter_700Bold", fontSize: 13, marginTop: 4, marginBottom: 2 },
-                        heading2: { color: colors.foreground, fontFamily: "Inter_600SemiBold", fontSize: 12, marginTop: 4, marginBottom: 2 },
-                        heading3: { color: colors.foreground, fontFamily: "Inter_600SemiBold", fontSize: 12, marginTop: 3, marginBottom: 1 },
-                        strong: { color: colors.foreground, fontFamily: "Inter_600SemiBold" },
-                        bullet_list: { marginTop: 2 },
-                        list_item: { marginVertical: 1 },
-                      }}
-                    >
-                      {strategy.data.ai_rationale}
-                    </Markdown>
-                  </View>
-                  <View className="flex-row flex-wrap gap-1.5">
-                    {["4% rule", `${formatPct(strategy.data.swr, 0)} SWR`, `${formatPct(strategy.data.return_base, 0)} base`].map((t) => (
-                      <View key={t} className="rounded-pill bg-salli-accent/[0.12] px-2.5 py-0.5">
-                        <Text className="text-[10px] font-sans-medium text-salli-accent">{t}</Text>
+                    {strategyOpen ? (
+                      <ChevronUp size={16} color={colors.mutedForeground} strokeWidth={2} />
+                    ) : (
+                      <ChevronDown size={16} color={colors.mutedForeground} strokeWidth={2} />
+                    )}
+                  </Pressable>
+                  {strategyOpen ? (
+                    <View className="px-3.5 pb-3.5">
+                      <View className="mb-2.5 border-t border-foreground/[0.06] pt-2.5">
+                        <Markdown
+                          style={{
+                            body: { color: "rgba(200,200,200,0.75)", fontSize: 12, lineHeight: 18, fontFamily: "Inter_400Regular" },
+                            heading1: { color: colors.foreground, fontFamily: "Inter_700Bold", fontSize: 13, marginTop: 4, marginBottom: 2 },
+                            heading2: { color: colors.foreground, fontFamily: "Inter_600SemiBold", fontSize: 12, marginTop: 4, marginBottom: 2 },
+                            heading3: { color: colors.foreground, fontFamily: "Inter_600SemiBold", fontSize: 12, marginTop: 3, marginBottom: 1 },
+                            strong: { color: colors.foreground, fontFamily: "Inter_600SemiBold" },
+                            bullet_list: { marginTop: 2 },
+                            list_item: { marginVertical: 1 },
+                          }}
+                        >
+                          {strategy.data.ai_rationale}
+                        </Markdown>
                       </View>
-                    ))}
-                  </View>
+                      <View className="flex-row flex-wrap gap-1.5">
+                        {["4% rule", `${formatPct(strategy.data.swr, 0)} SWR`, `${formatPct(strategy.data.return_base, 0)} base`].map((t) => (
+                          <View key={t} className="rounded-pill bg-salli-accent/[0.12] px-2.5 py-0.5">
+                            <Text className="text-[10px] font-sans-medium text-salli-accent">{t}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  ) : null}
                 </View>
               ) : null}
 
@@ -511,8 +559,11 @@ export default function FinancialIndependenceScreen() {
               </PillButton>
             </>
           )}
+        </View>
+      ) : null}
 
-          {/* FI Mentor advisor */}
+      {tab === "Mentor" ? (
+        <View className="gap-3 px-4 pt-3.5">
           <Card className="p-4">
             <View className="mb-2 flex-row items-center justify-between">
               <Text className="font-sans-semibold text-[14px] text-foreground">FI Mentor</Text>
@@ -520,8 +571,8 @@ export default function FinancialIndependenceScreen() {
             </View>
             {advisorReport.data ? (
               <>
-                <Text className="mb-2 text-[12px] leading-5 text-foreground/50">{advisorReport.data.summary}</Text>
-                {advisorReport.data.recommendations.slice(0, 4).map((rec) => (
+                <Text className="mb-2.5 text-[12px] leading-5 text-foreground/50">{advisorReport.data.summary}</Text>
+                {advisorReport.data.recommendations.map((rec) => (
                   <View key={rec.id} className="mb-2 rounded-control border border-foreground/10 bg-muted p-3">
                     <View className="mb-1 flex-row items-center gap-1.5">
                       <View className="rounded-[4px] bg-salli-accent/15 px-1.5 py-0.5">
@@ -534,10 +585,12 @@ export default function FinancialIndependenceScreen() {
                 ))}
               </>
             ) : (
-              <Text className="mb-3 text-[12px] text-foreground/35">Run the advisor for a prioritized action plan.</Text>
+              <Text className="mb-3 text-[12px] text-foreground/35">
+                Run the advisor for a prioritized, engine-backed action plan.
+              </Text>
             )}
             <PillButton variant="secondary" loading={runAdvisor.isPending} onPress={() => runAdvisor.mutate()}>
-              Run FI Mentor
+              {advisorReport.data ? "Re-run FI Mentor" : "Run FI Mentor"}
             </PillButton>
           </Card>
         </View>
@@ -679,6 +732,54 @@ export default function FinancialIndependenceScreen() {
                 Add goal
               </PillButton>
             </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Allocation bucket detail drawer */}
+      <Modal
+        visible={selectedBucket !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedBucket(null)}
+      >
+        <Pressable className="flex-1 justify-end" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onPress={() => setSelectedBucket(null)}>
+          <Pressable onPress={() => {}} style={themeVars} className="rounded-t-[24px] border-t border-foreground/10 bg-background px-5 pb-8 pt-3">
+            <View className="items-center pb-3">
+              <View className="h-1 w-10 rounded-full bg-foreground/15" />
+            </View>
+            {selectedBucket !== null && strategy.data?.buckets[selectedBucket]
+              ? (() => {
+                  const b = strategy.data.buckets[selectedBucket];
+                  const color = PIE_COLORS[selectedBucket % PIE_COLORS.length];
+                  const route = surplus.data ? Number(surplus.data.monthly_surplus) * Number(b.target_pct) : null;
+                  return (
+                    <>
+                      <View className="mb-3 flex-row items-center gap-2.5">
+                        <View style={{ width: 12, height: 12, borderRadius: 4, backgroundColor: color }} />
+                        <Text className="flex-1 font-sans-bold text-[17px] text-foreground">{b.name}</Text>
+                        <Pressable onPress={() => setSelectedBucket(null)} className="h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.08]">
+                          <X size={14} color={colors.mutedForeground} strokeWidth={2} />
+                        </Pressable>
+                      </View>
+                      <View className="mb-3 flex-row gap-2">
+                        <View className="flex-1 rounded-control border border-foreground/[0.08] bg-card p-3">
+                          <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">Allocation</Text>
+                          <Text className="font-sans-extrabold text-[22px] leading-6 text-foreground">{formatPct(b.target_pct, 0)}</Text>
+                        </View>
+                        <View className="flex-1 rounded-control border border-foreground/[0.08] bg-card p-3">
+                          <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">Routed / month</Text>
+                          <Text className="font-sans-extrabold text-[22px] leading-6 text-foreground">
+                            {route !== null ? `Rs. ${formatLKRAbbrev(route)}` : "—"}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">How it works</Text>
+                      <Text className="text-[13px] leading-5 text-foreground/60">{b.description}</Text>
+                    </>
+                  );
+                })()
+              : null}
           </Pressable>
         </Pressable>
       </Modal>

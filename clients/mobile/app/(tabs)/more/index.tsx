@@ -58,7 +58,8 @@ function QuickStatCard({ label, value, hint, onPress }: { label: string; value: 
 export default function MoreScreen() {
   const router = useRouter();
   const colors = useThemeColors();
-  const { profile, budgetSummary, portfolio, debtPlan, tax, overdueCount } = useMore();
+  const { profile, budgetSummary, portfolio, debtPlan, hasDebts, totalDebt, tax, overdueCount } =
+    useMore();
 
   return (
     <PageShell>
@@ -114,8 +115,14 @@ export default function MoreScreen() {
         />
         <QuickStatCard
           label="Debt"
-          value={debtPlan?.months_to_payoff ? "Active" : "—"}
-          hint={debtPlan?.months_to_payoff ? `${debtPlan.months_to_payoff} months to payoff` : "No debts"}
+          value={hasDebts ? `Rs. ${formatLKRAbbrev(totalDebt)}` : "—"}
+          hint={
+            hasDebts
+              ? debtPlan?.months_to_payoff
+                ? `${debtPlan.months_to_payoff} months to payoff`
+                : "Outstanding balance"
+              : "No debts"
+          }
           onPress={() => router.push("/(tabs)/more/debt")}
         />
         <QuickStatCard

@@ -7,8 +7,10 @@ import {
   getProfileOnboardingProfileGet,
   getSummaryPortfolioSummaryGet,
   listBudgetsBudgetGet,
+  listDebtsDebtGet,
   listRemindersRemindersGet,
 } from "@/lib/api/sdk.gen";
+import type { Debt } from "./useDebt";
 import type { BudgetSummary, TaxComputation } from "./useDashboard";
 
 export type Profile = { display_name: string | null; email: string | null; id: string };
@@ -61,6 +63,14 @@ export function useMore() {
     },
   });
 
+  const debts = useQuery({
+    queryKey: ["debts"],
+    queryFn: async () => {
+      const { data } = await listDebtsDebtGet({ throwOnError: true });
+      return (data as unknown as { debts: Debt[] }).debts;
+    },
+  });
+
   const tax = useQuery({
     queryKey: ["tax-latest"],
     queryFn: async () => {
@@ -79,11 +89,16 @@ export function useMore() {
 
   const overdueCount = (reminders.data ?? []).filter((r) => r.status === "overdue").length;
 
+  const activeDebts = (debts.data ?? []).filter((d) => d.is_active);
+  const totalDebt = activeDebts.reduce((sum, d) => sum + Number(d.principal), 0);
+
   return {
     profile: profile.data,
     budgetSummary: budgetSummary.data,
     portfolio: portfolio.data,
     debtPlan: debtPlan.data,
+    hasDebts: activeDebts.length > 0,
+    totalDebt,
     tax: tax.data,
     overdueCount,
   };

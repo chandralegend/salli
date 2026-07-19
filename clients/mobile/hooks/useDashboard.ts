@@ -26,6 +26,7 @@ export type JournalEntry = {
   entry_date: string;
   description: string;
   source: "manual" | "statement";
+  external_ref?: string | null;
   reversed_by: string | null;
   // Direction enum: DEBIT = 1, CREDIT = -1 (not 2 — a common wrong assumption).
   postings: { account_id: string; direction: 1 | -1; amount: string; currency: string }[];

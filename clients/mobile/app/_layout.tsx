@@ -21,7 +21,16 @@ import { ThemeProvider, useAppTheme, useThemeColors } from "../lib/theme";
 
 SplashScreen.preventAutoHideAsync();
 
-const queryClient = new QueryClient();
+// networkMode "always": the app talks to a known backend, and react-query's
+// browser offline detection is unreliable on Expo web (a dev-server blip can
+// wedge it "offline" and silently pause every query). Always attempt fetches
+// and surface real errors via the existing empty/error states instead.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { networkMode: "always" },
+    mutations: { networkMode: "always" },
+  },
+});
 
 function AppShell() {
   const { isDark } = useAppTheme();

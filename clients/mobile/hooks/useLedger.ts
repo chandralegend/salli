@@ -1,13 +1,29 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  getAccountOverviewAccountsAccountIdOverviewGet,
   addEntryEntriesPost,
   incomeStatementLedgerIncomeStatementGet,
   listAccountsAccountsGet,
   listEntriesEntriesGet,
   reverseEntryEntriesEntryIdReversePost,
+  trialBalanceLedgerTrialBalanceGet,
 } from "@/lib/api/sdk.gen";
 import type { Account, JournalEntry } from "./useDashboard";
+
+export type AccountTransaction = {
+  entry_id: string;
+  entry_date: string;
+  description: string;
+  source: string;
+  external_ref: string | null;
+  running_balance: string;
+};
+export type AccountOverview = {
+  account: Account;
+  current_balance: string;
+  transactions: AccountTransaction[];
+};
 
 export function useAccounts() {
   return useQuery({
@@ -16,6 +32,31 @@ export function useAccounts() {
       const { data } = await listAccountsAccountsGet({ throwOnError: true });
       return data as unknown as Account[];
     },
+  });
+}
+
+/** Per-account balances keyed by account id — the accounts list omits balances. */
+export function useTrialBalance() {
+  return useQuery({
+    queryKey: ["trial-balance"],
+    queryFn: async () => {
+      const { data } = await trialBalanceLedgerTrialBalanceGet({ throwOnError: true });
+      return (data as unknown as { balances: Record<string, string> }).balances;
+    },
+  });
+}
+
+export function useAccountOverview(accountId: string | null) {
+  return useQuery({
+    queryKey: ["account-overview", accountId],
+    queryFn: async () => {
+      const { data } = await getAccountOverviewAccountsAccountIdOverviewGet({
+        path: { account_id: accountId! },
+        throwOnError: true,
+      });
+      return data as unknown as AccountOverview;
+    },
+    enabled: Boolean(accountId),
   });
 }
 

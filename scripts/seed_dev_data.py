@@ -15,8 +15,10 @@ Usage:
 from __future__ import annotations
 
 import asyncio
+import calendar
 import os
 import sys
+from datetime import date as date_cls
 from decimal import Decimal
 
 import httpx
@@ -100,6 +102,9 @@ async def clear_user_data(user_ids: list[str]) -> None:
                 await s.execute(text("DELETE FROM journal_entries WHERE user_id = :u"), {"u": uid})
                 await s.execute(text("DELETE FROM accounts        WHERE user_id = :u"), {"u": uid})
                 await s.execute(text("DELETE FROM reminders       WHERE user_id = :u"), {"u": uid})
+                await s.execute(text("DELETE FROM budgets         WHERE user_id = :u"), {"u": uid})
+                await s.execute(text("DELETE FROM debts           WHERE user_id = :u"), {"u": uid})
+                await s.execute(text("DELETE FROM holdings        WHERE user_id = :u"), {"u": uid})
                 await s.execute(text("DELETE FROM documents       WHERE user_id = :u"), {"u": uid})
                 await s.execute(text("DELETE FROM agent_documents WHERE user_id = :u"), {"u": uid})
                 await s.execute(text("DELETE FROM agent_sessions  WHERE user_id = :u"), {"u": uid})
@@ -166,6 +171,36 @@ async def remind(client: httpx.AsyncClient, kind: str, due_date: str) -> str:
     r = await client.post("/reminders/", json={"kind": kind, "due_date": due_date})
     r.raise_for_status()
     return r.json()["id"]
+
+
+async def mkdebt(client: httpx.AsyncClient, name: str, principal: float,
+                  apr: float, minimum_payment: float) -> None:
+    # apr is a fraction, e.g. 0.115 for 11.5%.
+    r = await client.post("/debt/", json={
+        "name": name, "principal": principal, "apr": apr,
+        "minimum_payment": minimum_payment,
+    })
+    r.raise_for_status()
+
+
+async def mkholding(client: httpx.AsyncClient, symbol: str, name: str,
+                     asset_class: str, cost_basis: float, current_value: float) -> None:
+    r = await client.post("/portfolio/", json={
+        "symbol": symbol, "name": name, "asset_class": asset_class,
+        "cost_basis": cost_basis, "current_value": current_value,
+    })
+    r.raise_for_status()
+
+
+async def mkbudget(client: httpx.AsyncClient, period_start: str, period_end: str,
+                    lines: list[tuple[str, float]]) -> None:
+    # lines are (account_code, limit_amount); resolved to account ids here.
+    r = await client.post("/budget/", json={
+        "period_start": period_start,
+        "period_end": period_end,
+        "lines": [{"account_id": _accts[code], "limit_amount": amt} for code, amt in lines],
+    })
+    r.raise_for_status()
 
 
 # ── Main seed ─────────────────────────────────────────────────────────────────
@@ -553,7 +588,45 @@ async def seed(token: str) -> None:
 
         print(f"✓  {len(rids)} reminders\n")
 
-        # ── 4. Compute tax ────────────────────────────────────────────────────
+        # ── 4. Debts ──────────────────────────────────────────────────────────
+        print("── Creating debts ────────────────────────────────────────────")
+        await mkdebt(client, "Housing Loan (HNB)",         3_800_000, 0.115, 52_000)
+        await mkdebt(client, "Vehicle Lease (Commercial)",   420_000, 0.14,  38_000)
+        print("✓  2 debts\n")
+
+        # ── 5. Portfolio holdings ─────────────────────────────────────────────
+        print("── Creating portfolio holdings ───────────────────────────────")
+        await mkholding(client, "COMB.N", "Commercial Bank",      "equity",       250_000, 312_000)
+        await mkholding(client, "JKH.N",  "John Keells Holdings", "equity",       180_000, 205_000)
+        await mkholding(client, "TBILL",  "Treasury Bill 1yr",    "fixed_income", 300_000, 324_000)
+        await mkholding(client, "USDT",   "USDT Stablecoin",      "crypto",        50_000,  51_500)
+        print("✓  4 holdings\n")
+
+        # ── 6. Current-month budget + spending ────────────────────────────────
+        # Uses the live current month so the Budget/Dashboard "this month" views
+        # always have data, regardless of when the seed is run.
+        print("── Creating current-month budget + spending ──────────────────")
+        today = date_cls.today()
+        m_start = today.replace(day=1)
+        m_end = today.replace(day=calendar.monthrange(today.year, today.month)[1])
+        ms, me = m_start.isoformat(), m_end.isoformat()
+        # Partial-month expenses landing around ~57% of the total limit.
+        await entry(client, ms,                     "Monthly rent",           [("5000",  1, "45000.00"), ("1001", -1, "45000.00")])
+        await entry(client, m_start.replace(day=5).isoformat(),  "Keells groceries",  [("5040",  1, "12500.00"), ("1001", -1, "12500.00")])
+        await entry(client, m_start.replace(day=12).isoformat(), "Cargills groceries", [("5040",  1, "15500.00"), ("1001", -1, "15500.00")])
+        await entry(client, m_start.replace(day=8).isoformat(),  "Dinner out",        [("5050",  1, "6500.00"),  ("1001", -1, "6500.00")])
+        await entry(client, m_start.replace(day=15).isoformat(), "Cafe & takeout",    [("5050",  1, "3000.00"),  ("1001", -1, "3000.00")])
+        await entry(client, m_start.replace(day=3).isoformat(),  "Fuel",              [("5060",  1, "4200.00"),  ("1001", -1, "4200.00")])
+        await entry(client, m_start.replace(day=14).isoformat(), "PickMe rides",      [("5060",  1, "2000.00"),  ("1001", -1, "2000.00")])
+        await mkbudget(client, ms, me, [
+            ("5000", 75_000),  # Rent
+            ("5040", 45_000),  # Groceries & Supermarket
+            ("5050", 20_000),  # Dining & Entertainment
+            ("5060", 15_000),  # Transport & Fuel
+        ])
+        print("✓  budget + 7 current-month entries\n")
+
+        # ── 7. Compute tax ────────────────────────────────────────────────────
         print("── Computing tax AY 2025/26 ──────────────────────────────────")
         r = await client.post("/tax/compute", params={"year": "2025/26"})
         if r.is_success:

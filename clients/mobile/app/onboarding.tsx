@@ -2,16 +2,19 @@ import { useRouter } from "expo-router";
 import {
   Briefcase,
   Calendar,
+  Check,
   ChevronLeft,
   ChevronRight,
+  CreditCard,
   LineChart,
   ListChecks,
   Target,
   Trash2,
+  User,
   Wallet,
 } from "lucide-react-native";
-import { useState, type ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { useEffect, useState, type ReactNode } from "react";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Logo } from "@/components/Logo";
@@ -48,12 +51,12 @@ const EMPLOYMENT_LABELS: Record<(typeof EMPLOYMENT_OPTIONS)[number], string> = {
 };
 
 const INCOME_SOURCES = [
-  { key: "employment", label: "Employment", code: "4100", accountName: "Employment Income" },
-  { key: "freelance", label: "Freelance / Business", code: "4200", accountName: "Freelance / Business Income" },
-  { key: "rental", label: "Rental", code: "4300", accountName: "Rental Income" },
-  { key: "interest", label: "Interest", code: "4400", accountName: "Interest Income" },
-  { key: "foreign", label: "Foreign Remittances", code: "4500", accountName: "Foreign Service Income (FSI)" },
-  { key: "dividends", label: "Dividends", code: "4600", accountName: "Dividend Income" },
+  { key: "employment", label: "Employment", hint: "Salary / wages · APIT applies", code: "4100", accountName: "Employment Income" },
+  { key: "interest", label: "Interest Income", hint: "Bank deposits · AIT applies", code: "4400", accountName: "Interest Income" },
+  { key: "freelance", label: "Freelance / Business", hint: "Self-employed income", code: "4200", accountName: "Freelance / Business Income" },
+  { key: "rental", label: "Rental Income", hint: "Property lease", code: "4300", accountName: "Rental Income" },
+  { key: "foreign", label: "Foreign Remittances", hint: "FSI · 15% flat regime", code: "4500", accountName: "Foreign Service Income (FSI)" },
+  { key: "dividends", label: "Dividends", hint: "Share dividends · WHT applies", code: "4600", accountName: "Dividend Income" },
 ] as const;
 
 const DRAWDOWN_OPTIONS = [
@@ -178,6 +181,32 @@ export default function OnboardingScreen() {
   const [goals, setGoals] = useState<GoalDraft[]>([
     { name: "", kind: "financial_independence", targetAmount: "", targetYear: "", motivation: "" },
   ]);
+
+  // Live risk category — the engine (not the client) computes the score, so we
+  // ask the backend whenever the answers change while on the Risk step.
+  useEffect(() => {
+    if (step !== 3) return;
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const { data } = await submitRiskQuestionnaireOnboardingRiskQuestionnairePost({
+          body: {
+            time_horizon_years: timeHorizon,
+            drawdown_reaction: drawdown,
+            income_stability: stability,
+            investment_experience: experience,
+          },
+        });
+        if (!cancelled) setRiskResult(data as unknown as { score: number; category: string });
+      } catch {
+        // leave the previous result in place on transient errors
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [step, timeHorizon, drawdown, stability, experience]);
 
   const handleBack = () => setStep((s) => Math.max(0, s - 1));
 
@@ -406,39 +435,53 @@ export default function OnboardingScreen() {
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={1} onBack={handleBack} />
           <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled">
-            <StepTitle title="Income Sources" subtitle="Select every source that applies — at least one is required." />
+            <StepTitle title="Income Sources" subtitle="Select all that apply — we map each to a ledger account." />
             <View className="gap-2">
               {INCOME_SOURCES.map((source) => {
                 const selected = selectedSources.has(source.key);
                 return (
-                  <View key={source.key} className={cn("rounded-control border p-3.5", selected ? "border-salli-accent/40 bg-card" : "border-foreground/10 bg-card")}>
-                    <Pressable
-                      className="flex-row items-center justify-between"
-                      onPress={() =>
-                        setSelectedSources((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(source.key)) next.delete(source.key);
-                          else next.add(source.key);
-                          return next;
-                        })
-                      }
-                    >
-                      <Text className="font-sans-semibold text-[14px] text-foreground">{source.label}</Text>
-                      <View className={cn("h-5 w-5 items-center justify-center rounded-full border", selected ? "border-salli-accent bg-salli-accent" : "border-foreground/20")}>
-                        {selected ? <Text className="text-[11px] text-white">✓</Text> : null}
+                  <Pressable
+                    key={source.key}
+                    onPress={() =>
+                      setSelectedSources((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(source.key)) next.delete(source.key);
+                        else next.add(source.key);
+                        return next;
+                      })
+                    }
+                    className={cn("rounded-control border p-3.5", selected ? "border-salli-accent bg-card" : "border-foreground/[0.08] bg-card")}
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <View
+                        className={cn(
+                          "h-[22px] w-[22px] items-center justify-center rounded-[7px] border",
+                          selected ? "border-salli-accent bg-salli-accent" : "border-foreground/20",
+                        )}
+                      >
+                        {selected ? <Check size={12} color="#FFFFFF" strokeWidth={3} /> : null}
                       </View>
-                    </Pressable>
-                    {selected ? (
-                      <TextField
-                        label="Monthly amount"
-                        className="mt-2.5"
-                        value={incomeAmounts[source.key] ?? ""}
-                        onChangeText={(v) => setIncomeAmounts((prev) => ({ ...prev, [source.key]: v }))}
-                        keyboardType="numeric"
-                        placeholder="0"
-                      />
-                    ) : null}
-                  </View>
+                      <View className="min-w-0 flex-1">
+                        <Text numberOfLines={1} className="font-sans-semibold text-[13px] text-foreground">{source.label}</Text>
+                        <Text numberOfLines={1} className="text-[11px] text-foreground/30">{source.hint}</Text>
+                      </View>
+                      {selected ? (
+                        <View className="flex-none flex-row items-center gap-1 rounded-[8px] border border-foreground/10 bg-muted px-2.5 py-1.5">
+                          <Text className="text-[12px] font-sans-medium text-foreground/40">Rs.</Text>
+                          <TextInput
+                            value={incomeAmounts[source.key] ?? ""}
+                            onChangeText={(v) => setIncomeAmounts((prev) => ({ ...prev, [source.key]: v }))}
+                            keyboardType="numeric"
+                            placeholder="0"
+                            placeholderTextColor="rgba(128,128,128,0.4)"
+                            style={{ width: 44 }}
+                            className="text-right font-sans-semibold text-[13px] text-foreground"
+                          />
+                          <Text className="text-[11px] text-foreground/30">/mo</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </Pressable>
                 );
               })}
 
@@ -476,15 +519,35 @@ export default function OnboardingScreen() {
               </View>
 
               <View>
-                <Text className="mb-1.5 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
-                  If your portfolio dropped 30% tomorrow, you would...
+                <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
+                  If markets drop 20%, I would
                 </Text>
-                <View className="flex-row flex-wrap gap-1.5">
-                  {DRAWDOWN_OPTIONS.map((o) => (
-                    <Chip key={o.value} selected={drawdown === o.value} onPress={() => setDrawdown(o.value)}>
-                      {o.label}
-                    </Chip>
-                  ))}
+                <View className="gap-1.5">
+                  {DRAWDOWN_OPTIONS.map((o) => {
+                    const active = drawdown === o.value;
+                    return (
+                      <Pressable
+                        key={o.value}
+                        onPress={() => setDrawdown(o.value)}
+                        className={cn(
+                          "flex-row items-center gap-2.5 rounded-[12px] border px-3.5 py-[11px]",
+                          active ? "border-salli-accent bg-card" : "border-foreground/[0.08] bg-card",
+                        )}
+                      >
+                        <View
+                          className={cn(
+                            "h-[18px] w-[18px] items-center justify-center rounded-full border-2",
+                            active ? "border-salli-accent" : "border-foreground/20",
+                          )}
+                        >
+                          {active ? <View className="h-2 w-2 rounded-full bg-salli-accent" /> : null}
+                        </View>
+                        <Text className={cn("text-[13px]", active ? "font-sans-semibold text-foreground" : "font-sans-medium text-foreground/60")}>
+                          {o.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </View>
               </View>
 
@@ -509,6 +572,18 @@ export default function OnboardingScreen() {
                   ))}
                 </View>
               </View>
+
+              {riskResult ? (
+                <View className="flex-row items-center justify-between rounded-[14px] border border-salli-accent/20 bg-salli-accent/[0.08] px-4 py-3.5">
+                  <View>
+                    <Text className="mb-0.5 text-[11px] text-foreground/40">Your risk category</Text>
+                    <Text className="font-sans-bold text-[15px] capitalize text-foreground">{riskResult.category}</Text>
+                  </View>
+                  <View className="rounded-[8px] border border-salli-accent/30 bg-salli-accent/20 px-3 py-1.5">
+                    <Text className="text-[12px] font-sans-semibold text-salli-accent">Score {riskResult.score}/100</Text>
+                  </View>
+                </View>
+              ) : null}
 
               <PillButton className="mt-1" loading={saving} onPress={handleRiskContinue}>
                 <Text className="font-sans-semibold text-[15px] text-primary-foreground">Continue to Goals</Text>
@@ -605,42 +680,61 @@ export default function OnboardingScreen() {
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <StepHeader index={4} onBack={handleBack} />
       <ScrollView className="flex-1 px-5">
-        <StepTitle title="Review" subtitle="Confirm everything before we finish setting up." />
+        <StepTitle title="Review Setup" subtitle="Confirm — we'll post opening balances as ledger entries." />
         <View className="gap-2">
-          <View className="rounded-control border border-foreground/10 bg-card p-3.5">
-            <Text className="mb-1 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">Profile</Text>
-            <Text className="text-[13px] text-foreground">{fullName || "—"}</Text>
-            <Text className="text-[12px] text-foreground/40">
-              {dateOfBirth} · {residency === "resident" ? "Resident" : "Non-Resident"} · {employment.replace("_", "-")}
+          {(
+            [
+              {
+                icon: User,
+                title: fullName || "Your profile",
+                subtitle: `${residency === "resident" ? "Resident" : "Non-Resident"} · ${EMPLOYMENT_LABELS[employment]}${dateOfBirth ? ` · ${dateOfBirth}` : ""}`,
+                step: 1,
+              },
+              {
+                icon: Wallet,
+                title: `${selectedSources.size} income source${selectedSources.size === 1 ? "" : "s"}`,
+                subtitle: selectedSourceLabels.join(", ") || "None declared",
+                step: 2,
+              },
+              {
+                icon: LineChart,
+                title: `${riskResult?.category ?? "—"} risk · ${validGoals.length} goal${validGoals.length === 1 ? "" : "s"}`,
+                subtitle: validGoals[0]?.name ?? "No goals set",
+                step: 3,
+              },
+            ] as const
+          ).map((row) => (
+            <View key={row.step} className="flex-row items-center gap-2.5 rounded-control border border-foreground/[0.08] bg-card p-3.5">
+              <View className="h-8 w-8 items-center justify-center rounded-[9px] bg-foreground/[0.06]">
+                <row.icon size={14} color={colors.mutedForeground} strokeWidth={2} />
+              </View>
+              <View className="flex-1">
+                <Text className="font-sans-semibold text-[13px] capitalize text-foreground">{row.title}</Text>
+                <Text numberOfLines={1} className="text-[11px] text-foreground/30">{row.subtitle}</Text>
+              </View>
+              <Pressable onPress={() => setStep(row.step)}>
+                <Text className="text-[11px] font-sans-medium text-salli-accent">Edit</Text>
+              </Pressable>
+            </View>
+          ))}
+
+          <View className="flex-row items-center gap-2.5 rounded-control border border-salli-accent/20 bg-salli-accent/[0.08] p-3.5">
+            <CreditCard size={16} color={colors.accent} strokeWidth={2} />
+            <Text className="flex-1 text-[12px] leading-4 text-foreground/60">
+              <Text className="font-sans-semibold text-foreground">
+                {selectedSources.size} ledger account{selectedSources.size === 1 ? "" : "s"}
+              </Text>{" "}
+              will be created with your opening balances.
             </Text>
-          </View>
-          <View className="rounded-control border border-foreground/10 bg-card p-3.5">
-            <Text className="mb-1 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">Income</Text>
-            <Text className="text-[13px] text-foreground">{selectedSourceLabels.join(", ") || "None declared"}</Text>
-          </View>
-          <View className="rounded-control border border-foreground/10 bg-card p-3.5">
-            <Text className="mb-1 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">Risk Profile</Text>
-            <Text className="text-[13px] capitalize text-foreground">{riskResult?.category ?? "—"}</Text>
-            {riskResult ? <Text className="text-[12px] text-foreground/40">Score {riskResult.score}/100</Text> : null}
-          </View>
-          <View className="rounded-control border border-foreground/10 bg-card p-3.5">
-            <Text className="mb-1 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
-              Goals ({validGoals.length})
-            </Text>
-            {validGoals.length === 0 ? (
-              <Text className="text-[13px] text-foreground/40">None declared</Text>
-            ) : (
-              validGoals.map((g, i) => (
-                <Text key={i} className="text-[13px] text-foreground">
-                  {g.name}
-                </Text>
-              ))
-            )}
           </View>
 
-          <PillButton className="mb-6 mt-2" loading={saving} onPress={handleFinish}>
-            Finish setup
+          <PillButton className="mt-2" loading={saving} onPress={handleFinish}>
+            <Check size={15} color={colors.primaryForeground} strokeWidth={2.5} />
+            <Text className="font-sans-bold text-[15px] text-primary-foreground">Finish Setup</Text>
           </PillButton>
+          <Text className="mb-6 mt-2 text-center text-[11px] text-foreground/20">
+            You can change anything later in Settings
+          </Text>
         </View>
       </ScrollView>
     </View>

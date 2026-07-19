@@ -1,215 +1,146 @@
-import { useState } from "react";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
-import { Upload, Square, CheckSquare, CheckCircle } from "lucide-react-native";
-import { ScreenShell, CardContainer, SectionTitle } from "@/components/ui/page-shell";
+import { CreditCard, Upload } from "lucide-react-native";
+import { useState } from "react";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
+
+import { Card } from "@/components/ui/card";
+import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
-import { PostingRow } from "@/components/PostingRow";
-import { useStatements, type ParsedTx, type UploadResult } from "@/hooks/useStatements";
-import { useThemeColors, useAppTheme } from "@/lib/theme";
+import { ScreenHeader } from "@/components/ui/screen-header";
+import { usePendingStatement, usePostStatement, uploadStatement } from "@/hooks/useStatements";
+import { formatLKR } from "@/lib/format";
+import { useThemeColors } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 
 export default function StatementsScreen() {
-  const theme = useThemeColors();
-  const { isDark } = useAppTheme();
-  const { upload, postApproved } = useStatements();
+  const colors = useThemeColors();
+  const [statementId, setStatementId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [approved, setApproved] = useState<Set<string>>(new Set());
 
-  const [result, setResult] = useState<UploadResult | null>(null);
-  const [skipped, setSkipped] = useState<Set<string>>(new Set());
-  const [posted, setPosted] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const pending = usePendingStatement(statementId);
+  const postStatement = usePostStatement(statementId);
 
-  const approvedCount = result ? result.transactions.length - skipped.size : 0;
-
-  async function handlePickAndUpload() {
-    setErrorMessage(null);
-    const picked = await DocumentPicker.getDocumentAsync({
-      type: [
-        "application/pdf",
-        "text/csv",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      ],
+  const handleUpload = async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ["application/pdf", "text/csv", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
     });
-    if (picked.canceled || !picked.assets?.[0]) return;
-
-    const asset = picked.assets[0];
+    if (result.canceled) return;
+    const file = result.assets[0];
+    setUploading(true);
     try {
-      const uploadResult = await upload.mutateAsync({
-        uri: asset.uri,
-        name: asset.name,
-        mimeType: asset.mimeType,
-      });
-      setResult(uploadResult);
-      setSkipped(new Set());
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "Upload failed");
+      const { statement_id } = await uploadStatement(file.uri, file.name, file.mimeType ?? "application/octet-stream", "unknown");
+      setStatementId(statement_id);
+      setApproved(new Set());
+    } finally {
+      setUploading(false);
     }
-  }
+  };
 
-  function toggle(id: string) {
-    setSkipped((prev) => {
+  const toggle = (id: string) => {
+    setApproved((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  }
+  };
 
-  function toggleAll(skipAll: boolean) {
-    if (!result) return;
-    setSkipped(skipAll ? new Set(result.transactions.map((t) => t.id)) : new Set());
-  }
-
-  async function handlePostApproved() {
-    if (!result || approvedCount === 0) return;
-    setErrorMessage(null);
-    const approvedIds = result.transactions.map((t) => t.id).filter((id) => !skipped.has(id));
-    try {
-      await postApproved.mutateAsync({ statementId: result.statement_id, approvedIds });
-      setPosted(true);
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "Post failed");
-    }
-  }
-
-  function reset() {
-    setResult(null);
-    setSkipped(new Set());
-    setPosted(false);
-    setErrorMessage(null);
-  }
-
-  if (posted && result) {
-    return (
-      <ScreenShell edges={["left", "right"]}>
-        <CardContainer>
-          <View className="items-center gap-4 py-8">
-            <View className={`w-14 h-14 rounded-full ${isDark ? "bg-emerald-950" : "bg-emerald-50"} items-center justify-center`}>
-              <CheckCircle color="#059669" size={28} />
-            </View>
-            <View className="items-center">
-              <Text className="text-foreground text-[16px]" style={{ fontFamily: "DMSans_700Bold" }}>
-                {approvedCount} entries posted
-              </Text>
-              <Text className="text-muted-foreground text-[13px] mt-1 text-center">
-                Journal entries have been created from the approved transactions.
-              </Text>
-            </View>
-            <PillButton variant="primary" onPress={reset}>
-              Upload another statement
-            </PillButton>
-          </View>
-        </CardContainer>
-      </ScreenShell>
-    );
-  }
+  const transactions = pending.data?.transactions ?? [];
 
   return (
-    <ScreenShell edges={["left", "right"]}>
-      <View className="gap-3">
-        {!result && (
-          <CardContainer>
-            <SectionTitle>Import</SectionTitle>
-            <Text className="text-muted-foreground text-[13px] mb-4">
-              Import bank statements, review the parsed transactions, then post them to the ledger.
-            </Text>
-            <Pressable
-              onPress={handlePickAndUpload}
-              disabled={upload.isPending}
-              className="border-2 border-dashed border-border rounded-2xl py-10 items-center justify-center gap-3 active:bg-muted"
-            >
-              {upload.isPending ? (
-                <ActivityIndicator color={theme.mutedForeground} />
-              ) : (
-                <Upload color={theme.mutedForeground} size={28} />
-              )}
-              <View className="items-center">
-                <Text className="text-foreground text-[14px]" style={{ fontFamily: "DMSans_700Bold" }}>
-                  {upload.isPending ? "Parsing statement…" : "Choose a bank statement"}
-                </Text>
-                <Text className="text-muted-foreground text-[12px] mt-1">
-                  PDF, XLSX, or CSV · Any Sri Lankan bank
-                </Text>
-              </View>
-            </Pressable>
-            {errorMessage && (
-              <Text className="text-destructive text-[12px] mt-3 text-center">{errorMessage}</Text>
-            )}
-          </CardContainer>
-        )}
+    <PageShell>
+      <ScreenHeader title="Statements" back />
 
-        {result && (
-          <>
-            <CardContainer>
-              <View className="flex-row items-center justify-between mb-3">
-                <View>
-                  <Text className="text-foreground text-[14px]" style={{ fontFamily: "DMSans_700Bold" }}>
-                    {result.transactions.length} transactions parsed
-                  </Text>
-                  <Text className="text-muted-foreground text-[11px] font-mono mt-0.5">
-                    {result.statement_id}
-                  </Text>
-                </View>
+      {!statementId ? (
+        <View className="items-center gap-3 px-8 pt-16">
+          <View className="h-16 w-16 items-center justify-center rounded-full bg-salli-accent/15">
+            <Upload size={26} color={colors.accent} strokeWidth={1.8} />
+          </View>
+          <Text className="text-center font-sans-semibold text-[16px] text-foreground">
+            Import a bank statement
+          </Text>
+          <Text className="text-center text-[13px] leading-5 text-foreground/40">
+            PDF, CSV, or XLSX — any Sri Lankan bank.
+          </Text>
+          <PillButton className="mt-2" loading={uploading} onPress={handleUpload}>
+            Choose file
+          </PillButton>
+        </View>
+      ) : (
+        <View className="px-4 pt-3">
+          <Card className="bg-salli-navy-card p-4">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text className="mb-1.5 text-[10px] font-sans-medium uppercase tracking-wide text-white/45">
+                  Statement Import
+                </Text>
+                <Text className="text-[12px] text-white/40">
+                  {pending.data ? `${pending.data.period_start} → ${pending.data.period_end}` : "Parsing…"}
+                </Text>
               </View>
+              <CreditCard size={26} color="rgba(255,255,255,0.2)" strokeWidth={1.5} />
+            </View>
+          </Card>
 
-              <View className="flex-row items-center gap-2 mb-1">
-                <PillButton variant="secondary" onPress={() => toggleAll(false)} className="px-4 py-2">
-                  Approve all
-                </PillButton>
-                <PillButton variant="secondary" onPress={() => toggleAll(true)} className="px-4 py-2">
-                  Skip all
-                </PillButton>
-              </View>
-              <Text className="text-muted-foreground text-[12px] mb-3 tabular-nums">
-                {approvedCount} approved · {skipped.size} skipped
+          {pending.isLoading ? (
+            <View className="items-center pt-10">
+              <ActivityIndicator color={colors.accent} />
+            </View>
+          ) : transactions.length === 0 ? (
+            <Card className="mt-3 items-center p-6">
+              <Text className="text-[13px] text-foreground/35">No transactions parsed.</Text>
+            </Card>
+          ) : (
+            <>
+              <Text className="mb-1.5 mt-3.5 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                Needs Review · {transactions.length} transactions
               </Text>
-
-              <PillButton
-                variant="primary"
-                onPress={handlePostApproved}
-                disabled={approvedCount === 0}
-                loading={postApproved.isPending}
-              >
-                {`Post ${approvedCount} to ledger`}
-              </PillButton>
-
-              {errorMessage && (
-                <Text className="text-destructive text-[12px] mt-3 text-center">{errorMessage}</Text>
-              )}
-            </CardContainer>
-
-            <CardContainer>
-              <SectionTitle>Transactions</SectionTitle>
-              <View>
-                {result.transactions.map((tx: ParsedTx, i) => {
-                  const isSkipped = skipped.has(tx.id);
+              <View className="gap-1.5">
+                {transactions.map((t) => {
+                  const isApproved = approved.has(t.id);
                   return (
                     <Pressable
-                      key={tx.id}
-                      onPress={() => toggle(tx.id)}
-                      className={`flex-row items-center gap-2.5 active:bg-muted ${isSkipped ? "opacity-40" : ""}`}
-                    >
-                      {isSkipped ? (
-                        <Square color={theme.mutedForeground} size={18} />
-                      ) : (
-                        <CheckSquare color={theme.primary} size={18} />
+                      key={t.id}
+                      onPress={() => toggle(t.id)}
+                      className={cn(
+                        "flex-row items-center gap-2.5 rounded-card border p-3",
+                        isApproved ? "border-salli-accent/40 bg-card" : "border-foreground/10 bg-card",
                       )}
+                    >
+                      <View className="h-9 w-[3px] rounded-pill bg-salli-accent" />
                       <View className="flex-1">
-                        <PostingRow
-                          date={tx.date}
-                          description={tx.description}
-                          amount={tx.amount}
-                          isCredit={tx.credit_flag}
-                          isLast={i === result.transactions.length - 1}
-                        />
+                        <Text className="font-sans-semibold text-[13px] text-foreground">{t.raw.description}</Text>
+                        <Text className="mt-0.5 text-[11px] text-foreground/30">{t.raw.date}</Text>
+                      </View>
+                      <View className="items-end gap-1">
+                        <Text className="font-sans-bold text-[13px] text-foreground">
+                          {t.raw.credit_flag ? "+" : "−"}Rs. {formatLKR(t.raw.amount, 0)}
+                        </Text>
+                        <View className={cn("rounded-[4px] px-1.5 py-0.5", isApproved ? "bg-salli-accent" : "bg-salli-accent/15")}>
+                          <Text className={cn("text-[10px] font-sans-semibold", isApproved ? "text-white" : "text-salli-accent")}>
+                            {isApproved ? "Approved" : "Unmatched"}
+                          </Text>
+                        </View>
                       </View>
                     </Pressable>
                   );
                 })}
               </View>
-            </CardContainer>
-          </>
-        )}
-      </View>
-    </ScreenShell>
+
+              <PillButton
+                className="mb-4 mt-4"
+                variant="accent"
+                loading={postStatement.isPending}
+                disabled={approved.size === 0}
+                onPress={() => postStatement.mutate(Array.from(approved))}
+              >
+                Post {approved.size || ""} {approved.size === 1 ? "Entry" : "Entries"} to Ledger
+              </PillButton>
+            </>
+          )}
+        </View>
+      )}
+    </PageShell>
   );
 }

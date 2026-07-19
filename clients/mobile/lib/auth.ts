@@ -1,89 +1,84 @@
-import { useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useSalliStore } from "./store";
+import { useEffect } from "react";
+
 import { getSupabase, isSupabaseConfigured } from "./supabase";
+import { useSalliStore } from "./store";
 
 const DEV_TOKEN_KEY = "salli_dev_token";
 
-async function getStoredDevToken(): Promise<string | null> {
-  return AsyncStorage.getItem(DEV_TOKEN_KEY);
-}
-
-async function setStoredDevToken(token: string | null): Promise<void> {
-  if (token) await AsyncStorage.setItem(DEV_TOKEN_KEY, token);
-  else await AsyncStorage.removeItem(DEV_TOKEN_KEY);
-}
-
 /**
- * Hydrates the in-memory token from Supabase (or the dev-login fallback) on
- * mount, then keeps it in sync via onAuthStateChange. The token is read
- * synchronously from the zustand store by the API client's request
- * interceptor — see lib/api-client.ts.
+ * Hydrates the store's token/authReady from whichever auth source is active,
+ * and keeps token fresh via Supabase's onAuthStateChange (fires on its own
+ * auto-refresh, so no separate refresh-timer logic is needed here).
  */
 export function useAuth() {
-  const { token, setToken, authReady, setAuthReady } = useSalliStore();
+  const token = useSalliStore((s) => s.token);
+  const authReady = useSalliStore((s) => s.authReady);
+  const setToken = useSalliStore((s) => s.setToken);
+  const setAuthReady = useSalliStore((s) => s.setAuthReady);
 
   useEffect(() => {
-    const supabase = getSupabase();
-    if (!supabase) {
-      getStoredDevToken().then((t) => {
-        setToken(t);
-        setAuthReady(true);
+    let cancelled = false;
+
+    if (!isSupabaseConfigured()) {
+      AsyncStorage.getItem(DEV_TOKEN_KEY).then((stored) => {
+        if (!cancelled) {
+          setToken(stored);
+          setAuthReady(true);
+        }
       });
       return;
     }
 
+    const supabase = getSupabase();
     supabase.auth.getSession().then(({ data }) => {
-      setToken(data.session?.access_token ?? null);
-      setAuthReady(true);
+      if (!cancelled) {
+        setToken(data.session?.access_token ?? null);
+        setAuthReady(true);
+      }
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setToken(session?.access_token ?? null);
     });
-    return () => sub.subscription.unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  /** Dev-login path (no Supabase): the token IS the user id. */
-  async function login(newToken: string) {
-    await setStoredDevToken(newToken);
-    setToken(newToken);
-  }
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, [setToken, setAuthReady]);
 
-  async function logout() {
-    const supabase = getSupabase();
-    if (supabase) await supabase.auth.signOut();
-    await setStoredDevToken(null);
-    setToken(null);
-  }
-
-  return { token, authReady, login, logout };
+  return { token, authReady };
 }
 
-// ── Supabase auth actions (used by login / signup screens) ────────────────────
+/** Dev-only: log in with a raw token string (== user id) when Supabase isn't configured. */
+export async function devLogin(rawToken: string): Promise<void> {
+  await AsyncStorage.setItem(DEV_TOKEN_KEY, rawToken);
+  useSalliStore.getState().setToken(rawToken);
+}
 
 export async function signInWithPassword(email: string, password: string) {
-  const supabase = getSupabase();
-  if (!supabase) throw new Error("Supabase not configured");
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await getSupabase().auth.signInWithPassword({ email, password });
   if (error) throw error;
   return data;
 }
 
 export async function signUpWithPassword(email: string, password: string) {
-  const supabase = getSupabase();
-  if (!supabase) throw new Error("Supabase not configured");
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await getSupabase().auth.signUp({ email, password });
   if (error) throw error;
   return data;
 }
 
 export async function sendPasswordReset(email: string) {
-  const supabase = getSupabase();
-  if (!supabase) throw new Error("Supabase not configured");
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  const { error } = await getSupabase().auth.resetPasswordForEmail(email);
   if (error) throw error;
 }
 
-export { isSupabaseConfigured };
+export async function logout(): Promise<void> {
+  if (isSupabaseConfigured()) {
+    await getSupabase().auth.signOut();
+  } else {
+    await AsyncStorage.removeItem(DEV_TOKEN_KEY);
+  }
+  useSalliStore.getState().setToken(null);
+}

@@ -1,17 +1,17 @@
-import { View, Text } from "react-native";
+import { Text, View } from "react-native";
 
-interface LogoProps {
-  /** Outer square size in px. Font size is derived to match the web badge's 48cqw ratio. */
+type LogoProps = {
   size?: number;
   radius?: number;
   bg?: string;
   fg?: string;
   className?: string;
-}
+};
 
-/** The "රු" wordmark badge — mirrors clients/web/src/components/Logo.tsx. */
-export function Logo({ size = 40, radius, bg = "#010001", fg = "#E8FC85", className }: LogoProps) {
-  const r = radius ?? Math.round(size * 0.26);
+/** White rounded-square badge with the Sinhala "රු" wordmark — theme-invariant
+ * (always white bg / navy glyph), per the mockup's Login/Onboarding hero. */
+export function Logo({ size = 80, radius, bg = "#FFFFFF", fg = "#0912B0", className }: LogoProps) {
+  const r = radius ?? Math.round(size * 0.3);
   return (
     <View
       className={className}
@@ -22,18 +22,13 @@ export function Logo({ size = 40, radius, bg = "#010001", fg = "#E8FC85", classN
         backgroundColor: bg,
         alignItems: "center",
         justifyContent: "center",
-        overflow: "hidden",
       }}
-      accessibilityRole="image"
-      accessibilityLabel="Salli"
     >
       <Text
         style={{
+          fontFamily: "Inter_700Bold",
+          fontSize: Math.round(size * 0.42),
           color: fg,
-          fontFamily: "DMSans_900Black",
-          fontSize: size * 0.48,
-          lineHeight: size * 0.56,
-          letterSpacing: -1,
         }}
       >
         රු

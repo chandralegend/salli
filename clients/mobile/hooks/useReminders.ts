@@ -1,39 +1,55 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import {
+  deleteReminderRemindersReminderIdDelete,
   listRemindersRemindersGet,
   markDoneRemindersReminderIdDonePatch,
+  seedFilingCalendarRemindersSeedPost,
 } from "@/lib/api/sdk.gen";
 
 export type Reminder = {
   id: string;
   kind: string;
   due_date: string;
-  status: string;
+  status: "pending" | "done";
+  alert_type: string | null;
+  severity: "critical" | "warning" | null;
 };
 
 export function useReminders() {
-  const qc = useQueryClient();
-
-  const reminders = useQuery({
+  return useQuery({
     queryKey: ["reminders"],
     queryFn: async () => {
-      const res = await listRemindersRemindersGet({ throwOnError: true });
-      const payload = res.data as unknown as { reminders?: Reminder[] } | Reminder[] | null;
-      if (Array.isArray(payload)) return payload;
-      if (payload && "reminders" in payload) return payload.reminders ?? [];
-      return [];
+      const { data } = await listRemindersRemindersGet({ throwOnError: true });
+      return (data as unknown as { reminders: Reminder[] }).reminders;
     },
   });
+}
+
+export function useReminderMutations() {
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["reminders"] });
 
   const markDone = useMutation({
-    mutationFn: async (reminderId: string) => {
-      await markDoneRemindersReminderIdDonePatch({
-        path: { reminder_id: reminderId },
-        throwOnError: true,
-      });
+    mutationFn: async (id: string) => {
+      await markDoneRemindersReminderIdDonePatch({ path: { reminder_id: id }, throwOnError: true });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["reminders"] }),
+    onSuccess: invalidate,
   });
 
-  return { reminders, markDone };
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      await deleteReminderRemindersReminderIdDelete({ path: { reminder_id: id }, throwOnError: true });
+    },
+    onSuccess: invalidate,
+  });
+
+  const seed = useMutation({
+    mutationFn: async (year: string) => {
+      await seedFilingCalendarRemindersSeedPost({ query: { year }, throwOnError: true });
+    },
+    onSuccess: invalidate,
+  });
+
+  return { markDone, remove, seed };
 }

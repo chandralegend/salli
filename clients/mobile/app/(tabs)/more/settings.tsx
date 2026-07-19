@@ -1,194 +1,139 @@
-import { useState } from "react";
-import { View, Text, Pressable, Modal, ScrollView } from "react-native";
-import { router } from "expo-router";
-import { Sun, Moon, X } from "lucide-react-native";
-import { ScreenShell, CardContainer, SectionTitle } from "@/components/ui/page-shell";
-import { PillButton } from "@/components/ui/pill-button";
-import { TextField } from "@/components/ui/text-field";
-import { useAuth } from "@/lib/auth";
-import { useThemeColors, useDarkModeToggle, useThemeVars } from "@/lib/theme";
-import { downloadDataExport, decodeEmailFromToken, useDeleteAccount } from "@/hooks/useDataPortability";
+import { useRouter } from "expo-router";
+import { AlertTriangle, ChevronRight, Download, LogOut } from "lucide-react-native";
+import { Alert, Pressable, Text, View } from "react-native";
+
+import { Card } from "@/components/ui/card";
+import { PageShell } from "@/components/ui/page-shell";
+import { ScreenHeader } from "@/components/ui/screen-header";
+import { useEntitlements } from "@/hooks/useSettings";
+import { useMore } from "@/hooks/useMore";
+import { logout } from "@/lib/auth";
+import { useDarkModeToggle, useThemeColors } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 
 export default function SettingsScreen() {
-  const { token, logout } = useAuth();
-  const theme = useThemeColors();
+  const router = useRouter();
+  const colors = useThemeColors();
   const { isDark, toggle } = useDarkModeToggle();
-  const themeVars = useThemeVars();
+  const { profile } = useMore();
+  const entitlements = useEntitlements();
 
-  const [exporting, setExporting] = useState(false);
-  const [exportError, setExportError] = useState<string | null>(null);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [confirmEmail, setConfirmEmail] = useState("");
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const deleteAccount = useDeleteAccount();
-  const accountEmail = decodeEmailFromToken(token);
-
-  async function handleLogout() {
-    await logout();
-    router.replace("/(auth)/login");
-  }
-
-  async function handleExportData() {
-    setExporting(true);
-    setExportError(null);
-    try {
-      await downloadDataExport();
-    } catch (e) {
-      setExportError(e instanceof Error ? e.message : "Export failed");
-    } finally {
-      setExporting(false);
-    }
-  }
-
-  async function handleDeleteAccount() {
-    setDeleteError(null);
-    try {
-      await deleteAccount.mutateAsync(confirmEmail);
-      setDeleteOpen(false);
-      setConfirmEmail("");
-      await logout();
-      router.replace("/(auth)/login");
-    } catch (e) {
-      setDeleteError(e instanceof Error ? e.message : "Delete failed");
-    }
-  }
+  const isFree = entitlements.data?.plan === "free";
 
   return (
-    <ScreenShell edges={["left", "right"]}>
-      <View className="gap-3">
-        <CardContainer>
-          <SectionTitle>Appearance</SectionTitle>
-          <Pressable
-            onPress={toggle}
-            className="flex-row items-center justify-between py-1"
-          >
-            <Text className="text-foreground text-[14px]" style={{ fontFamily: "DMSans_700Bold" }}>
-              {isDark ? "Dark mode" : "Light mode"}
+    <PageShell>
+      <ScreenHeader title="Settings" back />
+
+      <View className="gap-2.5 px-4 pt-3">
+        <Card className="flex-row items-center gap-3 p-4">
+          <View className="h-12 w-12 items-center justify-center rounded-full bg-salli-accent">
+            <Text className="font-sans-bold text-[20px] text-white">
+              {(profile?.display_name ?? "?").charAt(0).toUpperCase()}
             </Text>
-            <View className="w-9 h-9 rounded-full bg-muted items-center justify-center">
-              {isDark ? <Sun color={theme.foreground} size={17} /> : <Moon color={theme.foreground} size={17} />}
-            </View>
-          </Pressable>
-        </CardContainer>
-
-        <CardContainer>
-          <SectionTitle>Session</SectionTitle>
-          <Text className="text-muted-foreground text-[13px] mb-1">Signed in as</Text>
-          <Text className="text-foreground text-[14px] mb-5" style={{ fontFamily: "DMSans_700Bold" }}>
-            {token ? `${token.slice(0, 8)}…` : "—"}
-          </Text>
-          <PillButton variant="destructive" onPress={handleLogout} className="self-start">
-            Sign out
-          </PillButton>
-        </CardContainer>
-
-        <CardContainer>
-          <SectionTitle>Profile Setup</SectionTitle>
-          <Text className="text-muted-foreground text-[13px] mb-3 leading-5">
-            Your profile configures default accounts and personalises tax and FIRE calculations.
-          </Text>
-          <PillButton variant="secondary" onPress={() => router.push("/onboarding")} className="self-start">
-            Redo profile setup
-          </PillButton>
-        </CardContainer>
-
-        <CardContainer>
-          <SectionTitle>Danger Zone</SectionTitle>
-          <View className="gap-4">
-            <View>
-              <Text className="text-foreground text-[14px] mb-1" style={{ fontFamily: "DMSans_700Bold" }}>
-                Export my data
-              </Text>
-              <Text className="text-muted-foreground text-[12.5px] mb-2.5 leading-[18px]">
-                Download everything Salli has stored about you as one JSON file.
-              </Text>
-              <PillButton variant="secondary" onPress={handleExportData} loading={exporting} className="self-start">
-                {exporting ? "Exporting…" : "Export my data"}
-              </PillButton>
-              {exportError && <Text className="text-destructive text-[12px] mt-1.5">{exportError}</Text>}
-            </View>
-            <View className="h-px bg-border" />
-            <View>
-              <Text className="text-[14px] mb-1" style={{ fontFamily: "DMSans_700Bold", color: "#DC2626" }}>
-                Delete my account
-              </Text>
-              <Text className="text-muted-foreground text-[12.5px] mb-2.5 leading-[18px]">
-                Permanently delete every row Salli has stored for you. This cannot be undone.
-              </Text>
-              <PillButton variant="destructive" onPress={() => setDeleteOpen(true)} className="self-start">
-                Delete my account
-              </PillButton>
-            </View>
           </View>
-        </CardContainer>
+          <View className="flex-1">
+            <Text className="font-sans-semibold text-[15px] text-foreground">{profile?.display_name ?? "—"}</Text>
+            <Text className="mt-0.5 text-[12px] text-foreground/35">{profile?.email ?? ""}</Text>
+          </View>
+          <View className="rounded-[8px] border border-foreground/10 bg-foreground/[0.06] px-2.5 py-1">
+            <Text className="font-sans-semibold text-[11px] text-foreground/50 capitalize">
+              {entitlements.data?.plan_name ?? "Free"}
+            </Text>
+          </View>
+        </Card>
 
-        <CardContainer>
-          <SectionTitle>About</SectionTitle>
-          <Text className="text-muted-foreground text-[13px] leading-5">
-            Salli tracks your money and tax, right from your pocket — ledger, tax computation,
-            Financial Independence planning, the Scrooge AI agent, statement uploads, and documents
-            all work here, in sync with the web app.
-          </Text>
-        </CardContainer>
-      </View>
-
-      {/* ── Delete Account modal ── */}
-      <Modal
-        visible={deleteOpen}
-        animationType="fade"
-        transparent
-        onRequestClose={() => { setDeleteOpen(false); setConfirmEmail(""); setDeleteError(null); }}
-      >
-        <View className="flex-1 items-center justify-center px-6" style={[themeVars, { backgroundColor: "rgba(0,0,0,0.4)" }]}>
-          <View className="bg-background rounded-[24px] p-5 w-full max-w-[420px]">
-            <View className="flex-row items-center justify-between mb-2">
-              <Text className="text-foreground" style={{ fontFamily: "DMSans_900Black", fontSize: 18, letterSpacing: -0.4 }}>
-                Delete your account?
-              </Text>
+        {isFree ? (
+          <Card className="overflow-hidden bg-salli-navy-card p-0">
+            <View className="px-4 pb-4 pt-3.5">
+              <View className="mb-2.5 flex-row items-center justify-between">
+                <Text className="text-[12px] text-white/60">Free Plan</Text>
+              </View>
+              <View className="flex-row flex-wrap gap-1.5">
+                {(entitlements.data?.usage ?? []).map((u) => (
+                  <View key={u.metric} className="flex-row items-center gap-1.5 rounded-pill bg-white/10 px-3 py-1.5">
+                    <Text className="text-[11px] capitalize text-white/50">{u.metric.replace(/_/g, " ")}</Text>
+                    <Text className="font-sans-bold text-[11px] text-white">
+                      {u.used}/{u.limit}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+            <View className="bg-salli-hero-2/40 px-4 pb-4 pt-4">
+              <Text className="mb-1 font-sans-bold text-[18px] text-white">Unlock Plus</Text>
+              <Text className="mb-3.5 text-[13px] text-white/45">Everything you need to master your finances.</Text>
               <Pressable
-                onPress={() => { setDeleteOpen(false); setConfirmEmail(""); setDeleteError(null); }}
-                className="w-8 h-8 rounded-full items-center justify-center bg-muted"
+                onPress={() => router.push("/(tabs)/more/billing")}
+                className="h-[50px] flex-row items-center justify-center gap-1.5 rounded-pill bg-white"
               >
-                <X color={theme.foreground} size={16} />
+                <Text className="font-sans-bold text-[15px] text-black">Upgrade to Plus</Text>
+                <Text className="text-[14px] text-black/40">· $9/mo</Text>
               </Pressable>
             </View>
-            <Text className="text-[13px] text-muted-foreground leading-[19px] mb-4">
-              This permanently deletes every row Salli has stored for you — accounts, entries,
-              budgets, debts, holdings, policies, everything. This cannot be undone. Type your
-              account email{accountEmail ? ` (${accountEmail})` : ""} to confirm.
-            </Text>
-            <ScrollView keyboardShouldPersistTaps="handled">
-              <TextField
-                placeholder="you@example.com"
-                autoCapitalize="none"
-                keyboardType="email-address"
-                value={confirmEmail}
-                onChangeText={setConfirmEmail}
-                className="mb-3"
-              />
-            </ScrollView>
-            {deleteError && <Text className="text-destructive text-[12px] mb-2">{deleteError}</Text>}
-            <View className="flex-row gap-2.5">
-              <PillButton
-                variant="secondary"
-                onPress={() => { setDeleteOpen(false); setConfirmEmail(""); setDeleteError(null); }}
-                className="flex-1"
-              >
-                Cancel
-              </PillButton>
-              <PillButton
-                variant="destructive"
-                onPress={handleDeleteAccount}
-                loading={deleteAccount.isPending}
-                disabled={!confirmEmail}
-                className="flex-1"
-              >
-                Permanently delete
-              </PillButton>
+          </Card>
+        ) : null}
+
+        <Card className="overflow-hidden p-0">
+          <Pressable
+            onPress={() => router.push("/onboarding")}
+            className="flex-row items-center justify-between border-b border-foreground/[0.06] px-4 py-3.5"
+          >
+            <Text className="font-sans-medium text-[14px] text-foreground">Redo profile setup</Text>
+            <ChevronRight size={14} color={colors.mutedForeground} strokeWidth={2} />
+          </Pressable>
+          <View className="flex-row items-center justify-between px-4 py-3.5">
+            <Text className="font-sans-medium text-[14px] text-foreground">Appearance</Text>
+            <View className="flex-row rounded-pill bg-foreground/[0.08] p-0.5">
+              <Pressable onPress={() => !isDark && toggle()} className={cn("rounded-pill px-3.5 py-1.5", isDark && "bg-primary")}>
+                <Text className={cn("text-[12px] font-sans-semibold", isDark ? "text-primary-foreground" : "text-foreground/40")}>
+                  Dark
+                </Text>
+              </Pressable>
+              <Pressable onPress={() => isDark && toggle()} className={cn("rounded-pill px-3.5 py-1.5", !isDark && "bg-primary")}>
+                <Text className={cn("text-[12px] font-sans-medium", !isDark ? "text-primary-foreground" : "text-foreground/40")}>
+                  Light
+                </Text>
+              </Pressable>
             </View>
           </View>
-        </View>
-      </Modal>
-    </ScreenShell>
+        </Card>
+
+        <Card
+          onTouchEnd={async () => {
+            await logout();
+            router.replace("/(auth)/login");
+          }}
+          className="flex-row items-center justify-between p-4"
+        >
+          <Text className="font-sans-medium text-[14px] text-foreground">Sign Out</Text>
+          <LogOut size={16} color={colors.mutedForeground} strokeWidth={2} />
+        </Card>
+
+        <Card className="overflow-hidden p-0">
+          <View className="px-4 pb-2 pt-3">
+            <Text className="text-[10px] font-sans-semibold uppercase tracking-wide text-foreground/25">
+              Danger Zone
+            </Text>
+          </View>
+          <Pressable className="flex-row items-center justify-between border-t border-foreground/[0.05] px-4 py-2.5">
+            <Text className="font-sans-medium text-[14px] text-foreground/60">Export my data</Text>
+            <Download size={14} color={colors.mutedForeground} strokeWidth={2} />
+          </Pressable>
+          <Pressable
+            onPress={() =>
+              Alert.alert(
+                "Delete account",
+                "This permanently deletes all your data. This cannot be undone. Please use the web app to confirm this action.",
+                [{ text: "OK" }],
+              )
+            }
+            className="flex-row items-center justify-between border-t border-foreground/[0.05] px-4 py-2.5"
+          >
+            <Text className="font-sans-medium text-[14px] text-destructive/90">Delete my account</Text>
+            <AlertTriangle size={14} color="#EF4444" strokeWidth={2} />
+          </Pressable>
+        </Card>
+      </View>
+    </PageShell>
   );
 }

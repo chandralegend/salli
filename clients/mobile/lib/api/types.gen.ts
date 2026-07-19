@@ -57,6 +57,26 @@ export type AddEntryRequest = {
 };
 
 /**
+ * BalanceSheetRequest
+ */
+export type BalanceSheetRequest = {
+    /**
+     * Balances
+     */
+    balances: Array<OpeningBalanceItem>;
+};
+
+/**
+ * Body_upload_file_agent_files_post
+ */
+export type BodyUploadFileAgentFilesPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
  * Body_upload_statement_statements_upload_post
  */
 export type BodyUploadStatementStatementsUploadPost = {
@@ -64,6 +84,80 @@ export type BodyUploadStatementStatementsUploadPost = {
      * File
      */
     file: Blob | File;
+};
+
+/**
+ * BriefingPrepareRequest
+ */
+export type BriefingPrepareRequest = {
+    /**
+     * Thread Id
+     */
+    thread_id?: string | null;
+};
+
+/**
+ * BriefingResumeRequest
+ */
+export type BriefingResumeRequest = {
+    /**
+     * Thread Id
+     */
+    thread_id: string;
+    /**
+     * Decision
+     */
+    decision: string;
+};
+
+/**
+ * BudgetLineRequest
+ */
+export type BudgetLineRequest = {
+    /**
+     * Account Id
+     */
+    account_id: string;
+    /**
+     * Limit Amount
+     */
+    limit_amount: number;
+};
+
+/**
+ * BudgetRequest
+ */
+export type BudgetRequest = {
+    /**
+     * Period Start
+     */
+    period_start: string;
+    /**
+     * Period End
+     */
+    period_end: string;
+    /**
+     * Lines
+     */
+    lines: Array<BudgetLineRequest>;
+};
+
+/**
+ * BudgetUpdateRequest
+ */
+export type BudgetUpdateRequest = {
+    /**
+     * Period Start
+     */
+    period_start?: string | null;
+    /**
+     * Period End
+     */
+    period_end?: string | null;
+    /**
+     * Lines
+     */
+    lines?: Array<BudgetLineRequest> | null;
 };
 
 /**
@@ -78,6 +172,20 @@ export type ChatRequest = {
      * Message
      */
     message: string;
+    /**
+     * File Refs
+     */
+    file_refs?: Array<string>;
+};
+
+/**
+ * CheckoutRequest
+ */
+export type CheckoutRequest = {
+    /**
+     * Plan
+     */
+    plan: string;
 };
 
 /**
@@ -95,6 +203,138 @@ export type CreateReminderRequest = {
 };
 
 /**
+ * DebtRequest
+ */
+export type DebtRequest = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Principal
+     */
+    principal: number;
+    /**
+     * Apr
+     */
+    apr: number;
+    /**
+     * Minimum Payment
+     */
+    minimum_payment: number;
+};
+
+/**
+ * DebtUpdateRequest
+ */
+export type DebtUpdateRequest = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Principal
+     */
+    principal?: number | null;
+    /**
+     * Apr
+     */
+    apr?: number | null;
+    /**
+     * Minimum Payment
+     */
+    minimum_payment?: number | null;
+    /**
+     * Is Active
+     */
+    is_active?: boolean | null;
+};
+
+/**
+ * DeleteAccountRequest
+ */
+export type DeleteAccountRequest = {
+    /**
+     * Confirm Email
+     */
+    confirm_email: string;
+};
+
+/**
+ * GoalRequest
+ */
+export type GoalRequest = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Kind
+     */
+    kind?: string;
+    /**
+     * Target Amount
+     */
+    target_amount?: number;
+    /**
+     * Current Amount
+     */
+    current_amount?: number;
+    /**
+     * Target Date
+     */
+    target_date?: string | null;
+    /**
+     * Priority
+     */
+    priority?: number;
+};
+
+/**
+ * GoalUpdateRequest
+ */
+export type GoalUpdateRequest = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Kind
+     */
+    kind?: string | null;
+    /**
+     * Target Amount
+     */
+    target_amount?: number | null;
+    /**
+     * Current Amount
+     */
+    current_amount?: number | null;
+    /**
+     * Target Date
+     */
+    target_date?: string | null;
+    /**
+     * Priority
+     */
+    priority?: number | null;
+    /**
+     * Is Active
+     */
+    is_active?: boolean | null;
+};
+
+/**
+ * GoalsRequest
+ */
+export type GoalsRequest = {
+    /**
+     * Goals
+     */
+    goals: Array<OnboardingGoalItem>;
+};
+
+/**
  * HTTPValidationError
  */
 export type HttpValidationError = {
@@ -102,6 +342,286 @@ export type HttpValidationError = {
      * Detail
      */
     detail?: Array<ValidationError>;
+};
+
+/**
+ * HoldingRequest
+ */
+export type HoldingRequest = {
+    /**
+     * Symbol
+     */
+    symbol: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Asset Class
+     */
+    asset_class: string;
+    /**
+     * Cost Basis
+     */
+    cost_basis: number;
+    /**
+     * Current Value
+     */
+    current_value: number;
+};
+
+/**
+ * HoldingUpdateRequest
+ */
+export type HoldingUpdateRequest = {
+    /**
+     * Symbol
+     */
+    symbol?: string | null;
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Asset Class
+     */
+    asset_class?: string | null;
+    /**
+     * Cost Basis
+     */
+    cost_basis?: number | null;
+    /**
+     * Current Value
+     */
+    current_value?: number | null;
+    /**
+     * Is Active
+     */
+    is_active?: boolean | null;
+};
+
+/**
+ * IncomeDeclarationRequest
+ */
+export type IncomeDeclarationRequest = {
+    /**
+     * Incomes
+     */
+    incomes: Array<IncomeItem>;
+};
+
+/**
+ * IncomeItem
+ */
+export type IncomeItem = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Amount
+     */
+    amount: number;
+    /**
+     * Deposit Account Code
+     */
+    deposit_account_code?: string | null;
+    /**
+     * Deposit Account Name
+     */
+    deposit_account_name?: string | null;
+};
+
+/**
+ * OnboardingGoalItem
+ */
+export type OnboardingGoalItem = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Kind
+     */
+    kind?: string;
+    /**
+     * Target Amount
+     */
+    target_amount?: number;
+    /**
+     * Current Amount
+     */
+    current_amount?: number;
+    /**
+     * Target Date
+     */
+    target_date?: string | null;
+    /**
+     * Priority
+     */
+    priority?: number;
+};
+
+/**
+ * OnboardingRequest
+ */
+export type OnboardingRequest = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Nic
+     */
+    nic?: string;
+    /**
+     * Residency
+     */
+    residency?: string;
+    /**
+     * Employer
+     */
+    employer?: string;
+    /**
+     * Employment Type
+     */
+    employment_type?: string;
+    /**
+     * Ird Number
+     */
+    ird_number?: string;
+    /**
+     * Income Sources
+     */
+    income_sources?: Array<string>;
+    /**
+     * Primary Goal
+     */
+    primary_goal?: string;
+    /**
+     * Goal Target Amount
+     */
+    goal_target_amount?: number;
+    /**
+     * Goal Target Year
+     */
+    goal_target_year?: string;
+    /**
+     * Risk Appetite
+     */
+    risk_appetite?: string;
+    /**
+     * Motivation
+     */
+    motivation?: string;
+};
+
+/**
+ * OnboardingStatusResponse
+ */
+export type OnboardingStatusResponse = {
+    /**
+     * Complete
+     */
+    complete: boolean;
+};
+
+/**
+ * OpeningBalanceItem
+ */
+export type OpeningBalanceItem = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Type
+     */
+    type: string;
+    /**
+     * Amount
+     */
+    amount: number;
+};
+
+/**
+ * PolicyRequest
+ */
+export type PolicyRequest = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Policy Type
+     */
+    policy_type: string;
+    /**
+     * Provider
+     */
+    provider: string;
+    /**
+     * Coverage Amount
+     */
+    coverage_amount: number;
+    /**
+     * Premium Amount
+     */
+    premium_amount: number;
+    /**
+     * Premium Frequency
+     */
+    premium_frequency: string;
+    /**
+     * Expiry Date
+     */
+    expiry_date: string;
+};
+
+/**
+ * PolicyUpdateRequest
+ */
+export type PolicyUpdateRequest = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Policy Type
+     */
+    policy_type?: string | null;
+    /**
+     * Provider
+     */
+    provider?: string | null;
+    /**
+     * Coverage Amount
+     */
+    coverage_amount?: number | null;
+    /**
+     * Premium Amount
+     */
+    premium_amount?: number | null;
+    /**
+     * Premium Frequency
+     */
+    premium_frequency?: string | null;
+    /**
+     * Expiry Date
+     */
+    expiry_date?: string | null;
+    /**
+     * Is Active
+     */
+    is_active?: boolean | null;
 };
 
 /**
@@ -145,6 +665,44 @@ export type PostingRequest = {
 };
 
 /**
+ * ProfileIdentityRequest
+ */
+export type ProfileIdentityRequest = {
+    /**
+     * Display Name
+     */
+    display_name?: string | null;
+    /**
+     * Date Of Birth
+     */
+    date_of_birth?: string | null;
+    /**
+     * Dependents Count
+     */
+    dependents_count?: number | null;
+    /**
+     * Employment Status
+     */
+    employment_status?: string | null;
+    /**
+     * Employment Type
+     */
+    employment_type?: string | null;
+    /**
+     * Residency Status
+     */
+    residency_status?: string | null;
+    /**
+     * Employer
+     */
+    employer?: string | null;
+    /**
+     * Ird Number
+     */
+    ird_number?: string | null;
+};
+
+/**
  * ResumeRequest
  */
 export type ResumeRequest = {
@@ -157,11 +715,149 @@ export type ResumeRequest = {
      */
     decision: string;
     /**
+     * Workflow
+     */
+    workflow?: string;
+    /**
      * Edits
      */
     edits?: {
         [key: string]: unknown;
     } | null;
+};
+
+/**
+ * RiskQuestionnaireRequest
+ */
+export type RiskQuestionnaireRequest = {
+    /**
+     * Time Horizon Years
+     */
+    time_horizon_years: number;
+    /**
+     * Drawdown Reaction
+     */
+    drawdown_reaction: string;
+    /**
+     * Income Stability
+     */
+    income_stability: string;
+    /**
+     * Investment Experience
+     */
+    investment_experience: string;
+    /**
+     * Dependents Count
+     */
+    dependents_count?: number;
+};
+
+/**
+ * SubscriptionRequest
+ */
+export type SubscriptionRequest = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Amount
+     */
+    amount: number;
+    /**
+     * Frequency
+     */
+    frequency: string;
+    /**
+     * Next Due Date
+     */
+    next_due_date: string;
+    /**
+     * Account Id
+     */
+    account_id?: string | null;
+    /**
+     * Grace Days
+     */
+    grace_days?: number;
+    /**
+     * Amount Tolerance Pct
+     */
+    amount_tolerance_pct?: number;
+};
+
+/**
+ * SubscriptionUpdateRequest
+ */
+export type SubscriptionUpdateRequest = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Amount
+     */
+    amount?: number | null;
+    /**
+     * Frequency
+     */
+    frequency?: string | null;
+    /**
+     * Next Due Date
+     */
+    next_due_date?: string | null;
+    /**
+     * Account Id
+     */
+    account_id?: string | null;
+    /**
+     * Grace Days
+     */
+    grace_days?: number | null;
+    /**
+     * Amount Tolerance Pct
+     */
+    amount_tolerance_pct?: number | null;
+    /**
+     * Is Active
+     */
+    is_active?: boolean | null;
+};
+
+/**
+ * TargetRequest
+ */
+export type TargetRequest = {
+    /**
+     * Policy Type
+     */
+    policy_type: string;
+    /**
+     * Target Amount
+     */
+    target_amount: number;
+};
+
+/**
+ * UpdateAccountRequest
+ */
+export type UpdateAccountRequest = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Type
+     */
+    type: 'asset' | 'liability' | 'equity' | 'income' | 'expense';
+    /**
+     * Currency
+     */
+    currency?: string;
 };
 
 /**
@@ -243,6 +939,157 @@ export type AddAccountAccountsPostResponses = {
     201: unknown;
 };
 
+export type DeactivateAccountAccountsAccountIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Account Id
+         */
+        account_id: string;
+    };
+    query?: never;
+    url: '/accounts/{account_id}';
+};
+
+export type DeactivateAccountAccountsAccountIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeactivateAccountAccountsAccountIdDeleteError = DeactivateAccountAccountsAccountIdDeleteErrors[keyof DeactivateAccountAccountsAccountIdDeleteErrors];
+
+export type DeactivateAccountAccountsAccountIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeactivateAccountAccountsAccountIdDeleteResponse = DeactivateAccountAccountsAccountIdDeleteResponses[keyof DeactivateAccountAccountsAccountIdDeleteResponses];
+
+export type GetAccountAccountsAccountIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Account Id
+         */
+        account_id: string;
+    };
+    query?: never;
+    url: '/accounts/{account_id}';
+};
+
+export type GetAccountAccountsAccountIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetAccountAccountsAccountIdGetError = GetAccountAccountsAccountIdGetErrors[keyof GetAccountAccountsAccountIdGetErrors];
+
+export type GetAccountAccountsAccountIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UpdateAccountAccountsAccountIdPatchData = {
+    body: UpdateAccountRequest;
+    path: {
+        /**
+         * Account Id
+         */
+        account_id: string;
+    };
+    query?: never;
+    url: '/accounts/{account_id}';
+};
+
+export type UpdateAccountAccountsAccountIdPatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateAccountAccountsAccountIdPatchError = UpdateAccountAccountsAccountIdPatchErrors[keyof UpdateAccountAccountsAccountIdPatchErrors];
+
+export type UpdateAccountAccountsAccountIdPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetAccountOverviewAccountsAccountIdOverviewGetData = {
+    body?: never;
+    path: {
+        /**
+         * Account Id
+         */
+        account_id: string;
+    };
+    query?: {
+        /**
+         * From Date
+         */
+        from_date?: string | null;
+        /**
+         * To Date
+         */
+        to_date?: string | null;
+    };
+    url: '/accounts/{account_id}/overview';
+};
+
+export type GetAccountOverviewAccountsAccountIdOverviewGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetAccountOverviewAccountsAccountIdOverviewGetError = GetAccountOverviewAccountsAccountIdOverviewGetErrors[keyof GetAccountOverviewAccountsAccountIdOverviewGetErrors];
+
+export type GetAccountOverviewAccountsAccountIdOverviewGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ReactivateAccountAccountsAccountIdReactivatePostData = {
+    body?: never;
+    path: {
+        /**
+         * Account Id
+         */
+        account_id: string;
+    };
+    query?: never;
+    url: '/accounts/{account_id}/reactivate';
+};
+
+export type ReactivateAccountAccountsAccountIdReactivatePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ReactivateAccountAccountsAccountIdReactivatePostError = ReactivateAccountAccountsAccountIdReactivatePostErrors[keyof ReactivateAccountAccountsAccountIdReactivatePostErrors];
+
+export type ReactivateAccountAccountsAccountIdReactivatePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type ListEntriesEntriesGetData = {
     body?: never;
     path?: never;
@@ -298,6 +1145,90 @@ export type AddEntryEntriesPostResponses = {
     201: unknown;
 };
 
+export type GetEntryEntriesEntryIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Entry Id
+         */
+        entry_id: string;
+    };
+    query?: never;
+    url: '/entries/{entry_id}';
+};
+
+export type GetEntryEntriesEntryIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetEntryEntriesEntryIdGetError = GetEntryEntriesEntryIdGetErrors[keyof GetEntryEntriesEntryIdGetErrors];
+
+export type GetEntryEntriesEntryIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetEntryProvenanceEntriesEntryIdProvenanceGetData = {
+    body?: never;
+    path: {
+        /**
+         * Entry Id
+         */
+        entry_id: string;
+    };
+    query?: never;
+    url: '/entries/{entry_id}/provenance';
+};
+
+export type GetEntryProvenanceEntriesEntryIdProvenanceGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetEntryProvenanceEntriesEntryIdProvenanceGetError = GetEntryProvenanceEntriesEntryIdProvenanceGetErrors[keyof GetEntryProvenanceEntriesEntryIdProvenanceGetErrors];
+
+export type GetEntryProvenanceEntriesEntryIdProvenanceGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ReverseEntryEntriesEntryIdReversePostData = {
+    body?: never;
+    path: {
+        /**
+         * Entry Id
+         */
+        entry_id: string;
+    };
+    query?: never;
+    url: '/entries/{entry_id}/reverse';
+};
+
+export type ReverseEntryEntriesEntryIdReversePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ReverseEntryEntriesEntryIdReversePostError = ReverseEntryEntriesEntryIdReversePostErrors[keyof ReverseEntryEntriesEntryIdReversePostErrors];
+
+export type ReverseEntryEntriesEntryIdReversePostResponses = {
+    /**
+     * Successful Response
+     */
+    201: unknown;
+};
+
 export type TrialBalanceLedgerTrialBalanceGetData = {
     body?: never;
     path?: never;
@@ -342,14 +1273,6 @@ export type IncomeStatementLedgerIncomeStatementGetData = {
          * To Date
          */
         to_date: string;
-        /**
-         * Income Accounts
-         */
-        income_accounts?: string;
-        /**
-         * Expense Accounts
-         */
-        expense_accounts?: string;
     };
     url: '/ledger/income-statement';
 };
@@ -463,23 +1386,46 @@ export type ChatAgentChatPostResponses = {
     200: unknown;
 };
 
-export type ResumeWorkflowAgentResumePostData = {
-    body: ResumeRequest;
+export type UploadFileAgentFilesPostData = {
+    body: BodyUploadFileAgentFilesPost;
     path?: never;
     query?: never;
-    url: '/agent/resume';
+    url: '/agent/files';
 };
 
-export type ResumeWorkflowAgentResumePostErrors = {
+export type UploadFileAgentFilesPostErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type ResumeWorkflowAgentResumePostError = ResumeWorkflowAgentResumePostErrors[keyof ResumeWorkflowAgentResumePostErrors];
+export type UploadFileAgentFilesPostError = UploadFileAgentFilesPostErrors[keyof UploadFileAgentFilesPostErrors];
 
-export type ResumeWorkflowAgentResumePostResponses = {
+export type UploadFileAgentFilesPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ResumeAgentResumePostData = {
+    body: ResumeRequest;
+    path?: never;
+    query?: never;
+    url: '/agent/resume';
+};
+
+export type ResumeAgentResumePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ResumeAgentResumePostError = ResumeAgentResumePostErrors[keyof ResumeAgentResumePostErrors];
+
+export type ResumeAgentResumePostResponses = {
     /**
      * Successful Response
      */
@@ -508,6 +1454,397 @@ export type GetHistoryAgentHistoryThreadIdGetErrors = {
 export type GetHistoryAgentHistoryThreadIdGetError = GetHistoryAgentHistoryThreadIdGetErrors[keyof GetHistoryAgentHistoryThreadIdGetErrors];
 
 export type GetHistoryAgentHistoryThreadIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListSessionsAgentSessionsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/agent/sessions';
+};
+
+export type ListSessionsAgentSessionsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListSessionsAgentSessionsGetError = ListSessionsAgentSessionsGetErrors[keyof ListSessionsAgentSessionsGetErrors];
+
+export type ListSessionsAgentSessionsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetAuditLogAgentAuditLogGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/agent/audit-log';
+};
+
+export type GetAuditLogAgentAuditLogGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetAuditLogAgentAuditLogGetError = GetAuditLogAgentAuditLogGetErrors[keyof GetAuditLogAgentAuditLogGetErrors];
+
+export type GetAuditLogAgentAuditLogGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type DeleteSessionAgentSessionsThreadIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Thread Id
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/agent/sessions/{thread_id}';
+};
+
+export type DeleteSessionAgentSessionsThreadIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteSessionAgentSessionsThreadIdDeleteError = DeleteSessionAgentSessionsThreadIdDeleteErrors[keyof DeleteSessionAgentSessionsThreadIdDeleteErrors];
+
+export type DeleteSessionAgentSessionsThreadIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteSessionAgentSessionsThreadIdDeleteResponse = DeleteSessionAgentSessionsThreadIdDeleteResponses[keyof DeleteSessionAgentSessionsThreadIdDeleteResponses];
+
+export type ListDocumentsDocumentsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Namespace
+         *
+         * Filter: 'documents' or 'memories'
+         */
+        namespace?: string | null;
+        /**
+         * Tags
+         *
+         * Filter by tags
+         */
+        tags?: Array<string>;
+        /**
+         * Search
+         *
+         * Full-text search over title and content
+         */
+        search?: string | null;
+    };
+    url: '/documents/';
+};
+
+export type ListDocumentsDocumentsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListDocumentsDocumentsGetError = ListDocumentsDocumentsGetErrors[keyof ListDocumentsDocumentsGetErrors];
+
+export type ListDocumentsDocumentsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type DeleteDocumentDocumentsDocIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Doc Id
+         */
+        doc_id: string;
+    };
+    query?: never;
+    url: '/documents/{doc_id}';
+};
+
+export type DeleteDocumentDocumentsDocIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteDocumentDocumentsDocIdDeleteError = DeleteDocumentDocumentsDocIdDeleteErrors[keyof DeleteDocumentDocumentsDocIdDeleteErrors];
+
+export type DeleteDocumentDocumentsDocIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteDocumentDocumentsDocIdDeleteResponse = DeleteDocumentDocumentsDocIdDeleteResponses[keyof DeleteDocumentDocumentsDocIdDeleteResponses];
+
+export type GetDocumentDocumentsDocIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Doc Id
+         */
+        doc_id: string;
+    };
+    query?: never;
+    url: '/documents/{doc_id}';
+};
+
+export type GetDocumentDocumentsDocIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetDocumentDocumentsDocIdGetError = GetDocumentDocumentsDocIdGetErrors[keyof GetDocumentDocumentsDocIdGetErrors];
+
+export type GetDocumentDocumentsDocIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetStatusOnboardingStatusGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/onboarding/status';
+};
+
+export type GetStatusOnboardingStatusGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: OnboardingStatusResponse;
+};
+
+export type GetStatusOnboardingStatusGetResponse = GetStatusOnboardingStatusGetResponses[keyof GetStatusOnboardingStatusGetResponses];
+
+export type CompleteOnboardingOnboardingCompletePostData = {
+    body: OnboardingRequest;
+    path?: never;
+    query?: never;
+    url: '/onboarding/complete';
+};
+
+export type CompleteOnboardingOnboardingCompletePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CompleteOnboardingOnboardingCompletePostError = CompleteOnboardingOnboardingCompletePostErrors[keyof CompleteOnboardingOnboardingCompletePostErrors];
+
+export type CompleteOnboardingOnboardingCompletePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetProfileOnboardingProfileGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/onboarding/profile';
+};
+
+export type GetProfileOnboardingProfileGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UpdateProfileOnboardingProfilePatchData = {
+    body: ProfileIdentityRequest;
+    path?: never;
+    query?: never;
+    url: '/onboarding/profile';
+};
+
+export type UpdateProfileOnboardingProfilePatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateProfileOnboardingProfilePatchError = UpdateProfileOnboardingProfilePatchErrors[keyof UpdateProfileOnboardingProfilePatchErrors];
+
+export type UpdateProfileOnboardingProfilePatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type DeclareBalanceSheetOnboardingBalanceSheetPostData = {
+    body: BalanceSheetRequest;
+    path?: never;
+    query?: never;
+    url: '/onboarding/balance-sheet';
+};
+
+export type DeclareBalanceSheetOnboardingBalanceSheetPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeclareBalanceSheetOnboardingBalanceSheetPostError = DeclareBalanceSheetOnboardingBalanceSheetPostErrors[keyof DeclareBalanceSheetOnboardingBalanceSheetPostErrors];
+
+export type DeclareBalanceSheetOnboardingBalanceSheetPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type DeclareIncomeOnboardingIncomePostData = {
+    body: IncomeDeclarationRequest;
+    path?: never;
+    query?: never;
+    url: '/onboarding/income';
+};
+
+export type DeclareIncomeOnboardingIncomePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeclareIncomeOnboardingIncomePostError = DeclareIncomeOnboardingIncomePostErrors[keyof DeclareIncomeOnboardingIncomePostErrors];
+
+export type DeclareIncomeOnboardingIncomePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SubmitRiskQuestionnaireOnboardingRiskQuestionnairePostData = {
+    body: RiskQuestionnaireRequest;
+    path?: never;
+    query?: never;
+    url: '/onboarding/risk-questionnaire';
+};
+
+export type SubmitRiskQuestionnaireOnboardingRiskQuestionnairePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SubmitRiskQuestionnaireOnboardingRiskQuestionnairePostError = SubmitRiskQuestionnaireOnboardingRiskQuestionnairePostErrors[keyof SubmitRiskQuestionnaireOnboardingRiskQuestionnairePostErrors];
+
+export type SubmitRiskQuestionnaireOnboardingRiskQuestionnairePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type DeclareGoalsOnboardingGoalsPostData = {
+    body: GoalsRequest;
+    path?: never;
+    query?: never;
+    url: '/onboarding/goals';
+};
+
+export type DeclareGoalsOnboardingGoalsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeclareGoalsOnboardingGoalsPostError = DeclareGoalsOnboardingGoalsPostErrors[keyof DeclareGoalsOnboardingGoalsPostErrors];
+
+export type DeclareGoalsOnboardingGoalsPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: unknown;
+};
+
+export type ExportMyDataOnboardingExportGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/onboarding/export';
+};
+
+export type ExportMyDataOnboardingExportGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type DeleteMyAccountOnboardingAccountDeleteData = {
+    body: DeleteAccountRequest;
+    path?: never;
+    query?: never;
+    url: '/onboarding/account';
+};
+
+export type DeleteMyAccountOnboardingAccountDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteMyAccountOnboardingAccountDeleteError = DeleteMyAccountOnboardingAccountDeleteErrors[keyof DeleteMyAccountOnboardingAccountDeleteErrors];
+
+export type DeleteMyAccountOnboardingAccountDeleteResponses = {
     /**
      * Successful Response
      */
@@ -606,6 +1943,10 @@ export type ListRemindersRemindersGetData = {
          * Status
          */
         status?: string | null;
+        /**
+         * Alerts Only
+         */
+        alerts_only?: boolean;
     };
     url: '/reminders/';
 };
@@ -677,6 +2018,20 @@ export type SeedFilingCalendarRemindersSeedPostResponses = {
     201: unknown;
 };
 
+export type SyncAlertsRemindersSyncAlertsPostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/reminders/sync-alerts';
+};
+
+export type SyncAlertsRemindersSyncAlertsPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: unknown;
+};
+
 export type MarkDoneRemindersReminderIdDonePatchData = {
     body?: never;
     path: {
@@ -706,6 +2061,1457 @@ export type MarkDoneRemindersReminderIdDonePatchResponses = {
 };
 
 export type MarkDoneRemindersReminderIdDonePatchResponse = MarkDoneRemindersReminderIdDonePatchResponses[keyof MarkDoneRemindersReminderIdDonePatchResponses];
+
+export type DeleteReminderRemindersReminderIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Reminder Id
+         */
+        reminder_id: string;
+    };
+    query?: never;
+    url: '/reminders/{reminder_id}';
+};
+
+export type DeleteReminderRemindersReminderIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteReminderRemindersReminderIdDeleteError = DeleteReminderRemindersReminderIdDeleteErrors[keyof DeleteReminderRemindersReminderIdDeleteErrors];
+
+export type DeleteReminderRemindersReminderIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteReminderRemindersReminderIdDeleteResponse = DeleteReminderRemindersReminderIdDeleteResponses[keyof DeleteReminderRemindersReminderIdDeleteResponses];
+
+export type GetSubscriptionBillingSubscriptionGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/billing/subscription';
+};
+
+export type GetSubscriptionBillingSubscriptionGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetPlansBillingPlansGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/billing/plans';
+};
+
+export type GetPlansBillingPlansGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type CreateCheckoutBillingCheckoutPostData = {
+    body: CheckoutRequest;
+    path?: never;
+    query?: never;
+    url: '/billing/checkout';
+};
+
+export type CreateCheckoutBillingCheckoutPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateCheckoutBillingCheckoutPostError = CreateCheckoutBillingCheckoutPostErrors[keyof CreateCheckoutBillingCheckoutPostErrors];
+
+export type CreateCheckoutBillingCheckoutPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type BillingPortalBillingPortalPostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/billing/portal';
+};
+
+export type BillingPortalBillingPortalPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type PaddleWebhookBillingWebhookPostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/billing/webhook';
+};
+
+export type PaddleWebhookBillingWebhookPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetScoreFiScoreGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/fi/score';
+};
+
+export type GetScoreFiScoreGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type RecomputeScoreFiScoreRecomputePostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/fi/score/recompute';
+};
+
+export type RecomputeScoreFiScoreRecomputePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ScoreHistoryFiScoreHistoryGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/fi/score/history';
+};
+
+export type ScoreHistoryFiScoreHistoryGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListGoalsFiGoalsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/fi/goals';
+};
+
+export type ListGoalsFiGoalsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type CreateGoalFiGoalsPostData = {
+    body: GoalRequest;
+    path?: never;
+    query?: never;
+    url: '/fi/goals';
+};
+
+export type CreateGoalFiGoalsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateGoalFiGoalsPostError = CreateGoalFiGoalsPostErrors[keyof CreateGoalFiGoalsPostErrors];
+
+export type CreateGoalFiGoalsPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: unknown;
+};
+
+export type DeleteGoalFiGoalsGoalIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Goal Id
+         */
+        goal_id: string;
+    };
+    query?: never;
+    url: '/fi/goals/{goal_id}';
+};
+
+export type DeleteGoalFiGoalsGoalIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteGoalFiGoalsGoalIdDeleteError = DeleteGoalFiGoalsGoalIdDeleteErrors[keyof DeleteGoalFiGoalsGoalIdDeleteErrors];
+
+export type DeleteGoalFiGoalsGoalIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteGoalFiGoalsGoalIdDeleteResponse = DeleteGoalFiGoalsGoalIdDeleteResponses[keyof DeleteGoalFiGoalsGoalIdDeleteResponses];
+
+export type UpdateGoalFiGoalsGoalIdPatchData = {
+    body: GoalUpdateRequest;
+    path: {
+        /**
+         * Goal Id
+         */
+        goal_id: string;
+    };
+    query?: never;
+    url: '/fi/goals/{goal_id}';
+};
+
+export type UpdateGoalFiGoalsGoalIdPatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateGoalFiGoalsGoalIdPatchError = UpdateGoalFiGoalsGoalIdPatchErrors[keyof UpdateGoalFiGoalsGoalIdPatchErrors];
+
+export type UpdateGoalFiGoalsGoalIdPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetStrategyFiStrategyGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/fi/strategy';
+};
+
+export type GetStrategyFiStrategyGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetStrategyHistoryFiStrategyHistoryGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/fi/strategy/history';
+};
+
+export type GetStrategyHistoryFiStrategyHistoryGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GenerateStrategyFiStrategyGeneratePostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/fi/strategy/generate';
+};
+
+export type GenerateStrategyFiStrategyGeneratePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetProjectionsFiProjectionsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/fi/projections';
+};
+
+export type GetProjectionsFiProjectionsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetSurplusBreakdownFiSurplusGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/fi/surplus';
+};
+
+export type GetSurplusBreakdownFiSurplusGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type RunAdvisorAdvisorRunPostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/advisor/run';
+};
+
+export type RunAdvisorAdvisorRunPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListReportsAdvisorReportsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/advisor/reports';
+};
+
+export type ListReportsAdvisorReportsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type LatestReportAdvisorReportsLatestGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/advisor/reports/latest';
+};
+
+export type LatestReportAdvisorReportsLatestGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ApplyRecommendationAdvisorReportsReportIdRecommendationsRecIdApplyPostData = {
+    body?: never;
+    path: {
+        /**
+         * Report Id
+         */
+        report_id: string;
+        /**
+         * Rec Id
+         */
+        rec_id: string;
+    };
+    query?: never;
+    url: '/advisor/reports/{report_id}/recommendations/{rec_id}/apply';
+};
+
+export type ApplyRecommendationAdvisorReportsReportIdRecommendationsRecIdApplyPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ApplyRecommendationAdvisorReportsReportIdRecommendationsRecIdApplyPostError = ApplyRecommendationAdvisorReportsReportIdRecommendationsRecIdApplyPostErrors[keyof ApplyRecommendationAdvisorReportsReportIdRecommendationsRecIdApplyPostErrors];
+
+export type ApplyRecommendationAdvisorReportsReportIdRecommendationsRecIdApplyPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type DismissRecommendationAdvisorReportsReportIdRecommendationsRecIdDismissPostData = {
+    body?: never;
+    path: {
+        /**
+         * Report Id
+         */
+        report_id: string;
+        /**
+         * Rec Id
+         */
+        rec_id: string;
+    };
+    query?: never;
+    url: '/advisor/reports/{report_id}/recommendations/{rec_id}/dismiss';
+};
+
+export type DismissRecommendationAdvisorReportsReportIdRecommendationsRecIdDismissPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DismissRecommendationAdvisorReportsReportIdRecommendationsRecIdDismissPostError = DismissRecommendationAdvisorReportsReportIdRecommendationsRecIdDismissPostErrors[keyof DismissRecommendationAdvisorReportsReportIdRecommendationsRecIdDismissPostErrors];
+
+export type DismissRecommendationAdvisorReportsReportIdRecommendationsRecIdDismissPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type PrepareBriefingAdvisorBriefingPreparePostData = {
+    body: BriefingPrepareRequest;
+    path?: never;
+    query?: never;
+    url: '/advisor/briefing/prepare';
+};
+
+export type PrepareBriefingAdvisorBriefingPreparePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type PrepareBriefingAdvisorBriefingPreparePostError = PrepareBriefingAdvisorBriefingPreparePostErrors[keyof PrepareBriefingAdvisorBriefingPreparePostErrors];
+
+export type PrepareBriefingAdvisorBriefingPreparePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ResumeBriefingAdvisorBriefingResumePostData = {
+    body: BriefingResumeRequest;
+    path?: never;
+    query?: never;
+    url: '/advisor/briefing/resume';
+};
+
+export type ResumeBriefingAdvisorBriefingResumePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ResumeBriefingAdvisorBriefingResumePostError = ResumeBriefingAdvisorBriefingResumePostErrors[keyof ResumeBriefingAdvisorBriefingResumePostErrors];
+
+export type ResumeBriefingAdvisorBriefingResumePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type CronRunDueAdvisorCronRunDuePostData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Cron-Secret
+         */
+        'x-cron-secret'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/advisor/cron/run-due';
+};
+
+export type CronRunDueAdvisorCronRunDuePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CronRunDueAdvisorCronRunDuePostError = CronRunDueAdvisorCronRunDuePostErrors[keyof CronRunDueAdvisorCronRunDuePostErrors];
+
+export type CronRunDueAdvisorCronRunDuePostResponses = {
+    /**
+     * Successful Response
+     */
+    202: unknown;
+};
+
+export type ListBudgetsBudgetGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/budget/';
+};
+
+export type ListBudgetsBudgetGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type CreateBudgetBudgetPostData = {
+    body: BudgetRequest;
+    path?: never;
+    query?: never;
+    url: '/budget/';
+};
+
+export type CreateBudgetBudgetPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateBudgetBudgetPostError = CreateBudgetBudgetPostErrors[keyof CreateBudgetBudgetPostErrors];
+
+export type CreateBudgetBudgetPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: unknown;
+};
+
+export type DeleteBudgetBudgetBudgetIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Budget Id
+         */
+        budget_id: string;
+    };
+    query?: never;
+    url: '/budget/{budget_id}';
+};
+
+export type DeleteBudgetBudgetBudgetIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteBudgetBudgetBudgetIdDeleteError = DeleteBudgetBudgetBudgetIdDeleteErrors[keyof DeleteBudgetBudgetBudgetIdDeleteErrors];
+
+export type DeleteBudgetBudgetBudgetIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteBudgetBudgetBudgetIdDeleteResponse = DeleteBudgetBudgetBudgetIdDeleteResponses[keyof DeleteBudgetBudgetBudgetIdDeleteResponses];
+
+export type GetBudgetBudgetBudgetIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Budget Id
+         */
+        budget_id: string;
+    };
+    query?: never;
+    url: '/budget/{budget_id}';
+};
+
+export type GetBudgetBudgetBudgetIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetBudgetBudgetBudgetIdGetError = GetBudgetBudgetBudgetIdGetErrors[keyof GetBudgetBudgetBudgetIdGetErrors];
+
+export type GetBudgetBudgetBudgetIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UpdateBudgetBudgetBudgetIdPatchData = {
+    body: BudgetUpdateRequest;
+    path: {
+        /**
+         * Budget Id
+         */
+        budget_id: string;
+    };
+    query?: never;
+    url: '/budget/{budget_id}';
+};
+
+export type UpdateBudgetBudgetBudgetIdPatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateBudgetBudgetBudgetIdPatchError = UpdateBudgetBudgetBudgetIdPatchErrors[keyof UpdateBudgetBudgetBudgetIdPatchErrors];
+
+export type UpdateBudgetBudgetBudgetIdPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetBudgetSummaryBudgetBudgetIdSummaryGetData = {
+    body?: never;
+    path: {
+        /**
+         * Budget Id
+         */
+        budget_id: string;
+    };
+    query?: never;
+    url: '/budget/{budget_id}/summary';
+};
+
+export type GetBudgetSummaryBudgetBudgetIdSummaryGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetBudgetSummaryBudgetBudgetIdSummaryGetError = GetBudgetSummaryBudgetBudgetIdSummaryGetErrors[keyof GetBudgetSummaryBudgetBudgetIdSummaryGetErrors];
+
+export type GetBudgetSummaryBudgetBudgetIdSummaryGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListDebtsDebtGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Active Only
+         */
+        active_only?: boolean;
+    };
+    url: '/debt/';
+};
+
+export type ListDebtsDebtGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListDebtsDebtGetError = ListDebtsDebtGetErrors[keyof ListDebtsDebtGetErrors];
+
+export type ListDebtsDebtGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type AddDebtDebtPostData = {
+    body: DebtRequest;
+    path?: never;
+    query?: never;
+    url: '/debt/';
+};
+
+export type AddDebtDebtPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AddDebtDebtPostError = AddDebtDebtPostErrors[keyof AddDebtDebtPostErrors];
+
+export type AddDebtDebtPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: unknown;
+};
+
+export type GetPayoffPlanDebtPayoffPlanGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Extra Monthly Payment
+         */
+        extra_monthly_payment?: number;
+        /**
+         * Strategy
+         */
+        strategy?: string;
+    };
+    url: '/debt/payoff-plan';
+};
+
+export type GetPayoffPlanDebtPayoffPlanGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetPayoffPlanDebtPayoffPlanGetError = GetPayoffPlanDebtPayoffPlanGetErrors[keyof GetPayoffPlanDebtPayoffPlanGetErrors];
+
+export type GetPayoffPlanDebtPayoffPlanGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type DeleteDebtDebtDebtIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Debt Id
+         */
+        debt_id: string;
+    };
+    query?: never;
+    url: '/debt/{debt_id}';
+};
+
+export type DeleteDebtDebtDebtIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteDebtDebtDebtIdDeleteError = DeleteDebtDebtDebtIdDeleteErrors[keyof DeleteDebtDebtDebtIdDeleteErrors];
+
+export type DeleteDebtDebtDebtIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteDebtDebtDebtIdDeleteResponse = DeleteDebtDebtDebtIdDeleteResponses[keyof DeleteDebtDebtDebtIdDeleteResponses];
+
+export type GetDebtDebtDebtIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Debt Id
+         */
+        debt_id: string;
+    };
+    query?: never;
+    url: '/debt/{debt_id}';
+};
+
+export type GetDebtDebtDebtIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetDebtDebtDebtIdGetError = GetDebtDebtDebtIdGetErrors[keyof GetDebtDebtDebtIdGetErrors];
+
+export type GetDebtDebtDebtIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UpdateDebtDebtDebtIdPatchData = {
+    body: DebtUpdateRequest;
+    path: {
+        /**
+         * Debt Id
+         */
+        debt_id: string;
+    };
+    query?: never;
+    url: '/debt/{debt_id}';
+};
+
+export type UpdateDebtDebtDebtIdPatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateDebtDebtDebtIdPatchError = UpdateDebtDebtDebtIdPatchErrors[keyof UpdateDebtDebtDebtIdPatchErrors];
+
+export type UpdateDebtDebtDebtIdPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListHoldingsPortfolioGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Active Only
+         */
+        active_only?: boolean;
+    };
+    url: '/portfolio/';
+};
+
+export type ListHoldingsPortfolioGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListHoldingsPortfolioGetError = ListHoldingsPortfolioGetErrors[keyof ListHoldingsPortfolioGetErrors];
+
+export type ListHoldingsPortfolioGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type AddHoldingPortfolioPostData = {
+    body: HoldingRequest;
+    path?: never;
+    query?: never;
+    url: '/portfolio/';
+};
+
+export type AddHoldingPortfolioPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AddHoldingPortfolioPostError = AddHoldingPortfolioPostErrors[keyof AddHoldingPortfolioPostErrors];
+
+export type AddHoldingPortfolioPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: unknown;
+};
+
+export type GetSummaryPortfolioSummaryGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Target
+         *
+         * Repeatable asset_class:pct, e.g. equity:0.6
+         */
+        target?: Array<string>;
+    };
+    url: '/portfolio/summary';
+};
+
+export type GetSummaryPortfolioSummaryGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetSummaryPortfolioSummaryGetError = GetSummaryPortfolioSummaryGetErrors[keyof GetSummaryPortfolioSummaryGetErrors];
+
+export type GetSummaryPortfolioSummaryGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type DeleteHoldingPortfolioHoldingIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Holding Id
+         */
+        holding_id: string;
+    };
+    query?: never;
+    url: '/portfolio/{holding_id}';
+};
+
+export type DeleteHoldingPortfolioHoldingIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteHoldingPortfolioHoldingIdDeleteError = DeleteHoldingPortfolioHoldingIdDeleteErrors[keyof DeleteHoldingPortfolioHoldingIdDeleteErrors];
+
+export type DeleteHoldingPortfolioHoldingIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteHoldingPortfolioHoldingIdDeleteResponse = DeleteHoldingPortfolioHoldingIdDeleteResponses[keyof DeleteHoldingPortfolioHoldingIdDeleteResponses];
+
+export type GetHoldingPortfolioHoldingIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Holding Id
+         */
+        holding_id: string;
+    };
+    query?: never;
+    url: '/portfolio/{holding_id}';
+};
+
+export type GetHoldingPortfolioHoldingIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetHoldingPortfolioHoldingIdGetError = GetHoldingPortfolioHoldingIdGetErrors[keyof GetHoldingPortfolioHoldingIdGetErrors];
+
+export type GetHoldingPortfolioHoldingIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UpdateHoldingPortfolioHoldingIdPatchData = {
+    body: HoldingUpdateRequest;
+    path: {
+        /**
+         * Holding Id
+         */
+        holding_id: string;
+    };
+    query?: never;
+    url: '/portfolio/{holding_id}';
+};
+
+export type UpdateHoldingPortfolioHoldingIdPatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateHoldingPortfolioHoldingIdPatchError = UpdateHoldingPortfolioHoldingIdPatchErrors[keyof UpdateHoldingPortfolioHoldingIdPatchErrors];
+
+export type UpdateHoldingPortfolioHoldingIdPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListSubscriptionsSubscriptionsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Active Only
+         */
+        active_only?: boolean;
+    };
+    url: '/subscriptions/';
+};
+
+export type ListSubscriptionsSubscriptionsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListSubscriptionsSubscriptionsGetError = ListSubscriptionsSubscriptionsGetErrors[keyof ListSubscriptionsSubscriptionsGetErrors];
+
+export type ListSubscriptionsSubscriptionsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type AddSubscriptionSubscriptionsPostData = {
+    body: SubscriptionRequest;
+    path?: never;
+    query?: never;
+    url: '/subscriptions/';
+};
+
+export type AddSubscriptionSubscriptionsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AddSubscriptionSubscriptionsPostError = AddSubscriptionSubscriptionsPostErrors[keyof AddSubscriptionSubscriptionsPostErrors];
+
+export type AddSubscriptionSubscriptionsPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: unknown;
+};
+
+export type GetAllReportsSubscriptionsReportsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/subscriptions/reports';
+};
+
+export type GetAllReportsSubscriptionsReportsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type DeleteSubscriptionSubscriptionsSubscriptionIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Subscription Id
+         */
+        subscription_id: string;
+    };
+    query?: never;
+    url: '/subscriptions/{subscription_id}';
+};
+
+export type DeleteSubscriptionSubscriptionsSubscriptionIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteSubscriptionSubscriptionsSubscriptionIdDeleteError = DeleteSubscriptionSubscriptionsSubscriptionIdDeleteErrors[keyof DeleteSubscriptionSubscriptionsSubscriptionIdDeleteErrors];
+
+export type DeleteSubscriptionSubscriptionsSubscriptionIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteSubscriptionSubscriptionsSubscriptionIdDeleteResponse = DeleteSubscriptionSubscriptionsSubscriptionIdDeleteResponses[keyof DeleteSubscriptionSubscriptionsSubscriptionIdDeleteResponses];
+
+export type GetSubscriptionSubscriptionsSubscriptionIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Subscription Id
+         */
+        subscription_id: string;
+    };
+    query?: never;
+    url: '/subscriptions/{subscription_id}';
+};
+
+export type GetSubscriptionSubscriptionsSubscriptionIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetSubscriptionSubscriptionsSubscriptionIdGetError = GetSubscriptionSubscriptionsSubscriptionIdGetErrors[keyof GetSubscriptionSubscriptionsSubscriptionIdGetErrors];
+
+export type GetSubscriptionSubscriptionsSubscriptionIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UpdateSubscriptionSubscriptionsSubscriptionIdPatchData = {
+    body: SubscriptionUpdateRequest;
+    path: {
+        /**
+         * Subscription Id
+         */
+        subscription_id: string;
+    };
+    query?: never;
+    url: '/subscriptions/{subscription_id}';
+};
+
+export type UpdateSubscriptionSubscriptionsSubscriptionIdPatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateSubscriptionSubscriptionsSubscriptionIdPatchError = UpdateSubscriptionSubscriptionsSubscriptionIdPatchErrors[keyof UpdateSubscriptionSubscriptionsSubscriptionIdPatchErrors];
+
+export type UpdateSubscriptionSubscriptionsSubscriptionIdPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetSubscriptionReportSubscriptionsSubscriptionIdReportGetData = {
+    body?: never;
+    path: {
+        /**
+         * Subscription Id
+         */
+        subscription_id: string;
+    };
+    query?: never;
+    url: '/subscriptions/{subscription_id}/report';
+};
+
+export type GetSubscriptionReportSubscriptionsSubscriptionIdReportGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetSubscriptionReportSubscriptionsSubscriptionIdReportGetError = GetSubscriptionReportSubscriptionsSubscriptionIdReportGetErrors[keyof GetSubscriptionReportSubscriptionsSubscriptionIdReportGetErrors];
+
+export type GetSubscriptionReportSubscriptionsSubscriptionIdReportGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListPoliciesInsurancePoliciesGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Active Only
+         */
+        active_only?: boolean;
+    };
+    url: '/insurance/policies';
+};
+
+export type ListPoliciesInsurancePoliciesGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListPoliciesInsurancePoliciesGetError = ListPoliciesInsurancePoliciesGetErrors[keyof ListPoliciesInsurancePoliciesGetErrors];
+
+export type ListPoliciesInsurancePoliciesGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type AddPolicyInsurancePoliciesPostData = {
+    body: PolicyRequest;
+    path?: never;
+    query?: never;
+    url: '/insurance/policies';
+};
+
+export type AddPolicyInsurancePoliciesPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AddPolicyInsurancePoliciesPostError = AddPolicyInsurancePoliciesPostErrors[keyof AddPolicyInsurancePoliciesPostErrors];
+
+export type AddPolicyInsurancePoliciesPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: unknown;
+};
+
+export type GetCoverageReportInsuranceReportGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/insurance/report';
+};
+
+export type GetCoverageReportInsuranceReportGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListTargetsInsuranceTargetsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/insurance/targets';
+};
+
+export type ListTargetsInsuranceTargetsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SetTargetInsuranceTargetsPutData = {
+    body: TargetRequest;
+    path?: never;
+    query?: never;
+    url: '/insurance/targets';
+};
+
+export type SetTargetInsuranceTargetsPutErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SetTargetInsuranceTargetsPutError = SetTargetInsuranceTargetsPutErrors[keyof SetTargetInsuranceTargetsPutErrors];
+
+export type SetTargetInsuranceTargetsPutResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type DeleteTargetInsuranceTargetsPolicyTypeDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Policy Type
+         */
+        policy_type: string;
+    };
+    query?: never;
+    url: '/insurance/targets/{policy_type}';
+};
+
+export type DeleteTargetInsuranceTargetsPolicyTypeDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteTargetInsuranceTargetsPolicyTypeDeleteError = DeleteTargetInsuranceTargetsPolicyTypeDeleteErrors[keyof DeleteTargetInsuranceTargetsPolicyTypeDeleteErrors];
+
+export type DeleteTargetInsuranceTargetsPolicyTypeDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteTargetInsuranceTargetsPolicyTypeDeleteResponse = DeleteTargetInsuranceTargetsPolicyTypeDeleteResponses[keyof DeleteTargetInsuranceTargetsPolicyTypeDeleteResponses];
+
+export type DeletePolicyInsurancePoliciesPolicyIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Policy Id
+         */
+        policy_id: string;
+    };
+    query?: never;
+    url: '/insurance/policies/{policy_id}';
+};
+
+export type DeletePolicyInsurancePoliciesPolicyIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeletePolicyInsurancePoliciesPolicyIdDeleteError = DeletePolicyInsurancePoliciesPolicyIdDeleteErrors[keyof DeletePolicyInsurancePoliciesPolicyIdDeleteErrors];
+
+export type DeletePolicyInsurancePoliciesPolicyIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeletePolicyInsurancePoliciesPolicyIdDeleteResponse = DeletePolicyInsurancePoliciesPolicyIdDeleteResponses[keyof DeletePolicyInsurancePoliciesPolicyIdDeleteResponses];
+
+export type GetPolicyInsurancePoliciesPolicyIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Policy Id
+         */
+        policy_id: string;
+    };
+    query?: never;
+    url: '/insurance/policies/{policy_id}';
+};
+
+export type GetPolicyInsurancePoliciesPolicyIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetPolicyInsurancePoliciesPolicyIdGetError = GetPolicyInsurancePoliciesPolicyIdGetErrors[keyof GetPolicyInsurancePoliciesPolicyIdGetErrors];
+
+export type GetPolicyInsurancePoliciesPolicyIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UpdatePolicyInsurancePoliciesPolicyIdPatchData = {
+    body: PolicyUpdateRequest;
+    path: {
+        /**
+         * Policy Id
+         */
+        policy_id: string;
+    };
+    query?: never;
+    url: '/insurance/policies/{policy_id}';
+};
+
+export type UpdatePolicyInsurancePoliciesPolicyIdPatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdatePolicyInsurancePoliciesPolicyIdPatchError = UpdatePolicyInsurancePoliciesPolicyIdPatchErrors[keyof UpdatePolicyInsurancePoliciesPolicyIdPatchErrors];
+
+export type UpdatePolicyInsurancePoliciesPolicyIdPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetBalanceSheetReportsBalanceSheetGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/reports/balance-sheet';
+};
+
+export type GetBalanceSheetReportsBalanceSheetGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetNetWorthStatementReportsNetWorthGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/reports/net-worth';
+};
+
+export type GetNetWorthStatementReportsNetWorthGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetGoalProgressReportReportsGoalProgressGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/reports/goal-progress';
+};
+
+export type GetGoalProgressReportReportsGoalProgressGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ExportReportCsvReportsReportTypeExportGetData = {
+    body?: never;
+    path: {
+        /**
+         * Report Type
+         */
+        report_type: string;
+    };
+    query?: never;
+    url: '/reports/{report_type}/export';
+};
+
+export type ExportReportCsvReportsReportTypeExportGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ExportReportCsvReportsReportTypeExportGetError = ExportReportCsvReportsReportTypeExportGetErrors[keyof ExportReportCsvReportsReportTypeExportGetErrors];
+
+export type ExportReportCsvReportsReportTypeExportGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
 
 export type HealthHealthzGetData = {
     body?: never;

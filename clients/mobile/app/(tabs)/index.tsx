@@ -1,262 +1,202 @@
-import { View, Text, ActivityIndicator, Pressable } from "react-native";
-import { Link, useRouter } from "expo-router";
-import { Home, TrendingUp, Wallet, Activity } from "lucide-react-native";
-import { ScreenShell, PageHeader, CardContainer } from "@/components/ui/page-shell";
-import { BentoTile, useTileIconColor } from "@/components/ui/bento-tile";
-import { SparklineWatermark, BarsWatermark, LandmarkWatermark } from "@/components/ui/card-watermarks";
-import { PostingRow } from "@/components/PostingRow";
-import { DeadlineChip } from "@/components/DeadlineChip";
-import { AvatarMoreButton } from "@/components/layout/AvatarMoreButton";
-import { useDashboard } from "@/hooks/useDashboard";
-import { useTax } from "@/hooks/useTax";
-import { useFiScore } from "@/hooks/useFi";
-import { useThemeColors, useColorScheme } from "@/lib/theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { PiggyBank, Plus, Settings, TrendingUp, Upload } from "lucide-react-native";
+import { Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-function compact(s: string): { main: string; suffix: string } {
-  const n = parseFloat(s.replace(/,/g, ""));
-  if (!isFinite(n)) return { main: s, suffix: "" };
-  if (Math.abs(n) >= 1_000_000) return { main: (n / 1_000_000).toFixed(2), suffix: "M" };
-  if (Math.abs(n) >= 1_000) return { main: (n / 1_000).toFixed(0), suffix: "K" };
-  return { main: s, suffix: "" };
-}
+import { AvatarMoreButton } from "@/components/layout/AvatarMoreButton";
+import { Card } from "@/components/ui/card";
+import { PageShell } from "@/components/ui/page-shell";
+import { StatTile } from "@/components/ui/stat-tile";
+import { useDashboard } from "@/hooks/useDashboard";
+import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
+import { useThemeColors } from "@/lib/theme";
+import { useSalliStore } from "@/lib/store";
 
 export default function DashboardScreen() {
-  const { loading, netWorth, incomeYtd, expensesYtd, upcomingReminders, recentEntries } = useDashboard();
-  const { latest: latestTax } = useTax();
-  const fiScore = useFiScore();
-  const theme = useThemeColors();
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
   const router = useRouter();
-  const navyIconColor = useTileIconColor("navy");
-  const greenIconColor = useTileIconColor("green");
-  const purpleIconColor = useTileIconColor("purple");
+  const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
+  const { netWorth, fiScore, tax, accounts, entries, budgetSummary } = useDashboard();
+  const requestQuickAddEntry = useSalliStore((s) => s.requestQuickAddEntry);
 
-  const s = fiScore.data;
-  const fiScoreValue = s ? Math.round(Number(s.overall_score)) : 0;
-
-  const nw = compact(netWorth);
-  const inc = compact(incomeYtd);
-  const exp = compact(expensesYtd);
-  const today = new Date().toLocaleDateString("en-LK", { month: "short", day: "numeric", year: "numeric" });
+  const topAccount = accounts.find((a) => a.type === "asset");
 
   return (
-    <ScreenShell>
-      <PageHeader title="Overview" subtitle={`${today} · LKR`} actions={<AvatarMoreButton />} />
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <LinearGradient
+        colors={["#0B20E0", "#0912B0", "#060A6A", "#020518", "#000000"]}
+        locations={[0, 0.28, 0.52, 0.78, 1]}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400 }}
+      />
+      <PageShell contentContainerStyle={{ paddingTop: insets.top }}>
+        <View className="flex-row items-center px-4 pt-2">
+          <AvatarMoreButton initial="D" />
+          <View className="flex-1 flex-row items-center justify-center gap-2.5">
+            <Text className="font-sans-semibold text-[14px] text-white">Jul 2026</Text>
+          </View>
+          <Pressable
+            onPress={() => router.push("/(tabs)/more/settings")}
+            className="h-9 w-9 items-center justify-center rounded-full bg-white/10"
+          >
+            <Settings size={16} color="#FFFFFF" strokeWidth={2} />
+          </Pressable>
+        </View>
 
-      <View className="gap-3">
-        <BentoTile
-          variant="navy"
-          label="Net Worth"
-          sub="Total financial standing"
-          value={loading ? "—" : nw.main}
-          suffix={nw.suffix || undefined}
-          minHeight={140}
-          icon={<Home size={15} color={navyIconColor} strokeWidth={2} />}
-          watermark={<SparklineWatermark />}
-        />
+        <View className="items-center px-6 pb-5 pt-4">
+          <Text className="mb-1.5 text-[12px] font-sans-medium uppercase tracking-wide text-white/45">
+            Net Worth
+          </Text>
+          <View className="flex-row items-baseline gap-1">
+            <Text className="font-sans-bold text-[24px] tracking-tight text-white/45">Rs.</Text>
+            <Text className="font-sans-extrabold text-[52px] tracking-tighter text-white">
+              {netWorth ? formatLKRAbbrev(netWorth.current_net_worth) : "—"}
+            </Text>
+          </View>
+        </View>
 
-        <View className="flex-row gap-3">
-          <BentoTile
-            variant="green"
-            label="Income YTD"
-            value={loading ? "—" : inc.main}
-            suffix={inc.suffix || undefined}
-            badge={loading ? undefined : "YTD"}
-            style={{ flex: 1 }}
-            icon={<TrendingUp size={15} color={greenIconColor} strokeWidth={2} />}
-            watermark={<BarsWatermark />}
+        <View className="flex-row gap-1.5 px-3.5 pb-3.5">
+          <StatTile onDark label="Income" value={tax ? formatLKRAbbrev(tax.gross_income) : "—"} hint="YTD" className="flex-1" />
+          <StatTile onDark label="Expenses" value="—" hint="YTD" className="flex-1" />
+          <StatTile
+            onDark
+            label="Tax"
+            value={tax ? formatLKRAbbrev(tax.tax_payable) : "—"}
+            hint="AY 25/26"
+            className="flex-1"
           />
-          <BentoTile
-            variant="purple"
-            label="Expenses YTD"
-            value={loading ? "—" : exp.main}
-            suffix={exp.suffix || undefined}
-            badge={loading ? undefined : "YTD"}
-            style={{ flex: 1 }}
-            icon={<Wallet size={15} color={purpleIconColor} strokeWidth={2} />}
+          <StatTile
+            onDark
+            label="FI Score"
+            value={
+              fiScore ? (
+                <Text className="font-sans-bold text-[14px] text-white">
+                  {fiScore.overall_score}
+                  <Text className="font-sans text-[10px] text-white/30">/100</Text>
+                </Text>
+              ) : (
+                "—"
+              )
+            }
+            hint={fiScore ? `Grade ${fiScore.grade}` : undefined}
+            className="flex-1"
           />
         </View>
 
-        {/* Tax Payable — mirrors clients/web dashboard's gold Tax Payable tile */}
-        <Pressable
-          onPress={() => router.push("/(tabs)/more/tax")}
-          className="rounded-[20px] overflow-hidden p-[18px]"
-          style={{ backgroundColor: "#e7bd61" }}
-        >
-          <View style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }} pointerEvents="none">
-            <LandmarkWatermark />
-          </View>
-          <Text style={{ fontSize: 10.5, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase", color: "rgba(23,18,8,0.55)" }}>
-            Tax Payable
-          </Text>
-          <Text style={{ fontSize: 11, color: "rgba(23,18,8,0.5)", marginTop: 3 }}>
-            Assessment Year 2025/26 · due Sep 30, 2026
-          </Text>
-          {latestTax.isLoading ? (
-            <ActivityIndicator color="#171208" style={{ marginTop: 14, alignSelf: "flex-start" }} />
-          ) : (
-            <Text style={{ fontSize: 28, fontWeight: "900", letterSpacing: -1, color: "#171208", marginTop: 14, marginBottom: 6 }}>
-              {latestTax.data?.tax_payable ?? "—"} <Text style={{ fontSize: 14 }}>LKR</Text>
-            </Text>
-          )}
-          <Text style={{ fontSize: 12, fontWeight: "800", color: "#171208" }}>View full breakdown →</Text>
-        </Pressable>
+        <View className="flex-row gap-2 px-4 pb-3.5">
+          <Pressable className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-white/10 bg-white/[0.08]">
+            <Upload size={13} color="rgba(255,255,255,0.6)" strokeWidth={2} />
+            <Text className="font-sans-medium text-[11px] text-white/60">Upload</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              requestQuickAddEntry();
+              router.push("/(tabs)/ledger");
+            }}
+            className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-white/10 bg-white/[0.08]"
+          >
+            <Plus size={13} color="rgba(255,255,255,0.6)" strokeWidth={2.5} />
+            <Text className="font-sans-medium text-[11px] text-white/60">New Entry</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push("/(tabs)/agent")}
+            className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control bg-salli-accent"
+          >
+            <PiggyBank size={13} color="rgba(255,255,255,0.8)" strokeWidth={1.8} />
+            <Text className="font-sans-semibold text-[11px] text-white">Ask Scrooge</Text>
+          </Pressable>
+        </View>
 
-        {/* FI Score — mirrors clients/web dashboard's dark FI Score tile */}
-        <Pressable
-          onPress={() => router.push("/(tabs)/financial-independence")}
-          className="rounded-card p-5"
-          style={{ backgroundColor: "#010001" }}
-        >
-          <View className="flex-row items-center gap-2 mb-1">
-            <Activity size={14} color="#E8FC85" />
-            <Text style={{ fontSize: 10.5, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>
-              FI Score
-            </Text>
-          </View>
-          {fiScore.isLoading || !s ? (
-            <ActivityIndicator color="#E8FC85" style={{ marginTop: 8, alignSelf: "flex-start" }} />
-          ) : (
-            <>
-              <View className="flex-row items-baseline gap-1.5 mb-1 mt-1">
-                <Text style={{ fontSize: 44, fontWeight: "900", letterSpacing: -1.5, color: "#E8FC85", lineHeight: 48 }}>
-                  {fiScoreValue}
+        {budgetSummary ? (
+          <Card className="mx-4 mb-3.5 p-3.5">
+            <View className="mb-2.5 flex-row items-center justify-between">
+              <Text className="font-sans-semibold text-[14px] text-foreground">Monthly Budget</Text>
+              <Text className="text-[12px] text-foreground/30">Jul 2026</Text>
+            </View>
+            <View className="flex-row overflow-hidden rounded-[12px] bg-foreground/[0.06]" style={{ gap: 1 }}>
+              <View className="flex-1 bg-muted px-3 py-2.5">
+                <Text className="mb-1 text-[10px] font-sans-medium tracking-wide text-foreground/35">SPENT</Text>
+                <Text className="font-sans-bold text-[15px] tracking-tight text-foreground">
+                  Rs. {formatLKRAbbrev(budgetSummary.total_actual)}
                 </Text>
-                <Text style={{ fontSize: 15, fontWeight: "600", color: "rgba(255,255,255,0.25)" }}>/100</Text>
               </View>
-              <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", marginBottom: 14 }}>
-                {s.grade} · Standard FIRE
-              </Text>
-              <View className="gap-2.5 mb-4">
-                {s.components.slice(0, 3).map((c) => {
-                  const v = Number(c.score);
-                  const amber = v < 50;
-                  return (
-                    <View key={c.key} className="flex-row items-center justify-between gap-2">
-                      <Text style={{ fontSize: 11.5, color: "rgba(255,255,255,0.45)", width: 92 }} numberOfLines={1}>
-                        {c.label}
-                      </Text>
-                      <View style={{ flex: 1, height: 3, backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 999, overflow: "hidden" }}>
-                        <View style={{ width: `${v}%`, height: "100%", backgroundColor: amber ? "#F59E0B" : "#E8FC85", borderRadius: 999 }} />
-                      </View>
-                      <Text style={{ fontSize: 11, fontWeight: "700", color: amber ? "#F59E0B" : "rgba(255,255,255,0.5)", width: 22, textAlign: "right" }}>
-                        {v.toFixed(0)}
-                      </Text>
-                    </View>
-                  );
-                })}
+              <View className="flex-1 bg-muted px-3 py-2.5">
+                <Text className="mb-1 text-[10px] font-sans-medium tracking-wide text-foreground/35">LEFT</Text>
+                <Text className="font-sans-bold text-[15px] tracking-tight text-foreground">
+                  Rs.{" "}
+                  {formatLKRAbbrev(Number(budgetSummary.total_limit) - Number(budgetSummary.total_actual))}
+                </Text>
               </View>
-            </>
-          )}
-          <Text style={{ fontSize: 12, fontWeight: "800", color: "#E8FC85" }}>View FIRE strategy →</Text>
-        </Pressable>
-
-        <CardContainer>
-          <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-foreground text-[14px]" style={{ fontFamily: "DMSans_700Bold", letterSpacing: -0.3 }}>
-              Recent Entries
-            </Text>
-            <Link href="/(tabs)/ledger" asChild>
-              <Text className="text-muted-foreground text-[13px]" style={{ fontFamily: "DMSans_600SemiBold" }}>
-                All
-              </Text>
-            </Link>
-          </View>
-          {loading ? (
-            <ActivityIndicator color={theme.foreground} />
-          ) : recentEntries.length === 0 ? (
-            <View className="items-center gap-2 py-6">
-              <Text className="text-[13px] font-medium text-foreground">No transactions yet</Text>
-              <Text className="text-[12px] text-muted-foreground">Upload a bank statement on the web app to get started</Text>
+              <View className="flex-1 bg-muted px-3 py-2.5">
+                <Text className="mb-1 text-[10px] font-sans-medium tracking-wide text-foreground/35">LIMIT</Text>
+                <Text className="font-sans-bold text-[15px] tracking-tight text-foreground/40">
+                  Rs. {formatLKRAbbrev(budgetSummary.total_limit)}
+                </Text>
+              </View>
             </View>
+          </Card>
+        ) : null}
+
+        <View className="px-4 pb-3">
+          <View className="mb-2.5 flex-row items-center justify-between">
+            <Text className="font-sans-semibold text-[15px] text-foreground">Accounts</Text>
+            <Pressable onPress={() => router.push("/(tabs)/ledger")}>
+              <Text className="font-sans-medium text-[13px] text-salli-accent">See all</Text>
+            </Pressable>
+          </View>
+          {topAccount ? (
+            <Card className="flex-row items-center gap-3 p-3.5">
+              <View className="h-10 w-10 items-center justify-center rounded-[12px] bg-salli-accent">
+                <Text className="font-sans-bold text-[16px] text-white">{topAccount.name.charAt(0)}</Text>
+              </View>
+              <View className="flex-1">
+                <Text className="font-sans-semibold text-[14px] text-foreground">{topAccount.name}</Text>
+                <Text className="text-[12px] text-foreground/35">Asset · {topAccount.currency}</Text>
+              </View>
+            </Card>
           ) : (
-            recentEntries.map((entry, i) => {
-              const fp = entry.postings[0];
-              if (!fp) return null;
-              return (
-                <PostingRow
-                  key={entry.id}
-                  date={entry.entry_date}
-                  description={entry.description}
-                  amount={fp.amount}
-                  isCredit={fp.direction === -1}
-                  currency={fp.currency}
-                  isLast={i === recentEntries.length - 1}
-                />
-              );
-            })
+            <Card className="items-center p-5">
+              <Text className="text-[13px] text-foreground/35">No accounts yet.</Text>
+            </Card>
           )}
-        </CardContainer>
+        </View>
 
-        <CardContainer>
-          <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-foreground text-[14px]" style={{ fontFamily: "DMSans_700Bold", letterSpacing: -0.3 }}>
-              Deadlines
-            </Text>
-            <Link href="/(tabs)/more/reminders" asChild>
-              <Text className="text-muted-foreground text-[13px]" style={{ fontFamily: "DMSans_600SemiBold" }}>
-                All
-              </Text>
-            </Link>
+        <View className="px-4">
+          <View className="mb-2.5 flex-row items-center justify-between">
+            <Text className="font-sans-semibold text-[15px] text-foreground">Recent Entries</Text>
+            <Pressable onPress={() => router.push("/(tabs)/ledger")}>
+              <Text className="font-sans-medium text-[13px] text-salli-accent">See all</Text>
+            </Pressable>
           </View>
-          {upcomingReminders.length === 0 ? (
-            <View className="items-center py-4">
-              <Text className="text-[13px] text-muted-foreground">No upcoming deadlines</Text>
-            </View>
+          {entries.length === 0 ? (
+            <Card className="items-center p-5">
+              <Text className="text-[13px] text-foreground/35">
+                No transactions yet — upload a statement to get started.
+              </Text>
+            </Card>
           ) : (
             <View className="gap-2">
-              {upcomingReminders.map((r) => {
-                const isOverdue = r.status !== "done" && new Date(r.due_date) < new Date();
-                const isDueSoon = !isOverdue && new Date(r.due_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+              {entries.map((entry) => {
+                const firstDebit = entry.postings.find((p) => p.direction === 1);
                 return (
-                  <View
-                    key={r.id}
-                    className="flex-row items-center justify-between p-3 rounded-2xl"
-                    style={{
-                      backgroundColor: isOverdue
-                        ? (isDark ? "#4C0519" : "#FEE2E2")
-                        : isDueSoon
-                          ? (isDark ? "#451A03" : "#FEF3C7")
-                          : theme.muted,
-                    }}
-                  >
-                    <View style={{ flex: 1, marginRight: 8 }}>
-                      <Text
-                        className="text-[13px]"
-                        numberOfLines={1}
-                        style={{
-                          fontFamily: "DMSans_700Bold",
-                          color: isOverdue
-                            ? (isDark ? "#FDA4AF" : "#7F1D1D")
-                            : isDueSoon
-                              ? (isDark ? "#FCD34D" : "#78350F")
-                              : theme.foreground,
-                        }}
-                      >
-                        {r.kind}
-                      </Text>
-                      <Text
-                        className="text-[11.5px] mt-0.5"
-                        style={{
-                          color: isOverdue
-                            ? (isDark ? "#FB7185" : "#B91C1C")
-                            : isDueSoon
-                              ? "#B45309"
-                              : theme.mutedForeground,
-                        }}
-                      >
-                        {new Date(r.due_date).toLocaleDateString("en-LK", { month: "short", day: "numeric" })}
-                      </Text>
+                  <Card key={entry.id} className="flex-row items-center gap-2.5 p-3">
+                    <View className="h-[38px] w-[38px] items-center justify-center rounded-[12px] bg-foreground/[0.06]">
+                      <TrendingUp size={17} color={colors.mutedForeground} strokeWidth={2} />
                     </View>
-                    <DeadlineChip dueDate={r.due_date} done={r.status === "done"} />
-                  </View>
+                    <View className="flex-1">
+                      <Text className="font-sans-semibold text-[13px] text-foreground">{entry.description}</Text>
+                      <Text className="text-[11px] text-foreground/30">{entry.source} · {entry.entry_date}</Text>
+                    </View>
+                    <Text className="font-sans-bold text-[14px] text-foreground/70">
+                      Rs. {formatLKR(firstDebit?.amount ?? "0", 0)}
+                    </Text>
+                  </Card>
                 );
               })}
             </View>
           )}
-        </CardContainer>
-      </View>
-    </ScreenShell>
+        </View>
+      </PageShell>
+    </View>
   );
 }

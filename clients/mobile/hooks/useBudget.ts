@@ -1,67 +1,48 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api-fetch";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-/** Mirrors clients/web/src/hooks/useBudget.ts */
+import { createBudgetBudgetPost, getBudgetSummaryBudgetBudgetIdSummaryGet, listBudgetsBudgetGet } from "@/lib/api/sdk.gen";
 
-export type BudgetLine = { account_id: string; limit_amount: string };
-
-export type Budget = {
-  id: string;
+export type BudgetListItem = { id: string; period_start: string; period_end: string; lines: unknown[] };
+export type BudgetSummaryLine = { category: string; limit_amount: string; actual_amount: string; variance: string };
+export type BudgetSummaryFull = {
   period_start: string;
   period_end: string;
-  lines: BudgetLine[];
-  created_at?: string | null;
-  updated_at?: string | null;
-};
-
-export type BudgetSummaryLine = {
-  account_id: string;
-  category: string;
-  limit_amount: string;
-  actual_amount: string;
-  variance: string;
-};
-
-export type BudgetSummary = {
-  id: string;
-  period_start: string;
-  period_end: string;
+  lines: BudgetSummaryLine[];
   total_limit: string;
   total_actual: string;
   total_variance: string;
-  lines: BudgetSummaryLine[];
 };
 
 export function useBudgets() {
   return useQuery({
-    queryKey: ["budget", "list"],
-    queryFn: () => apiFetch<{ budgets: Budget[] }>("GET", "/budget/").then((d) => d.budgets),
-    staleTime: 30_000,
+    queryKey: ["budgets"],
+    queryFn: async () => {
+      const { data } = await listBudgetsBudgetGet({ throwOnError: true });
+      return (data as unknown as { budgets: BudgetListItem[] }).budgets;
+    },
   });
 }
 
-export function useBudgetSummary(budgetId: string | null) {
+export function useBudgetSummaryFull(budgetId: string | undefined) {
   return useQuery({
-    queryKey: ["budget", "summary", budgetId],
-    queryFn: () => apiFetch<BudgetSummary>("GET", `/budget/${budgetId}/summary`),
-    enabled: !!budgetId,
-    staleTime: 15_000,
+    queryKey: ["budget-summary-full", budgetId],
+    queryFn: async () => {
+      const { data } = await getBudgetSummaryBudgetBudgetIdSummaryGet({
+        path: { budget_id: budgetId! },
+        throwOnError: true,
+      });
+      return data as unknown as BudgetSummaryFull;
+    },
+    enabled: Boolean(budgetId),
   });
 }
 
 export function useCreateBudget() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { period_start: string; period_end: string; lines: BudgetLine[] }) =>
-      apiFetch<{ id: string }>("POST", "/budget/", body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["budget"] }),
-  });
-}
-
-export function useDeleteBudget() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => apiFetch("DELETE", `/budget/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["budget"] }),
+    mutationFn: async (input: { period_start: string; period_end: string; lines: { account_id: string; limit_amount: number }[] }) => {
+      await createBudgetBudgetPost({ body: input, throwOnError: true });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["budgets"] }),
   });
 }

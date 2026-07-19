@@ -1,244 +1,159 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api-fetch";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-/**
- * Mirrors clients/web/src/hooks/useFi.ts — FI endpoints aren't in the generated
- * SDK yet (mobile's openapi.json has no /fi or /advisor paths), so this uses the
- * same generic `apiFetch` wrapper web uses for these routes.
- */
+import {
+  createGoalFiGoalsPost,
+  deleteGoalFiGoalsGoalIdDelete,
+  generateStrategyFiStrategyGeneratePost,
+  getProjectionsFiProjectionsGet,
+  getScoreFiScoreGet,
+  getStrategyFiStrategyGet,
+  latestReportAdvisorReportsLatestGet,
+  listGoalsFiGoalsGet,
+  runAdvisorAdvisorRunPost,
+} from "@/lib/api/sdk.gen";
+import type { FiScore } from "./useDashboard";
 
-export type FiComponent = { key: string; label: string; score: string; weight: string; detail: string };
-
-export type FiScore = {
-  overall_score: string;
-  grade: string;
-  monthly_income: string;
-  monthly_expenses: string;
-  monthly_surplus: string;
-  savings_rate: string;
-  annual_expenses: string;
+export type FiProjections = {
   fi_number: string;
-  net_worth: string;
-  progress_to_fi: string;
-  emergency_fund_months: string;
-  debt_to_asset: string;
-  projected_fi_date: string | null;
-  currency: string;
-  components: FiComponent[];
+  fire_year_conservative: number | string;
+  fire_year_base: number | string;
+  fire_year_growth: number | string;
+  current_portfolio: string;
 };
 
-export type Goal = {
+export type FiStrategy = {
+  version: number;
+  fire_style: string;
+  swr: string;
+  return_conservative: string;
+  return_base: string;
+  return_growth: string;
+  target_monthly_expenses: string;
+  target_age: number | null;
+  buckets: { name: string; target_pct: string; description: string }[];
+  ai_rationale?: string;
+};
+
+export type FiGoal = {
   id: string;
   name: string;
   kind: string;
   target_amount: string;
   current_amount: string;
-  target_date: string | null;
-  priority: number;
   progress: number;
+  target_date: string | null;
 };
 
-export type Recommendation = {
+export type AdvisorRecommendation = {
   id: string;
   title: string;
-  rationale: string;
   category: string;
+  status: string;
+  rationale: string;
   priority: number;
-  bucket_key: string | null;
-  action_type: "none" | "reminder";
-  action_params: { label?: string; due_in_days?: number | null };
-  status: "pending" | "applied" | "dismissed";
 };
 
-export type AdvisoryReport = {
+export type AdvisorReport = {
   id: string;
-  trigger: string;
   summary: string;
-  fire_tier_assessment?: string;
-  recommendations: Recommendation[];
-  created_at: string;
+  fire_tier_assessment: string;
+  recommendations: AdvisorRecommendation[];
 };
-
-// ── Score ─────────────────────────────────────────────────────────────────────
 
 export function useFiScore() {
   return useQuery({
-    queryKey: ["fi", "score"],
-    queryFn: () => apiFetch<FiScore>("GET", "/fi/score"),
-    staleTime: 60_000,
+    queryKey: ["fi-score"],
+    queryFn: async () => {
+      const { data } = await getScoreFiScoreGet({ throwOnError: true });
+      return data as unknown as FiScore;
+    },
   });
 }
 
-export function useRecomputeScore() {
+export function useFiProjections() {
+  return useQuery({
+    queryKey: ["fi-projections"],
+    queryFn: async () => {
+      const { data } = await getProjectionsFiProjectionsGet({ throwOnError: true });
+      return data as unknown as FiProjections;
+    },
+  });
+}
+
+export function useFiStrategy() {
+  return useQuery({
+    queryKey: ["fi-strategy"],
+    queryFn: async () => {
+      const { data } = await getStrategyFiStrategyGet({ throwOnError: true });
+      return data as unknown as FiStrategy | null;
+    },
+  });
+}
+
+export function useGenerateStrategy() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => apiFetch<FiScore>("POST", "/fi/score/recompute"),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["fi", "score"] }),
+    mutationFn: async () => {
+      const { data } = await generateStrategyFiStrategyGeneratePost({ throwOnError: true });
+      return data as unknown as FiStrategy;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["fi-strategy"] }),
   });
 }
 
-// ── Goals ─────────────────────────────────────────────────────────────────────
-
-export function useGoals() {
+export function useFiGoals() {
   return useQuery({
-    queryKey: ["fi", "goals"],
-    queryFn: () => apiFetch<{ goals: Goal[] }>("GET", "/fi/goals").then((d) => d.goals),
-    staleTime: 30_000,
+    queryKey: ["fi-goals"],
+    queryFn: async () => {
+      const { data } = await listGoalsFiGoalsGet({ throwOnError: true });
+      return (data as unknown as { goals: FiGoal[] }).goals;
+    },
   });
 }
 
-export function useCreateGoal() {
+export function useFiGoalMutations() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body: Record<string, unknown>) => apiFetch("POST", "/fi/goals", body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["fi"] }),
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["fi-goals"] });
+
+  const createGoal = useMutation({
+    mutationFn: async (input: { name: string; target_amount: number; target_date?: string }) => {
+      await createGoalFiGoalsPost({
+        body: { name: input.name, kind: "custom", target_amount: input.target_amount, target_date: input.target_date },
+        throwOnError: true,
+      });
+    },
+    onSuccess: invalidate,
   });
+
+  const deleteGoal = useMutation({
+    mutationFn: async (goalId: string) => {
+      await deleteGoalFiGoalsGoalIdDelete({ path: { goal_id: goalId }, throwOnError: true });
+    },
+    onSuccess: invalidate,
+  });
+
+  return { createGoal, deleteGoal };
 }
 
-export function useUpdateGoal() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
-      apiFetch("PATCH", `/fi/goals/${id}`, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["fi"] }),
-  });
-}
-
-export function useDeleteGoal() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => apiFetch("DELETE", `/fi/goals/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["fi"] }),
-  });
-}
-
-// ── FIRE Strategy ─────────────────────────────────────────────────────────────
-
-export type AllocationBucket = {
-  key: string;
-  name: string;
-  target_pct: number;
-  description: string;
-  color: string;
-};
-
-export type FireStrategy = {
-  version: number;
-  fire_style: "lean" | "standard" | "fat" | "coast";
-  swr: number;
-  return_conservative: number;
-  return_base: number;
-  return_growth: number;
-  target_monthly_expenses: number | null;
-  target_age: number | null;
-  buckets: AllocationBucket[];
-  ai_rationale: string;
-  theories_applied: string[];
-  created_at: string;
-  is_initial: boolean;
-};
-
-export type ProjectionPoint = {
-  year: number;
-  conservative: string;
-  base: string;
-  growth: string;
-};
-
-export type ProjectionsData = {
-  points: ProjectionPoint[];
-  fi_number: string;
-  fire_year_conservative: number | null;
-  fire_year_base: number | null;
-  fire_year_growth: number | null;
-  current_portfolio: string;
-};
-
-export type SurplusBreakdown = {
-  income_by_source: Record<string, string>;
-  expense_by_category: Record<string, string>;
-  gross_monthly_income: string;
-  gross_monthly_expenses: string;
-  monthly_surplus: string;
-  savings_rate: string;
-};
-
-export function useFireStrategy() {
+export function useLatestAdvisorReport() {
   return useQuery({
-    queryKey: ["fi", "strategy"],
-    queryFn: () =>
-      apiFetch<FireStrategy>("GET", "/fi/strategy").catch((e) => {
-        if (e?.message?.includes("404") || String(e).includes("404")) return null;
-        throw e;
-      }),
-    staleTime: 60_000,
-    retry: false,
-  });
-}
-
-export function useFireStrategyHistory() {
-  return useQuery({
-    queryKey: ["fi", "strategy", "history"],
-    queryFn: () =>
-      apiFetch<{ history: unknown[] }>("GET", "/fi/strategy/history").then((d) => d.history),
-    staleTime: 60_000,
-  });
-}
-
-export function useFireProjections() {
-  return useQuery({
-    queryKey: ["fi", "projections"],
-    queryFn: () => apiFetch<ProjectionsData>("GET", "/fi/projections"),
-    staleTime: 120_000,
-  });
-}
-
-export function useFireSurplus() {
-  return useQuery({
-    queryKey: ["fi", "surplus"],
-    queryFn: () => apiFetch<SurplusBreakdown>("GET", "/fi/surplus"),
-    staleTime: 120_000,
-  });
-}
-
-// ── Advisor ───────────────────────────────────────────────────────────────────
-
-export function useLatestAdvisory() {
-  return useQuery({
-    queryKey: ["fi", "advisory"],
-    queryFn: () => apiFetch<AdvisoryReport>("GET", "/advisor/reports/latest"),
-    staleTime: 30_000,
+    queryKey: ["advisor-report-latest"],
+    queryFn: async () => {
+      const { data } = await latestReportAdvisorReportsLatestGet({ throwOnError: true });
+      // Returns {} (not null) when no report exists yet.
+      const report = data as unknown as AdvisorReport;
+      return report && "id" in report ? report : null;
+    },
   });
 }
 
 export function useRunAdvisor() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => apiFetch<AdvisoryReport>("POST", "/advisor/run"),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["fi", "advisory"] });
-      qc.invalidateQueries({ queryKey: ["billing"] });
+    mutationFn: async () => {
+      const { data } = await runAdvisorAdvisorRunPost({ throwOnError: true });
+      return data as unknown as AdvisorReport;
     },
-  });
-}
-
-export function useApplyRecommendation() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ reportId, recId }: { reportId: string; recId: string }) =>
-      apiFetch("POST", `/advisor/reports/${reportId}/recommendations/${recId}/apply`),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["fi", "advisory"] });
-      qc.invalidateQueries({ queryKey: ["reminders"] });
-    },
-  });
-}
-
-export function useDismissRecommendation() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ reportId, recId }: { reportId: string; recId: string }) =>
-      apiFetch("POST", `/advisor/reports/${reportId}/recommendations/${recId}/dismiss`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["fi", "advisory"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["advisor-report-latest"] }),
   });
 }

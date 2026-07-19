@@ -1,677 +1,254 @@
-import { useState, useEffect, useRef } from "react";
-import { View, Text, Pressable, ActivityIndicator, Modal, ScrollView } from "react-native";
-import { router } from "expo-router";
-import { Eye, Plus, Pencil, Trash2, RotateCcw, X } from "lucide-react-native";
-import { ScreenShell, PageHeader, CardContainer, SectionTitle } from "@/components/ui/page-shell";
-import { PostingRow } from "@/components/PostingRow";
-import { PillButton } from "@/components/ui/pill-button";
-import { TextField } from "@/components/ui/text-field";
-import { AvatarMoreButton } from "@/components/layout/AvatarMoreButton";
-import { useLedger, type Account, type JournalEntry } from "@/hooks/useLedger";
-import { useThemeColors, useAppTheme, useThemeVars } from "@/lib/theme";
+import { Plus, Search } from "lucide-react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Pressable, Text, TextInput, View } from "react-native";
+
+import { NewEntryModal } from "@/components/NewEntryModal";
+import { Card } from "@/components/ui/card";
+import { PageShell } from "@/components/ui/page-shell";
+import { useAccounts, useEntries, useIncomeStatement, useLedgerMutations } from "@/hooks/useLedger";
+import { formatLKR } from "@/lib/format";
 import { useSalliStore } from "@/lib/store";
+import { useThemeColors } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 
-const MONO_MEDIUM = { fontFamily: "IBMPlexMono_500Medium" };
+const TABS = ["Accounts", "Journal", "Income Stmt"] as const;
+const TYPE_FILTERS = ["All", "Income", "Expense", "Manual", "Statement"] as const;
 
-const ACCOUNT_TYPES = ["asset", "liability", "equity", "income", "expense"] as const;
-type AccountType = (typeof ACCOUNT_TYPES)[number];
-
-/** Mirrors clients/web/src/app/(app)/ledger/page.tsx TYPE_COLORS */
-const TYPE_COLORS: Record<string, { light: string; dark: string }> = {
-  asset: { light: "bg-sky-50 text-sky-700", dark: "bg-sky-950 text-sky-400" },
-  liability: { light: "bg-rose-50 text-rose-700", dark: "bg-rose-950 text-rose-400" },
-  equity: { light: "bg-violet-50 text-violet-700", dark: "bg-violet-950 text-violet-400" },
-  income: { light: "bg-emerald-50 text-emerald-700", dark: "bg-emerald-950 text-emerald-400" },
-  expense: { light: "bg-amber-50 text-amber-700", dark: "bg-amber-950 text-amber-400" },
-};
-
-function fmt(v: string | number) {
-  return Number(v).toLocaleString("en-LK", { minimumFractionDigits: 2 });
+function monthRange() {
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+  return { from, to };
 }
-
-function TypeBadge({ type }: { type: string }) {
-  const { isDark } = useAppTheme();
-  const colors = TYPE_COLORS[type];
-  const cls = colors ? (isDark ? colors.dark : colors.light) : "bg-muted";
-  return (
-    <View className={`px-1.5 py-0.5 rounded ${cls}`}>
-      <Text className={`text-[11px] font-medium capitalize ${colors ? "" : "text-muted-foreground"}`}>
-        {type}
-      </Text>
-    </View>
-  );
-}
-
-type LedgerTab = "accounts" | "entries" | "income";
 
 export default function LedgerScreen() {
-  const theme = useThemeColors();
-  const { isDark } = useAppTheme();
-  const {
-    accounts,
-    entries,
-    incomeStatement,
-    accountMap,
-    addAccount,
-    updateAccount,
-    deactivateAccount,
-    addEntry,
-    reverseEntry,
-  } = useLedger();
+  const colors = useThemeColors();
+  const [tab, setTab] = useState<(typeof TABS)[number]>("Journal");
+  const [filter, setFilter] = useState<(typeof TYPE_FILTERS)[number]>("All");
+  const [search, setSearch] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
 
-  const [tab, setTab] = useState<LedgerTab>("accounts");
+  const accounts = useAccounts();
+  const entries = useEntries();
+  const { reverseEntry } = useLedgerMutations();
+  const { from, to } = monthRange();
+  const incomeStatement = useIncomeStatement(from, to);
 
-  // Add Account modal
-  const [acctOpen, setAcctOpen] = useState(false);
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
-  const [type, setType] = useState<AccountType>("asset");
-  const [currency, setCurrency] = useState("LKR");
-
-  // Edit Account modal
-  const [editAcct, setEditAcct] = useState<Account | null>(null);
-  const [editCode, setEditCode] = useState("");
-  const [editName, setEditName] = useState("");
-  const [editType, setEditType] = useState<AccountType>("asset");
-  const [editCurrency, setEditCurrency] = useState("LKR");
-
-  // Deactivate confirm
-  const [deactivateTarget, setDeactivateTarget] = useState<Account | null>(null);
-
-  // Add Entry modal
-  const [entryOpen, setEntryOpen] = useState(false);
-  const [entryDate, setEntryDate] = useState(new Date().toISOString().split("T")[0]);
-  const [entryDesc, setEntryDesc] = useState("");
-  const [debitAccountId, setDebitAccountId] = useState("");
-  const [creditAccountId, setCreditAccountId] = useState("");
-  const [amount, setAmount] = useState("");
-
-  // Opened from the floating dock's "+" button (see components/layout/FloatingTabBar.tsx)
   const quickAddEntryRequest = useSalliStore((s) => s.quickAddEntryRequest);
-  const lastHandledRequest = useRef(0);
   useEffect(() => {
-    if (quickAddEntryRequest > lastHandledRequest.current) {
-      lastHandledRequest.current = quickAddEntryRequest;
-      setTab("entries");
-      setEntryOpen(true);
+    if (quickAddEntryRequest > 0) {
+      setTab("Journal");
+      setModalVisible(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quickAddEntryRequest]);
 
-  // Reverse confirm
-  const [reverseTarget, setReverseTarget] = useState<string | null>(null);
+  const filteredEntries = useMemo(() => {
+    let list = entries.data ?? [];
+    if (search) {
+      list = list.filter((e) => e.description.toLowerCase().includes(search.toLowerCase()));
+    }
+    if (filter === "Manual" || filter === "Statement") {
+      list = list.filter((e) => e.source === filter.toLowerCase());
+    } else if (filter === "Income" || filter === "Expense") {
+      list = list.filter((e) =>
+        e.postings.some((p) => {
+          const acc = accounts.data?.find((a) => a.id === p.account_id);
+          return acc?.type === filter.toLowerCase();
+        }),
+      );
+    }
+    return list;
+  }, [entries.data, search, filter, accounts.data]);
 
-  const accountsList = accounts.data ?? [];
-  const entriesList = entries.data ?? [];
-
-  function openEdit(a: Account) {
-    setEditAcct(a);
-    setEditCode(a.code);
-    setEditName(a.name);
-    setEditType(a.type as AccountType);
-    setEditCurrency(a.currency);
-  }
-
-  function resetAddAccountForm() {
-    setCode("");
-    setName("");
-    setType("asset");
-    setCurrency("LKR");
-  }
-
-  function resetEntryForm() {
-    setEntryDesc("");
-    setDebitAccountId("");
-    setCreditAccountId("");
-    setAmount("");
-  }
-
-  async function handleAddAccount() {
-    if (!code || !name) return;
-    await addAccount.mutateAsync({ code, name, type, currency });
-    setAcctOpen(false);
-    resetAddAccountForm();
-  }
-
-  async function handleUpdateAccount() {
-    if (!editAcct || !editCode || !editName) return;
-    await updateAccount.mutateAsync({
-      id: editAcct.id,
-      code: editCode,
-      name: editName,
-      type: editType,
-      currency: editCurrency,
-    });
-    setEditAcct(null);
-  }
-
-  async function handleDeactivate() {
-    if (!deactivateTarget) return;
-    await deactivateAccount.mutateAsync(deactivateTarget.id);
-    setDeactivateTarget(null);
-  }
-
-  async function handleAddEntry() {
-    if (!entryDate || !entryDesc || !debitAccountId || !creditAccountId || !amount) return;
-    await addEntry.mutateAsync({
-      entry_date: entryDate,
-      description: entryDesc,
-      postings: [
-        { account_id: debitAccountId, direction: 1, amount, currency: "LKR" },
-        { account_id: creditAccountId, direction: -1, amount, currency: "LKR" },
-      ],
-    });
-    setEntryOpen(false);
-    resetEntryForm();
-  }
-
-  async function handleReverse() {
-    if (!reverseTarget) return;
-    await reverseEntry.mutateAsync(reverseTarget);
-    setReverseTarget(null);
-  }
+  const grouped = useMemo(() => {
+    const groups: Record<string, typeof filteredEntries> = {};
+    for (const entry of filteredEntries) {
+      (groups[entry.entry_date] ??= []).push(entry);
+    }
+    return Object.entries(groups).sort(([a], [b]) => (a < b ? 1 : -1));
+  }, [filteredEntries]);
 
   return (
-    <ScreenShell>
-      <PageHeader
-        title="Ledger"
-        subtitle="Double-entry accounting · YA 2025/26"
-        actions={
-          <>
-            <Pressable
-              onPress={() => (tab === "accounts" ? setAcctOpen(true) : setEntryOpen(true))}
-              className="w-9 h-9 rounded-full bg-primary items-center justify-center active:opacity-85"
-            >
-              <Plus color={theme.primaryForeground} size={18} />
-            </Pressable>
-            <AvatarMoreButton />
-          </>
-        }
-      />
-
-      {/* Segmented control */}
-      <View className="flex-row bg-muted rounded-full p-1 gap-0.5 mb-5">
-        <SegmentButton label="Accounts" active={tab === "accounts"} onPress={() => setTab("accounts")} />
-        <SegmentButton label="Entries" active={tab === "entries"} onPress={() => setTab("entries")} />
-        <SegmentButton label="Income Statement" active={tab === "income"} onPress={() => setTab("income")} />
+    <PageShell>
+      <View className="flex-row items-center px-5 pt-2.5">
+        <Text className="flex-1 font-sans-bold text-[22px] text-foreground">Ledger</Text>
+        <View className="flex-row items-center gap-2">
+          <Pressable className="h-[34px] w-[34px] items-center justify-center rounded-full border border-foreground/[0.08] bg-card">
+            <Search size={16} color={colors.mutedForeground} strokeWidth={2} />
+          </Pressable>
+          <Pressable
+            onPress={() => setModalVisible(true)}
+            className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
+          >
+            <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+          </Pressable>
+        </View>
       </View>
 
-      {/* ── Accounts tab ── */}
-      {tab === "accounts" && (
-        <CardContainer>
-          {accounts.isLoading ? (
-            <ActivityIndicator color={theme.foreground} />
-          ) : accountsList.length === 0 ? (
-            <View className="items-center gap-2 py-8">
-              <Text className="text-[13px] font-medium text-foreground">No accounts yet</Text>
-              <Pressable onPress={() => setAcctOpen(true)}>
-                <Text className="text-[12px] text-primary underline">Add your first account</Text>
-              </Pressable>
-            </View>
-          ) : (
-            accountsList.map((a, i) => (
-              <View
-                key={a.id}
-                className={`flex-row items-center gap-3 py-3 ${i === accountsList.length - 1 ? "" : "border-b border-border"}`}
-              >
-                <Text className="text-[11px] text-muted-foreground w-12 shrink-0" style={MONO_MEDIUM}>
-                  {a.code}
-                </Text>
-                <View className="flex-1 min-w-0">
-                  <Text className="text-[13.5px] font-medium text-foreground" numberOfLines={1}>
-                    {a.name}
-                  </Text>
-                  <View className="flex-row items-center gap-1.5 mt-1">
-                    <TypeBadge type={a.type} />
-                    <Text className="text-[11px] text-muted-foreground" style={MONO_MEDIUM}>
-                      {a.currency}
-                    </Text>
-                    {!a.is_active && (
-                      <View className="px-1.5 py-0.5 rounded bg-muted">
-                        <Text className="text-[11px] font-medium text-muted-foreground">Inactive</Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-                <View className="flex-row items-center gap-1 shrink-0">
-                  <Pressable
-                    onPress={() => router.push({ pathname: "/account-detail", params: { id: a.id } })}
-                    className="w-8 h-8 rounded-full items-center justify-center active:bg-muted"
-                  >
-                    <Eye color={theme.mutedForeground} size={15} />
-                  </Pressable>
-                  <Pressable
-                    onPress={() => openEdit(a)}
-                    className="w-8 h-8 rounded-full items-center justify-center active:bg-muted"
-                  >
-                    <Pencil color={theme.mutedForeground} size={15} />
-                  </Pressable>
-                  {a.is_active && (
-                    <Pressable
-                      onPress={() => setDeactivateTarget(a)}
-                      className="w-8 h-8 rounded-full items-center justify-center active:bg-muted"
-                    >
-                      <Trash2 color={theme.mutedForeground} size={15} />
-                    </Pressable>
-                  )}
-                </View>
-              </View>
-            ))
-          )}
-        </CardContainer>
-      )}
-
-      {/* ── Entries tab ── */}
-      {tab === "entries" && (
-        <CardContainer>
-          {entries.isLoading ? (
-            <ActivityIndicator color={theme.foreground} />
-          ) : entriesList.length === 0 ? (
-            <View className="items-center gap-2 py-8">
-              <Text className="text-[13px] font-medium text-foreground">No journal entries yet</Text>
-              <Pressable onPress={() => setEntryOpen(true)}>
-                <Text className="text-[12px] text-primary underline">Post the first entry</Text>
-              </Pressable>
-            </View>
-          ) : (
-            entriesList.map((entry: JournalEntry, i) => {
-              const fp = entry.postings[0];
-              const reversed = !!entry.reversed_by;
-              return (
-                <View
-                  key={entry.id}
-                  className={`flex-row items-center gap-2 ${reversed ? "opacity-50" : ""}`}
-                >
-                  <View className="flex-1 min-w-0">
-                    <PostingRow
-                      date={entry.entry_date}
-                      description={reversed ? `${entry.description} (reversed)` : entry.description}
-                      account={fp ? accountMap[fp.account_id]?.name : undefined}
-                      amount={fp ? fmt(fp.amount) : "—"}
-                      isCredit={fp ? fp.direction === -1 : false}
-                      currency={fp?.currency}
-                      isLast={i === entriesList.length - 1}
-                    />
-                    <View className="flex-row items-center gap-1.5 -mt-1 mb-2">
-                      <View className="px-1.5 py-0.5 rounded bg-muted">
-                        <Text className="text-[10.5px] font-medium text-muted-foreground capitalize">
-                          {entry.source}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                  {!reversed && (
-                    <Pressable
-                      onPress={() => setReverseTarget(entry.id)}
-                      className="w-8 h-8 rounded-full items-center justify-center active:bg-muted shrink-0"
-                    >
-                      <RotateCcw color={theme.mutedForeground} size={15} />
-                    </Pressable>
-                  )}
-                </View>
-              );
-            })
-          )}
-        </CardContainer>
-      )}
-
-      {/* ── Income Statement tab ── */}
-      {tab === "income" && (
-        <View className="gap-4">
-          {incomeStatement.isLoading ? (
-            <ActivityIndicator color={theme.foreground} />
-          ) : !incomeStatement.data ? (
-            <CardContainer>
-              <Text className="text-[13px] text-muted-foreground text-center py-6">
-                No income statement data available.
-              </Text>
-            </CardContainer>
-          ) : (
-            <>
-              <CardContainer>
-                <SectionTitle>Income</SectionTitle>
-                {Object.entries(incomeStatement.data.income ?? {}).length === 0 ? (
-                  <Text className="text-[13px] text-muted-foreground text-center py-4">No income recorded</Text>
-                ) : (
-                  <>
-                    {Object.entries(incomeStatement.data.income ?? {}).map(([k, v], idx, arr) => (
-                      <View
-                        key={k}
-                        className={`flex-row justify-between items-center py-2.5 ${idx === arr.length - 1 ? "" : "border-b border-border"}`}
-                      >
-                        <Text className="text-[13px] text-foreground flex-1 pr-2">{k}</Text>
-                        <Text className="text-[13px] font-medium text-foreground" style={MONO_MEDIUM}>
-                          {fmt(v)}
-                        </Text>
-                      </View>
-                    ))}
-                    <View className="flex-row justify-between items-center px-4 py-2.5 mt-3 rounded-xl" style={{ backgroundColor: "#A5FFB9" }}>
-                      <Text className="text-[13px] font-bold" style={{ color: "#010001" }}>Total Income</Text>
-                      <Text className="text-[13px] font-bold" style={[MONO_MEDIUM, { color: "#010001" }]}>
-                        {fmt(Object.values(incomeStatement.data.income ?? {}).reduce((s, v) => s + Number(v), 0))}
-                      </Text>
-                    </View>
-                  </>
-                )}
-              </CardContainer>
-
-              <CardContainer>
-                <Text className="text-[11px] font-bold uppercase tracking-widest mb-2 mt-1 text-rose-500">
-                  Expenses
-                </Text>
-                {Object.entries(incomeStatement.data.expenses ?? {}).length === 0 ? (
-                  <Text className="text-[13px] text-muted-foreground text-center py-4">No expenses recorded</Text>
-                ) : (
-                  <>
-                    {Object.entries(incomeStatement.data.expenses ?? {}).map(([k, v], idx, arr) => (
-                      <View
-                        key={k}
-                        className={`flex-row justify-between items-center py-2.5 ${idx === arr.length - 1 ? "" : "border-b border-border"}`}
-                      >
-                        <Text className="text-[13px] text-foreground flex-1 pr-2">{k}</Text>
-                        <Text className="text-[13px] font-medium text-foreground" style={MONO_MEDIUM}>
-                          {fmt(v)}
-                        </Text>
-                      </View>
-                    ))}
-                    <View className={`flex-row justify-between items-center px-4 py-2.5 mt-3 rounded-xl ${isDark ? "bg-rose-950" : "bg-rose-100"}`}>
-                      <Text className={`text-[13px] font-bold ${isDark ? "text-rose-300" : "text-rose-900"}`}>Total Expenses</Text>
-                      <Text className={`text-[13px] font-bold ${isDark ? "text-rose-300" : "text-rose-900"}`} style={MONO_MEDIUM}>
-                        {fmt(Object.values(incomeStatement.data.expenses ?? {}).reduce((s, v) => s + Number(v), 0))}
-                      </Text>
-                    </View>
-                  </>
-                )}
-              </CardContainer>
-
-              <View className="rounded-2xl px-5 py-4 flex-row items-center justify-between" style={{ backgroundColor: "#010001" }}>
-                <Text className="text-[13px] font-semibold" style={{ color: "rgba(240,238,232,0.6)" }}>
-                  Net Income
-                </Text>
-                <Text className="text-[22px] font-black" style={[MONO_MEDIUM, { color: "#E8FC85" }]}>
-                  {fmt(incomeStatement.data.net_income)}
-                </Text>
-              </View>
-            </>
-          )}
-        </View>
-      )}
-
-      {/* ── Add Account modal ── */}
-      <FormModal
-        visible={acctOpen}
-        title="Add Account"
-        onClose={() => setAcctOpen(false)}
-        onSubmit={handleAddAccount}
-        submitLabel="Create Account"
-        submitting={addAccount.isPending}
-        submitDisabled={!code || !name}
-      >
-        <FieldLabel>Code *</FieldLabel>
-        <TextField placeholder="e.g. 1100" value={code} onChangeText={setCode} className="mb-3" />
-        <FieldLabel>Name *</FieldLabel>
-        <TextField placeholder="e.g. Cash at Bank" value={name} onChangeText={setName} className="mb-3" />
-        <FieldLabel>Currency</FieldLabel>
-        <TextField placeholder="LKR" value={currency} onChangeText={setCurrency} className="mb-3" />
-        <FieldLabel>Type</FieldLabel>
-        <TypeChipPicker value={type} onChange={setType} />
-      </FormModal>
-
-      {/* ── Edit Account modal ── */}
-      <FormModal
-        visible={!!editAcct}
-        title="Edit Account"
-        onClose={() => setEditAcct(null)}
-        onSubmit={handleUpdateAccount}
-        submitLabel="Save Changes"
-        submitting={updateAccount.isPending}
-        submitDisabled={!editCode || !editName}
-      >
-        <FieldLabel>Code *</FieldLabel>
-        <TextField value={editCode} onChangeText={setEditCode} className="mb-3" />
-        <FieldLabel>Name *</FieldLabel>
-        <TextField value={editName} onChangeText={setEditName} className="mb-3" />
-        <FieldLabel>Currency</FieldLabel>
-        <TextField value={editCurrency} onChangeText={setEditCurrency} className="mb-3" />
-        <FieldLabel>Type</FieldLabel>
-        <TypeChipPicker value={editType} onChange={setEditType} />
-      </FormModal>
-
-      {/* ── Deactivate confirm modal ── */}
-      <ConfirmModal
-        visible={!!deactivateTarget}
-        title="Deactivate account?"
-        description={`${deactivateTarget?.name ?? ""} will be hidden from the chart of accounts. Existing journal entries are unaffected.`}
-        confirmLabel="Deactivate"
-        destructive
-        onCancel={() => setDeactivateTarget(null)}
-        onConfirm={handleDeactivate}
-        loading={deactivateAccount.isPending}
-      />
-
-      {/* ── Add Entry modal ── */}
-      <FormModal
-        visible={entryOpen}
-        title="New Journal Entry"
-        onClose={() => setEntryOpen(false)}
-        onSubmit={handleAddEntry}
-        submitLabel="Post Entry"
-        submitting={addEntry.isPending}
-        submitDisabled={!entryDate || !entryDesc || !debitAccountId || !creditAccountId || !amount}
-      >
-        <FieldLabel>Date *</FieldLabel>
-        <TextField placeholder="YYYY-MM-DD" value={entryDate} onChangeText={setEntryDate} className="mb-3" />
-        <FieldLabel>Description *</FieldLabel>
-        <TextField placeholder="e.g. Office supplies" value={entryDesc} onChangeText={setEntryDesc} className="mb-3" />
-        <FieldLabel>Amount (LKR) *</FieldLabel>
-        <TextField placeholder="0.00" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" className="mb-3" />
-        <FieldLabel>Debit Account *</FieldLabel>
-        <AccountChipPicker accounts={accountsList} value={debitAccountId} onChange={setDebitAccountId} />
-        <View className="h-3" />
-        <FieldLabel>Credit Account *</FieldLabel>
-        <AccountChipPicker accounts={accountsList} value={creditAccountId} onChange={setCreditAccountId} />
-        <Text className="text-[11.5px] text-muted-foreground mt-3">
-          Debit and credit use the same amount to keep the entry balanced.
-        </Text>
-      </FormModal>
-
-      {/* ── Reverse confirm modal ── */}
-      <ConfirmModal
-        visible={!!reverseTarget}
-        title="Create reversing entry?"
-        description="A new journal entry with all debits and credits swapped will be posted. Journal entries are immutable — this is the standard correction method."
-        confirmLabel="Post Reversal"
-        onCancel={() => setReverseTarget(null)}
-        onConfirm={handleReverse}
-        loading={reverseEntry.isPending}
-      />
-    </ScreenShell>
-  );
-}
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function SegmentButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} className={`flex-1 py-1.5 rounded-full items-center ${active ? "bg-card" : ""}`}>
-      <Text
-        className={`text-[12.5px] ${active ? "text-foreground" : "text-muted-foreground"}`}
-        style={{ fontFamily: active ? "DMSans_700Bold" : "DMSans_500Medium" }}
-        numberOfLines={1}
-      >
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <Text className="text-[12px] font-medium text-muted-foreground mb-1.5">{children}</Text>;
-}
-
-function TypeChipPicker({ value, onChange }: { value: AccountType; onChange: (t: AccountType) => void }) {
-  return (
-    <View className="flex-row flex-wrap gap-2">
-      {ACCOUNT_TYPES.map((t) => {
-        const active = value === t;
-        return (
+      <View className="mx-4 mt-3 flex-row border-b border-foreground/[0.08]">
+        {TABS.map((t) => (
           <Pressable
             key={t}
-            onPress={() => onChange(t)}
-            className={`px-3 py-2 rounded-full border ${active ? "bg-primary border-primary" : "bg-card border-border"}`}
+            onPress={() => setTab(t)}
+            className={cn("px-3.5 py-2", tab === t && "border-b-2 border-salli-accent")}
           >
-            <Text
-              className={`text-[12.5px] capitalize ${active ? "text-primary-foreground" : "text-foreground"}`}
-              style={{ fontFamily: active ? "DMSans_700Bold" : "DMSans_500Medium" }}
-            >
+            <Text className={cn("text-[13px]", tab === t ? "font-sans-semibold text-foreground" : "font-sans-medium text-foreground/35")}>
               {t}
             </Text>
           </Pressable>
-        );
-      })}
-    </View>
-  );
-}
+        ))}
+      </View>
 
-function AccountChipPicker({
-  accounts,
-  value,
-  onChange,
-}: {
-  accounts: Account[];
-  value: string;
-  onChange: (id: string) => void;
-}) {
-  if (accounts.length === 0) {
-    return <Text className="text-[12.5px] text-muted-foreground">No accounts available</Text>;
-  }
-  return (
-    <View className="border border-border rounded-2xl max-h-40">
-      <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}>
-        {accounts.map((a, i) => {
-          const active = value === a.id;
-          return (
-            <Pressable
-              key={a.id}
-              onPress={() => onChange(a.id)}
-              className={`flex-row items-center gap-2 px-3 py-2.5 ${i === accounts.length - 1 ? "" : "border-b border-border"} ${active ? "bg-muted" : ""}`}
-            >
-              <Text className="text-[11px] text-muted-foreground w-12" style={MONO_MEDIUM}>
-                {a.code}
-              </Text>
-              <Text
-                className={`text-[13px] flex-1 ${active ? "text-foreground" : "text-foreground"}`}
-                style={{ fontFamily: active ? "DMSans_700Bold" : "DMSans_400Regular" }}
-                numberOfLines={1}
+      {tab === "Journal" ? (
+        <>
+          <View className="flex-row items-center gap-2 px-4 pb-2 pt-2.5">
+            <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
+              <Search size={13} color={colors.mutedForeground} strokeWidth={2} />
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Search entries..."
+                placeholderTextColor="rgba(128,128,128,0.4)"
+                className="flex-1 text-[13px] text-foreground"
+              />
+            </View>
+          </View>
+          <View className="flex-row flex-wrap gap-1.5 px-4 pb-2.5">
+            {TYPE_FILTERS.map((f) => (
+              <Pressable
+                key={f}
+                onPress={() => setFilter(f)}
+                className={cn(
+                  "rounded-pill px-3 py-1",
+                  filter === f ? "bg-salli-accent" : "border border-foreground/[0.08] bg-card",
+                )}
               >
-                {a.name}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-    </View>
-  );
-}
+                <Text className={cn("text-[12px]", filter === f ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/40")}>
+                  {f}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
 
-function FormModal({
-  visible,
-  title,
-  onClose,
-  onSubmit,
-  submitLabel,
-  submitting,
-  submitDisabled,
-  children,
-}: {
-  visible: boolean;
-  title: string;
-  onClose: () => void;
-  onSubmit: () => void;
-  submitLabel: string;
-  submitting?: boolean;
-  submitDisabled?: boolean;
-  children: React.ReactNode;
-}) {
-  const theme = useThemeColors();
-  const themeVars = useThemeVars();
-  return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View className="flex-1 justify-end" style={[themeVars, { backgroundColor: "rgba(0,0,0,0.4)" }]}>
-        <View className="bg-background rounded-t-[28px] max-h-[85%]">
-          <View className="flex-row items-center justify-between px-5 pt-5 pb-3">
-            <Text className="text-foreground" style={{ fontFamily: "DMSans_900Black", fontSize: 20, letterSpacing: -0.5 }}>
-              {title}
+          <View className="gap-1.5 px-4">
+            {grouped.length === 0 ? (
+              <Card className="items-center p-6">
+                <Text className="text-[13px] text-foreground/35">No entries yet — post your first one.</Text>
+              </Card>
+            ) : (
+              grouped.map(([date, dayEntries]) => (
+                <View key={date}>
+                  <Text className="px-0.5 pb-1 pt-1.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                    {date}
+                  </Text>
+                  <View className="gap-1.5">
+                    {dayEntries.map((entry) => {
+                      const debit = entry.postings.find((p) => p.direction === 1);
+                      const credit = entry.postings.find((p) => p.direction === 2);
+                      const debitAcc = accounts.data?.find((a) => a.id === debit?.account_id);
+                      const creditAcc = accounts.data?.find((a) => a.id === credit?.account_id);
+                      const isIncome = debitAcc?.type === "asset" && creditAcc?.type === "income";
+                      const reversed = Boolean(entry.reversed_by);
+
+                      return (
+                        <Pressable
+                          key={entry.id}
+                          onLongPress={() => !reversed && reverseEntry(entry.id)}
+                          className={cn("flex-row gap-2.5 rounded-card border border-foreground/10 bg-card p-3", reversed && "opacity-40")}
+                        >
+                          <View
+                            className={cn("mt-0.5 h-9 w-[3px] rounded-pill", isIncome ? "bg-salli-accent" : "bg-foreground/15")}
+                          />
+                          <View className="flex-1">
+                            <View className="mb-1 flex-row items-start justify-between">
+                              <Text
+                                className={cn(
+                                  "font-sans-semibold text-[13px] text-foreground",
+                                  reversed && "line-through",
+                                )}
+                              >
+                                {entry.description}
+                              </Text>
+                              <Text className={cn("font-sans-bold text-[13px]", isIncome ? "text-foreground" : "text-foreground/60")}>
+                                {isIncome ? "+" : "−"}Rs. {formatLKR(debit?.amount ?? "0", 0)}
+                              </Text>
+                            </View>
+                            <Text className="mb-1 text-[11px] text-foreground/30">
+                              DR: {debitAcc?.name ?? "—"} · CR: {creditAcc?.name ?? "—"}
+                            </Text>
+                            <View className="flex-row items-center gap-1.5">
+                              <View
+                                className={cn(
+                                  "rounded-[4px] px-1.5 py-0.5",
+                                  entry.source === "statement" ? "bg-salli-accent/15" : "bg-foreground/[0.07]",
+                                )}
+                              >
+                                <Text
+                                  className={cn(
+                                    "text-[10px] font-sans-medium capitalize",
+                                    entry.source === "statement" ? "text-salli-accent" : "text-foreground/35",
+                                  )}
+                                >
+                                  {reversed ? "(reversed)" : entry.source}
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+        </>
+      ) : null}
+
+      {tab === "Accounts" ? (
+        <View className="gap-1.5 px-4 pt-2.5">
+          {(accounts.data ?? []).length === 0 ? (
+            <Card className="items-center p-6">
+              <Text className="text-[13px] text-foreground/35">No accounts found. Use the agent or web app to add one.</Text>
+            </Card>
+          ) : (
+            (accounts.data ?? []).map((a) => (
+              <Card key={a.id} className="flex-row items-center gap-3 p-3.5">
+                <View className="h-10 w-10 items-center justify-center rounded-[12px] bg-foreground/[0.07]">
+                  <Text className="font-sans-bold text-[13px] text-foreground/60">{a.code.slice(0, 2)}</Text>
+                </View>
+                <View className="flex-1">
+                  <Text className="font-sans-semibold text-[14px] text-foreground">{a.name}</Text>
+                  <Text className="text-[11px] capitalize text-foreground/35">
+                    {a.type} · {a.currency}
+                  </Text>
+                </View>
+                {!a.is_active ? (
+                  <View className="rounded-[5px] bg-foreground/[0.07] px-2 py-0.5">
+                    <Text className="text-[10px] text-foreground/35">inactive</Text>
+                  </View>
+                ) : null}
+              </Card>
+            ))
+          )}
+        </View>
+      ) : null}
+
+      {tab === "Income Stmt" ? (
+        <View className="px-4 pt-4">
+          <Card className="p-5">
+            <Text className="mb-1 text-[11px] font-sans-medium uppercase tracking-wide text-foreground/35">
+              Net Income · {from} → {to}
             </Text>
-            <Pressable onPress={onClose} className="w-8 h-8 rounded-full items-center justify-center bg-muted">
-              <X color={theme.foreground} size={16} />
-            </Pressable>
-          </View>
-          <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12 }} keyboardShouldPersistTaps="handled">
-            {children}
-          </ScrollView>
-          <View className="flex-row gap-2.5 px-5 pt-2 pb-6">
-            <PillButton variant="secondary" onPress={onClose} className="flex-1">
-              Cancel
-            </PillButton>
-            <PillButton
-              variant="primary"
-              onPress={onSubmit}
-              loading={submitting}
-              disabled={submitDisabled}
-              className="flex-1"
-            >
-              {submitLabel}
-            </PillButton>
-          </View>
+            <Text className="font-sans-extrabold text-[32px] tracking-tight text-foreground">
+              Rs. {incomeStatement.data ? formatLKR(incomeStatement.data.net_income) : "—"}
+            </Text>
+          </Card>
         </View>
-      </View>
-    </Modal>
-  );
-}
+      ) : null}
 
-function ConfirmModal({
-  visible,
-  title,
-  description,
-  confirmLabel,
-  destructive,
-  onCancel,
-  onConfirm,
-  loading,
-}: {
-  visible: boolean;
-  title: string;
-  description: string;
-  confirmLabel: string;
-  destructive?: boolean;
-  onCancel: () => void;
-  onConfirm: () => void;
-  loading?: boolean;
-}) {
-  const themeVars = useThemeVars();
-  return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={onCancel}>
-      <View className="flex-1 items-center justify-center px-6" style={[themeVars, { backgroundColor: "rgba(0,0,0,0.4)" }]}>
-        <View className="bg-background rounded-[24px] p-5 w-full max-w-[380px]">
-          <Text className="text-foreground mb-2" style={{ fontFamily: "DMSans_900Black", fontSize: 18, letterSpacing: -0.4 }}>
-            {title}
-          </Text>
-          <Text className="text-[13px] text-muted-foreground leading-[19px] mb-5">{description}</Text>
-          <View className="flex-row gap-2.5">
-            <PillButton variant="secondary" onPress={onCancel} className="flex-1">
-              Cancel
-            </PillButton>
-            <PillButton
-              variant={destructive ? "destructive" : "primary"}
-              onPress={onConfirm}
-              loading={loading}
-              className="flex-1"
-            >
-              {confirmLabel}
-            </PillButton>
-          </View>
-        </View>
-      </View>
-    </Modal>
+      <NewEntryModal visible={modalVisible} onClose={() => setModalVisible(false)} accounts={accounts.data ?? []} />
+    </PageShell>
   );
 }

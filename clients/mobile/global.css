@@ -2,61 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Mirrors clients/web/src/app/globals.css :root / .dark — keep both in sync. */
+/*
+ * Design tokens are RAW "R G B" channel triplets (not hex/rgba strings) so
+ * Tailwind's rgb(var(...) / <alpha-value>) wrapper (see tailwind.config.js)
+ * can apply opacity modifiers — text-foreground/40, border-foreground/10 —
+ * matching the mockup's technique of white-at-varying-opacity over black.
+ *
+ * Dark is the mockup's literal spec. Light is derived: same structure/radii/
+ * spacing, inverted surface scale, same fixed #2563EB accent both ways.
+ */
 :root {
-  --color-background: #F1F7F7;
-  --color-foreground: #010001;
+  --color-background: 245 245 247; /* #F5F5F7 — light canvas */
+  --color-foreground: 10 10 10; /* #0A0A0A — primary text */
 
-  --color-card: #FFFFFF;
-  --color-card-foreground: #010001;
+  --color-card: 255 255 255; /* white cards, one step up from canvas */
+  --color-card-foreground: 10 10 10;
 
-  --color-popover: #FFFFFF;
-  --color-popover-foreground: #010001;
+  --color-popover: 255 255 255;
+  --color-popover-foreground: 10 10 10;
 
-  --color-primary: #010001;
-  --color-primary-foreground: #FFFFFF;
+  --color-primary: 10 10 10; /* CTA pill = inverse of canvas (dark pill) */
+  --color-primary-foreground: 255 255 255;
 
-  --color-secondary: #E4EFEF;
-  --color-secondary-foreground: #010001;
+  --color-muted: 237 237 240; /* inset surface, darker than card */
+  --color-muted-foreground: 100 100 105;
 
-  --color-muted: #E4EFEF;
-  --color-muted-foreground: #7DA6A9;
-
-  --color-accent: #E4EFEF;
-  --color-accent-foreground: #010001;
-
-  --color-destructive: #DC2626;
-
-  --color-border: #D5E9EA;
-  --color-input: #D5E9EA;
-  --color-ring: #7DA6A9;
+  --color-destructive: 220 38 38; /* #DC2626 */
 }
 
 .dark {
-  --color-background: #111110;
-  --color-foreground: #F0EEE8;
+  --color-background: 0 0 0; /* #000000 — pure black canvas */
+  --color-foreground: 255 255 255;
 
-  --color-card: #1C1C1A;
-  --color-card-foreground: #F0EEE8;
+  --color-card: 26 26 26; /* #1a1a1a */
+  --color-card-foreground: 255 255 255;
 
-  --color-popover: #1C1C1A;
-  --color-popover-foreground: #F0EEE8;
+  --color-popover: 26 26 26;
+  --color-popover-foreground: 255 255 255;
 
-  --color-primary: #E8FC85;
-  --color-primary-foreground: #010001;
+  --color-primary: 255 255 255; /* CTA pill = inverse of canvas (white pill) */
+  --color-primary-foreground: 0 0 0;
 
-  --color-secondary: #242422;
-  --color-secondary-foreground: #F0EEE8;
+  --color-muted: 17 17 17; /* #111 — inset surface, darker than card */
+  --color-muted-foreground: 179 179 179;
 
-  --color-muted: #242422;
-  --color-muted-foreground: #7DA6A9;
-
-  --color-accent: #242422;
-  --color-accent-foreground: #F0EEE8;
-
-  --color-destructive: #EF4444;
-
-  --color-border: #2E2E2C;
-  --color-input: #2E2E2C;
-  --color-ring: #7DA6A9;
+  --color-destructive: 239 68 68; /* #EF4444 */
 }

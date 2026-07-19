@@ -3,18 +3,14 @@ import { useSalliStore } from "./store";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
 
-client.setConfig({
-  baseUrl: API_URL,
-});
+client.setConfig({ baseUrl: API_URL });
 
 client.interceptors.request.use((request) => {
   const token = useSalliStore.getState().token;
   if (token) {
-    const headers = new Headers(request.headers);
-    headers.set("Authorization", `Bearer ${token}`);
-    return new Request(request, { headers });
+    request.headers.set("Authorization", `Bearer ${token}`);
   }
   return request;
 });
 
-export { client, API_URL };
+export { API_URL };

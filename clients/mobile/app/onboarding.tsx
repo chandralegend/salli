@@ -1,696 +1,280 @@
-import { useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
-import { Check, Plus, Trash2 } from "lucide-react-native";
-import { TextField } from "@/components/ui/text-field";
-import { PillButton } from "@/components/ui/pill-button";
-import { Logo } from "@/components/Logo";
-import { apiFetch } from "@/lib/api-fetch";
-import { useSalliStore } from "@/lib/store";
-import { useThemeColors } from "@/lib/theme";
+import { useRouter } from "expo-router";
 import {
-  updateProfileIdentity,
-  declareBalanceSheet,
-  declareIncome,
-  submitRiskQuestionnaire,
-  declareGoals,
-  type OpeningBalanceItem,
-  type IncomeItem,
-  type OnboardingGoalItem,
-} from "@/hooks/useOnboardingWizard";
+  Briefcase,
+  ChevronLeft,
+  ChevronRight,
+  LineChart,
+  ListChecks,
+  Target,
+  Wallet,
+} from "lucide-react-native";
+import { useState } from "react";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// ── Types ────────────────────────────────────────────────────────────────────
+import { Logo } from "@/components/Logo";
+import { PillButton } from "@/components/ui/pill-button";
+import { TextField } from "@/components/ui/text-field";
+import { updateProfileOnboardingProfilePatch } from "@/lib/api/sdk.gen";
+import { useThemeColors } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 
-interface WizardData {
-  display_name: string;
-  date_of_birth: string;
-  dependents_count: string;
-  employment_status: string;
-  employment_type: string;
-  residency_status: string;
-  employer: string;
-  ird_number: string;
-  balances: OpeningBalanceItem[];
-  incomes: IncomeItem[];
-  time_horizon_years: string;
-  drawdown_reaction: string;
-  income_stability: string;
-  investment_experience: string;
-  goals: OnboardingGoalItem[];
-}
+const STEP_LABELS = ["Profile", "Income", "Risk", "Goals", "Review"];
 
-const GOAL_KIND_OPTIONS = [
-  { id: "financial_independence", label: "Financial independence" },
-  { id: "retirement", label: "Comfortable retirement" },
-  { id: "home", label: "Buy a home" },
-  { id: "emergency_fund", label: "Emergency fund" },
-  { id: "debt_free", label: "Become debt-free" },
-  { id: "wealth_growth", label: "Grow my wealth" },
-  { id: "custom", label: "Something else" },
+const WELCOME_ITEMS = [
+  { icon: Briefcase, title: "Your profile", detail: "Name, DOB, tax residency, employment" },
+  { icon: Wallet, title: "Accounts & balances", detail: "Bank accounts, assets, liabilities" },
+  { icon: LineChart, title: "Income sources", detail: "Employment, freelance, rental, other" },
+  { icon: ListChecks, title: "Risk profile", detail: "Investment horizon & risk tolerance" },
+  { icon: Target, title: "Financial goals", detail: "FIRE, home, emergency fund, debt-free" },
 ];
 
-const RESIDENCY_OPTIONS = [
-  { id: "resident", label: "Sri Lanka Resident" },
-  { id: "non_resident", label: "Non-Resident" },
-];
-
-const EMPLOYMENT_STATUS_OPTIONS = ["employed", "self_employed", "unemployed", "student", "retired"];
-
-const DRAWDOWN_OPTIONS = [
-  { id: "sell_all", label: "Sell everything" },
-  { id: "sell_some", label: "Sell some" },
-  { id: "hold", label: "Hold steady" },
-  { id: "buy_more", label: "Buy more" },
-];
-
-const STABILITY_OPTIONS = [
-  { id: "unstable", label: "Unstable" },
-  { id: "moderate", label: "Moderate" },
-  { id: "stable", label: "Stable" },
-];
-
-const EXPERIENCE_OPTIONS = [
-  { id: "none", label: "None" },
-  { id: "some", label: "Some" },
-  { id: "experienced", label: "Experienced" },
-];
-
-const STEPS = ["Welcome", "About you", "Opening balances", "Income", "Risk profile", "Goals", "Review"];
-
-const EMPTY_BALANCE: OpeningBalanceItem = { code: "", name: "", type: "asset", amount: 0 };
-const EMPTY_INCOME: IncomeItem = { code: "", name: "", amount: 0 };
-const EMPTY_GOAL: OnboardingGoalItem = { name: "", kind: "financial_independence", target_amount: 0, current_amount: 0, priority: 2 };
-
-const DEFAULT_DATA: WizardData = {
-  display_name: "",
-  date_of_birth: "",
-  dependents_count: "",
-  employment_status: "",
-  employment_type: "",
-  residency_status: "resident",
-  employer: "",
-  ird_number: "",
-  balances: [{ ...EMPTY_BALANCE }],
-  incomes: [{ ...EMPTY_INCOME }],
-  time_horizon_years: "",
-  drawdown_reaction: "",
-  income_stability: "",
-  investment_experience: "",
-  goals: [{ ...EMPTY_GOAL }],
-};
-
-// ── Shared bits ──────────────────────────────────────────────────────────────
-
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <Text className="text-foreground text-[12px] mb-1.5" style={{ fontFamily: "DMSans_700Bold" }}>
-      {children}
-    </Text>
-  );
-}
-
-function Heading({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <View className="mb-5">
-      <Text className="text-foreground" style={{ fontFamily: "DMSans_700Bold", fontSize: 20, letterSpacing: -0.5 }}>
-        {title}
-      </Text>
-      <Text className="text-muted-foreground text-[13px] mt-1">{subtitle}</Text>
-    </View>
-  );
-}
-
-function Chip({
-  selected,
-  label,
-  onPress,
-  className,
-}: {
-  selected: boolean;
-  label: string;
-  onPress: () => void;
-  className?: string;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className={
-        "px-3 py-2.5 rounded-xl border " +
-        (selected ? "bg-foreground border-foreground" : "bg-card border-border") +
-        (className ? " " + className : "")
-      }
-    >
-      <Text
-        className={selected ? "text-background text-[12px]" : "text-foreground text-[12px]"}
-        style={{ fontFamily: "DMSans_700Bold" }}
-      >
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
-function StepDots({ current, total }: { current: number; total: number }) {
-  return (
-    <View className="flex-row items-center justify-center gap-1.5">
-      {Array.from({ length: total }).map((_, i) => (
-        <View
-          key={i}
-          className={"rounded-full " + (i <= current ? "bg-primary" : "bg-border")}
-          style={{ width: i === current ? 18 : 7, height: 7 }}
-        />
-      ))}
-    </View>
-  );
-}
-
-// ── Step components ──────────────────────────────────────────────────────────
-
-function WelcomeStep({ onNext }: { onNext: () => void }) {
-  const items = [
-    "Your identity & tax profile",
-    "Opening balance sheet — your net worth starts non-zero",
-    "Income sources with real amounts",
-    "A scored risk-tolerance profile",
-    "Your financial goals",
-  ];
-  return (
-    <View className="items-center">
-      <Logo size={64} />
-      <Text
-        className="text-foreground mt-5 text-center"
-        style={{ fontFamily: "DMSans_700Bold", fontSize: 22, letterSpacing: -0.5 }}
-      >
-        Welcome to Salli
-      </Text>
-      <Text className="text-muted-foreground text-[13px] text-center mt-2 px-2">
-        Your personal finance and tax assistant for Sri Lanka. A real fact-find — it only takes a
-        few minutes and your numbers start working for you immediately.
-      </Text>
-
-      <View className="bg-muted rounded-xl p-4 mt-6 w-full gap-3">
-        <Text className="text-foreground text-[12px]" style={{ fontFamily: "DMSans_700Bold" }}>
-          What we&apos;ll set up:
-        </Text>
-        {items.map((item) => (
-          <View key={item} className="flex-row items-start gap-2">
-            <View className="w-4 h-4 rounded-full bg-foreground/10 items-center justify-center mt-0.5">
-              <Check size={10} color="#000" />
-            </View>
-            <Text className="text-muted-foreground text-[12px] flex-1">{item}</Text>
-          </View>
-        ))}
-      </View>
-
-      <PillButton variant="primary" onPress={onNext} className="mt-6 px-8">
-        Get started
-      </PillButton>
-    </View>
-  );
-}
-
-function IdentityStep({ data, onChange }: { data: WizardData; onChange: (u: Partial<WizardData>) => void }) {
-  return (
-    <View>
-      <Heading title="About you" subtitle="Basic personal & tax details for your profile." />
-      <View className="gap-4">
-        <View>
-          <Label>Full name</Label>
-          <TextField placeholder="e.g. Chandra Perera" value={data.display_name} onChangeText={(v) => onChange({ display_name: v })} />
-        </View>
-        <View className="flex-row gap-3">
-          <View className="flex-1">
-            <Label>Date of birth (optional)</Label>
-            <TextField placeholder="YYYY-MM-DD" value={data.date_of_birth} onChangeText={(v) => onChange({ date_of_birth: v })} />
-          </View>
-          <View className="flex-1">
-            <Label>Dependents (optional)</Label>
-            <TextField
-              keyboardType="numeric"
-              value={data.dependents_count}
-              onChangeText={(v) => onChange({ dependents_count: v.replace(/[^0-9]/g, "") })}
-            />
-          </View>
-        </View>
-        <View>
-          <Label>Residency status</Label>
-          <View className="flex-row gap-2">
-            {RESIDENCY_OPTIONS.map((opt) => (
-              <Chip
-                key={opt.id}
-                selected={data.residency_status === opt.id}
-                label={opt.label}
-                onPress={() => onChange({ residency_status: opt.id })}
-                className="flex-1"
-              />
-            ))}
-          </View>
-        </View>
-        <View>
-          <Label>Employment status</Label>
-          <View className="flex-row flex-wrap gap-2">
-            {EMPLOYMENT_STATUS_OPTIONS.map((opt) => (
-              <Chip
-                key={opt}
-                selected={data.employment_status === opt}
-                label={opt.replace("_", " ")}
-                onPress={() => onChange({ employment_status: opt })}
-                className="grow basis-[30%]"
-              />
-            ))}
-          </View>
-        </View>
-        <View className="flex-row gap-3">
-          <View className="flex-1">
-            <Label>Employer (optional)</Label>
-            <TextField placeholder="e.g. Virtusa" value={data.employer} onChangeText={(v) => onChange({ employer: v })} />
-          </View>
-          <View className="flex-1">
-            <Label>IRD number (optional)</Label>
-            <TextField placeholder="e.g. 134012345" value={data.ird_number} onChangeText={(v) => onChange({ ird_number: v })} />
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function BalanceSheetStep({ data, onChange }: { data: WizardData; onChange: (u: Partial<WizardData>) => void }) {
-  const theme = useThemeColors();
-  const lines = data.balances;
-  function setLine(i: number, patch: Partial<OpeningBalanceItem>) {
-    onChange({ balances: lines.map((l, j) => (j === i ? { ...l, ...patch } : l)) });
-  }
-  return (
-    <View>
-      <Heading
-        title="Opening balances"
-        subtitle="Declare what you already have — your net worth starts non-zero immediately. Optional; skip if you'd rather add these later."
-      />
-      <View className="gap-3">
-        {lines.map((line, i) => (
-          <View key={i} className="border border-border rounded-xl p-3 gap-2">
-            <View className="flex-row gap-2">
-              <TextField placeholder="Code (1100)" value={line.code} onChangeText={(v) => setLine(i, { code: v })} className="w-24" />
-              <TextField placeholder="Name (Cash)" value={line.name} onChangeText={(v) => setLine(i, { name: v })} className="flex-1" />
-              {lines.length > 1 && (
-                <Pressable onPress={() => onChange({ balances: lines.filter((_, j) => j !== i) })} className="w-9 items-center justify-center">
-                  <Trash2 color={theme.mutedForeground} size={16} />
-                </Pressable>
-              )}
-            </View>
-            <View className="flex-row gap-2">
-              <Chip selected={line.type === "asset"} label="Asset" onPress={() => setLine(i, { type: "asset" })} className="flex-1" />
-              <Chip selected={line.type === "liability"} label="Liability" onPress={() => setLine(i, { type: "liability" })} className="flex-1" />
-            </View>
-            <TextField
-              placeholder="Amount"
-              keyboardType="decimal-pad"
-              value={line.amount ? String(line.amount) : ""}
-              onChangeText={(v) => setLine(i, { amount: Number(v.replace(/[^0-9.]/g, "")) || 0 })}
-            />
-          </View>
-        ))}
-        <Pressable onPress={() => onChange({ balances: [...lines, { ...EMPTY_BALANCE }] })} className="flex-row items-center gap-1.5 px-1 py-1">
-          <Plus color={theme.foreground} size={14} />
-          <Text className="text-foreground text-[12.5px]" style={{ fontFamily: "DMSans_700Bold" }}>Add balance</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
-function IncomeStep({ data, onChange }: { data: WizardData; onChange: (u: Partial<WizardData>) => void }) {
-  const theme = useThemeColors();
-  const lines = data.incomes;
-  function setLine(i: number, patch: Partial<IncomeItem>) {
-    onChange({ incomes: lines.map((l, j) => (j === i ? { ...l, ...patch } : l)) });
-  }
-  return (
-    <View>
-      <Heading
-        title="Income sources"
-        subtitle="Declare a representative monthly amount per source — real numbers your FI score and cash-flow can use right away. Optional."
-      />
-      <View className="gap-3">
-        {lines.map((line, i) => (
-          <View key={i} className="border border-border rounded-xl p-3 gap-2">
-            <View className="flex-row gap-2">
-              <TextField placeholder="Code (4100)" value={line.code} onChangeText={(v) => setLine(i, { code: v })} className="w-24" />
-              <TextField placeholder="Name (Salary)" value={line.name} onChangeText={(v) => setLine(i, { name: v })} className="flex-1" />
-              {lines.length > 1 && (
-                <Pressable onPress={() => onChange({ incomes: lines.filter((_, j) => j !== i) })} className="w-9 items-center justify-center">
-                  <Trash2 color={theme.mutedForeground} size={16} />
-                </Pressable>
-              )}
-            </View>
-            <TextField
-              placeholder="Monthly amount"
-              keyboardType="decimal-pad"
-              value={line.amount ? String(line.amount) : ""}
-              onChangeText={(v) => setLine(i, { amount: Number(v.replace(/[^0-9.]/g, "")) || 0 })}
-            />
-          </View>
-        ))}
-        <Pressable onPress={() => onChange({ incomes: [...lines, { ...EMPTY_INCOME }] })} className="flex-row items-center gap-1.5 px-1 py-1">
-          <Plus color={theme.foreground} size={14} />
-          <Text className="text-foreground text-[12.5px]" style={{ fontFamily: "DMSans_700Bold" }}>Add income source</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
-function RiskStep({ data, onChange }: { data: WizardData; onChange: (u: Partial<WizardData>) => void }) {
-  return (
-    <View>
-      <Heading title="Risk profile" subtitle="A few questions to score your risk tolerance for the AI advisor." />
-      <View className="gap-4">
-        <View>
-          <Label>Investment time horizon (years)</Label>
-          <TextField
-            placeholder="e.g. 15"
-            keyboardType="numeric"
-            value={data.time_horizon_years}
-            onChangeText={(v) => onChange({ time_horizon_years: v.replace(/[^0-9]/g, "") })}
-          />
-        </View>
-        <View>
-          <Label>If your portfolio dropped 20% in a month, you&apos;d…</Label>
-          <View className="flex-row flex-wrap gap-2">
-            {DRAWDOWN_OPTIONS.map((opt) => (
-              <Chip
-                key={opt.id}
-                selected={data.drawdown_reaction === opt.id}
-                label={opt.label}
-                onPress={() => onChange({ drawdown_reaction: opt.id })}
-                className="grow basis-[47%]"
-              />
-            ))}
-          </View>
-        </View>
-        <View>
-          <Label>How stable is your income?</Label>
-          <View className="flex-row gap-2">
-            {STABILITY_OPTIONS.map((opt) => (
-              <Chip
-                key={opt.id}
-                selected={data.income_stability === opt.id}
-                label={opt.label}
-                onPress={() => onChange({ income_stability: opt.id })}
-                className="flex-1"
-              />
-            ))}
-          </View>
-        </View>
-        <View>
-          <Label>Investment experience</Label>
-          <View className="flex-row gap-2">
-            {EXPERIENCE_OPTIONS.map((opt) => (
-              <Chip
-                key={opt.id}
-                selected={data.investment_experience === opt.id}
-                label={opt.label}
-                onPress={() => onChange({ investment_experience: opt.id })}
-                className="flex-1"
-              />
-            ))}
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function GoalsStep({ data, onChange }: { data: WizardData; onChange: (u: Partial<WizardData>) => void }) {
-  const theme = useThemeColors();
-  const goals = data.goals;
-  function setGoal(i: number, patch: Partial<OnboardingGoalItem>) {
-    onChange({ goals: goals.map((g, j) => (j === i ? { ...g, ...patch } : g)) });
-  }
-  return (
-    <View>
-      <Heading title="Your goals" subtitle="What are you working toward? Add as many as you like — optional." />
-      <View className="gap-3">
-        {goals.map((g, i) => (
-          <View key={i} className="border border-border rounded-xl p-3 gap-2">
-            <View className="flex-row items-center gap-2">
-              <TextField placeholder="Goal name" value={g.name} onChangeText={(v) => setGoal(i, { name: v })} className="flex-1" />
-              {goals.length > 1 && (
-                <Pressable onPress={() => onChange({ goals: goals.filter((_, j) => j !== i) })} className="w-9 items-center justify-center">
-                  <Trash2 color={theme.mutedForeground} size={16} />
-                </Pressable>
-              )}
-            </View>
-            <View className="flex-row flex-wrap gap-1.5">
-              {GOAL_KIND_OPTIONS.map((opt) => (
-                <Pressable
-                  key={opt.id}
-                  onPress={() => setGoal(i, { kind: opt.id })}
-                  className={`px-2.5 py-1 rounded-full border ${g.kind === opt.id ? "border-foreground bg-foreground/5" : "border-border"}`}
-                >
-                  <Text
-                    className="text-[11px]"
-                    style={{ fontFamily: g.kind === opt.id ? "DMSans_700Bold" : "DMSans_400Regular", color: theme.foreground }}
-                  >
-                    {opt.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-            <View className="flex-row gap-2">
-              <TextField
-                placeholder="Target amount (LKR)"
-                keyboardType="decimal-pad"
-                value={g.target_amount ? String(g.target_amount) : ""}
-                onChangeText={(v) => setGoal(i, { target_amount: Number(v.replace(/[^0-9.]/g, "")) || 0 })}
-                className="flex-1"
-              />
-              <TextField
-                placeholder="Target date"
-                value={g.target_date ?? ""}
-                onChangeText={(v) => setGoal(i, { target_date: v })}
-                className="flex-1"
-              />
-            </View>
-          </View>
-        ))}
-        <Pressable onPress={() => onChange({ goals: [...goals, { ...EMPTY_GOAL }] })} className="flex-row items-center gap-1.5 px-1 py-1">
-          <Plus color={theme.foreground} size={14} />
-          <Text className="text-foreground text-[12.5px]" style={{ fontFamily: "DMSans_700Bold" }}>Add goal</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
-function ReviewStep({ data }: { data: WizardData }) {
-  const validBalances = data.balances.filter((b) => b.code && b.amount);
-  const validIncomes = data.incomes.filter((i) => i.code && i.amount);
-  const validGoals = data.goals.filter((g) => g.name);
-
-  return (
-    <View>
-      <Heading title="Review & complete" subtitle="Here's what we'll set up when you tap Finish." />
-      <View className="gap-3">
-        <View className="bg-muted rounded-xl p-4 gap-1.5">
-          <Text className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase mb-1">Profile</Text>
-          <View className="flex-row justify-between">
-            <Text className="text-muted-foreground text-[13px]">Name</Text>
-            <Text className="text-foreground text-[13px]" style={{ fontFamily: "DMSans_700Bold" }}>{data.display_name || "—"}</Text>
-          </View>
-          <View className="flex-row justify-between">
-            <Text className="text-muted-foreground text-[13px]">Residency</Text>
-            <Text className="text-foreground text-[13px]" style={{ fontFamily: "DMSans_700Bold" }}>
-              {data.residency_status === "resident" ? "Sri Lanka Resident" : "Non-Resident"}
-            </Text>
-          </View>
-        </View>
-
-        <View className="bg-muted rounded-xl p-4 gap-1.5">
-          <Text className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase mb-1">
-            Opening balances ({validBalances.length})
-          </Text>
-          {validBalances.length === 0 ? (
-            <Text className="text-muted-foreground text-[13px]">None declared.</Text>
-          ) : (
-            validBalances.map((b, i) => (
-              <View key={i} className="flex-row justify-between">
-                <Text className="text-foreground text-[13px]">{b.name || b.code}</Text>
-                <Text className="text-foreground text-[13px]" style={{ fontFamily: "DMSans_700Bold" }}>{b.amount.toLocaleString()}</Text>
-              </View>
-            ))
-          )}
-        </View>
-
-        <View className="bg-muted rounded-xl p-4 gap-1.5">
-          <Text className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase mb-1">
-            Income sources ({validIncomes.length})
-          </Text>
-          {validIncomes.length === 0 ? (
-            <Text className="text-muted-foreground text-[13px]">None declared.</Text>
-          ) : (
-            validIncomes.map((inc, i) => (
-              <View key={i} className="flex-row justify-between">
-                <Text className="text-foreground text-[13px]">{inc.name || inc.code}</Text>
-                <Text className="text-foreground text-[13px]" style={{ fontFamily: "DMSans_700Bold" }}>{inc.amount.toLocaleString()}/mo</Text>
-              </View>
-            ))
-          )}
-        </View>
-
-        <View className="bg-muted rounded-xl p-4 gap-1.5">
-          <Text className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase mb-1">
-            Goals ({validGoals.length})
-          </Text>
-          {validGoals.length === 0 ? (
-            <Text className="text-muted-foreground text-[13px]">None declared.</Text>
-          ) : (
-            validGoals.map((g, i) => (
-              <View key={i} className="flex-row justify-between">
-                <Text className="text-foreground text-[13px]">{g.name}</Text>
-                <Text className="text-foreground text-[13px]" style={{ fontFamily: "DMSans_700Bold" }}>
-                  {g.target_amount ? g.target_amount.toLocaleString() : "—"}
-                </Text>
-              </View>
-            ))
-          )}
-        </View>
-      </View>
-    </View>
-  );
-}
-
-// ── Main component ───────────────────────────────────────────────────────────
+const EMPLOYMENT_OPTIONS = ["employed", "self_employed", "student", "retired"] as const;
 
 export default function OnboardingScreen() {
-  const [step, setStep] = useState(0);
-  const [data, setData] = useState<WizardData>(DEFAULT_DATA);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const setOnboardingComplete = useSalliStore((s) => s.setOnboardingComplete);
+  const router = useRouter();
+  const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
+  const [step, setStep] = useState(0); // 0 = Welcome, 1..5 = the 5 labeled steps
 
-  function update(updates: Partial<WizardData>) {
-    setData((prev) => ({ ...prev, ...updates }));
-  }
+  const [fullName, setFullName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [residency, setResidency] = useState<"resident" | "non_resident">("resident");
+  const [employment, setEmployment] = useState<(typeof EMPLOYMENT_OPTIONS)[number]>("employed");
+  const [irdNumber, setIrdNumber] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  function canAdvance() {
-    if (step === 1 && !data.display_name.trim()) return false;
-    if (step === 4 && (!data.time_horizon_years || !data.drawdown_reaction || !data.income_stability || !data.investment_experience)) return false;
-    return true;
-  }
-
-  function next() {
-    if (step < STEPS.length - 1) setStep((s) => s + 1);
-  }
-
-  function back() {
-    if (step > 0) setStep((s) => s - 1);
-  }
-
-  async function finish() {
-    setLoading(true);
-    setError("");
+  const handleContinueFromAboutYou = async () => {
+    setSaving(true);
     try {
-      await updateProfileIdentity({
-        display_name: data.display_name,
-        date_of_birth: data.date_of_birth || undefined,
-        dependents_count: data.dependents_count ? Number(data.dependents_count) : undefined,
-        employment_status: data.employment_status || undefined,
-        employment_type: data.employment_type || undefined,
-        residency_status: data.residency_status,
-        employer: data.employer || undefined,
-        ird_number: data.ird_number || undefined,
+      await updateProfileOnboardingProfilePatch({
+        body: {
+          display_name: fullName,
+          date_of_birth: dateOfBirth || null,
+          residency_status: residency,
+          employment_status: employment,
+          ird_number: irdNumber || null,
+        },
       });
-
-      const validBalances = data.balances.filter((b) => b.code && b.name && b.amount);
-      if (validBalances.length > 0) await declareBalanceSheet(validBalances);
-
-      const validIncomes = data.incomes.filter((i) => i.code && i.name && i.amount);
-      if (validIncomes.length > 0) await declareIncome(validIncomes);
-
-      await submitRiskQuestionnaire({
-        time_horizon_years: Number(data.time_horizon_years),
-        drawdown_reaction: data.drawdown_reaction,
-        income_stability: data.income_stability,
-        investment_experience: data.investment_experience,
-        dependents_count: data.dependents_count ? Number(data.dependents_count) : 0,
-      });
-
-      const validGoals = data.goals.filter((g) => g.name);
-      if (validGoals.length > 0) await declareGoals(validGoals);
-
-      // Legacy completion call — still the only thing that flips the
-      // onboarding_complete flag, and idempotently creates the base starter
-      // accounts (skips any the balance-sheet/income steps already created).
-      await apiFetch("POST", "/onboarding/complete", { name: data.display_name, income_sources: [] });
-
-      setOnboardingComplete(true);
-      router.replace("/(tabs)");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setStep(2);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
+  };
+
+  if (step === 0) {
+    return (
+      <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+        <View className="flex-1 px-6 pt-4" style={{ paddingBottom: insets.bottom + 16 }}>
+          <View className="mb-5 items-center">
+            <Logo size={56} />
+            <Text className="mb-1.5 mt-3 text-center font-sans-bold text-[26px] tracking-tight text-foreground">
+              Welcome to Salli
+            </Text>
+            <Text className="text-center text-[13px] leading-5 text-foreground/40">
+              Your AI-powered financial companion,{"\n"}built for Sri Lanka.
+            </Text>
+          </View>
+
+          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            <Text className="mb-3 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+              We&apos;ll set up together in ~5 min
+            </Text>
+            <View className="gap-1.5">
+              {WELCOME_ITEMS.map((item, i) => (
+                <View
+                  key={item.title}
+                  className="flex-row items-center gap-3 rounded-control border border-foreground/[0.08] bg-card px-4 py-3"
+                >
+                  <View
+                    className={cn(
+                      "h-8 w-8 items-center justify-center rounded-[10px]",
+                      i === 0 ? "bg-salli-accent" : "bg-foreground/[0.08]",
+                    )}
+                  >
+                    <item.icon size={14} color={i === 0 ? "#FFFFFF" : colors.mutedForeground} strokeWidth={2} />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-sans-medium text-[13px] text-foreground">{item.title}</Text>
+                    <Text className="text-[11px] text-foreground/30">{item.detail}</Text>
+                  </View>
+                  <ChevronRight size={12} color={colors.mutedForeground} strokeWidth={2} />
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+
+          <View className="pt-3">
+            <PillButton onPress={() => setStep(1)}>
+              <Text className="font-sans-bold text-[15px] text-primary-foreground">Begin setup</Text>
+              <ChevronRight size={13} color={colors.primaryForeground} strokeWidth={2.5} />
+            </PillButton>
+            <View className="mt-2 flex-row justify-center gap-3">
+              <Text className="text-[11px] text-foreground/20">IRD-ready</Text>
+              <Text className="text-[11px] text-foreground/10">·</Text>
+              <Text className="text-[11px] text-foreground/20">100% private</Text>
+              <Text className="text-[11px] text-foreground/10">·</Text>
+              <Text className="text-[11px] text-foreground/20">~5 minutes</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
   }
 
-  const isLastStep = step === STEPS.length - 1;
-
-  return (
-    <SafeAreaView className="flex-1 bg-background">
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1, padding: 20, paddingBottom: 32 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View className="flex-1 justify-center">
-          <View className="items-center mb-6 gap-3">
-            <View className="flex-row items-center gap-2">
-              <Logo size={28} />
-              <Text className="text-foreground" style={{ fontFamily: "DMSans_700Bold", fontSize: 16 }}>Salli</Text>
-            </View>
-            {step > 0 && <StepDots current={step - 1} total={STEPS.length - 1} />}
+  if (step === 1) {
+    return (
+      <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+        <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
+          <View className="flex-row items-center justify-between px-5 pt-2.5">
+            <Pressable
+              onPress={() => setStep(0)}
+              className="h-[34px] w-[34px] items-center justify-center rounded-full border border-foreground/[0.08] bg-foreground/[0.07]"
+            >
+              <ChevronLeft size={14} color={colors.foreground} strokeWidth={2} />
+            </Pressable>
+            <Text className="font-sans-medium text-[13px] text-foreground/35">1 of 5</Text>
+            <View style={{ width: 34 }} />
           </View>
 
-          <View className="bg-card rounded-2xl border border-border p-5">
-            {step === 0 && <WelcomeStep onNext={next} />}
-            {step === 1 && <IdentityStep data={data} onChange={update} />}
-            {step === 2 && <BalanceSheetStep data={data} onChange={update} />}
-            {step === 3 && <IncomeStep data={data} onChange={update} />}
-            {step === 4 && <RiskStep data={data} onChange={update} />}
-            {step === 5 && <GoalsStep data={data} onChange={update} />}
-            {step === 6 && <ReviewStep data={data} />}
-
-            {!!error && (
-              <Text className="mt-4 text-[12px] text-rose-600 bg-rose-500/10 rounded-md px-3 py-2 border border-rose-500/30">
-                {error}
+          <View className="flex-row gap-1 px-4 pb-1 pt-3">
+            {STEP_LABELS.map((_, i) => (
+              <View
+                key={i}
+                className={cn("h-[3px] flex-1 rounded-pill", i === 0 ? "bg-salli-accent" : "bg-foreground/[0.15]")}
+              />
+            ))}
+          </View>
+          <View className="flex-row justify-between px-4">
+            {STEP_LABELS.map((label, i) => (
+              <Text
+                key={label}
+                className={cn("text-[10px]", i === 0 ? "font-sans-medium text-salli-accent" : "text-foreground/20")}
+              >
+                {label}
               </Text>
-            )}
-
-            {step > 0 && (
-              <View className="flex-row items-center justify-between mt-6 pt-5 border-t border-border">
-                <PillButton variant="secondary" onPress={back} className="px-4">Back</PillButton>
-
-                {isLastStep ? (
-                  <PillButton variant="primary" onPress={finish} disabled={loading} loading={loading} className="px-6">
-                    Finish setup
-                  </PillButton>
-                ) : (
-                  <PillButton variant="primary" onPress={next} disabled={!canAdvance()} className="px-6">
-                    Continue
-                  </PillButton>
-                )}
-              </View>
-            )}
+            ))}
           </View>
 
-          {step > 0 && (
-            <Text className="text-center text-muted-foreground text-[11px] mt-4">
-              Step {step} of {STEPS.length - 1} — {STEPS[step]}
-            </Text>
-          )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled">
+            <View className="pb-4 pt-4">
+              <Text className="mb-1.5 font-sans-extrabold text-[28px] tracking-tight text-foreground">
+                About You
+              </Text>
+              <Text className="text-[13px] text-foreground/35">
+                Used to compute your IRD tax and FIRE plan.
+              </Text>
+            </View>
+
+            <View className="gap-2">
+              <TextField
+                label="Full Name *"
+                active
+                value={fullName}
+                onChangeText={setFullName}
+                placeholder="Your full name"
+              />
+              <TextField
+                label="Date of Birth *"
+                value={dateOfBirth}
+                onChangeText={setDateOfBirth}
+                placeholder="YYYY-MM-DD"
+              />
+
+              <View>
+                <Text className="mb-1.5 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
+                  Tax Residency *
+                </Text>
+                <View className="flex-row rounded-pill border border-foreground/[0.08] bg-card p-1">
+                  {(["resident", "non_resident"] as const).map((value) => (
+                    <Pressable
+                      key={value}
+                      onPress={() => setResidency(value)}
+                      className={cn(
+                        "h-9 flex-1 items-center justify-center rounded-pill",
+                        residency === value && "bg-salli-accent",
+                      )}
+                    >
+                      <Text
+                        className={cn(
+                          "text-[13px] font-sans-semibold",
+                          residency === value ? "text-white" : "text-foreground/35",
+                        )}
+                      >
+                        {value === "resident" ? "Sri Lankan Resident" : "Non-Resident"}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              <View>
+                <Text className="mb-1.5 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
+                  Employment *
+                </Text>
+                <View className="flex-row flex-wrap gap-1.5">
+                  {EMPLOYMENT_OPTIONS.map((opt) => (
+                    <Pressable
+                      key={opt}
+                      onPress={() => setEmployment(opt)}
+                      className={cn(
+                        "rounded-pill border px-3.5 py-1.5",
+                        employment === opt
+                          ? "border-transparent bg-salli-accent"
+                          : "border-foreground/10 bg-foreground/[0.07]",
+                      )}
+                    >
+                      <Text
+                        className={cn(
+                          "text-[12px] font-sans-medium capitalize",
+                          employment === opt ? "text-white" : "text-foreground/45",
+                        )}
+                      >
+                        {opt.replace("_", "-")}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              <TextField
+                label="IRD Number"
+                optionalHint="optional"
+                value={irdNumber}
+                onChangeText={setIrdNumber}
+                placeholder="Add for accurate tax pre-fill"
+              />
+
+              <PillButton
+                className="mt-1"
+                loading={saving}
+                disabled={!fullName || !dateOfBirth}
+                onPress={handleContinueFromAboutYou}
+              >
+                <Text className="font-sans-semibold text-[15px] text-primary-foreground">
+                  Continue to Income
+                </Text>
+                <ChevronRight size={13} color={colors.primaryForeground} strokeWidth={2.5} />
+              </PillButton>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </View>
+    );
+  }
+
+  // Steps 2-5 (Income, Risk, Goals, Review) aren't mocked yet — see plan task 8.
+  return (
+    <View className="flex-1 items-center justify-center gap-3 bg-background px-8" style={{ paddingTop: insets.top }}>
+      <Text className="text-center font-sans-semibold text-[16px] text-foreground">
+        {STEP_LABELS[step - 1]} step — coming next
+      </Text>
+      <Text className="text-center text-[13px] text-foreground/40">
+        This step needs a design check-in before it's built.
+      </Text>
+      <Pressable onPress={() => setStep(1)} className="mt-2">
+        <Text className="text-[13px] text-salli-accent">Back</Text>
+      </Pressable>
+    </View>
   );
 }

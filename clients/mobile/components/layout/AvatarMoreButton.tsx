@@ -1,26 +1,22 @@
-import { Pressable } from "react-native";
-import { router } from "expo-router";
-import { User } from "lucide-react-native";
-import { useThemeColors } from "@/lib/theme";
+import { useRouter } from "expo-router";
+import { Pressable, Text } from "react-native";
 
-/**
- * Top-right header entry point into the More section (Tax, Reminders,
- * Documents, Statements, Billing, Settings) — replaces the dock's old
- * hamburger icon. Reads as a user avatar since Settings/session info lives
- * behind it too.
- */
-export function AvatarMoreButton() {
-  const theme = useThemeColors();
+type AvatarMoreButtonProps = {
+  initial?: string;
+};
 
+/** Header avatar button → More hub. Mockup: a filled blue circle with the
+ * user's first-initial (not a hamburger/User icon). */
+export function AvatarMoreButton({ initial = "?" }: AvatarMoreButtonProps) {
+  const router = useRouter();
   return (
     <Pressable
       onPress={() => router.push("/(tabs)/more")}
       accessibilityRole="button"
       accessibilityLabel="More"
-      className="w-10 h-10 rounded-full items-center justify-center active:opacity-80"
-      style={{ backgroundColor: theme.foreground }}
+      className="h-9 w-9 items-center justify-center rounded-full bg-salli-accent"
     >
-      <User color={theme.background} size={18} />
+      <Text className="font-sans-bold text-[15px] text-white">{initial}</Text>
     </Pressable>
   );
 }

@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddAccountAccountsPostData, AddAccountAccountsPostErrors, AddAccountAccountsPostResponses, AddEntryEntriesPostData, AddEntryEntriesPostErrors, AddEntryEntriesPostResponses, ChatAgentChatPostData, ChatAgentChatPostErrors, ChatAgentChatPostResponses, ComputeTaxTaxComputePostData, ComputeTaxTaxComputePostErrors, ComputeTaxTaxComputePostResponses, CreateReminderRemindersPostData, CreateReminderRemindersPostErrors, CreateReminderRemindersPostResponses, GetHistoryAgentHistoryThreadIdGetData, GetHistoryAgentHistoryThreadIdGetErrors, GetHistoryAgentHistoryThreadIdGetResponses, GetLatestTaxLatestGetData, GetLatestTaxLatestGetErrors, GetLatestTaxLatestGetResponses, GetPendingStatementsStatementIdGetData, GetPendingStatementsStatementIdGetErrors, GetPendingStatementsStatementIdGetResponses, HealthHealthzGetData, HealthHealthzGetResponses, IncomeStatementLedgerIncomeStatementGetData, IncomeStatementLedgerIncomeStatementGetErrors, IncomeStatementLedgerIncomeStatementGetResponses, ListAccountsAccountsGetData, ListAccountsAccountsGetResponses, ListEntriesEntriesGetData, ListEntriesEntriesGetErrors, ListEntriesEntriesGetResponses, ListPacksTaxPacksGetData, ListPacksTaxPacksGetResponses, ListRemindersRemindersGetData, ListRemindersRemindersGetErrors, ListRemindersRemindersGetResponses, MarkDoneRemindersReminderIdDonePatchData, MarkDoneRemindersReminderIdDonePatchErrors, MarkDoneRemindersReminderIdDonePatchResponses, MeAuthMeGetData, MeAuthMeGetResponses, PostApprovedStatementsStatementIdPostPostData, PostApprovedStatementsStatementIdPostPostErrors, PostApprovedStatementsStatementIdPostPostResponses, ResumeWorkflowAgentResumePostData, ResumeWorkflowAgentResumePostErrors, ResumeWorkflowAgentResumePostResponses, SeedFilingCalendarRemindersSeedPostData, SeedFilingCalendarRemindersSeedPostErrors, SeedFilingCalendarRemindersSeedPostResponses, TrialBalanceLedgerTrialBalanceGetData, TrialBalanceLedgerTrialBalanceGetErrors, TrialBalanceLedgerTrialBalanceGetResponses, UploadStatementStatementsUploadPostData, UploadStatementStatementsUploadPostErrors, UploadStatementStatementsUploadPostResponses } from './types.gen';
+import type { AddAccountAccountsPostData, AddAccountAccountsPostErrors, AddAccountAccountsPostResponses, AddDebtDebtPostData, AddDebtDebtPostErrors, AddDebtDebtPostResponses, AddEntryEntriesPostData, AddEntryEntriesPostErrors, AddEntryEntriesPostResponses, AddHoldingPortfolioPostData, AddHoldingPortfolioPostErrors, AddHoldingPortfolioPostResponses, AddPolicyInsurancePoliciesPostData, AddPolicyInsurancePoliciesPostErrors, AddPolicyInsurancePoliciesPostResponses, AddSubscriptionSubscriptionsPostData, AddSubscriptionSubscriptionsPostErrors, AddSubscriptionSubscriptionsPostResponses, ApplyRecommendationAdvisorReportsReportIdRecommendationsRecIdApplyPostData, ApplyRecommendationAdvisorReportsReportIdRecommendationsRecIdApplyPostErrors, ApplyRecommendationAdvisorReportsReportIdRecommendationsRecIdApplyPostResponses, BillingPortalBillingPortalPostData, BillingPortalBillingPortalPostResponses, ChatAgentChatPostData, ChatAgentChatPostErrors, ChatAgentChatPostResponses, CompleteOnboardingOnboardingCompletePostData, CompleteOnboardingOnboardingCompletePostErrors, CompleteOnboardingOnboardingCompletePostResponses, ComputeTaxTaxComputePostData, ComputeTaxTaxComputePostErrors, ComputeTaxTaxComputePostResponses, CreateBudgetBudgetPostData, CreateBudgetBudgetPostErrors, CreateBudgetBudgetPostResponses, CreateCheckoutBillingCheckoutPostData, CreateCheckoutBillingCheckoutPostErrors, CreateCheckoutBillingCheckoutPostResponses, CreateGoalFiGoalsPostData, CreateGoalFiGoalsPostErrors, CreateGoalFiGoalsPostResponses, CreateReminderRemindersPostData, CreateReminderRemindersPostErrors, CreateReminderRemindersPostResponses, CronRunDueAdvisorCronRunDuePostData, CronRunDueAdvisorCronRunDuePostErrors, CronRunDueAdvisorCronRunDuePostResponses, DeactivateAccountAccountsAccountIdDeleteData, DeactivateAccountAccountsAccountIdDeleteErrors, DeactivateAccountAccountsAccountIdDeleteResponses, DeclareBalanceSheetOnboardingBalanceSheetPostData, DeclareBalanceSheetOnboardingBalanceSheetPostErrors, DeclareBalanceSheetOnboardingBalanceSheetPostResponses, DeclareGoalsOnboardingGoalsPostData, DeclareGoalsOnboardingGoalsPostErrors, DeclareGoalsOnboardingGoalsPostResponses, DeclareIncomeOnboardingIncomePostData, DeclareIncomeOnboardingIncomePostErrors, DeclareIncomeOnboardingIncomePostResponses, DeleteBudgetBudgetBudgetIdDeleteData, DeleteBudgetBudgetBudgetIdDeleteErrors, DeleteBudgetBudgetBudgetIdDeleteResponses, DeleteDebtDebtDebtIdDeleteData, DeleteDebtDebtDebtIdDeleteErrors, DeleteDebtDebtDebtIdDeleteResponses, DeleteDocumentDocumentsDocIdDeleteData, DeleteDocumentDocumentsDocIdDeleteErrors, DeleteDocumentDocumentsDocIdDeleteResponses, DeleteGoalFiGoalsGoalIdDeleteData, DeleteGoalFiGoalsGoalIdDeleteErrors, DeleteGoalFiGoalsGoalIdDeleteResponses, DeleteHoldingPortfolioHoldingIdDeleteData, DeleteHoldingPortfolioHoldingIdDeleteErrors, DeleteHoldingPortfolioHoldingIdDeleteResponses, DeleteMyAccountOnboardingAccountDeleteData, DeleteMyAccountOnboardingAccountDeleteErrors, DeleteMyAccountOnboardingAccountDeleteResponses, DeletePolicyInsurancePoliciesPolicyIdDeleteData, DeletePolicyInsurancePoliciesPolicyIdDeleteErrors, DeletePolicyInsurancePoliciesPolicyIdDeleteResponses, DeleteReminderRemindersReminderIdDeleteData, DeleteReminderRemindersReminderIdDeleteErrors, DeleteReminderRemindersReminderIdDeleteResponses, DeleteSessionAgentSessionsThreadIdDeleteData, DeleteSessionAgentSessionsThreadIdDeleteErrors, DeleteSessionAgentSessionsThreadIdDeleteResponses, DeleteSubscriptionSubscriptionsSubscriptionIdDeleteData, DeleteSubscriptionSubscriptionsSubscriptionIdDeleteErrors, DeleteSubscriptionSubscriptionsSubscriptionIdDeleteResponses, DeleteTargetInsuranceTargetsPolicyTypeDeleteData, DeleteTargetInsuranceTargetsPolicyTypeDeleteErrors, DeleteTargetInsuranceTargetsPolicyTypeDeleteResponses, DismissRecommendationAdvisorReportsReportIdRecommendationsRecIdDismissPostData, DismissRecommendationAdvisorReportsReportIdRecommendationsRecIdDismissPostErrors, DismissRecommendationAdvisorReportsReportIdRecommendationsRecIdDismissPostResponses, ExportMyDataOnboardingExportGetData, ExportMyDataOnboardingExportGetResponses, ExportReportCsvReportsReportTypeExportGetData, ExportReportCsvReportsReportTypeExportGetErrors, ExportReportCsvReportsReportTypeExportGetResponses, GenerateStrategyFiStrategyGeneratePostData, GenerateStrategyFiStrategyGeneratePostResponses, GetAccountAccountsAccountIdGetData, GetAccountAccountsAccountIdGetErrors, GetAccountAccountsAccountIdGetResponses, GetAccountOverviewAccountsAccountIdOverviewGetData, GetAccountOverviewAccountsAccountIdOverviewGetErrors, GetAccountOverviewAccountsAccountIdOverviewGetResponses, GetAllReportsSubscriptionsReportsGetData, GetAllReportsSubscriptionsReportsGetResponses, GetAuditLogAgentAuditLogGetData, GetAuditLogAgentAuditLogGetErrors, GetAuditLogAgentAuditLogGetResponses, GetBalanceSheetReportsBalanceSheetGetData, GetBalanceSheetReportsBalanceSheetGetResponses, GetBudgetBudgetBudgetIdGetData, GetBudgetBudgetBudgetIdGetErrors, GetBudgetBudgetBudgetIdGetResponses, GetBudgetSummaryBudgetBudgetIdSummaryGetData, GetBudgetSummaryBudgetBudgetIdSummaryGetErrors, GetBudgetSummaryBudgetBudgetIdSummaryGetResponses, GetCoverageReportInsuranceReportGetData, GetCoverageReportInsuranceReportGetResponses, GetDebtDebtDebtIdGetData, GetDebtDebtDebtIdGetErrors, GetDebtDebtDebtIdGetResponses, GetDocumentDocumentsDocIdGetData, GetDocumentDocumentsDocIdGetErrors, GetDocumentDocumentsDocIdGetResponses, GetEntryEntriesEntryIdGetData, GetEntryEntriesEntryIdGetErrors, GetEntryEntriesEntryIdGetResponses, GetEntryProvenanceEntriesEntryIdProvenanceGetData, GetEntryProvenanceEntriesEntryIdProvenanceGetErrors, GetEntryProvenanceEntriesEntryIdProvenanceGetResponses, GetGoalProgressReportReportsGoalProgressGetData, GetGoalProgressReportReportsGoalProgressGetResponses, GetHistoryAgentHistoryThreadIdGetData, GetHistoryAgentHistoryThreadIdGetErrors, GetHistoryAgentHistoryThreadIdGetResponses, GetHoldingPortfolioHoldingIdGetData, GetHoldingPortfolioHoldingIdGetErrors, GetHoldingPortfolioHoldingIdGetResponses, GetLatestTaxLatestGetData, GetLatestTaxLatestGetErrors, GetLatestTaxLatestGetResponses, GetNetWorthStatementReportsNetWorthGetData, GetNetWorthStatementReportsNetWorthGetResponses, GetPayoffPlanDebtPayoffPlanGetData, GetPayoffPlanDebtPayoffPlanGetErrors, GetPayoffPlanDebtPayoffPlanGetResponses, GetPendingStatementsStatementIdGetData, GetPendingStatementsStatementIdGetErrors, GetPendingStatementsStatementIdGetResponses, GetPlansBillingPlansGetData, GetPlansBillingPlansGetResponses, GetPolicyInsurancePoliciesPolicyIdGetData, GetPolicyInsurancePoliciesPolicyIdGetErrors, GetPolicyInsurancePoliciesPolicyIdGetResponses, GetProfileOnboardingProfileGetData, GetProfileOnboardingProfileGetResponses, GetProjectionsFiProjectionsGetData, GetProjectionsFiProjectionsGetResponses, GetScoreFiScoreGetData, GetScoreFiScoreGetResponses, GetStatusOnboardingStatusGetData, GetStatusOnboardingStatusGetResponses, GetStrategyFiStrategyGetData, GetStrategyFiStrategyGetResponses, GetStrategyHistoryFiStrategyHistoryGetData, GetStrategyHistoryFiStrategyHistoryGetResponses, GetSubscriptionBillingSubscriptionGetData, GetSubscriptionBillingSubscriptionGetResponses, GetSubscriptionReportSubscriptionsSubscriptionIdReportGetData, GetSubscriptionReportSubscriptionsSubscriptionIdReportGetErrors, GetSubscriptionReportSubscriptionsSubscriptionIdReportGetResponses, GetSubscriptionSubscriptionsSubscriptionIdGetData, GetSubscriptionSubscriptionsSubscriptionIdGetErrors, GetSubscriptionSubscriptionsSubscriptionIdGetResponses, GetSummaryPortfolioSummaryGetData, GetSummaryPortfolioSummaryGetErrors, GetSummaryPortfolioSummaryGetResponses, GetSurplusBreakdownFiSurplusGetData, GetSurplusBreakdownFiSurplusGetResponses, HealthHealthzGetData, HealthHealthzGetResponses, IncomeStatementLedgerIncomeStatementGetData, IncomeStatementLedgerIncomeStatementGetErrors, IncomeStatementLedgerIncomeStatementGetResponses, LatestReportAdvisorReportsLatestGetData, LatestReportAdvisorReportsLatestGetResponses, ListAccountsAccountsGetData, ListAccountsAccountsGetResponses, ListBudgetsBudgetGetData, ListBudgetsBudgetGetResponses, ListDebtsDebtGetData, ListDebtsDebtGetErrors, ListDebtsDebtGetResponses, ListDocumentsDocumentsGetData, ListDocumentsDocumentsGetErrors, ListDocumentsDocumentsGetResponses, ListEntriesEntriesGetData, ListEntriesEntriesGetErrors, ListEntriesEntriesGetResponses, ListGoalsFiGoalsGetData, ListGoalsFiGoalsGetResponses, ListHoldingsPortfolioGetData, ListHoldingsPortfolioGetErrors, ListHoldingsPortfolioGetResponses, ListPacksTaxPacksGetData, ListPacksTaxPacksGetResponses, ListPoliciesInsurancePoliciesGetData, ListPoliciesInsurancePoliciesGetErrors, ListPoliciesInsurancePoliciesGetResponses, ListRemindersRemindersGetData, ListRemindersRemindersGetErrors, ListRemindersRemindersGetResponses, ListReportsAdvisorReportsGetData, ListReportsAdvisorReportsGetResponses, ListSessionsAgentSessionsGetData, ListSessionsAgentSessionsGetErrors, ListSessionsAgentSessionsGetResponses, ListSubscriptionsSubscriptionsGetData, ListSubscriptionsSubscriptionsGetErrors, ListSubscriptionsSubscriptionsGetResponses, ListTargetsInsuranceTargetsGetData, ListTargetsInsuranceTargetsGetResponses, MarkDoneRemindersReminderIdDonePatchData, MarkDoneRemindersReminderIdDonePatchErrors, MarkDoneRemindersReminderIdDonePatchResponses, MeAuthMeGetData, MeAuthMeGetResponses, PaddleWebhookBillingWebhookPostData, PaddleWebhookBillingWebhookPostResponses, PostApprovedStatementsStatementIdPostPostData, PostApprovedStatementsStatementIdPostPostErrors, PostApprovedStatementsStatementIdPostPostResponses, PrepareBriefingAdvisorBriefingPreparePostData, PrepareBriefingAdvisorBriefingPreparePostErrors, PrepareBriefingAdvisorBriefingPreparePostResponses, ReactivateAccountAccountsAccountIdReactivatePostData, ReactivateAccountAccountsAccountIdReactivatePostErrors, ReactivateAccountAccountsAccountIdReactivatePostResponses, RecomputeScoreFiScoreRecomputePostData, RecomputeScoreFiScoreRecomputePostResponses, ResumeAgentResumePostData, ResumeAgentResumePostErrors, ResumeAgentResumePostResponses, ResumeBriefingAdvisorBriefingResumePostData, ResumeBriefingAdvisorBriefingResumePostErrors, ResumeBriefingAdvisorBriefingResumePostResponses, ReverseEntryEntriesEntryIdReversePostData, ReverseEntryEntriesEntryIdReversePostErrors, ReverseEntryEntriesEntryIdReversePostResponses, RunAdvisorAdvisorRunPostData, RunAdvisorAdvisorRunPostResponses, ScoreHistoryFiScoreHistoryGetData, ScoreHistoryFiScoreHistoryGetResponses, SeedFilingCalendarRemindersSeedPostData, SeedFilingCalendarRemindersSeedPostErrors, SeedFilingCalendarRemindersSeedPostResponses, SetTargetInsuranceTargetsPutData, SetTargetInsuranceTargetsPutErrors, SetTargetInsuranceTargetsPutResponses, SubmitRiskQuestionnaireOnboardingRiskQuestionnairePostData, SubmitRiskQuestionnaireOnboardingRiskQuestionnairePostErrors, SubmitRiskQuestionnaireOnboardingRiskQuestionnairePostResponses, SyncAlertsRemindersSyncAlertsPostData, SyncAlertsRemindersSyncAlertsPostResponses, TrialBalanceLedgerTrialBalanceGetData, TrialBalanceLedgerTrialBalanceGetErrors, TrialBalanceLedgerTrialBalanceGetResponses, UpdateAccountAccountsAccountIdPatchData, UpdateAccountAccountsAccountIdPatchErrors, UpdateAccountAccountsAccountIdPatchResponses, UpdateBudgetBudgetBudgetIdPatchData, UpdateBudgetBudgetBudgetIdPatchErrors, UpdateBudgetBudgetBudgetIdPatchResponses, UpdateDebtDebtDebtIdPatchData, UpdateDebtDebtDebtIdPatchErrors, UpdateDebtDebtDebtIdPatchResponses, UpdateGoalFiGoalsGoalIdPatchData, UpdateGoalFiGoalsGoalIdPatchErrors, UpdateGoalFiGoalsGoalIdPatchResponses, UpdateHoldingPortfolioHoldingIdPatchData, UpdateHoldingPortfolioHoldingIdPatchErrors, UpdateHoldingPortfolioHoldingIdPatchResponses, UpdatePolicyInsurancePoliciesPolicyIdPatchData, UpdatePolicyInsurancePoliciesPolicyIdPatchErrors, UpdatePolicyInsurancePoliciesPolicyIdPatchResponses, UpdateProfileOnboardingProfilePatchData, UpdateProfileOnboardingProfilePatchErrors, UpdateProfileOnboardingProfilePatchResponses, UpdateSubscriptionSubscriptionsSubscriptionIdPatchData, UpdateSubscriptionSubscriptionsSubscriptionIdPatchErrors, UpdateSubscriptionSubscriptionsSubscriptionIdPatchResponses, UploadFileAgentFilesPostData, UploadFileAgentFilesPostErrors, UploadFileAgentFilesPostResponses, UploadStatementStatementsUploadPostData, UploadStatementStatementsUploadPostErrors, UploadStatementStatementsUploadPostResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -54,6 +54,57 @@ export const addAccountAccountsPost = <ThrowOnError extends boolean = false>(opt
 });
 
 /**
+ * Deactivate Account
+ */
+export const deactivateAccountAccountsAccountIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeactivateAccountAccountsAccountIdDeleteData, ThrowOnError>): RequestResult<DeactivateAccountAccountsAccountIdDeleteResponses, DeactivateAccountAccountsAccountIdDeleteErrors, ThrowOnError> => (options.client ?? client).delete<DeactivateAccountAccountsAccountIdDeleteResponses, DeactivateAccountAccountsAccountIdDeleteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/accounts/{account_id}',
+    ...options
+});
+
+/**
+ * Get Account
+ */
+export const getAccountAccountsAccountIdGet = <ThrowOnError extends boolean = false>(options: Options<GetAccountAccountsAccountIdGetData, ThrowOnError>): RequestResult<GetAccountAccountsAccountIdGetResponses, GetAccountAccountsAccountIdGetErrors, ThrowOnError> => (options.client ?? client).get<GetAccountAccountsAccountIdGetResponses, GetAccountAccountsAccountIdGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/accounts/{account_id}',
+    ...options
+});
+
+/**
+ * Update Account
+ */
+export const updateAccountAccountsAccountIdPatch = <ThrowOnError extends boolean = false>(options: Options<UpdateAccountAccountsAccountIdPatchData, ThrowOnError>): RequestResult<UpdateAccountAccountsAccountIdPatchResponses, UpdateAccountAccountsAccountIdPatchErrors, ThrowOnError> => (options.client ?? client).patch<UpdateAccountAccountsAccountIdPatchResponses, UpdateAccountAccountsAccountIdPatchErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/accounts/{account_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Account Overview
+ *
+ * Account detail, current balance, and running-balance transaction history.
+ */
+export const getAccountOverviewAccountsAccountIdOverviewGet = <ThrowOnError extends boolean = false>(options: Options<GetAccountOverviewAccountsAccountIdOverviewGetData, ThrowOnError>): RequestResult<GetAccountOverviewAccountsAccountIdOverviewGetResponses, GetAccountOverviewAccountsAccountIdOverviewGetErrors, ThrowOnError> => (options.client ?? client).get<GetAccountOverviewAccountsAccountIdOverviewGetResponses, GetAccountOverviewAccountsAccountIdOverviewGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/accounts/{account_id}/overview',
+    ...options
+});
+
+/**
+ * Reactivate Account
+ */
+export const reactivateAccountAccountsAccountIdReactivatePost = <ThrowOnError extends boolean = false>(options: Options<ReactivateAccountAccountsAccountIdReactivatePostData, ThrowOnError>): RequestResult<ReactivateAccountAccountsAccountIdReactivatePostResponses, ReactivateAccountAccountsAccountIdReactivatePostErrors, ThrowOnError> => (options.client ?? client).post<ReactivateAccountAccountsAccountIdReactivatePostResponses, ReactivateAccountAccountsAccountIdReactivatePostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/accounts/{account_id}/reactivate',
+    ...options
+});
+
+/**
  * List Entries
  */
 export const listEntriesEntriesGet = <ThrowOnError extends boolean = false>(options?: Options<ListEntriesEntriesGetData, ThrowOnError>): RequestResult<ListEntriesEntriesGetResponses, ListEntriesEntriesGetErrors, ThrowOnError> => (options?.client ?? client).get<ListEntriesEntriesGetResponses, ListEntriesEntriesGetErrors, ThrowOnError>({
@@ -73,6 +124,35 @@ export const addEntryEntriesPost = <ThrowOnError extends boolean = false>(option
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Get Entry
+ */
+export const getEntryEntriesEntryIdGet = <ThrowOnError extends boolean = false>(options: Options<GetEntryEntriesEntryIdGetData, ThrowOnError>): RequestResult<GetEntryEntriesEntryIdGetResponses, GetEntryEntriesEntryIdGetErrors, ThrowOnError> => (options.client ?? client).get<GetEntryEntriesEntryIdGetResponses, GetEntryEntriesEntryIdGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/entries/{entry_id}',
+    ...options
+});
+
+/**
+ * Get Entry Provenance
+ *
+ * Where this entry came from: a bank-statement transaction, or an attached receipt.
+ */
+export const getEntryProvenanceEntriesEntryIdProvenanceGet = <ThrowOnError extends boolean = false>(options: Options<GetEntryProvenanceEntriesEntryIdProvenanceGetData, ThrowOnError>): RequestResult<GetEntryProvenanceEntriesEntryIdProvenanceGetResponses, GetEntryProvenanceEntriesEntryIdProvenanceGetErrors, ThrowOnError> => (options.client ?? client).get<GetEntryProvenanceEntriesEntryIdProvenanceGetResponses, GetEntryProvenanceEntriesEntryIdProvenanceGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/entries/{entry_id}/provenance',
+    ...options
+});
+
+/**
+ * Reverse Entry
+ */
+export const reverseEntryEntriesEntryIdReversePost = <ThrowOnError extends boolean = false>(options: Options<ReverseEntryEntriesEntryIdReversePostData, ThrowOnError>): RequestResult<ReverseEntryEntriesEntryIdReversePostResponses, ReverseEntryEntriesEntryIdReversePostErrors, ThrowOnError> => (options.client ?? client).post<ReverseEntryEntriesEntryIdReversePostResponses, ReverseEntryEntriesEntryIdReversePostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/entries/{entry_id}/reverse',
+    ...options
 });
 
 /**
@@ -119,8 +199,9 @@ export const getLatestTaxLatestGet = <ThrowOnError extends boolean = false>(opti
 /**
  * Chat
  *
- * Stream a Tax Agent response as Server-Sent Events.
- * The client supplies a thread_id to maintain conversation history.
+ * Stream a manager agent response as Server-Sent Events.
+ * Counts one agent message against the user's monthly quota before streaming;
+ * after the stream completes a background task generates a session title via Haiku.
  */
 export const chatAgentChatPost = <ThrowOnError extends boolean = false>(options: Options<ChatAgentChatPostData, ThrowOnError>): RequestResult<ChatAgentChatPostResponses, ChatAgentChatPostErrors, ThrowOnError> => (options.client ?? client).post<ChatAgentChatPostResponses, ChatAgentChatPostErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -133,12 +214,31 @@ export const chatAgentChatPost = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
- * Resume Workflow
+ * Upload File
  *
- * Resume an interrupted return-preparation workflow after human approval.
- * The interrupt() gate in the StateGraph pauses here.
+ * Upload a file to be attached to a chat message.
+ * Returns a file_ref ID to pass in the subsequent /agent/chat request.
+ * Supported: PDF, TXT, CSV, PNG, JPG, XLSX.
  */
-export const resumeWorkflowAgentResumePost = <ThrowOnError extends boolean = false>(options: Options<ResumeWorkflowAgentResumePostData, ThrowOnError>): RequestResult<ResumeWorkflowAgentResumePostResponses, ResumeWorkflowAgentResumePostErrors, ThrowOnError> => (options.client ?? client).post<ResumeWorkflowAgentResumePostResponses, ResumeWorkflowAgentResumePostErrors, ThrowOnError>({
+export const uploadFileAgentFilesPost = <ThrowOnError extends boolean = false>(options: Options<UploadFileAgentFilesPostData, ThrowOnError>): RequestResult<UploadFileAgentFilesPostResponses, UploadFileAgentFilesPostErrors, ThrowOnError> => (options.client ?? client).post<UploadFileAgentFilesPostResponses, UploadFileAgentFilesPostErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/agent/files',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Resume
+ *
+ * Resume an interrupted agent.
+ * - workflow="chat": resumes a write-tool approval gate (decision: "approved"|"denied")
+ * - workflow="return": resumes the return-preparation workflow (decision: "approve"|"reject")
+ */
+export const resumeAgentResumePost = <ThrowOnError extends boolean = false>(options: Options<ResumeAgentResumePostData, ThrowOnError>): RequestResult<ResumeAgentResumePostResponses, ResumeAgentResumePostErrors, ThrowOnError> => (options.client ?? client).post<ResumeAgentResumePostResponses, ResumeAgentResumePostErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/agent/resume',
     ...options,
@@ -160,10 +260,216 @@ export const getHistoryAgentHistoryThreadIdGet = <ThrowOnError extends boolean =
 });
 
 /**
+ * List Sessions
+ *
+ * Return the user's conversation sessions sorted by most recent activity.
+ */
+export const listSessionsAgentSessionsGet = <ThrowOnError extends boolean = false>(options?: Options<ListSessionsAgentSessionsGetData, ThrowOnError>): RequestResult<ListSessionsAgentSessionsGetResponses, ListSessionsAgentSessionsGetErrors, ThrowOnError> => (options?.client ?? client).get<ListSessionsAgentSessionsGetResponses, ListSessionsAgentSessionsGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/agent/sessions',
+    ...options
+});
+
+/**
+ * Get Audit Log
+ *
+ * Every agent-initiated write decision (approved or denied).
+ */
+export const getAuditLogAgentAuditLogGet = <ThrowOnError extends boolean = false>(options?: Options<GetAuditLogAgentAuditLogGetData, ThrowOnError>): RequestResult<GetAuditLogAgentAuditLogGetResponses, GetAuditLogAgentAuditLogGetErrors, ThrowOnError> => (options?.client ?? client).get<GetAuditLogAgentAuditLogGetResponses, GetAuditLogAgentAuditLogGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/agent/audit-log',
+    ...options
+});
+
+/**
+ * Delete Session
+ *
+ * Delete a conversation session.
+ */
+export const deleteSessionAgentSessionsThreadIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteSessionAgentSessionsThreadIdDeleteData, ThrowOnError>): RequestResult<DeleteSessionAgentSessionsThreadIdDeleteResponses, DeleteSessionAgentSessionsThreadIdDeleteErrors, ThrowOnError> => (options.client ?? client).delete<DeleteSessionAgentSessionsThreadIdDeleteResponses, DeleteSessionAgentSessionsThreadIdDeleteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/agent/sessions/{thread_id}',
+    ...options
+});
+
+/**
+ * List Documents
+ *
+ * List agent documents. Optionally filter by namespace, tags, or full-text search.
+ */
+export const listDocumentsDocumentsGet = <ThrowOnError extends boolean = false>(options?: Options<ListDocumentsDocumentsGetData, ThrowOnError>): RequestResult<ListDocumentsDocumentsGetResponses, ListDocumentsDocumentsGetErrors, ThrowOnError> => (options?.client ?? client).get<ListDocumentsDocumentsGetResponses, ListDocumentsDocumentsGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/documents/',
+    ...options
+});
+
+/**
+ * Delete Document
+ *
+ * Permanently delete a document.
+ */
+export const deleteDocumentDocumentsDocIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteDocumentDocumentsDocIdDeleteData, ThrowOnError>): RequestResult<DeleteDocumentDocumentsDocIdDeleteResponses, DeleteDocumentDocumentsDocIdDeleteErrors, ThrowOnError> => (options.client ?? client).delete<DeleteDocumentDocumentsDocIdDeleteResponses, DeleteDocumentDocumentsDocIdDeleteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/documents/{doc_id}',
+    ...options
+});
+
+/**
+ * Get Document
+ *
+ * Retrieve a single document by ID.
+ */
+export const getDocumentDocumentsDocIdGet = <ThrowOnError extends boolean = false>(options: Options<GetDocumentDocumentsDocIdGetData, ThrowOnError>): RequestResult<GetDocumentDocumentsDocIdGetResponses, GetDocumentDocumentsDocIdGetErrors, ThrowOnError> => (options.client ?? client).get<GetDocumentDocumentsDocIdGetResponses, GetDocumentDocumentsDocIdGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/documents/{doc_id}',
+    ...options
+});
+
+/**
+ * Get Status
+ *
+ * Check whether the user has completed onboarding.
+ */
+export const getStatusOnboardingStatusGet = <ThrowOnError extends boolean = false>(options?: Options<GetStatusOnboardingStatusGetData, ThrowOnError>): RequestResult<GetStatusOnboardingStatusGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetStatusOnboardingStatusGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/onboarding/status',
+    ...options
+});
+
+/**
+ * Complete Onboarding
+ *
+ * Save profile as agent memories and create a starter chart of accounts.
+ * Idempotent — safe to call again if the user re-runs onboarding.
+ */
+export const completeOnboardingOnboardingCompletePost = <ThrowOnError extends boolean = false>(options: Options<CompleteOnboardingOnboardingCompletePostData, ThrowOnError>): RequestResult<CompleteOnboardingOnboardingCompletePostResponses, CompleteOnboardingOnboardingCompletePostErrors, ThrowOnError> => (options.client ?? client).post<CompleteOnboardingOnboardingCompletePostResponses, CompleteOnboardingOnboardingCompletePostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/onboarding/complete',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Profile
+ *
+ * The structured fact-find profile — identity, risk profile, life stage.
+ */
+export const getProfileOnboardingProfileGet = <ThrowOnError extends boolean = false>(options?: Options<GetProfileOnboardingProfileGetData, ThrowOnError>): RequestResult<GetProfileOnboardingProfileGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetProfileOnboardingProfileGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/onboarding/profile',
+    ...options
+});
+
+/**
+ * Update Profile
+ */
+export const updateProfileOnboardingProfilePatch = <ThrowOnError extends boolean = false>(options: Options<UpdateProfileOnboardingProfilePatchData, ThrowOnError>): RequestResult<UpdateProfileOnboardingProfilePatchResponses, UpdateProfileOnboardingProfilePatchErrors, ThrowOnError> => (options.client ?? client).patch<UpdateProfileOnboardingProfilePatchResponses, UpdateProfileOnboardingProfilePatchErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/onboarding/profile',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Declare Balance Sheet
+ *
+ * Post real opening-balance journal entries so net worth is non-zero immediately.
+ */
+export const declareBalanceSheetOnboardingBalanceSheetPost = <ThrowOnError extends boolean = false>(options: Options<DeclareBalanceSheetOnboardingBalanceSheetPostData, ThrowOnError>): RequestResult<DeclareBalanceSheetOnboardingBalanceSheetPostResponses, DeclareBalanceSheetOnboardingBalanceSheetPostErrors, ThrowOnError> => (options.client ?? client).post<DeclareBalanceSheetOnboardingBalanceSheetPostResponses, DeclareBalanceSheetOnboardingBalanceSheetPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/onboarding/balance-sheet',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Declare Income
+ *
+ * Post one representative monthly entry per declared income source.
+ */
+export const declareIncomeOnboardingIncomePost = <ThrowOnError extends boolean = false>(options: Options<DeclareIncomeOnboardingIncomePostData, ThrowOnError>): RequestResult<DeclareIncomeOnboardingIncomePostResponses, DeclareIncomeOnboardingIncomePostErrors, ThrowOnError> => (options.client ?? client).post<DeclareIncomeOnboardingIncomePostResponses, DeclareIncomeOnboardingIncomePostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/onboarding/income',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Submit Risk Questionnaire
+ *
+ * Score the risk-tolerance questionnaire and persist score/category/life-stage.
+ */
+export const submitRiskQuestionnaireOnboardingRiskQuestionnairePost = <ThrowOnError extends boolean = false>(options: Options<SubmitRiskQuestionnaireOnboardingRiskQuestionnairePostData, ThrowOnError>): RequestResult<SubmitRiskQuestionnaireOnboardingRiskQuestionnairePostResponses, SubmitRiskQuestionnaireOnboardingRiskQuestionnairePostErrors, ThrowOnError> => (options.client ?? client).post<SubmitRiskQuestionnaireOnboardingRiskQuestionnairePostResponses, SubmitRiskQuestionnaireOnboardingRiskQuestionnairePostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/onboarding/risk-questionnaire',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Declare Goals
+ *
+ * Create one or more goals — repeatable, unlike the legacy single-goal flow.
+ */
+export const declareGoalsOnboardingGoalsPost = <ThrowOnError extends boolean = false>(options: Options<DeclareGoalsOnboardingGoalsPostData, ThrowOnError>): RequestResult<DeclareGoalsOnboardingGoalsPostResponses, DeclareGoalsOnboardingGoalsPostErrors, ThrowOnError> => (options.client ?? client).post<DeclareGoalsOnboardingGoalsPostResponses, DeclareGoalsOnboardingGoalsPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/onboarding/goals',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Export My Data
+ *
+ * Everything Salli has stored about this user, as one JSON document.
+ */
+export const exportMyDataOnboardingExportGet = <ThrowOnError extends boolean = false>(options?: Options<ExportMyDataOnboardingExportGetData, ThrowOnError>): RequestResult<ExportMyDataOnboardingExportGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ExportMyDataOnboardingExportGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/onboarding/export',
+    ...options
+});
+
+/**
+ * Delete My Account
+ *
+ * Permanently delete every row belonging to this user. Irreversible.
+ * Requires confirm_email to match the authenticated account's email —
+ * a deliberate friction point against an accidental or spoofed call.
+ */
+export const deleteMyAccountOnboardingAccountDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteMyAccountOnboardingAccountDeleteData, ThrowOnError>): RequestResult<DeleteMyAccountOnboardingAccountDeleteResponses, DeleteMyAccountOnboardingAccountDeleteErrors, ThrowOnError> => (options.client ?? client).delete<DeleteMyAccountOnboardingAccountDeleteResponses, DeleteMyAccountOnboardingAccountDeleteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/onboarding/account',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Upload Statement
  *
  * Parse a bank statement file. Returns the statement_id and extracted transactions.
  * Transactions have LLM-assigned accounts and dedup status; review before posting.
+ * Counts one statement upload against the user's monthly quota.
  */
 export const uploadStatementStatementsUploadPost = <ThrowOnError extends boolean = false>(options: Options<UploadStatementStatementsUploadPostData, ThrowOnError>): RequestResult<UploadStatementStatementsUploadPostResponses, UploadStatementStatementsUploadPostErrors, ThrowOnError> => (options.client ?? client).post<UploadStatementStatementsUploadPostResponses, UploadStatementStatementsUploadPostErrors, ThrowOnError>({
     ...formDataBodySerializer,
@@ -236,11 +542,703 @@ export const seedFilingCalendarRemindersSeedPost = <ThrowOnError extends boolean
 });
 
 /**
+ * Sync Alerts
+ *
+ * Detect current Budget/Subscription/Insurance alert conditions and
+ * upsert them as reminders. Idempotent — safe to call repeatedly.
+ */
+export const syncAlertsRemindersSyncAlertsPost = <ThrowOnError extends boolean = false>(options?: Options<SyncAlertsRemindersSyncAlertsPostData, ThrowOnError>): RequestResult<SyncAlertsRemindersSyncAlertsPostResponses, unknown, ThrowOnError> => (options?.client ?? client).post<SyncAlertsRemindersSyncAlertsPostResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reminders/sync-alerts',
+    ...options
+});
+
+/**
  * Mark Done
  */
 export const markDoneRemindersReminderIdDonePatch = <ThrowOnError extends boolean = false>(options: Options<MarkDoneRemindersReminderIdDonePatchData, ThrowOnError>): RequestResult<MarkDoneRemindersReminderIdDonePatchResponses, MarkDoneRemindersReminderIdDonePatchErrors, ThrowOnError> => (options.client ?? client).patch<MarkDoneRemindersReminderIdDonePatchResponses, MarkDoneRemindersReminderIdDonePatchErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/reminders/{reminder_id}/done',
+    ...options
+});
+
+/**
+ * Delete Reminder
+ */
+export const deleteReminderRemindersReminderIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteReminderRemindersReminderIdDeleteData, ThrowOnError>): RequestResult<DeleteReminderRemindersReminderIdDeleteResponses, DeleteReminderRemindersReminderIdDeleteErrors, ThrowOnError> => (options.client ?? client).delete<DeleteReminderRemindersReminderIdDeleteResponses, DeleteReminderRemindersReminderIdDeleteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reminders/{reminder_id}',
+    ...options
+});
+
+/**
+ * Get Subscription
+ *
+ * Current plan, status, and per-metric usage (used/limit/remaining/resets_at).
+ */
+export const getSubscriptionBillingSubscriptionGet = <ThrowOnError extends boolean = false>(options?: Options<GetSubscriptionBillingSubscriptionGetData, ThrowOnError>): RequestResult<GetSubscriptionBillingSubscriptionGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetSubscriptionBillingSubscriptionGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/billing/subscription',
+    ...options
+});
+
+/**
+ * Get Plans
+ *
+ * Plan catalog for the upgrade/pricing UI.
+ */
+export const getPlansBillingPlansGet = <ThrowOnError extends boolean = false>(options?: Options<GetPlansBillingPlansGetData, ThrowOnError>): RequestResult<GetPlansBillingPlansGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetPlansBillingPlansGetResponses, unknown, ThrowOnError>({ url: '/billing/plans', ...options });
+
+/**
+ * Create Checkout
+ *
+ * Return the data the client passes to Paddle.js to open checkout.
+ */
+export const createCheckoutBillingCheckoutPost = <ThrowOnError extends boolean = false>(options: Options<CreateCheckoutBillingCheckoutPostData, ThrowOnError>): RequestResult<CreateCheckoutBillingCheckoutPostResponses, CreateCheckoutBillingCheckoutPostErrors, ThrowOnError> => (options.client ?? client).post<CreateCheckoutBillingCheckoutPostResponses, CreateCheckoutBillingCheckoutPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/billing/checkout',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Billing Portal
+ *
+ * Return a Paddle customer-portal URL for managing or cancelling the subscription.
+ */
+export const billingPortalBillingPortalPost = <ThrowOnError extends boolean = false>(options?: Options<BillingPortalBillingPortalPostData, ThrowOnError>): RequestResult<BillingPortalBillingPortalPostResponses, unknown, ThrowOnError> => (options?.client ?? client).post<BillingPortalBillingPortalPostResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/billing/portal',
+    ...options
+});
+
+/**
+ * Paddle Webhook
+ *
+ * Receive Paddle subscription events (no auth; verified by HMAC signature).
+ */
+export const paddleWebhookBillingWebhookPost = <ThrowOnError extends boolean = false>(options?: Options<PaddleWebhookBillingWebhookPostData, ThrowOnError>): RequestResult<PaddleWebhookBillingWebhookPostResponses, unknown, ThrowOnError> => (options?.client ?? client).post<PaddleWebhookBillingWebhookPostResponses, unknown, ThrowOnError>({ url: '/billing/webhook', ...options });
+
+/**
+ * Get Score
+ *
+ * Latest FI score, computing one on first access.
+ */
+export const getScoreFiScoreGet = <ThrowOnError extends boolean = false>(options?: Options<GetScoreFiScoreGetData, ThrowOnError>): RequestResult<GetScoreFiScoreGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetScoreFiScoreGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/fi/score',
+    ...options
+});
+
+/**
+ * Recompute Score
+ *
+ * Recompute the FI score from the current ledger and store a snapshot.
+ */
+export const recomputeScoreFiScoreRecomputePost = <ThrowOnError extends boolean = false>(options?: Options<RecomputeScoreFiScoreRecomputePostData, ThrowOnError>): RequestResult<RecomputeScoreFiScoreRecomputePostResponses, unknown, ThrowOnError> => (options?.client ?? client).post<RecomputeScoreFiScoreRecomputePostResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/fi/score/recompute',
+    ...options
+});
+
+/**
+ * Score History
+ */
+export const scoreHistoryFiScoreHistoryGet = <ThrowOnError extends boolean = false>(options?: Options<ScoreHistoryFiScoreHistoryGetData, ThrowOnError>): RequestResult<ScoreHistoryFiScoreHistoryGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ScoreHistoryFiScoreHistoryGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/fi/score/history',
+    ...options
+});
+
+/**
+ * List Goals
+ */
+export const listGoalsFiGoalsGet = <ThrowOnError extends boolean = false>(options?: Options<ListGoalsFiGoalsGetData, ThrowOnError>): RequestResult<ListGoalsFiGoalsGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListGoalsFiGoalsGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/fi/goals',
+    ...options
+});
+
+/**
+ * Create Goal
+ */
+export const createGoalFiGoalsPost = <ThrowOnError extends boolean = false>(options: Options<CreateGoalFiGoalsPostData, ThrowOnError>): RequestResult<CreateGoalFiGoalsPostResponses, CreateGoalFiGoalsPostErrors, ThrowOnError> => (options.client ?? client).post<CreateGoalFiGoalsPostResponses, CreateGoalFiGoalsPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/fi/goals',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete Goal
+ */
+export const deleteGoalFiGoalsGoalIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteGoalFiGoalsGoalIdDeleteData, ThrowOnError>): RequestResult<DeleteGoalFiGoalsGoalIdDeleteResponses, DeleteGoalFiGoalsGoalIdDeleteErrors, ThrowOnError> => (options.client ?? client).delete<DeleteGoalFiGoalsGoalIdDeleteResponses, DeleteGoalFiGoalsGoalIdDeleteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/fi/goals/{goal_id}',
+    ...options
+});
+
+/**
+ * Update Goal
+ */
+export const updateGoalFiGoalsGoalIdPatch = <ThrowOnError extends boolean = false>(options: Options<UpdateGoalFiGoalsGoalIdPatchData, ThrowOnError>): RequestResult<UpdateGoalFiGoalsGoalIdPatchResponses, UpdateGoalFiGoalsGoalIdPatchErrors, ThrowOnError> => (options.client ?? client).patch<UpdateGoalFiGoalsGoalIdPatchResponses, UpdateGoalFiGoalsGoalIdPatchErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/fi/goals/{goal_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Strategy
+ *
+ * Return the user's active FIRE strategy, or 404 if none exists yet.
+ */
+export const getStrategyFiStrategyGet = <ThrowOnError extends boolean = false>(options?: Options<GetStrategyFiStrategyGetData, ThrowOnError>): RequestResult<GetStrategyFiStrategyGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetStrategyFiStrategyGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/fi/strategy',
+    ...options
+});
+
+/**
+ * Get Strategy History
+ *
+ * List all strategy versions (summary only).
+ */
+export const getStrategyHistoryFiStrategyHistoryGet = <ThrowOnError extends boolean = false>(options?: Options<GetStrategyHistoryFiStrategyHistoryGetData, ThrowOnError>): RequestResult<GetStrategyHistoryFiStrategyHistoryGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetStrategyHistoryFiStrategyHistoryGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/fi/strategy/history',
+    ...options
+});
+
+/**
+ * Generate Strategy
+ *
+ * Trigger AI FIRE strategy generation. Returns an SSE stream.
+ *
+ * Stream events:
+ * {"type": "status",  "message": "..."} — progress updates
+ * {"type": "done",    "strategy": {...}} — final result
+ * {"type": "error",   "message": "..."}  — failure
+ */
+export const generateStrategyFiStrategyGeneratePost = <ThrowOnError extends boolean = false>(options?: Options<GenerateStrategyFiStrategyGeneratePostData, ThrowOnError>): RequestResult<GenerateStrategyFiStrategyGeneratePostResponses, unknown, ThrowOnError> => (options?.client ?? client).post<GenerateStrategyFiStrategyGeneratePostResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/fi/strategy/generate',
+    ...options
+});
+
+/**
+ * Get Projections
+ *
+ * 15-year portfolio projections across conservative/base/growth scenarios.
+ */
+export const getProjectionsFiProjectionsGet = <ThrowOnError extends boolean = false>(options?: Options<GetProjectionsFiProjectionsGetData, ThrowOnError>): RequestResult<GetProjectionsFiProjectionsGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetProjectionsFiProjectionsGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/fi/projections',
+    ...options
+});
+
+/**
+ * Get Surplus Breakdown
+ *
+ * Income-by-source and expense-by-category breakdown from the trailing 12 months.
+ */
+export const getSurplusBreakdownFiSurplusGet = <ThrowOnError extends boolean = false>(options?: Options<GetSurplusBreakdownFiSurplusGetData, ThrowOnError>): RequestResult<GetSurplusBreakdownFiSurplusGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetSurplusBreakdownFiSurplusGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/fi/surplus',
+    ...options
+});
+
+/**
+ * Run Advisor
+ *
+ * Run the Wealth Advisor now (counts against the advisor_runs quota).
+ */
+export const runAdvisorAdvisorRunPost = <ThrowOnError extends boolean = false>(options?: Options<RunAdvisorAdvisorRunPostData, ThrowOnError>): RequestResult<RunAdvisorAdvisorRunPostResponses, unknown, ThrowOnError> => (options?.client ?? client).post<RunAdvisorAdvisorRunPostResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/advisor/run',
+    ...options
+});
+
+/**
+ * List Reports
+ */
+export const listReportsAdvisorReportsGet = <ThrowOnError extends boolean = false>(options?: Options<ListReportsAdvisorReportsGetData, ThrowOnError>): RequestResult<ListReportsAdvisorReportsGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListReportsAdvisorReportsGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/advisor/reports',
+    ...options
+});
+
+/**
+ * Latest Report
+ */
+export const latestReportAdvisorReportsLatestGet = <ThrowOnError extends boolean = false>(options?: Options<LatestReportAdvisorReportsLatestGetData, ThrowOnError>): RequestResult<LatestReportAdvisorReportsLatestGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<LatestReportAdvisorReportsLatestGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/advisor/reports/latest',
+    ...options
+});
+
+/**
+ * Apply Recommendation
+ */
+export const applyRecommendationAdvisorReportsReportIdRecommendationsRecIdApplyPost = <ThrowOnError extends boolean = false>(options: Options<ApplyRecommendationAdvisorReportsReportIdRecommendationsRecIdApplyPostData, ThrowOnError>): RequestResult<ApplyRecommendationAdvisorReportsReportIdRecommendationsRecIdApplyPostResponses, ApplyRecommendationAdvisorReportsReportIdRecommendationsRecIdApplyPostErrors, ThrowOnError> => (options.client ?? client).post<ApplyRecommendationAdvisorReportsReportIdRecommendationsRecIdApplyPostResponses, ApplyRecommendationAdvisorReportsReportIdRecommendationsRecIdApplyPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/advisor/reports/{report_id}/recommendations/{rec_id}/apply',
+    ...options
+});
+
+/**
+ * Dismiss Recommendation
+ */
+export const dismissRecommendationAdvisorReportsReportIdRecommendationsRecIdDismissPost = <ThrowOnError extends boolean = false>(options: Options<DismissRecommendationAdvisorReportsReportIdRecommendationsRecIdDismissPostData, ThrowOnError>): RequestResult<DismissRecommendationAdvisorReportsReportIdRecommendationsRecIdDismissPostResponses, DismissRecommendationAdvisorReportsReportIdRecommendationsRecIdDismissPostErrors, ThrowOnError> => (options.client ?? client).post<DismissRecommendationAdvisorReportsReportIdRecommendationsRecIdDismissPostResponses, DismissRecommendationAdvisorReportsReportIdRecommendationsRecIdDismissPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/advisor/reports/{report_id}/recommendations/{rec_id}/dismiss',
+    ...options
+});
+
+/**
+ * Prepare Briefing
+ *
+ * Run the monthly briefing workflow up to the human review gate. Returns the
+ * draft briefing for approval, or a gather-step error (e.g. quota exceeded).
+ */
+export const prepareBriefingAdvisorBriefingPreparePost = <ThrowOnError extends boolean = false>(options: Options<PrepareBriefingAdvisorBriefingPreparePostData, ThrowOnError>): RequestResult<PrepareBriefingAdvisorBriefingPreparePostResponses, PrepareBriefingAdvisorBriefingPreparePostErrors, ThrowOnError> => (options.client ?? client).post<PrepareBriefingAdvisorBriefingPreparePostResponses, PrepareBriefingAdvisorBriefingPreparePostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/advisor/briefing/prepare',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Resume Briefing
+ *
+ * Resume the briefing workflow after human review and persist if approved.
+ */
+export const resumeBriefingAdvisorBriefingResumePost = <ThrowOnError extends boolean = false>(options: Options<ResumeBriefingAdvisorBriefingResumePostData, ThrowOnError>): RequestResult<ResumeBriefingAdvisorBriefingResumePostResponses, ResumeBriefingAdvisorBriefingResumePostErrors, ThrowOnError> => (options.client ?? client).post<ResumeBriefingAdvisorBriefingResumePostResponses, ResumeBriefingAdvisorBriefingResumePostErrors, ThrowOnError>({
+    url: '/advisor/briefing/resume',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Cron Run Due
+ *
+ * Trigger the daily advisor for all due paid users. Auth: X-Cron-Secret header.
+ */
+export const cronRunDueAdvisorCronRunDuePost = <ThrowOnError extends boolean = false>(options?: Options<CronRunDueAdvisorCronRunDuePostData, ThrowOnError>): RequestResult<CronRunDueAdvisorCronRunDuePostResponses, CronRunDueAdvisorCronRunDuePostErrors, ThrowOnError> => (options?.client ?? client).post<CronRunDueAdvisorCronRunDuePostResponses, CronRunDueAdvisorCronRunDuePostErrors, ThrowOnError>({ url: '/advisor/cron/run-due', ...options });
+
+/**
+ * List Budgets
+ */
+export const listBudgetsBudgetGet = <ThrowOnError extends boolean = false>(options?: Options<ListBudgetsBudgetGetData, ThrowOnError>): RequestResult<ListBudgetsBudgetGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListBudgetsBudgetGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/budget/',
+    ...options
+});
+
+/**
+ * Create Budget
+ */
+export const createBudgetBudgetPost = <ThrowOnError extends boolean = false>(options: Options<CreateBudgetBudgetPostData, ThrowOnError>): RequestResult<CreateBudgetBudgetPostResponses, CreateBudgetBudgetPostErrors, ThrowOnError> => (options.client ?? client).post<CreateBudgetBudgetPostResponses, CreateBudgetBudgetPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/budget/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete Budget
+ */
+export const deleteBudgetBudgetBudgetIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteBudgetBudgetBudgetIdDeleteData, ThrowOnError>): RequestResult<DeleteBudgetBudgetBudgetIdDeleteResponses, DeleteBudgetBudgetBudgetIdDeleteErrors, ThrowOnError> => (options.client ?? client).delete<DeleteBudgetBudgetBudgetIdDeleteResponses, DeleteBudgetBudgetBudgetIdDeleteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/budget/{budget_id}',
+    ...options
+});
+
+/**
+ * Get Budget
+ */
+export const getBudgetBudgetBudgetIdGet = <ThrowOnError extends boolean = false>(options: Options<GetBudgetBudgetBudgetIdGetData, ThrowOnError>): RequestResult<GetBudgetBudgetBudgetIdGetResponses, GetBudgetBudgetBudgetIdGetErrors, ThrowOnError> => (options.client ?? client).get<GetBudgetBudgetBudgetIdGetResponses, GetBudgetBudgetBudgetIdGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/budget/{budget_id}',
+    ...options
+});
+
+/**
+ * Update Budget
+ */
+export const updateBudgetBudgetBudgetIdPatch = <ThrowOnError extends boolean = false>(options: Options<UpdateBudgetBudgetBudgetIdPatchData, ThrowOnError>): RequestResult<UpdateBudgetBudgetBudgetIdPatchResponses, UpdateBudgetBudgetBudgetIdPatchErrors, ThrowOnError> => (options.client ?? client).patch<UpdateBudgetBudgetBudgetIdPatchResponses, UpdateBudgetBudgetBudgetIdPatchErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/budget/{budget_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Budget Summary
+ *
+ * Category limits vs. actual ledger spend for the budget's period.
+ */
+export const getBudgetSummaryBudgetBudgetIdSummaryGet = <ThrowOnError extends boolean = false>(options: Options<GetBudgetSummaryBudgetBudgetIdSummaryGetData, ThrowOnError>): RequestResult<GetBudgetSummaryBudgetBudgetIdSummaryGetResponses, GetBudgetSummaryBudgetBudgetIdSummaryGetErrors, ThrowOnError> => (options.client ?? client).get<GetBudgetSummaryBudgetBudgetIdSummaryGetResponses, GetBudgetSummaryBudgetBudgetIdSummaryGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/budget/{budget_id}/summary',
+    ...options
+});
+
+/**
+ * List Debts
+ */
+export const listDebtsDebtGet = <ThrowOnError extends boolean = false>(options?: Options<ListDebtsDebtGetData, ThrowOnError>): RequestResult<ListDebtsDebtGetResponses, ListDebtsDebtGetErrors, ThrowOnError> => (options?.client ?? client).get<ListDebtsDebtGetResponses, ListDebtsDebtGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/debt/',
+    ...options
+});
+
+/**
+ * Add Debt
+ */
+export const addDebtDebtPost = <ThrowOnError extends boolean = false>(options: Options<AddDebtDebtPostData, ThrowOnError>): RequestResult<AddDebtDebtPostResponses, AddDebtDebtPostErrors, ThrowOnError> => (options.client ?? client).post<AddDebtDebtPostResponses, AddDebtDebtPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/debt/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Payoff Plan
+ *
+ * Avalanche/snowball payoff plan — months to payoff, total interest, schedule.
+ */
+export const getPayoffPlanDebtPayoffPlanGet = <ThrowOnError extends boolean = false>(options?: Options<GetPayoffPlanDebtPayoffPlanGetData, ThrowOnError>): RequestResult<GetPayoffPlanDebtPayoffPlanGetResponses, GetPayoffPlanDebtPayoffPlanGetErrors, ThrowOnError> => (options?.client ?? client).get<GetPayoffPlanDebtPayoffPlanGetResponses, GetPayoffPlanDebtPayoffPlanGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/debt/payoff-plan',
+    ...options
+});
+
+/**
+ * Delete Debt
+ */
+export const deleteDebtDebtDebtIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteDebtDebtDebtIdDeleteData, ThrowOnError>): RequestResult<DeleteDebtDebtDebtIdDeleteResponses, DeleteDebtDebtDebtIdDeleteErrors, ThrowOnError> => (options.client ?? client).delete<DeleteDebtDebtDebtIdDeleteResponses, DeleteDebtDebtDebtIdDeleteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/debt/{debt_id}',
+    ...options
+});
+
+/**
+ * Get Debt
+ */
+export const getDebtDebtDebtIdGet = <ThrowOnError extends boolean = false>(options: Options<GetDebtDebtDebtIdGetData, ThrowOnError>): RequestResult<GetDebtDebtDebtIdGetResponses, GetDebtDebtDebtIdGetErrors, ThrowOnError> => (options.client ?? client).get<GetDebtDebtDebtIdGetResponses, GetDebtDebtDebtIdGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/debt/{debt_id}',
+    ...options
+});
+
+/**
+ * Update Debt
+ */
+export const updateDebtDebtDebtIdPatch = <ThrowOnError extends boolean = false>(options: Options<UpdateDebtDebtDebtIdPatchData, ThrowOnError>): RequestResult<UpdateDebtDebtDebtIdPatchResponses, UpdateDebtDebtDebtIdPatchErrors, ThrowOnError> => (options.client ?? client).patch<UpdateDebtDebtDebtIdPatchResponses, UpdateDebtDebtDebtIdPatchErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/debt/{debt_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Holdings
+ */
+export const listHoldingsPortfolioGet = <ThrowOnError extends boolean = false>(options?: Options<ListHoldingsPortfolioGetData, ThrowOnError>): RequestResult<ListHoldingsPortfolioGetResponses, ListHoldingsPortfolioGetErrors, ThrowOnError> => (options?.client ?? client).get<ListHoldingsPortfolioGetResponses, ListHoldingsPortfolioGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/portfolio/',
+    ...options
+});
+
+/**
+ * Add Holding
+ */
+export const addHoldingPortfolioPost = <ThrowOnError extends boolean = false>(options: Options<AddHoldingPortfolioPostData, ThrowOnError>): RequestResult<AddHoldingPortfolioPostResponses, AddHoldingPortfolioPostErrors, ThrowOnError> => (options.client ?? client).post<AddHoldingPortfolioPostResponses, AddHoldingPortfolioPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/portfolio/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Summary
+ *
+ * Allocation by asset class, total gain/ROI, and (if target given) rebalancing alerts.
+ */
+export const getSummaryPortfolioSummaryGet = <ThrowOnError extends boolean = false>(options?: Options<GetSummaryPortfolioSummaryGetData, ThrowOnError>): RequestResult<GetSummaryPortfolioSummaryGetResponses, GetSummaryPortfolioSummaryGetErrors, ThrowOnError> => (options?.client ?? client).get<GetSummaryPortfolioSummaryGetResponses, GetSummaryPortfolioSummaryGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/portfolio/summary',
+    ...options
+});
+
+/**
+ * Delete Holding
+ */
+export const deleteHoldingPortfolioHoldingIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteHoldingPortfolioHoldingIdDeleteData, ThrowOnError>): RequestResult<DeleteHoldingPortfolioHoldingIdDeleteResponses, DeleteHoldingPortfolioHoldingIdDeleteErrors, ThrowOnError> => (options.client ?? client).delete<DeleteHoldingPortfolioHoldingIdDeleteResponses, DeleteHoldingPortfolioHoldingIdDeleteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/portfolio/{holding_id}',
+    ...options
+});
+
+/**
+ * Get Holding
+ */
+export const getHoldingPortfolioHoldingIdGet = <ThrowOnError extends boolean = false>(options: Options<GetHoldingPortfolioHoldingIdGetData, ThrowOnError>): RequestResult<GetHoldingPortfolioHoldingIdGetResponses, GetHoldingPortfolioHoldingIdGetErrors, ThrowOnError> => (options.client ?? client).get<GetHoldingPortfolioHoldingIdGetResponses, GetHoldingPortfolioHoldingIdGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/portfolio/{holding_id}',
+    ...options
+});
+
+/**
+ * Update Holding
+ */
+export const updateHoldingPortfolioHoldingIdPatch = <ThrowOnError extends boolean = false>(options: Options<UpdateHoldingPortfolioHoldingIdPatchData, ThrowOnError>): RequestResult<UpdateHoldingPortfolioHoldingIdPatchResponses, UpdateHoldingPortfolioHoldingIdPatchErrors, ThrowOnError> => (options.client ?? client).patch<UpdateHoldingPortfolioHoldingIdPatchResponses, UpdateHoldingPortfolioHoldingIdPatchErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/portfolio/{holding_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Subscriptions
+ */
+export const listSubscriptionsSubscriptionsGet = <ThrowOnError extends boolean = false>(options?: Options<ListSubscriptionsSubscriptionsGetData, ThrowOnError>): RequestResult<ListSubscriptionsSubscriptionsGetResponses, ListSubscriptionsSubscriptionsGetErrors, ThrowOnError> => (options?.client ?? client).get<ListSubscriptionsSubscriptionsGetResponses, ListSubscriptionsSubscriptionsGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/subscriptions/',
+    ...options
+});
+
+/**
+ * Add Subscription
+ */
+export const addSubscriptionSubscriptionsPost = <ThrowOnError extends boolean = false>(options: Options<AddSubscriptionSubscriptionsPostData, ThrowOnError>): RequestResult<AddSubscriptionSubscriptionsPostResponses, AddSubscriptionSubscriptionsPostErrors, ThrowOnError> => (options.client ?? client).post<AddSubscriptionSubscriptionsPostResponses, AddSubscriptionSubscriptionsPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/subscriptions/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get All Reports
+ *
+ * Missed-charge/price-change reports for every active subscription.
+ */
+export const getAllReportsSubscriptionsReportsGet = <ThrowOnError extends boolean = false>(options?: Options<GetAllReportsSubscriptionsReportsGetData, ThrowOnError>): RequestResult<GetAllReportsSubscriptionsReportsGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetAllReportsSubscriptionsReportsGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/subscriptions/reports',
+    ...options
+});
+
+/**
+ * Delete Subscription
+ */
+export const deleteSubscriptionSubscriptionsSubscriptionIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteSubscriptionSubscriptionsSubscriptionIdDeleteData, ThrowOnError>): RequestResult<DeleteSubscriptionSubscriptionsSubscriptionIdDeleteResponses, DeleteSubscriptionSubscriptionsSubscriptionIdDeleteErrors, ThrowOnError> => (options.client ?? client).delete<DeleteSubscriptionSubscriptionsSubscriptionIdDeleteResponses, DeleteSubscriptionSubscriptionsSubscriptionIdDeleteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/subscriptions/{subscription_id}',
+    ...options
+});
+
+/**
+ * Get Subscription
+ */
+export const getSubscriptionSubscriptionsSubscriptionIdGet = <ThrowOnError extends boolean = false>(options: Options<GetSubscriptionSubscriptionsSubscriptionIdGetData, ThrowOnError>): RequestResult<GetSubscriptionSubscriptionsSubscriptionIdGetResponses, GetSubscriptionSubscriptionsSubscriptionIdGetErrors, ThrowOnError> => (options.client ?? client).get<GetSubscriptionSubscriptionsSubscriptionIdGetResponses, GetSubscriptionSubscriptionsSubscriptionIdGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/subscriptions/{subscription_id}',
+    ...options
+});
+
+/**
+ * Update Subscription
+ */
+export const updateSubscriptionSubscriptionsSubscriptionIdPatch = <ThrowOnError extends boolean = false>(options: Options<UpdateSubscriptionSubscriptionsSubscriptionIdPatchData, ThrowOnError>): RequestResult<UpdateSubscriptionSubscriptionsSubscriptionIdPatchResponses, UpdateSubscriptionSubscriptionsSubscriptionIdPatchErrors, ThrowOnError> => (options.client ?? client).patch<UpdateSubscriptionSubscriptionsSubscriptionIdPatchResponses, UpdateSubscriptionSubscriptionsSubscriptionIdPatchErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/subscriptions/{subscription_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Subscription Report
+ *
+ * Missed-charge/price-change report for a single subscription.
+ */
+export const getSubscriptionReportSubscriptionsSubscriptionIdReportGet = <ThrowOnError extends boolean = false>(options: Options<GetSubscriptionReportSubscriptionsSubscriptionIdReportGetData, ThrowOnError>): RequestResult<GetSubscriptionReportSubscriptionsSubscriptionIdReportGetResponses, GetSubscriptionReportSubscriptionsSubscriptionIdReportGetErrors, ThrowOnError> => (options.client ?? client).get<GetSubscriptionReportSubscriptionsSubscriptionIdReportGetResponses, GetSubscriptionReportSubscriptionsSubscriptionIdReportGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/subscriptions/{subscription_id}/report',
+    ...options
+});
+
+/**
+ * List Policies
+ */
+export const listPoliciesInsurancePoliciesGet = <ThrowOnError extends boolean = false>(options?: Options<ListPoliciesInsurancePoliciesGetData, ThrowOnError>): RequestResult<ListPoliciesInsurancePoliciesGetResponses, ListPoliciesInsurancePoliciesGetErrors, ThrowOnError> => (options?.client ?? client).get<ListPoliciesInsurancePoliciesGetResponses, ListPoliciesInsurancePoliciesGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/insurance/policies',
+    ...options
+});
+
+/**
+ * Add Policy
+ */
+export const addPolicyInsurancePoliciesPost = <ThrowOnError extends boolean = false>(options: Options<AddPolicyInsurancePoliciesPostData, ThrowOnError>): RequestResult<AddPolicyInsurancePoliciesPostResponses, AddPolicyInsurancePoliciesPostErrors, ThrowOnError> => (options.client ?? client).post<AddPolicyInsurancePoliciesPostResponses, AddPolicyInsurancePoliciesPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/insurance/policies',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Coverage Report
+ *
+ * Coverage-gap report: target vs. actual coverage per type, missing types,
+ * and policies expiring within the next 30 days.
+ */
+export const getCoverageReportInsuranceReportGet = <ThrowOnError extends boolean = false>(options?: Options<GetCoverageReportInsuranceReportGetData, ThrowOnError>): RequestResult<GetCoverageReportInsuranceReportGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetCoverageReportInsuranceReportGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/insurance/report',
+    ...options
+});
+
+/**
+ * List Targets
+ */
+export const listTargetsInsuranceTargetsGet = <ThrowOnError extends boolean = false>(options?: Options<ListTargetsInsuranceTargetsGetData, ThrowOnError>): RequestResult<ListTargetsInsuranceTargetsGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListTargetsInsuranceTargetsGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/insurance/targets',
+    ...options
+});
+
+/**
+ * Set Target
+ */
+export const setTargetInsuranceTargetsPut = <ThrowOnError extends boolean = false>(options: Options<SetTargetInsuranceTargetsPutData, ThrowOnError>): RequestResult<SetTargetInsuranceTargetsPutResponses, SetTargetInsuranceTargetsPutErrors, ThrowOnError> => (options.client ?? client).put<SetTargetInsuranceTargetsPutResponses, SetTargetInsuranceTargetsPutErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/insurance/targets',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete Target
+ */
+export const deleteTargetInsuranceTargetsPolicyTypeDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteTargetInsuranceTargetsPolicyTypeDeleteData, ThrowOnError>): RequestResult<DeleteTargetInsuranceTargetsPolicyTypeDeleteResponses, DeleteTargetInsuranceTargetsPolicyTypeDeleteErrors, ThrowOnError> => (options.client ?? client).delete<DeleteTargetInsuranceTargetsPolicyTypeDeleteResponses, DeleteTargetInsuranceTargetsPolicyTypeDeleteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/insurance/targets/{policy_type}',
+    ...options
+});
+
+/**
+ * Delete Policy
+ */
+export const deletePolicyInsurancePoliciesPolicyIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeletePolicyInsurancePoliciesPolicyIdDeleteData, ThrowOnError>): RequestResult<DeletePolicyInsurancePoliciesPolicyIdDeleteResponses, DeletePolicyInsurancePoliciesPolicyIdDeleteErrors, ThrowOnError> => (options.client ?? client).delete<DeletePolicyInsurancePoliciesPolicyIdDeleteResponses, DeletePolicyInsurancePoliciesPolicyIdDeleteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/insurance/policies/{policy_id}',
+    ...options
+});
+
+/**
+ * Get Policy
+ */
+export const getPolicyInsurancePoliciesPolicyIdGet = <ThrowOnError extends boolean = false>(options: Options<GetPolicyInsurancePoliciesPolicyIdGetData, ThrowOnError>): RequestResult<GetPolicyInsurancePoliciesPolicyIdGetResponses, GetPolicyInsurancePoliciesPolicyIdGetErrors, ThrowOnError> => (options.client ?? client).get<GetPolicyInsurancePoliciesPolicyIdGetResponses, GetPolicyInsurancePoliciesPolicyIdGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/insurance/policies/{policy_id}',
+    ...options
+});
+
+/**
+ * Update Policy
+ */
+export const updatePolicyInsurancePoliciesPolicyIdPatch = <ThrowOnError extends boolean = false>(options: Options<UpdatePolicyInsurancePoliciesPolicyIdPatchData, ThrowOnError>): RequestResult<UpdatePolicyInsurancePoliciesPolicyIdPatchResponses, UpdatePolicyInsurancePoliciesPolicyIdPatchErrors, ThrowOnError> => (options.client ?? client).patch<UpdatePolicyInsurancePoliciesPolicyIdPatchResponses, UpdatePolicyInsurancePoliciesPolicyIdPatchErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/insurance/policies/{policy_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Balance Sheet
+ */
+export const getBalanceSheetReportsBalanceSheetGet = <ThrowOnError extends boolean = false>(options?: Options<GetBalanceSheetReportsBalanceSheetGetData, ThrowOnError>): RequestResult<GetBalanceSheetReportsBalanceSheetGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetBalanceSheetReportsBalanceSheetGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reports/balance-sheet',
+    ...options
+});
+
+/**
+ * Get Net Worth Statement
+ */
+export const getNetWorthStatementReportsNetWorthGet = <ThrowOnError extends boolean = false>(options?: Options<GetNetWorthStatementReportsNetWorthGetData, ThrowOnError>): RequestResult<GetNetWorthStatementReportsNetWorthGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetNetWorthStatementReportsNetWorthGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reports/net-worth',
+    ...options
+});
+
+/**
+ * Get Goal Progress Report
+ */
+export const getGoalProgressReportReportsGoalProgressGet = <ThrowOnError extends boolean = false>(options?: Options<GetGoalProgressReportReportsGoalProgressGetData, ThrowOnError>): RequestResult<GetGoalProgressReportReportsGoalProgressGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetGoalProgressReportReportsGoalProgressGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reports/goal-progress',
+    ...options
+});
+
+/**
+ * Export Report Csv
+ *
+ * Download a report as CSV. report_type: balance-sheet | net-worth | goal-progress.
+ */
+export const exportReportCsvReportsReportTypeExportGet = <ThrowOnError extends boolean = false>(options: Options<ExportReportCsvReportsReportTypeExportGetData, ThrowOnError>): RequestResult<ExportReportCsvReportsReportTypeExportGetResponses, ExportReportCsvReportsReportTypeExportGetErrors, ThrowOnError> => (options.client ?? client).get<ExportReportCsvReportsReportTypeExportGetResponses, ExportReportCsvReportsReportTypeExportGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reports/{report_type}/export',
     ...options
 });
 

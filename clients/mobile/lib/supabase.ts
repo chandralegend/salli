@@ -1,22 +1,22 @@
-import "react-native-url-polyfill/auto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-let _client: SupabaseClient | null = null;
-
-/** True when Supabase env is configured (prod). When false, the app uses dev-login. */
 export function isSupabaseConfigured(): boolean {
-  return Boolean(URL && ANON);
+  return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 }
 
-/** Returns the singleton Supabase client, or null if not configured. */
-export function getSupabase(): SupabaseClient | null {
-  if (!isSupabaseConfigured()) return null;
-  if (!_client) {
-    _client = createClient(URL as string, ANON as string, {
+let cached: SupabaseClient | null = null;
+
+/** Lazily creates the Supabase client. Only call when isSupabaseConfigured() is true. */
+export function getSupabase(): SupabaseClient {
+  if (!cached) {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      throw new Error("Supabase is not configured — check isSupabaseConfigured() first.");
+    }
+    cached = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
         storage: AsyncStorage,
         persistSession: true,
@@ -25,5 +25,5 @@ export function getSupabase(): SupabaseClient | null {
       },
     });
   }
-  return _client;
+  return cached;
 }

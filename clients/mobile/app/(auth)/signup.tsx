@@ -1,82 +1,118 @@
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { Mail } from "lucide-react-native";
 import { useState } from "react";
-import { View, Text, Pressable } from "react-native";
-import { Link, router } from "expo-router";
-import { AuthShell } from "@/components/auth/AuthShell";
-import { TextField } from "@/components/ui/text-field";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native";
+
+import { Logo } from "@/components/Logo";
 import { PillButton } from "@/components/ui/pill-button";
-import { signUpWithPassword, isSupabaseConfigured } from "@/lib/auth";
-import { useAppTheme } from "@/lib/theme";
+import { TextField } from "@/components/ui/text-field";
+import { signUpWithPassword } from "@/lib/auth";
 
 export default function SignupScreen() {
-  const { isDark } = useAppTheme();
-  const supabaseOn = isSupabaseConfigured();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [done, setDone] = useState(false);
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
 
-  async function handleSignup() {
+  const handleSignUp = async () => {
+    setError(null);
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
     setLoading(true);
-    setError("");
     try {
-      await signUpWithPassword(email, password);
-      setDone(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign up failed");
+      await signUpWithPassword(email.trim(), password);
+      setSent(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Sign up failed.");
     } finally {
       setLoading(false);
     }
-  }
-
-  if (done) {
-    return (
-      <AuthShell title="Check your inbox" subtitle="We sent a confirmation link to finish creating your account.">
-        <PillButton variant="primary" onPress={() => router.replace("/(auth)/login")}>
-          Back to sign in
-        </PillButton>
-      </AuthShell>
-    );
-  }
+  };
 
   return (
-    <AuthShell title="Create your account" subtitle="Track your money. Understand your tax.">
-      <View className="gap-3">
-        <TextField
-          placeholder="Email address"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          editable={supabaseOn}
-        />
-        <TextField
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          editable={supabaseOn}
-        />
-
-        {!!error && (
-          <View className={`${isDark ? "bg-rose-950 border-rose-900" : "bg-rose-50 border-rose-200"} border rounded-xl px-3 py-2.5`}>
-            <Text className={`${isDark ? "text-rose-400" : "text-rose-600"} text-[12px]`}>{error}</Text>
+    <View className="flex-1 bg-black">
+      <LinearGradient
+        colors={["#0B20E0", "#0912B0", "#060A6A", "#020518", "#000000"]}
+        locations={[0, 0.3, 0.55, 0.8, 1]}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, height: 300 }}
+      />
+      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+          <View className="items-center px-6 pb-10 pt-16">
+            <Logo size={56} />
+            <Text className="mt-4 font-sans-bold text-[26px] tracking-tight text-white">
+              Create account
+            </Text>
+            <Text className="mt-1.5 text-center text-[13px] text-white/45">
+              Set up your Salli account to get started.
+            </Text>
           </View>
-        )}
 
-        <PillButton variant="primary" onPress={handleSignup} loading={loading} disabled={!supabaseOn}>
-          Create account
-        </PillButton>
-      </View>
+          {sent ? (
+            <View className="items-center gap-3 px-6">
+              <View className="h-14 w-14 items-center justify-center rounded-full bg-salli-accent/20">
+                <Mail size={22} color="#2563EB" strokeWidth={2} />
+              </View>
+              <Text className="text-center font-sans-semibold text-[16px] text-white">
+                Check your inbox
+              </Text>
+              <Text className="text-center text-[13px] text-white/40">
+                We&apos;ve sent a confirmation link to {email}.
+              </Text>
+              <PillButton className="mt-3 w-full" onPress={() => router.replace("/(auth)/login")}>
+                Back to sign in
+              </PillButton>
+            </View>
+          ) : (
+            <View className="gap-2.5 px-6">
+              <TextField
+                label="Email"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                autoComplete="email"
+                keyboardType="email-address"
+                placeholder="you@example.com"
+              />
+              <TextField
+                label="Password"
+                optionalHint="min 8 characters"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                placeholder="••••••••"
+              />
 
-      <View className="flex-row justify-center mt-4">
-        <Text className="text-muted-foreground text-[13.5px]">Already have an account? </Text>
-        <Link href="/(auth)/login" asChild>
-          <Pressable>
-            <Text className="text-foreground font-bold text-[13.5px]">Sign in</Text>
-          </Pressable>
-        </Link>
-      </View>
-    </AuthShell>
+              {error ? (
+                <View className="rounded-control border border-destructive/30 bg-destructive/10 px-4 py-3">
+                  <Text className="text-[13px] text-destructive">{error}</Text>
+                </View>
+              ) : null}
+
+              <PillButton
+                className="mt-1"
+                loading={loading}
+                disabled={!email || !password}
+                onPress={handleSignUp}
+              >
+                Create account
+              </PillButton>
+
+              <Pressable className="items-center py-2" onPress={() => router.replace("/(auth)/login")}>
+                <Text className="text-[13px] text-white/40">
+                  Already have an account? <Text className="text-salli-accent">Sign in</Text>
+                </Text>
+              </Pressable>
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }

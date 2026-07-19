@@ -1,92 +1,131 @@
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import { useState } from "react";
-import { View, Text, Pressable } from "react-native";
-import { Link, router } from "expo-router";
-import { AuthShell } from "@/components/auth/AuthShell";
-import { TextField } from "@/components/ui/text-field";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
+
+import { Logo } from "@/components/Logo";
 import { PillButton } from "@/components/ui/pill-button";
-import { useAuth, signInWithPassword, isSupabaseConfigured } from "@/lib/auth";
-import { useAppTheme } from "@/lib/theme";
+import { TextField } from "@/components/ui/text-field";
+import { devLogin, signInWithPassword } from "@/lib/auth";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 export default function LoginScreen() {
-  const { login } = useAuth();
-  const { isDark } = useAppTheme();
-  const supabaseOn = isSupabaseConfigured();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function handleLogin() {
+  const supabaseReady = isSupabaseConfigured();
+
+  const handleSignIn = async () => {
+    setError(null);
     setLoading(true);
-    setError("");
     try {
-      await signInWithPassword(email, password);
-      router.replace("/(tabs)");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign in failed");
+      await signInWithPassword(email.trim(), password);
+      router.replace("/");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Sign in failed.");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  async function handleDevLogin() {
-    await login("dev-seed-user");
-    router.replace("/(tabs)");
-  }
+  const handleDevLogin = async () => {
+    setLoading(true);
+    try {
+      await devLogin(email.trim() || "dev-user");
+      router.replace("/");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <AuthShell title="Welcome back" subtitle="Your numbers are waiting.">
-      <View className="gap-3">
-        <TextField
-          placeholder="Email address"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          editable={supabaseOn}
-        />
-        <TextField
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          editable={supabaseOn}
-        />
-
-        <Link href="/(auth)/forgot-password" asChild>
-          <Pressable className="self-end -mt-1">
-            <Text className="text-muted-foreground text-[13px]">Forgot password?</Text>
-          </Pressable>
-        </Link>
-
-        {!!error && (
-          <View className={`${isDark ? "bg-rose-950 border-rose-900" : "bg-rose-50 border-rose-200"} border rounded-xl px-3 py-2.5`}>
-            <Text className={`${isDark ? "text-rose-400" : "text-rose-600"} text-[12px]`}>{error}</Text>
+    <View className="flex-1 bg-black">
+      <LinearGradient
+        colors={["#0B20E0", "#0912B0", "#060A6A", "#020518", "#000000"]}
+        locations={[0, 0.3, 0.55, 0.8, 1]}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, height: 430 }}
+      />
+      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+          <View className="items-center px-6 pb-13 pt-16">
+            <Logo size={80} />
+            <Text className="mt-5 font-sans-extrabold text-[38px] tracking-tighter text-white">
+              Salli
+            </Text>
+            <Text className="mt-2.5 text-center text-[14px] leading-5 text-white/45">
+              AI-powered personal finance{"\n"}Built for Sri Lanka
+            </Text>
           </View>
-        )}
 
-        <PillButton variant="primary" onPress={handleLogin} loading={loading} disabled={!supabaseOn}>
-          Sign in
-        </PillButton>
-      </View>
+          <View className="gap-2.5 px-6">
+            <TextField
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              autoComplete="email"
+              keyboardType="email-address"
+              placeholder="you@example.com"
+            />
+            <TextField
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              placeholder="••••••••"
+            />
 
-      <View className="flex-row justify-center mt-4">
-        <Text className="text-muted-foreground text-[13.5px]">New here? </Text>
-        <Link href="/(auth)/signup" asChild>
-          <Pressable>
-            <Text className="text-foreground font-bold text-[13.5px]">Create account</Text>
-          </Pressable>
-        </Link>
-      </View>
+            {error ? (
+              <View className="rounded-control border border-destructive/30 bg-destructive/10 px-4 py-3">
+                <Text className="text-[13px] text-destructive">{error}</Text>
+              </View>
+            ) : null}
 
-      {!supabaseOn && (
-        <View className="mt-5 border-t border-border/50 pt-4">
-          <PillButton onPress={handleDevLogin}>Dev login (skip auth)</PillButton>
-          <Text className="text-muted-foreground/60 text-[11px] text-center mt-2">
-            Supabase isn&apos;t configured — using the local dev account.
-          </Text>
-        </View>
-      )}
-    </AuthShell>
+            <PillButton
+              className="mt-1"
+              loading={loading}
+              disabled={!email || !password}
+              onPress={handleSignIn}
+            >
+              Sign in
+            </PillButton>
+
+            <Pressable
+              className="items-center py-1"
+              onPress={() => router.push("/(auth)/forgot-password")}
+            >
+              <Text className="font-sans-medium text-[14px] text-salli-accent">Forgot password?</Text>
+            </Pressable>
+
+            <View className="my-1 flex-row items-center gap-3">
+              <View className="h-px flex-1 bg-white/10" />
+              <Text className="text-[12px] text-white/20">or</Text>
+              <View className="h-px flex-1 bg-white/10" />
+            </View>
+
+            <PillButton variant="secondary" onPress={() => router.push("/(auth)/signup")}>
+              Create account
+            </PillButton>
+
+            {!supabaseReady ? (
+              <Pressable className="items-center py-2" onPress={handleDevLogin}>
+                <Text className="text-[12px] text-white/30">Dev login (skip auth)</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }

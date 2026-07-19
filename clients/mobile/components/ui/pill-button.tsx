@@ -1,52 +1,55 @@
-import { Pressable, Text, ActivityIndicator } from "react-native";
-import { cn } from "@/lib/utils";
-import { useThemeColors } from "@/lib/theme";
+import type { ReactNode } from "react";
+import { ActivityIndicator, Pressable, Text, type PressableProps } from "react-native";
 
-interface PillButtonProps {
-  variant?: "primary" | "secondary" | "destructive";
-  onPress?: () => void;
-  disabled?: boolean;
+import { useThemeColors } from "../../lib/theme";
+import { cn } from "../../lib/utils";
+
+type PillButtonProps = PressableProps & {
+  children: ReactNode;
+  variant?: "primary" | "secondary" | "accent";
   loading?: boolean;
-  children: string;
   className?: string;
-}
+};
 
-/** Mirrors clients/web/src/components/ui/page-shell.tsx PillButton. */
+/** The mockup's two recurring CTA shapes: a solid "inverse of canvas" primary
+ * pill (white-on-black in dark mode) and a translucent secondary pill with a
+ * hairline border. `accent` is the fixed-blue variant (e.g. "Set Reminder"). */
 export function PillButton({
-  variant = "secondary",
-  onPress,
-  disabled,
-  loading,
   children,
+  variant = "primary",
+  loading,
+  disabled,
   className,
+  ...props
 }: PillButtonProps) {
-  const theme = useThemeColors();
-  const isLight = variant === "secondary";
-  const spinnerColor = isLight ? theme.foreground : variant === "primary" ? theme.primaryForeground : "#fff";
+  const colors = useThemeColors();
+
+  const bg =
+    variant === "primary" ? colors.primary : variant === "accent" ? colors.accent : "transparent";
+  const textColor =
+    variant === "primary" ? colors.primaryForeground : variant === "accent" ? "#FFFFFF" : colors.foreground;
 
   return (
     <Pressable
-      onPress={onPress}
       disabled={disabled || loading}
       className={cn(
-        "flex-row items-center justify-center gap-2 rounded-full px-5 py-3.5",
-        variant === "primary" && "bg-primary active:opacity-85",
-        variant === "secondary" && "bg-card border border-border active:bg-muted",
-        variant === "destructive" && "bg-destructive active:opacity-90",
+        "h-[50px] flex-row items-center justify-center gap-2 rounded-pill",
+        variant === "secondary" && "border border-foreground/10 bg-foreground/5",
         (disabled || loading) && "opacity-50",
         className,
       )}
+      style={variant !== "secondary" ? { backgroundColor: bg } : undefined}
+      {...props}
     >
-      {loading && <ActivityIndicator size="small" color={spinnerColor} />}
-      <Text
-        className={cn(
-          "text-[15px]",
-          isLight ? "text-foreground" : variant === "primary" ? "text-primary-foreground" : "text-white",
-        )}
-        style={{ fontFamily: "DMSans_700Bold" }}
-      >
-        {children}
-      </Text>
+      {loading ? (
+        <ActivityIndicator color={textColor} />
+      ) : typeof children === "string" ? (
+        <Text style={{ color: textColor }} className="text-[16px] font-sans-semibold">
+          {children}
+        </Text>
+      ) : (
+        children
+      )}
     </Pressable>
   );
 }

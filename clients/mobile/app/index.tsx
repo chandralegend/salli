@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Redirect } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 
-import { useAuth } from "../lib/auth";
 import { getStatusOnboardingStatusGet } from "../lib/api/sdk.gen";
+import { useSalliStore } from "../lib/store";
 import { useThemeColors } from "../lib/theme";
 
 function Loading() {
@@ -19,7 +19,9 @@ function Loading() {
 }
 
 export default function Index() {
-  const { token, authReady } = useAuth();
+  // Auth hydration lives in the root layout (_layout.tsx); here we just read it.
+  const token = useSalliStore((s) => s.token);
+  const authReady = useSalliStore((s) => s.authReady);
 
   const onboardingStatus = useQuery({
     queryKey: ["onboarding-status"],

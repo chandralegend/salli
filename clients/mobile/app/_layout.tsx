@@ -16,6 +16,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 
+import { useAuth } from "../lib/auth";
 import { ThemeProvider, useAppTheme, useThemeColors } from "../lib/theme";
 
 SplashScreen.preventAutoHideAsync();
@@ -25,6 +26,11 @@ const queryClient = new QueryClient();
 function AppShell() {
   const { isDark } = useAppTheme();
   const colors = useThemeColors();
+
+  // Hydrate the auth token once, app-wide — so it's set on any route (incl.
+  // deep links) and Supabase's onAuthStateChange keeps it fresh for the whole
+  // session, rather than only while the index guard is mounted.
+  useAuth();
 
   return (
     <QueryClientProvider client={queryClient}>

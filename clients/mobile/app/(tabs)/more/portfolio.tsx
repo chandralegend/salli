@@ -5,16 +5,18 @@ import {
   Search,
   Trash2,
   TriangleAlert,
-  X,
 } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
 import { Card } from "@/components/ui/card";
+import { Drawer } from "@/components/ui/drawer";
+import { ChipSelect } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
+import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
 import {
   type AllocationSlice,
@@ -25,8 +27,9 @@ import {
   usePortfolioSummary,
   useUpdateHolding,
 } from "@/hooks/usePortfolio";
+import { confirmDestructive } from "@/lib/confirm";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
-import { useThemeColors, useThemeVars } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const TABS = ["Holdings", "Allocation"] as const;
@@ -83,7 +86,6 @@ function AllocationDonut({
 
 export default function PortfolioScreen() {
   const colors = useThemeColors();
-  const themeVars = useThemeVars();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Holdings");
   const [search, setSearch] = useState("");
   const [selectedClass, setSelectedClass] = useState<number | null>(null);
@@ -167,7 +169,8 @@ export default function PortfolioScreen() {
             </PillButton>
           </View>
         ) : (
-          <View className="px-4 pt-3">
+          <>
+            <View className="px-4 pt-3">
             {/* Navy hero — total value + cost/gain */}
             <Card className="bg-salli-navy-card p-[18px]">
               <Text className="mb-2 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
@@ -211,18 +214,12 @@ export default function PortfolioScreen() {
                 ) : null}
               </View>
             </Card>
-
-            {/* Tabs */}
-            <View className="mt-3 flex-row border-b border-foreground/[0.08]">
-              {TABS.map((t) => (
-                <Pressable key={t} onPress={() => setTab(t)} className={cn("px-3.5 py-2", tab === t && "border-b-2 border-salli-accent")}>
-                  <Text className={cn("text-[13px]", tab === t ? "font-sans-semibold text-foreground" : "font-sans-medium text-foreground/35")}>
-                    {t}
-                  </Text>
-                </Pressable>
-              ))}
             </View>
 
+            {/* Tabs */}
+            <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
+
+            <View className="px-4">
             {tab === "Holdings" ? (
               <>
                 <View className="mt-2.5 flex-row gap-2">
@@ -394,7 +391,8 @@ export default function PortfolioScreen() {
                 </View>
               </>
             )}
-          </View>
+            </View>
+          </>
         )}
       </PageShell>
 
@@ -416,18 +414,13 @@ export default function PortfolioScreen() {
       ) : null}
 
       {/* Asset-class detail drawer */}
-      <Modal
+      <Drawer
         visible={selectedClass !== null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSelectedClass(null)}
+        onClose={() => setSelectedClass(null)}
+        title={selectedClass !== null && allocation[selectedClass] ? titleCase(allocation[selectedClass].asset_class) : undefined}
+        keyboardAvoiding={false}
       >
-        <Pressable className="flex-1 justify-end" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onPress={() => setSelectedClass(null)}>
-          <Pressable onPress={() => {}} style={themeVars} className="rounded-t-[24px] border-t border-foreground/10 bg-background px-5 pb-8 pt-3">
-            <View className="items-center pb-3">
-              <View className="h-1 w-10 rounded-full bg-foreground/15" />
-            </View>
-            {selectedClass !== null && allocation[selectedClass]
+        {selectedClass !== null && allocation[selectedClass]
               ? (() => {
                   const a = allocation[selectedClass];
                   const color = colorForClass[a.asset_class] ?? SLICE_COLORS[0];
@@ -436,13 +429,6 @@ export default function PortfolioScreen() {
                   const gain = Number(a.current_value) - cost;
                   return (
                     <>
-                      <View className="mb-3 flex-row items-center gap-2.5">
-                        <View style={{ width: 12, height: 12, borderRadius: 4, backgroundColor: color }} />
-                        <Text className="flex-1 font-sans-bold text-[17px] text-foreground">{titleCase(a.asset_class)}</Text>
-                        <Pressable onPress={() => setSelectedClass(null)} className="h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.08]">
-                          <X size={14} color={colors.mutedForeground} strokeWidth={2} />
-                        </Pressable>
-                      </View>
                       <View className="mb-3 flex-row gap-2">
                         <View className="flex-1 rounded-control border border-foreground/[0.08] bg-card p-3">
                           <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">Value</Text>
@@ -490,9 +476,7 @@ export default function PortfolioScreen() {
                   );
                 })()
               : null}
-          </Pressable>
-        </Pressable>
-      </Modal>
+      </Drawer>
 
       <HoldingDrawer visible={addOpen} onClose={() => setAddOpen(false)} />
       <HoldingDrawer
@@ -517,8 +501,6 @@ function HoldingDrawer({
   holding?: Holding | null;
   onClose: () => void;
 }) {
-  const colors = useThemeColors();
-  const themeVars = useThemeVars();
   const addHolding = useAddHolding();
   const updateHolding = useUpdateHolding();
   const deleteHolding = useDeleteHolding();
@@ -595,38 +577,43 @@ function HoldingDrawer({
 
   const confirmDelete = () => {
     if (!holding) return;
-    Alert.alert(
-      "Delete holding?",
-      `${holding.name} (${holding.symbol.toUpperCase()}) will be permanently removed from your portfolio.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => deleteHolding.mutate(holding.id, { onSuccess: onClose }),
-        },
-      ],
-    );
+    confirmDestructive({
+      title: "Delete holding?",
+      message: `${holding.name} (${holding.symbol.toUpperCase()}) will be permanently removed from your portfolio.`,
+      onConfirm: () => deleteHolding.mutate(holding.id, { onSuccess: onClose }),
+    });
   };
 
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable className="flex-1 justify-end" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onPress={onClose}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <Pressable onPress={() => {}} style={themeVars} className="max-h-[88%] rounded-t-[28px] border-t border-foreground/10 bg-background px-4 pb-8 pt-2.5">
-            <View className="items-center pb-1">
-              <View className="h-1 w-10 rounded-full bg-foreground/20" />
-            </View>
-            <View className="flex-row items-center px-0.5 pb-3.5 pt-1.5">
-              <Text className="flex-1 font-sans-bold text-[18px] text-foreground">
-                {isEdit ? "Edit Holding" : "New Holding"}
-              </Text>
-              <Pressable onPress={onClose} className="h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.08]">
-                <X size={14} color={colors.mutedForeground} strokeWidth={2} />
-              </Pressable>
-            </View>
+  const footer = (
+    <>
+      <PillButton
+        variant="accent"
+        loading={addHolding.isPending || updateHolding.isPending}
+        disabled={!canSubmit}
+        onPress={submit}
+      >
+        {isEdit ? "Save Changes" : "Add Holding"}
+      </PillButton>
+      {isEdit ? (
+        <Pressable
+          onPress={confirmDelete}
+          disabled={busy}
+          className="mt-2.5 h-12 flex-row items-center justify-center gap-2 rounded-pill border border-destructive/25 bg-destructive/[0.08]"
+        >
+          <Trash2 size={15} color="#EF4444" strokeWidth={2} />
+          <Text className="font-sans-semibold text-[14px] text-destructive">
+            {deleteHolding.isPending ? "Deleting…" : "Delete Holding"}
+          </Text>
+        </Pressable>
+      ) : null}
+      {isError ? (
+        <Text className="mt-2 text-center text-[11px] text-destructive">Could not save holding. Please try again.</Text>
+      ) : null}
+    </>
+  );
 
-            <ScrollView keyboardShouldPersistTaps="handled">
+  return (
+    <Drawer visible={visible} onClose={onClose} title={isEdit ? "Edit Holding" : "New Holding"} footer={footer}>
               {/* symbol + name */}
               <View className="mb-2.5 flex-row gap-2">
                 <TextField
@@ -642,22 +629,13 @@ function HoldingDrawer({
 
               {/* asset class chips */}
               <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">Asset Class *</Text>
-              <View className="mb-3 flex-row flex-wrap gap-1.5">
-                {ASSET_CLASSES.map((ac) => (
-                  <Pressable
-                    key={ac}
-                    onPress={() => setAssetClass(ac)}
-                    className={cn(
-                      "rounded-pill px-3.5 py-1.5",
-                      assetClass === ac ? "bg-salli-accent" : "border border-foreground/10 bg-card",
-                    )}
-                  >
-                    <Text className={cn("text-[12px] capitalize", assetClass === ac ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/50")}>
-                      {ac}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
+              <ChipSelect
+                className="mb-3"
+                options={ASSET_CLASSES}
+                value={assetClass}
+                onChange={setAssetClass}
+                capitalize
+              />
 
               {/* cost + current value */}
               <View className="mb-3 flex-row gap-2">
@@ -693,34 +671,6 @@ function HoldingDrawer({
                   </Text>
                 </View>
               ) : null}
-
-              <PillButton
-                variant="accent"
-                loading={addHolding.isPending || updateHolding.isPending}
-                disabled={!canSubmit}
-                onPress={submit}
-              >
-                {isEdit ? "Save Changes" : "Add Holding"}
-              </PillButton>
-              {isEdit ? (
-                <Pressable
-                  onPress={confirmDelete}
-                  disabled={busy}
-                  className="mt-2.5 h-12 flex-row items-center justify-center gap-2 rounded-pill border border-destructive/25 bg-destructive/[0.08]"
-                >
-                  <Trash2 size={15} color="#EF4444" strokeWidth={2} />
-                  <Text className="font-sans-semibold text-[14px] text-destructive">
-                    {deleteHolding.isPending ? "Deleting…" : "Delete Holding"}
-                  </Text>
-                </Pressable>
-              ) : null}
-              {isError ? (
-                <Text className="mt-2 text-center text-[11px] text-destructive">Could not save holding. Please try again.</Text>
-              ) : null}
-            </ScrollView>
-          </Pressable>
-        </KeyboardAvoidingView>
-      </Pressable>
-    </Modal>
+    </Drawer>
   );
 }

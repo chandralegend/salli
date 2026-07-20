@@ -13,16 +13,17 @@ import {
   Trash2,
   TrendingUp,
   Wallet,
-  X,
 } from "lucide-react-native";
 import { useState } from "react";
-import { ActivityIndicator, Modal, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import Markdown from "react-native-markdown-display";
 import Svg, { Circle, Line, Path, Polyline } from "react-native-svg";
 
 import { Card } from "@/components/ui/card";
+import { Drawer } from "@/components/ui/drawer";
 import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
+import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
 import {
   useFiGoalMutations,
@@ -38,7 +39,7 @@ import {
 } from "@/hooks/useFi";
 import { useBalanceSheet } from "@/hooks/useReports";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
-import { useThemeColors, useThemeVars } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const TABS = ["Overview", "Strategy", "Goals", "Mentor"] as const;
@@ -204,7 +205,6 @@ function MilestoneRow({ milestone }: { milestone: Milestone }) {
 
 export default function FinancialIndependenceScreen() {
   const colors = useThemeColors();
-  const themeVars = useThemeVars();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Overview");
   const [strategyOpen, setStrategyOpen] = useState(true);
   const [selectedBucket, setSelectedBucket] = useState<number | null>(null);
@@ -301,15 +301,7 @@ export default function FinancialIndependenceScreen() {
         <Info size={18} color={colors.mutedForeground} strokeWidth={2} />
       </View>
 
-      <View className="mx-4 mt-3 flex-row border-b border-foreground/[0.08]">
-        {TABS.map((t) => (
-          <Pressable key={t} onPress={() => setTab(t)} className={cn("px-3.5 py-2", tab === t && "border-b-2 border-salli-accent")}>
-            <Text className={cn("text-[13px]", tab === t ? "font-sans-semibold text-foreground" : "font-sans-medium text-foreground/35")}>
-              {t}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
 
       {tab === "Overview" && fiScore.isLoading ? (
         <View className="items-center pt-16">
@@ -710,79 +702,57 @@ export default function FinancialIndependenceScreen() {
         Planning estimates only · Not financial advice · Numbers from deterministic engine
       </Text>
 
-      <Modal visible={addOpen} transparent animationType="slide" onRequestClose={() => setAddOpen(false)}>
-        <Pressable className="flex-1 justify-end" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onPress={() => setAddOpen(false)}>
-          <Pressable onPress={() => {}} style={themeVars} className="rounded-t-[24px] border-t border-foreground/10 bg-background px-4 pb-8 pt-3">
-            <View className="items-center pb-3">
-              <View className="h-1 w-10 rounded-full bg-foreground/15" />
-            </View>
-            <View className="mb-3 flex-row items-center justify-between">
-              <Text className="font-sans-bold text-[17px] text-foreground">Add a goal</Text>
-              <Pressable onPress={() => setAddOpen(false)} className="h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.08]">
-                <X size={14} color={colors.mutedForeground} strokeWidth={2} />
-              </Pressable>
-            </View>
-            <View className="gap-2">
-              <TextField label="Goal name" value={newName} onChangeText={setNewName} placeholder="e.g. Buy a home" />
-              <View className="flex-row gap-2">
-                <TextField className="flex-1" label="Target amount" value={newAmount} onChangeText={setNewAmount} keyboardType="numeric" placeholder="0" />
-                <TextField className="flex-1" label="Target year" value={newYear} onChangeText={setNewYear} keyboardType="numeric" placeholder="YYYY" />
-              </View>
-              <PillButton className="mt-1" loading={createGoal.isPending} disabled={!newName.trim() || !newAmount} onPress={submitGoal}>
-                Add goal
-              </PillButton>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <Drawer
+        visible={addOpen}
+        onClose={() => setAddOpen(false)}
+        title="Add a goal"
+        footer={
+          <PillButton loading={createGoal.isPending} disabled={!newName.trim() || !newAmount} onPress={submitGoal}>
+            Add goal
+          </PillButton>
+        }
+      >
+        <View className="gap-2">
+          <TextField label="Goal name" value={newName} onChangeText={setNewName} placeholder="e.g. Buy a home" />
+          <View className="flex-row gap-2">
+            <TextField className="flex-1" label="Target amount" value={newAmount} onChangeText={setNewAmount} keyboardType="numeric" placeholder="0" />
+            <TextField className="flex-1" label="Target year" value={newYear} onChangeText={setNewYear} keyboardType="numeric" placeholder="YYYY" />
+          </View>
+        </View>
+      </Drawer>
 
       {/* Allocation bucket detail drawer */}
-      <Modal
+      <Drawer
         visible={selectedBucket !== null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSelectedBucket(null)}
+        onClose={() => setSelectedBucket(null)}
+        keyboardAvoiding={false}
+        title={selectedBucket !== null ? strategy.data?.buckets[selectedBucket]?.name : undefined}
       >
-        <Pressable className="flex-1 justify-end" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onPress={() => setSelectedBucket(null)}>
-          <Pressable onPress={() => {}} style={themeVars} className="rounded-t-[24px] border-t border-foreground/10 bg-background px-5 pb-8 pt-3">
-            <View className="items-center pb-3">
-              <View className="h-1 w-10 rounded-full bg-foreground/15" />
-            </View>
-            {selectedBucket !== null && strategy.data?.buckets[selectedBucket]
-              ? (() => {
-                  const b = strategy.data.buckets[selectedBucket];
-                  const color = PIE_COLORS[selectedBucket % PIE_COLORS.length];
-                  const route = surplus.data ? Number(surplus.data.monthly_surplus) * Number(b.target_pct) : null;
-                  return (
-                    <>
-                      <View className="mb-3 flex-row items-center gap-2.5">
-                        <View style={{ width: 12, height: 12, borderRadius: 4, backgroundColor: color }} />
-                        <Text className="flex-1 font-sans-bold text-[17px] text-foreground">{b.name}</Text>
-                        <Pressable onPress={() => setSelectedBucket(null)} className="h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.08]">
-                          <X size={14} color={colors.mutedForeground} strokeWidth={2} />
-                        </Pressable>
-                      </View>
-                      <View className="mb-3 flex-row gap-2">
-                        <View className="flex-1 rounded-control border border-foreground/[0.08] bg-card p-3">
-                          <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">Allocation</Text>
-                          <Text className="font-sans-extrabold text-[22px] leading-6 text-foreground">{formatPct(b.target_pct, 0)}</Text>
-                        </View>
-                        <View className="flex-1 rounded-control border border-foreground/[0.08] bg-card p-3">
-                          <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">Routed / month</Text>
-                          <Text className="font-sans-extrabold text-[22px] leading-6 text-foreground">
-                            {route !== null ? `Rs. ${formatLKRAbbrev(route)}` : "—"}
-                          </Text>
-                        </View>
-                      </View>
-                      <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">How it works</Text>
-                      <Text className="text-[13px] leading-5 text-foreground/60">{b.description}</Text>
-                    </>
-                  );
-                })()
-              : null}
-          </Pressable>
-        </Pressable>
-      </Modal>
+        {selectedBucket !== null && strategy.data?.buckets[selectedBucket]
+          ? (() => {
+              const b = strategy.data.buckets[selectedBucket];
+              const route = surplus.data ? Number(surplus.data.monthly_surplus) * Number(b.target_pct) : null;
+              return (
+                <>
+                  <View className="mb-3 flex-row gap-2">
+                    <View className="flex-1 rounded-control border border-foreground/[0.08] bg-card p-3">
+                      <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">Allocation</Text>
+                      <Text className="font-sans-extrabold text-[22px] leading-6 text-foreground">{formatPct(b.target_pct, 0)}</Text>
+                    </View>
+                    <View className="flex-1 rounded-control border border-foreground/[0.08] bg-card p-3">
+                      <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">Routed / month</Text>
+                      <Text className="font-sans-extrabold text-[22px] leading-6 text-foreground">
+                        {route !== null ? `Rs. ${formatLKRAbbrev(route)}` : "—"}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">How it works</Text>
+                  <Text className="text-[13px] leading-5 text-foreground/60">{b.description}</Text>
+                </>
+              );
+            })()
+          : null}
+      </Drawer>
     </PageShell>
   );
 }

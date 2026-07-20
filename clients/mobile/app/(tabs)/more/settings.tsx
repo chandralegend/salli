@@ -10,6 +10,7 @@ import { ScreenHeader } from "@/components/ui/screen-header";
 import { useCreateCheckout, useDeleteAccount, useEntitlements, useExportData } from "@/hooks/useSettings";
 import { useMore } from "@/hooks/useMore";
 import { logout } from "@/lib/auth";
+import { confirmDestructive } from "@/lib/confirm";
 import { useDarkModeToggle, useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -91,26 +92,19 @@ export default function SettingsScreen() {
       );
       return;
     }
-    Alert.alert(
-      "Delete my account",
-      `This permanently deletes all data for ${email}. This cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteAccount.mutateAsync(email);
-              await logout();
-              router.replace("/(auth)/login");
-            } catch {
-              Alert.alert("Delete failed", "Could not delete your account right now. Please try again.");
-            }
-          },
-        },
-      ],
-    );
+    confirmDestructive({
+      title: "Delete my account",
+      message: `This permanently deletes all data for ${email}. This cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          await deleteAccount.mutateAsync(email);
+          await logout();
+          router.replace("/(auth)/login");
+        } catch {
+          Alert.alert("Delete failed", "Could not delete your account right now. Please try again.");
+        }
+      },
+    });
   }
 
   return (

@@ -2,32 +2,20 @@ import {
   Calendar,
   Check,
   ChevronRight,
-  CreditCard,
-  FileText,
-  Landmark,
   Plus,
-  RefreshCw,
   Search,
-  X,
 } from "lucide-react-native";
 import { useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  Modal as RNModal,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 
+import { Drawer } from "@/components/ui/drawer";
+import { ChipSelect, FilterChip } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { TextField } from "@/components/ui/text-field";
 import { useReminderMutations, useReminders, type Reminder } from "@/hooks/useReminders";
-import { useThemeColors, useThemeVars } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const FILTERS = ["All", "Overdue", "Due Soon", "IRD"] as const;
@@ -234,23 +222,7 @@ export default function RemindersScreen() {
 
       <View className="mb-2 flex-row gap-1.5 px-4">
         {FILTERS.map((f) => (
-          <Pressable
-            key={f}
-            onPress={() => setFilter(f)}
-            className={cn(
-              "rounded-pill px-3.5 py-1",
-              filter === f ? "bg-salli-accent" : "border border-foreground/[0.08] bg-card",
-            )}
-          >
-            <Text
-              className={cn(
-                "text-[12px]",
-                filter === f ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/40",
-              )}
-            >
-              {f}
-            </Text>
-          </Pressable>
+          <FilterChip key={f} label={f} active={filter === f} onPress={() => setFilter(f)} />
         ))}
       </View>
 
@@ -307,14 +279,9 @@ export default function RemindersScreen() {
   );
 }
 
-const REMINDER_TYPES = [
-  { label: "Tax Filing", Icon: Landmark },
-  { label: "Payment", Icon: CreditCard },
-  { label: "Renewal", Icon: RefreshCw },
-  { label: "Custom", Icon: FileText },
-] as const;
+const REMINDER_TYPES = ["Tax Filing", "Payment", "Renewal", "Custom"] as const;
 
-type ReminderTypeLabel = (typeof REMINDER_TYPES)[number]["label"];
+type ReminderTypeLabel = (typeof REMINDER_TYPES)[number];
 
 /** Bottom-sheet "New Reminder" form. The backend CreateReminderRequest accepts
  * only { kind, due_date }, so the freeform `kind` carries the title; the Type
@@ -333,7 +300,6 @@ function NewReminderDrawer({
   onSubmit: (input: { kind: string; due_date: string }) => Promise<void>;
 }) {
   const colors = useThemeColors();
-  const themeVars = useThemeVars();
 
   const [type, setType] = useState<ReminderTypeLabel>("Tax Filing");
   const [description, setDescription] = useState("");
@@ -362,31 +328,16 @@ function NewReminderDrawer({
   };
 
   return (
-    <RNModal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
-      <Pressable className="flex-1 justify-end bg-black/50" onPress={handleClose}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <Pressable
-            style={[{ backgroundColor: colors.card }, themeVars]}
-            className="rounded-t-[28px] border-t border-foreground/[0.12] px-4 pb-8 pt-2.5"
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View className="mb-1 items-center">
-              <View className="h-1 w-9 rounded-pill bg-foreground/20" />
-            </View>
-
-            <View className="flex-row items-center px-0.5 pb-3.5 pt-1.5">
-              <Text className="flex-1 font-sans-bold text-[18px] text-foreground">New Reminder</Text>
-              <Pressable
-                onPress={handleClose}
-                accessibilityRole="button"
-                accessibilityLabel="Close"
-                className="h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.08]"
-              >
-                <X size={14} color={colors.mutedForeground} strokeWidth={2} />
-              </Pressable>
-            </View>
-
-            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+    <Drawer
+      visible={visible}
+      onClose={handleClose}
+      title="New Reminder"
+      footer={
+        <PillButton disabled={!canSubmit} loading={saving} onPress={handleSubmit}>
+          Add Reminder
+        </PillButton>
+      }
+    >
               <TextField
                 label="Description *"
                 className="mb-2.5"
@@ -415,39 +366,7 @@ function NewReminderDrawer({
               <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
                 Type
               </Text>
-              <View className="mb-4 flex-row flex-wrap gap-1.5">
-                {REMINDER_TYPES.map(({ label, Icon }) => {
-                  const active = type === label;
-                  return (
-                    <Pressable
-                      key={label}
-                      onPress={() => setType(label)}
-                      className={cn(
-                        "flex-row items-center gap-1.5 rounded-pill px-3.5 py-1.5",
-                        active ? "bg-salli-accent" : "border border-foreground/[0.08] bg-card",
-                      )}
-                    >
-                      {active ? <Icon size={11} color="#FFFFFF" strokeWidth={2.5} /> : null}
-                      <Text
-                        className={cn(
-                          "text-[12px]",
-                          active ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/40",
-                        )}
-                      >
-                        {label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-
-              <PillButton disabled={!canSubmit} loading={saving} onPress={handleSubmit}>
-                Add Reminder
-              </PillButton>
-            </ScrollView>
-          </Pressable>
-        </KeyboardAvoidingView>
-      </Pressable>
-    </RNModal>
+              <ChipSelect className="mb-4" options={REMINDER_TYPES} value={type} onChange={setType} />
+    </Drawer>
   );
 }

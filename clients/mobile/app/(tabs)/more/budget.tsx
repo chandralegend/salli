@@ -15,9 +15,11 @@ import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
+import { FilterChip } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { getScoreFiScoreGet } from "@/lib/api/sdk.gen";
 import { useBudgetSummaryFull, useBudgets, useCreateBudget, useUpdateBudget } from "@/hooks/useBudget";
 import { useAccounts } from "@/hooks/useLedger";
@@ -289,38 +291,15 @@ export default function BudgetScreen() {
 
           {/* cadence + presets */}
           <View className="mt-2.5 flex-row items-center gap-2">
-            <View className="flex-row rounded-pill border border-foreground/[0.07] bg-card p-[3px]">
-              {(["Weekly", "Monthly"] as const).map((c) => (
-                <Pressable
-                  key={c}
-                  onPress={() => setCadence(c)}
-                  className={cn("h-8 items-center justify-center rounded-pill px-3.5", cadence === c && "bg-salli-accent")}
-                >
-                  <Text className={cn("text-[12px]", cadence === c ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/30")}>
-                    {c}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            <SegmentedControl options={["Weekly", "Monthly"] as const} value={cadence} onChange={setCadence} />
             <View className="flex-row gap-1.5">
               {PRESETS.map((p) => (
-                <Pressable
+                <FilterChip
                   key={p.label}
+                  label={p.label}
+                  active={monthlyLimit === p.value}
                   onPress={() => setMonthlyLimit(p.value)}
-                  className={cn(
-                    "rounded-pill px-3 py-1",
-                    monthlyLimit === p.value ? "bg-salli-accent" : "border border-foreground/[0.08] bg-card",
-                  )}
-                >
-                  <Text
-                    className={cn(
-                      "text-[12px]",
-                      monthlyLimit === p.value ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/40",
-                    )}
-                  >
-                    {p.label}
-                  </Text>
-                </Pressable>
+                />
               ))}
             </View>
           </View>

@@ -1,15 +1,20 @@
-import { ChevronRight, Info, Pencil, Plus, Search, Trash2, X, Zap } from "lucide-react-native";
+import { ChevronRight, Info, Pencil, Plus, Search, Trash2, Zap } from "lucide-react-native";
 import { useMemo, useRef, useState } from "react";
-import { Alert, KeyboardAvoidingView, LayoutChangeEvent, Modal, PanResponder, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { LayoutChangeEvent, PanResponder, Pressable, Text, TextInput, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
+import { Drawer } from "@/components/ui/drawer";
+import { FilterChip } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
 import { useAddDebt, useDebts, useDeleteDebt, usePayoffPlan, useUpdateDebt, type Debt } from "@/hooks/useDebt";
+import { confirmDestructive } from "@/lib/confirm";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
-import { useThemeColors, useThemeVars } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const TABS = ["Overview", "Strategy", "Schedule"] as const;
@@ -159,18 +164,6 @@ export default function DebtScreen() {
   const totalMonths = plan.data?.months_to_payoff ?? null;
   const visibleRows = showAllRows ? monthlyRows : monthlyRows.slice(0, 12);
 
-  const renderTabs = () => (
-    <View className="mt-3 flex-row border-b border-foreground/[0.08] px-4">
-      {TABS.map((t) => (
-        <Pressable key={t} onPress={() => setTab(t)} className={cn("px-3.5 py-2", tab === t && "border-b-2 border-salli-accent")}>
-          <Text className={cn("text-[13px]", tab === t ? "font-sans-semibold text-foreground" : "font-sans-medium text-foreground/35")}>
-            {t}
-          </Text>
-        </Pressable>
-      ))}
-    </View>
-  );
-
   return (
     <View className="flex-1">
       <PageShell>
@@ -184,7 +177,7 @@ export default function DebtScreen() {
           }
         />
 
-        {renderTabs()}
+        <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
 
         {allDebts.length === 0 ? (
           <View className="items-center gap-2 px-8 pt-16">
@@ -241,15 +234,7 @@ export default function DebtScreen() {
 
             <View className="mt-2.5 flex-row gap-1.5">
               {FILTERS.map((f) => (
-                <Pressable
-                  key={f}
-                  onPress={() => setFilter(f)}
-                  className={cn("rounded-pill px-3.5 py-1", filter === f ? "bg-salli-accent" : "border border-foreground/[0.08] bg-card")}
-                >
-                  <Text className={cn("text-[12px]", filter === f ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/40")}>
-                    {f}
-                  </Text>
-                </Pressable>
+                <FilterChip key={f} label={f} active={filter === f} onPress={() => setFilter(f)} />
               ))}
             </View>
 
@@ -307,15 +292,13 @@ export default function DebtScreen() {
               <Text className="mb-2.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
                 Payoff Strategy
               </Text>
-              <View className="mb-3 flex-row rounded-pill border border-foreground/[0.06] bg-foreground/[0.06] p-1">
-                {(["avalanche", "snowball"] as const).map((s) => (
-                  <Pressable key={s} onPress={() => setStrategy(s)} className={cn("h-9 flex-1 items-center justify-center rounded-pill", strategy === s && "bg-salli-accent")}>
-                    <Text className={cn("text-[13px] capitalize", strategy === s ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/35")}>
-                      {s}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
+              <SegmentedControl
+                className="mb-3"
+                options={["avalanche", "snowball"] as const}
+                value={strategy}
+                onChange={setStrategy}
+                capitalize
+              />
               <Pressable onPress={() => setTab("Strategy")} className="flex-row items-center justify-between rounded-control border border-foreground/[0.07] bg-muted px-3.5 py-2.5">
                 <View>
                   <Text className="mb-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
@@ -359,15 +342,12 @@ export default function DebtScreen() {
             <Text className="mb-2 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
               Payoff Method
             </Text>
-            <View className="flex-row rounded-pill border border-foreground/[0.07] bg-card p-1">
-              {(["avalanche", "snowball"] as const).map((s) => (
-                <Pressable key={s} onPress={() => setStrategy(s)} className={cn("h-[38px] flex-1 items-center justify-center rounded-pill", strategy === s && "bg-salli-accent")}>
-                  <Text className={cn("text-[13px] capitalize", strategy === s ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/35")}>
-                    {s}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            <SegmentedControl
+              options={["avalanche", "snowball"] as const}
+              value={strategy}
+              onChange={setStrategy}
+              capitalize
+            />
             <View className="mt-2 flex-row items-start gap-2 rounded-control border border-salli-accent/20 bg-salli-accent/[0.08] px-3.5 py-2.5">
               <Zap size={14} color={colors.accent} strokeWidth={2} style={{ marginTop: 1 }} />
               <Text className="flex-1 text-[11px] leading-4 text-foreground/55">
@@ -601,8 +581,6 @@ function AddEditDebtDrawer({
   debt: Debt | null;
   onClose: () => void;
 }) {
-  const colors = useThemeColors();
-  const themeVars = useThemeVars();
   const addDebt = useAddDebt();
   const updateDebt = useUpdateDebt();
   const deleteDebt = useDeleteDebt();
@@ -658,95 +636,79 @@ function AddEditDebtDrawer({
 
   const confirmDelete = () => {
     if (!debt) return;
-    Alert.alert("Delete debt", `Delete "${debt.name}"? This can't be undone.`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => deleteDebt.mutate(debt.id, { onSuccess: close }),
-      },
-    ]);
+    confirmDestructive({
+      title: "Delete debt",
+      message: `Delete "${debt.name}"? This can't be undone.`,
+      onConfirm: () => deleteDebt.mutate(debt.id, { onSuccess: close }),
+    });
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
-      <Pressable className="flex-1 justify-end" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onPress={close}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <Pressable onPress={() => {}} style={themeVars} className="max-h-[88%] rounded-t-[28px] border-t border-foreground/10 bg-background px-4 pb-8 pt-2.5">
-            <View className="items-center pb-1">
-              <View className="h-1 w-10 rounded-full bg-foreground/20" />
-            </View>
-            <View className="flex-row items-center px-0.5 pb-3.5 pt-1.5">
-              <Text className="flex-1 font-sans-bold text-[18px] text-foreground">{isEdit ? "Edit Debt" : "New Debt"}</Text>
-              <Pressable onPress={close} className="h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.08]">
-                <X size={14} color={colors.mutedForeground} strokeWidth={2} />
-              </Pressable>
-            </View>
+    <Drawer
+      visible={visible}
+      onClose={close}
+      title={isEdit ? "Edit Debt" : "New Debt"}
+      footer={
+        <PillButton variant="accent" loading={saving} disabled={!canSubmit} onPress={submit}>
+          {isEdit ? "Save Changes" : "Add Debt"}
+        </PillButton>
+      }
+    >
+      <TextField className="mb-2.5" label="Name *" value={name} onChangeText={setName} placeholder="Housing Loan" />
 
-            <ScrollView keyboardShouldPersistTaps="handled">
-              <TextField className="mb-2.5" label="Name *" value={name} onChangeText={setName} placeholder="Housing Loan" />
+      <TextField
+        className="mb-2.5"
+        label="Principal Outstanding *"
+        value={principal}
+        onChangeText={setPrincipal}
+        keyboardType="decimal-pad"
+        placeholder="0"
+      />
 
-              <TextField
-                className="mb-2.5"
-                label="Principal Outstanding *"
-                value={principal}
-                onChangeText={setPrincipal}
-                keyboardType="decimal-pad"
-                placeholder="0"
-              />
+      <View className="mb-3 flex-row gap-2">
+        <TextField
+          className="flex-1"
+          label="APR % *"
+          value={aprPct}
+          onChangeText={setAprPct}
+          keyboardType="decimal-pad"
+          placeholder="24"
+        />
+        <TextField
+          className="flex-1"
+          label="Min Payment / mo *"
+          value={minPayment}
+          onChangeText={setMinPayment}
+          keyboardType="decimal-pad"
+          placeholder="0"
+        />
+      </View>
 
-              <View className="mb-3 flex-row gap-2">
-                <TextField
-                  className="flex-1"
-                  label="APR % *"
-                  value={aprPct}
-                  onChangeText={setAprPct}
-                  keyboardType="decimal-pad"
-                  placeholder="24"
-                />
-                <TextField
-                  className="flex-1"
-                  label="Min Payment / mo *"
-                  value={minPayment}
-                  onChangeText={setMinPayment}
-                  keyboardType="decimal-pad"
-                  placeholder="0"
-                />
-              </View>
+      {principal && aprPct ? (
+        <View className="mb-4 flex-row items-center justify-between rounded-[12px] border border-foreground/[0.08] bg-card px-3.5 py-2.5">
+          <Text className="text-[12px] text-foreground/50">Interest / mo (approx)</Text>
+          <Text className="font-sans-bold text-[14px] text-foreground">
+            Rs. {formatLKR((principalNum * (aprNum / 100)) / 12, 0)}
+          </Text>
+        </View>
+      ) : null}
 
-              {principal && aprPct ? (
-                <View className="mb-4 flex-row items-center justify-between rounded-[12px] border border-foreground/[0.08] bg-card px-3.5 py-2.5">
-                  <Text className="text-[12px] text-foreground/50">Interest / mo (approx)</Text>
-                  <Text className="font-sans-bold text-[14px] text-foreground">
-                    Rs. {formatLKR((principalNum * (aprNum / 100)) / 12, 0)}
-                  </Text>
-                </View>
-              ) : null}
+      {isEdit ? (
+        <Pressable
+          onPress={confirmDelete}
+          disabled={deleteDebt.isPending}
+          className="mt-2.5 h-[50px] flex-row items-center justify-center gap-2 rounded-pill border border-destructive/20 bg-destructive/[0.08]"
+        >
+          <Trash2 size={15} color="#EF4444" strokeWidth={2} />
+          <Text className="font-sans-semibold text-[15px] text-destructive">
+            {deleteDebt.isPending ? "Deleting…" : "Delete Debt"}
+          </Text>
+        </Pressable>
+      ) : null}
 
-              <PillButton variant="accent" loading={saving} disabled={!canSubmit} onPress={submit}>
-                {isEdit ? "Save Changes" : "Add Debt"}
-              </PillButton>
-
-              {isEdit ? (
-                <Pressable
-                  onPress={confirmDelete}
-                  disabled={deleteDebt.isPending}
-                  className="mt-2.5 h-[50px] flex-row items-center justify-center gap-2 rounded-pill border border-destructive/20 bg-destructive/[0.08]"
-                >
-                  <Trash2 size={15} color="#EF4444" strokeWidth={2} />
-                  <Text className="font-sans-semibold text-[15px] text-destructive">
-                    {deleteDebt.isPending ? "Deleting…" : "Delete Debt"}
-                  </Text>
-                </Pressable>
-              ) : null}
-
-              {isError ? (
-                <Text className="mt-2 text-center text-[11px] text-destructive">Could not save debt. Please try again.</Text>
-              ) : null}
-            </ScrollView>
-          </Pressable>
-        </KeyboardAvoidingView>
-      </Pressable>
-    </Modal>
+      {isError ? (
+        <Text className="mt-2 text-center text-[11px] text-destructive">Could not save debt. Please try again.</Text>
+      ) : null}
+    </Drawer>
   );
 }

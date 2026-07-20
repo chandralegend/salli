@@ -13,11 +13,12 @@ import {
   User,
   Wallet,
 } from "lucide-react-native";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Logo } from "@/components/Logo";
+import { FilterChip } from "@/components/ui/filter-chip";
 import { PillButton } from "@/components/ui/pill-button";
 import { TextField } from "@/components/ui/text-field";
 import {
@@ -134,20 +135,6 @@ function StepTitle({ title, subtitle }: { title: string; subtitle: string }) {
       <Text className="mb-1.5 font-sans-extrabold text-[28px] tracking-tight text-foreground">{title}</Text>
       <Text className="text-[13px] text-foreground/35">{subtitle}</Text>
     </View>
-  );
-}
-
-function Chip({ selected, onPress, children }: { selected: boolean; onPress: () => void; children: ReactNode }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className={cn(
-        "rounded-pill border px-3.5 py-1.5",
-        selected ? "border-transparent bg-salli-accent" : "border-foreground/10 bg-foreground/[0.07]",
-      )}
-    >
-      <Text className={cn("text-[12px] font-sans-medium", selected ? "text-white" : "text-foreground/45")}>{children}</Text>
-    </Pressable>
   );
 }
 
@@ -404,9 +391,12 @@ export default function OnboardingScreen() {
                 <Text className="mb-1.5 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">Employment *</Text>
                 <View className="flex-row flex-wrap gap-1.5">
                   {EMPLOYMENT_OPTIONS.map((opt) => (
-                    <Chip key={opt} selected={employment === opt} onPress={() => setEmployment(opt)}>
-                      {EMPLOYMENT_LABELS[opt]}
-                    </Chip>
+                    <FilterChip
+                      key={opt}
+                      label={EMPLOYMENT_LABELS[opt]}
+                      active={employment === opt}
+                      onPress={() => setEmployment(opt)}
+                    />
                   ))}
                 </View>
               </View>
@@ -514,9 +504,7 @@ export default function OnboardingScreen() {
                 </Text>
                 <View className="flex-row flex-wrap gap-1.5">
                   {[3, 5, 10, 15, 20, 30].map((y) => (
-                    <Chip key={y} selected={timeHorizon === y} onPress={() => setTimeHorizon(y)}>
-                      {y}y
-                    </Chip>
+                    <FilterChip key={y} label={`${y}y`} active={timeHorizon === y} onPress={() => setTimeHorizon(y)} />
                   ))}
                 </View>
               </View>
@@ -558,9 +546,12 @@ export default function OnboardingScreen() {
                 <Text className="mb-1.5 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">Income stability</Text>
                 <View className="flex-row flex-wrap gap-1.5">
                   {STABILITY_OPTIONS.map((o) => (
-                    <Chip key={o.value} selected={stability === o.value} onPress={() => setStability(o.value)}>
-                      {o.label}
-                    </Chip>
+                    <FilterChip
+                      key={o.value}
+                      label={o.label}
+                      active={stability === o.value}
+                      onPress={() => setStability(o.value)}
+                    />
                   ))}
                 </View>
               </View>
@@ -569,9 +560,12 @@ export default function OnboardingScreen() {
                 <Text className="mb-1.5 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">Investment experience</Text>
                 <View className="flex-row flex-wrap gap-1.5">
                   {EXPERIENCE_OPTIONS.map((o) => (
-                    <Chip key={o.value} selected={experience === o.value} onPress={() => setExperience(o.value)}>
-                      {o.label}
-                    </Chip>
+                    <FilterChip
+                      key={o.value}
+                      label={o.label}
+                      active={experience === o.value}
+                      onPress={() => setExperience(o.value)}
+                    />
                   ))}
                 </View>
               </View>
@@ -624,9 +618,12 @@ export default function OnboardingScreen() {
                   <TextField label="Name" value={goal.name} onChangeText={(v) => updateGoal(i, { name: v })} placeholder="e.g. Emergency fund" />
                   <View className="flex-row flex-wrap gap-1.5">
                     {GOAL_KINDS.map((k) => (
-                      <Chip key={k.value} selected={goal.kind === k.value} onPress={() => updateGoal(i, { kind: k.value })}>
-                        {k.label}
-                      </Chip>
+                      <FilterChip
+                        key={k.value}
+                        label={k.label}
+                        active={goal.kind === k.value}
+                        onPress={() => updateGoal(i, { kind: k.value })}
+                      />
                     ))}
                   </View>
                   <View className="flex-row gap-2">

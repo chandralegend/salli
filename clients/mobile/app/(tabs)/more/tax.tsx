@@ -7,6 +7,7 @@ import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { StatTile } from "@/components/ui/stat-tile";
+import { Tabs } from "@/components/ui/tabs";
 import type { TaxComputationFull, TaxPack } from "@/hooks/useTax";
 import { useComputeTax, useLatestTax, useTaxHistory, useTaxPacks } from "@/hooks/useTax";
 import { useReminderMutations } from "@/hooks/useReminders";
@@ -90,21 +91,7 @@ export default function TaxScreen() {
         <ScreenHeader title="Tax" back />
       </View>
 
-      <View className="mt-3 flex-row border-b border-foreground/[0.08] px-4">
-        {TABS.map((t) => (
-          <Pressable key={t} onPress={() => setTab(t)} className="px-3.5 py-2">
-            <Text
-              className={cn(
-                "text-[13px]",
-                tab === t ? "font-sans-semibold text-foreground" : "font-sans-medium text-foreground/35",
-              )}
-            >
-              {t}
-            </Text>
-            {tab === t && <View className="mt-2 h-0.5 rounded-pill bg-salli-accent" />}
-          </Pressable>
-        ))}
-      </View>
+      <Tabs items={TABS} value={tab} onChange={setTab} className="mt-3" />
 
       {!tax.data ? (
         <View className="items-center gap-3 px-8 pt-10">

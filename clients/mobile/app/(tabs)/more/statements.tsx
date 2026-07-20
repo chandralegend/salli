@@ -18,8 +18,10 @@ import { ActivityIndicator, Modal, Pressable, Text, TextInput, View } from "reac
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
+import { FilterChip } from "@/components/ui/filter-chip";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { StatTile } from "@/components/ui/stat-tile";
+import { Tabs } from "@/components/ui/tabs";
 import { useAccounts, useTrialBalance } from "@/hooks/useLedger";
 import type { ParsedTransaction, StatementUploadResult } from "@/hooks/useStatements";
 import { usePendingStatement, usePostStatement, uploadStatement } from "@/hooks/useStatements";
@@ -128,21 +130,7 @@ export default function StatementsScreen() {
           }
         />
 
-        <View className="mt-3 flex-row border-b border-foreground/[0.08] px-4">
-          {TABS.map((t) => (
-            <Pressable key={t} onPress={() => setTab(t)} className="px-3.5 py-2">
-              <Text
-                className={cn(
-                  "text-[13px]",
-                  tab === t ? "font-sans-semibold text-foreground" : "font-sans-medium text-foreground/35",
-                )}
-              >
-                {t}
-              </Text>
-              {tab === t && <View className="mt-2 h-0.5 rounded-pill bg-salli-accent" />}
-            </Pressable>
-          ))}
-        </View>
+        <Tabs items={TABS} value={tab} onChange={setTab} className="mt-3" />
 
         {tab === "Review" ? (
           <ReviewTab
@@ -346,24 +334,12 @@ function ReviewTab({
               const count = s === "All" ? imported : s === "Pending" ? unmatched : s === "Matched" ? matched : 0;
               const showCount = s !== "Skipped";
               return (
-                <Pressable
+                <FilterChip
                   key={s}
+                  label={`${s}${showCount ? ` ${count}` : ""}`}
+                  active={status === s}
                   onPress={() => setStatus(s)}
-                  className={cn(
-                    "rounded-pill px-3.5 py-1",
-                    status === s ? "bg-salli-accent" : "border border-foreground/[0.08] bg-card",
-                  )}
-                >
-                  <Text
-                    className={cn(
-                      "text-[12px]",
-                      status === s ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/40",
-                    )}
-                  >
-                    {s}
-                    {showCount ? ` ${count}` : ""}
-                  </Text>
-                </Pressable>
+                />
               );
             })}
           </View>

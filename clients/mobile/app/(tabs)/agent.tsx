@@ -14,10 +14,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   View,
@@ -25,6 +23,7 @@ import {
 import Markdown from "react-native-markdown-display";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Drawer } from "@/components/ui/drawer";
 import {
   fetchThreadHistory,
   useAgentSessions,
@@ -33,7 +32,7 @@ import {
   type HistoryPart,
 } from "@/hooks/useAgentSessions";
 import { type AgentEvent, streamAgentChat } from "@/lib/agent-stream";
-import { useThemeColors, useThemeVars } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { randomId } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -184,7 +183,6 @@ export default function AgentScreen() {
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const closeStreamRef = useRef<(() => void) | null>(null);
 
-  const themeVars = useThemeVars();
   const sessions = useAgentSessions();
   const deleteSession = useDeleteSession();
 
@@ -455,69 +453,45 @@ export default function AgentScreen() {
         </View>
       </KeyboardAvoidingView>
 
-      <Modal
-        visible={sessionsOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSessionsOpen(false)}
-      >
-        <Pressable
-          className="flex-1 justify-end"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-          onPress={() => setSessionsOpen(false)}
-        >
+      <Drawer visible={sessionsOpen} onClose={() => setSessionsOpen(false)} keyboardAvoiding={false}>
+        <View className="flex-row items-center justify-between px-1 pb-3 pt-1">
+          <Text className="font-sans-bold text-[17px] text-foreground">Chats</Text>
           <Pressable
-            onPress={() => {}}
-            style={themeVars}
-            className="rounded-t-[24px] border-t border-foreground/10 bg-background"
+            onPress={() => {
+              startNewChat();
+              setSessionsOpen(false);
+            }}
+            className="flex-row items-center gap-1.5 rounded-pill bg-salli-accent px-3 py-1.5"
           >
-            <View style={{ paddingBottom: insets.bottom + 12 }}>
-              <View className="items-center pt-3">
-                <View className="h-1 w-10 rounded-full bg-foreground/15" />
-              </View>
-              <View className="flex-row items-center justify-between px-5 py-3">
-                <Text className="font-sans-bold text-[17px] text-foreground">Chats</Text>
-                <Pressable
-                  onPress={() => {
-                    startNewChat();
-                    setSessionsOpen(false);
-                  }}
-                  className="flex-row items-center gap-1.5 rounded-pill bg-salli-accent px-3 py-1.5"
-                >
-                  <SquarePen size={13} color="#FFFFFF" strokeWidth={2} />
-                  <Text className="font-sans-semibold text-[12px] text-white">New chat</Text>
-                </Pressable>
-              </View>
-              {(sessions.data ?? []).length === 0 ? (
-                <View className="items-center px-5 py-10">
-                  <Text className="text-[13px] text-foreground/35">No conversations yet.</Text>
-                </View>
-              ) : (
-                <ScrollView style={{ maxHeight: 420 }}>
-                  {(sessions.data ?? []).map((s) => (
-                    <View
-                      key={s.thread_id}
-                      className="flex-row items-center gap-3 border-t border-foreground/[0.05] px-5 py-3"
-                    >
-                      <Pressable className="flex-1" onPress={() => loadThread(s.thread_id)}>
-                        <Text numberOfLines={1} className="font-sans-medium text-[14px] text-foreground">
-                          {s.title || "New conversation"}
-                        </Text>
-                        <Text className="mt-0.5 text-[11px] text-foreground/30">
-                          {new Date(s.last_active_at).toLocaleDateString()}
-                        </Text>
-                      </Pressable>
-                      <Pressable onPress={() => deleteSession.mutate(s.thread_id)} className="p-1">
-                        <Trash2 size={15} color={colors.mutedForeground} strokeWidth={2} />
-                      </Pressable>
-                    </View>
-                  ))}
-                </ScrollView>
-              )}
-            </View>
+            <SquarePen size={13} color="#FFFFFF" strokeWidth={2} />
+            <Text className="font-sans-semibold text-[12px] text-white">New chat</Text>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </View>
+        {(sessions.data ?? []).length === 0 ? (
+          <View className="items-center px-1 py-10">
+            <Text className="text-[13px] text-foreground/35">No conversations yet.</Text>
+          </View>
+        ) : (
+          (sessions.data ?? []).map((s) => (
+            <View
+              key={s.thread_id}
+              className="flex-row items-center gap-3 border-t border-foreground/[0.05] px-1 py-3"
+            >
+              <Pressable className="flex-1" onPress={() => loadThread(s.thread_id)}>
+                <Text numberOfLines={1} className="font-sans-medium text-[14px] text-foreground">
+                  {s.title || "New conversation"}
+                </Text>
+                <Text className="mt-0.5 text-[11px] text-foreground/30">
+                  {new Date(s.last_active_at).toLocaleDateString()}
+                </Text>
+              </Pressable>
+              <Pressable onPress={() => deleteSession.mutate(s.thread_id)} className="p-1">
+                <Trash2 size={15} color={colors.mutedForeground} strokeWidth={2} />
+              </Pressable>
+            </View>
+          ))
+        )}
+      </Drawer>
     </View>
   );
 }

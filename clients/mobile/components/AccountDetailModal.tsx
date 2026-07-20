@@ -10,6 +10,7 @@ import {
   useReactivateAccount,
   type AccountTransaction,
 } from "@/hooks/useLedger";
+import { confirmDestructive } from "@/lib/confirm";
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
 import { useThemeColors, useThemeVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -57,14 +58,12 @@ export function AccountDetailModal({
   const confirmToggleActive = () => {
     if (!account) return;
     if (account.is_active) {
-      Alert.alert(
-        "Deactivate account",
-        `Deactivate "${account.name}"? It will be hidden from account pickers but its history is kept.`,
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Deactivate", style: "destructive", onPress: () => deactivate.mutate(account.id) },
-        ],
-      );
+      confirmDestructive({
+        title: "Deactivate account",
+        message: `Deactivate "${account.name}"? It will be hidden from account pickers but its history is kept.`,
+        confirmLabel: "Deactivate",
+        onConfirm: () => deactivate.mutate(account.id),
+      });
     } else {
       Alert.alert("Reactivate account", `Reactivate "${account.name}"?`, [
         { text: "Cancel", style: "cancel" },

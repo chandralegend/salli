@@ -12,7 +12,9 @@ import { useMemo, useState } from "react";
 import { KeyboardAvoidingView, Modal as RNModal, Platform, Pressable, ScrollView, Text, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
+import { Drawer } from "@/components/ui/drawer";
 import { PillButton } from "@/components/ui/pill-button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { TextField } from "@/components/ui/text-field";
 import type { Account } from "@/hooks/useDashboard";
 import { useLedgerMutations } from "@/hooks/useLedger";
@@ -126,27 +128,13 @@ export function NewEntryModal({ visible, onClose, accounts }: NewEntryModalProps
           </View>
 
           <ScrollView className="flex-1 px-4" keyboardShouldPersistTaps="handled">
-            <View className="mt-3.5 flex-row rounded-pill border border-foreground/[0.07] bg-card p-1">
-              {(["income", "expense", "transfer"] as EntryType[]).map((t) => (
-                <Pressable
-                  key={t}
-                  onPress={() => handleType(t)}
-                  className={cn(
-                    "h-9 flex-1 items-center justify-center rounded-pill",
-                    type === t && "border border-foreground/10 bg-background",
-                  )}
-                >
-                  <Text
-                    className={cn(
-                      "text-[13px] capitalize",
-                      type === t ? "font-sans-semibold text-foreground" : "font-sans-medium text-foreground/30",
-                    )}
-                  >
-                    {t}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            <SegmentedControl
+              className="mt-3.5"
+              options={["income", "expense", "transfer"] as EntryType[]}
+              value={type}
+              onChange={handleType}
+              capitalize
+            />
 
             <Card className="mt-4 border-foreground/[0.08] bg-salli-navy-card px-5 pb-4 pt-5">
               <Text className="mb-2.5 text-[11px] font-sans-medium uppercase tracking-wide text-white/40">Amount</Text>
@@ -321,73 +309,59 @@ function AccountPickerSheet({
   onSelect: (id: string) => void;
   onClose: () => void;
 }) {
-  const colors = useThemeColors();
-  const themeVars = useThemeVars();
-
   return (
-    <RNModal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable className="flex-1 justify-end bg-black/50" onPress={onClose}>
-        <Pressable
-          style={[{ backgroundColor: colors.background }, themeVars]}
-          className="max-h-[70%] rounded-t-[24px] border-t border-foreground/[0.08] px-4 pb-8 pt-3"
-          onPress={(e) => e.stopPropagation()}
-        >
-          <View className="mb-3 items-center">
-            <View className="h-1 w-9 rounded-pill bg-foreground/15" />
-          </View>
-          <Text className="mb-3 px-1 font-sans-bold text-[16px] text-foreground">
-            {side === "debit" ? "Debit account" : "Credit account"}
-          </Text>
-          {candidates.length === 0 ? (
-            <Text className="px-1 pb-4 text-[13px] text-foreground/40">No matching accounts for this entry type.</Text>
-          ) : (
-            <ScrollView>
-              <View className="gap-1.5">
-                {candidates.map((a) => {
-                  const meta = TYPE_META[a.type];
-                  const Icon = meta.Icon;
-                  const active = a.id === selectedId;
-                  return (
-                    <Pressable
-                      key={a.id}
-                      onPress={() => onSelect(a.id)}
-                      className={cn(
-                        "flex-row items-center gap-3 rounded-card border px-3.5 py-3",
-                        active ? "border-salli-accent bg-salli-accent/10" : "border-foreground/[0.08] bg-card",
-                      )}
-                    >
-                      <View
-                        className={cn(
-                          "h-8 w-8 items-center justify-center rounded-[9px]",
-                          active ? "border border-salli-accent/20 bg-salli-accent/10" : "bg-foreground/[0.06]",
-                        )}
-                      >
-                        <Icon size={13} color={active ? "#2563EB" : "rgba(148,163,184,0.7)"} strokeWidth={2.5} />
-                      </View>
-                      <View className="flex-1">
-                        <Text
-                          className={cn(
-                            "font-sans-semibold text-[13px]",
-                            active ? "text-salli-accent" : "text-foreground",
-                          )}
-                        >
-                          {a.code} · {a.name}
-                        </Text>
-                        <Text className="mt-0.5 text-[11px] text-foreground/35">{meta.label}</Text>
-                      </View>
-                      {a.currency !== "LKR" && (
-                        <View className="rounded-[4px] bg-foreground/[0.07] px-1.5 py-px">
-                          <Text className="text-[10px] font-sans-medium text-foreground/45">{a.currency}</Text>
-                        </View>
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </ScrollView>
-          )}
-        </Pressable>
-      </Pressable>
-    </RNModal>
+    <Drawer
+      visible={visible}
+      onClose={onClose}
+      title={side === "debit" ? "Debit account" : "Credit account"}
+      keyboardAvoiding={false}
+    >
+      {candidates.length === 0 ? (
+        <Text className="px-1 pb-4 text-[13px] text-foreground/40">No matching accounts for this entry type.</Text>
+      ) : (
+        <View className="gap-1.5">
+          {candidates.map((a) => {
+            const meta = TYPE_META[a.type];
+            const Icon = meta.Icon;
+            const active = a.id === selectedId;
+            return (
+              <Pressable
+                key={a.id}
+                onPress={() => onSelect(a.id)}
+                className={cn(
+                  "flex-row items-center gap-3 rounded-card border px-3.5 py-3",
+                  active ? "border-salli-accent bg-salli-accent/10" : "border-foreground/[0.08] bg-card",
+                )}
+              >
+                <View
+                  className={cn(
+                    "h-8 w-8 items-center justify-center rounded-[9px]",
+                    active ? "border border-salli-accent/20 bg-salli-accent/10" : "bg-foreground/[0.06]",
+                  )}
+                >
+                  <Icon size={13} color={active ? "#2563EB" : "rgba(148,163,184,0.7)"} strokeWidth={2.5} />
+                </View>
+                <View className="flex-1">
+                  <Text
+                    className={cn(
+                      "font-sans-semibold text-[13px]",
+                      active ? "text-salli-accent" : "text-foreground",
+                    )}
+                  >
+                    {a.code} · {a.name}
+                  </Text>
+                  <Text className="mt-0.5 text-[11px] text-foreground/35">{meta.label}</Text>
+                </View>
+                {a.currency !== "LKR" && (
+                  <View className="rounded-[4px] bg-foreground/[0.07] px-1.5 py-px">
+                    <Text className="text-[10px] font-sans-medium text-foreground/45">{a.currency}</Text>
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
+    </Drawer>
   );
 }

@@ -4,8 +4,10 @@ import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import Svg, { Polygon, Polyline } from "react-native-svg";
 
 import { Card } from "@/components/ui/card";
+import { FilterChip } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
+import { Tabs } from "@/components/ui/tabs";
 import {
   exportReportCsv,
   type ExportableReport,
@@ -157,35 +159,11 @@ export default function ReportsScreen() {
 
       <View className="mt-2.5 flex-row gap-1.5 px-4">
         {PERIODS.map((p) => (
-          <Pressable
-            key={p}
-            onPress={() => setPeriod(p)}
-            className={cn(
-              "rounded-pill px-3.5 py-1",
-              period === p ? "bg-salli-accent" : "border border-foreground/[0.08] bg-card",
-            )}
-          >
-            <Text
-              className={cn(
-                "text-[12px]",
-                period === p ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/40",
-              )}
-            >
-              {p}
-            </Text>
-          </Pressable>
+          <FilterChip key={p} label={p} active={period === p} onPress={() => setPeriod(p)} />
         ))}
       </View>
 
-      <View className="mx-4 mt-1.5 flex-row border-b border-foreground/[0.08]">
-        {TABS.map((t) => (
-          <Pressable key={t} onPress={() => setTab(t)} className={cn("px-3.5 py-2", tab === t && "border-b-2 border-salli-accent")}>
-            <Text className={cn("text-[13px]", tab === t ? "font-sans-semibold text-foreground" : "font-sans-medium text-foreground/35")}>
-              {t}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <Tabs items={TABS} value={tab} onChange={setTab} className="mt-1.5" />
 
       {tab === "Balance Sheet" ? (
         <View className="px-4 pt-2.5">

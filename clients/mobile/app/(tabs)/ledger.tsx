@@ -19,7 +19,9 @@ import { AddEditAccountDrawer } from "@/components/AddEditAccountDrawer";
 import { EntryDetailSheet } from "@/components/EntryDetailSheet";
 import { NewEntryModal } from "@/components/NewEntryModal";
 import { Card } from "@/components/ui/card";
+import { FilterChip } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
+import { Tabs } from "@/components/ui/tabs";
 import type { Account, JournalEntry } from "@/hooks/useDashboard";
 import { useAccounts, useEntries, useIncomeStatement, useLedgerMutations, useTrialBalance } from "@/hooks/useLedger";
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
@@ -139,15 +141,7 @@ export default function LedgerScreen() {
         </Pressable>
       </View>
 
-      <View className="mx-4 mt-3 flex-row border-b border-foreground/[0.08]">
-        {TABS.map((t) => (
-          <Pressable key={t} onPress={() => setTab(t)} className={cn("px-3.5 py-2", tab === t && "border-b-2 border-salli-accent")}>
-            <Text className={cn("text-[13px]", tab === t ? "font-sans-semibold text-foreground" : "font-sans-medium text-foreground/35")}>
-              {t}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
 
       {tab === "Journal" ? (
         <>
@@ -178,15 +172,7 @@ export default function LedgerScreen() {
           </View>
           <View className="flex-row flex-wrap gap-1.5 px-4 pb-2.5">
             {TYPE_FILTERS.map((f) => (
-              <Pressable
-                key={f}
-                onPress={() => setFilter(f)}
-                className={cn("rounded-pill px-3 py-1", filter === f ? "bg-salli-accent" : "border border-foreground/[0.08] bg-card")}
-              >
-                <Text className={cn("text-[12px]", filter === f ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/40")}>
-                  {f}
-                </Text>
-              </Pressable>
+              <FilterChip key={f} label={f} active={filter === f} onPress={() => setFilter(f)} />
             ))}
           </View>
 
@@ -261,15 +247,7 @@ export default function LedgerScreen() {
           </View>
           <View className="flex-row flex-wrap gap-1.5 px-4 pb-2.5">
             {ACCT_FILTERS.map((f) => (
-              <Pressable
-                key={f}
-                onPress={() => setAcctFilter(f)}
-                className={cn("rounded-pill px-3 py-1", acctFilter === f ? "bg-salli-accent" : "border border-foreground/[0.08] bg-card")}
-              >
-                <Text className={cn("text-[12px]", acctFilter === f ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/40")}>
-                  {f}
-                </Text>
-              </Pressable>
+              <FilterChip key={f} label={f} active={acctFilter === f} onPress={() => setAcctFilter(f)} />
             ))}
           </View>
 

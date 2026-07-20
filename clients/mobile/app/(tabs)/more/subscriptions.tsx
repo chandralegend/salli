@@ -1,8 +1,10 @@
-import { AlertTriangle, Plus, RefreshCw, Trash2, X } from "lucide-react-native";
+import { AlertTriangle, Plus, RefreshCw, Trash2 } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
+import { Drawer } from "@/components/ui/drawer";
+import { ChipSelect } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
@@ -16,7 +18,7 @@ import {
   useUpdateSubscription,
 } from "@/hooks/useSubscriptions";
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
-import { useThemeColors, useThemeVars } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 /** Billing cadences the engine understands (see monthlyEquivalent). Stored lowercase. */
@@ -196,8 +198,6 @@ function AddEditSubscriptionDrawer({
   subscription: Subscription | null;
   onClose: () => void;
 }) {
-  const colors = useThemeColors();
-  const themeVars = useThemeVars();
   const add = useAddSubscription();
   const update = useUpdateSubscription();
 
@@ -249,95 +249,48 @@ function AddEditSubscriptionDrawer({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable className="flex-1 justify-end" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onPress={onClose}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <Pressable
-            onPress={() => {}}
-            style={themeVars}
-            className="max-h-[88%] rounded-t-[28px] border-t border-foreground/10 bg-background px-4 pb-8 pt-2.5"
-          >
-            <View className="items-center pb-1">
-              <View className="h-1 w-10 rounded-full bg-foreground/20" />
-            </View>
-            <View className="flex-row items-center px-0.5 pb-3.5 pt-1.5">
-              <Text className="flex-1 font-sans-bold text-[18px] text-foreground">
-                {isEdit ? "Edit Subscription" : "New Subscription"}
-              </Text>
-              <Pressable
-                onPress={onClose}
-                className="h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.08]"
-              >
-                <X size={14} color={colors.mutedForeground} strokeWidth={2} />
-              </Pressable>
-            </View>
+    <Drawer
+      visible={visible}
+      onClose={onClose}
+      title={isEdit ? "Edit Subscription" : "New Subscription"}
+      footer={
+        <>
+          <PillButton variant="accent" loading={pending} disabled={!canSubmit} onPress={submit}>
+            {isEdit ? "Save Changes" : "Add Subscription"}
+          </PillButton>
+          {isError ? (
+            <Text className="mt-2 text-center text-[11px] text-destructive">
+              Could not save subscription. Please try again.
+            </Text>
+          ) : null}
+        </>
+      }
+    >
+      <TextField className="mb-2.5" label="Name *" value={name} onChangeText={setName} placeholder="Netflix" />
 
-            <ScrollView keyboardShouldPersistTaps="handled">
-              <TextField
-                className="mb-2.5"
-                label="Name *"
-                value={name}
-                onChangeText={setName}
-                placeholder="Netflix"
-              />
+      <View className="mb-3 flex-row gap-2">
+        <TextField
+          className="flex-1"
+          label="Amount *"
+          value={amount}
+          onChangeText={setAmount}
+          keyboardType="decimal-pad"
+          placeholder="0"
+        />
+        <TextField
+          className="flex-1"
+          label="Next Due *"
+          value={nextDue}
+          onChangeText={setNextDue}
+          autoCapitalize="none"
+          placeholder="2026-08-01"
+        />
+      </View>
 
-              <View className="mb-3 flex-row gap-2">
-                <TextField
-                  className="flex-1"
-                  label="Amount *"
-                  value={amount}
-                  onChangeText={setAmount}
-                  keyboardType="decimal-pad"
-                  placeholder="0"
-                />
-                <TextField
-                  className="flex-1"
-                  label="Next Due *"
-                  value={nextDue}
-                  onChangeText={setNextDue}
-                  autoCapitalize="none"
-                  placeholder="2026-08-01"
-                />
-              </View>
-
-              {/* billing cadence chips */}
-              <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">
-                Billing Cycle *
-              </Text>
-              <View className="mb-4 flex-row flex-wrap gap-1.5">
-                {FREQUENCIES.map((f) => (
-                  <Pressable
-                    key={f}
-                    onPress={() => setFrequency(f)}
-                    className={cn(
-                      "rounded-pill px-3.5 py-1.5",
-                      frequency === f ? "bg-salli-accent" : "border border-foreground/10 bg-card",
-                    )}
-                  >
-                    <Text
-                      className={cn(
-                        "text-[12px] capitalize",
-                        frequency === f ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/50",
-                      )}
-                    >
-                      {f}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <PillButton variant="accent" loading={pending} disabled={!canSubmit} onPress={submit}>
-                {isEdit ? "Save Changes" : "Add Subscription"}
-              </PillButton>
-              {isError ? (
-                <Text className="mt-2 text-center text-[11px] text-destructive">
-                  Could not save subscription. Please try again.
-                </Text>
-              ) : null}
-            </ScrollView>
-          </Pressable>
-        </KeyboardAvoidingView>
-      </Pressable>
-    </Modal>
+      <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">
+        Billing Cycle *
+      </Text>
+      <ChipSelect className="mb-1" options={FREQUENCIES} value={frequency} onChange={setFrequency} capitalize />
+    </Drawer>
   );
 }

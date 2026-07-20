@@ -1,11 +1,14 @@
-import { AlertTriangle, Pencil, Plus, Shield, Trash2, X } from "lucide-react-native";
+import { AlertTriangle, Pencil, Plus, Shield, Trash2 } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
+import { Drawer } from "@/components/ui/drawer";
+import { ChipSelect } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
+import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
 import {
   type Policy,
@@ -16,8 +19,9 @@ import {
   useTargets,
   useUpdatePolicy,
 } from "@/hooks/useInsurance";
+import { confirmDestructive } from "@/lib/confirm";
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
-import { useThemeColors, useThemeVars } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const TABS = ["Policies", "Targets", "Coverage Report"] as const;
@@ -27,6 +31,10 @@ const POLICY_TYPES = ["life", "health", "motor", "property", "other"] as const;
 
 /** Premium payment cadences the backend accepts (free-form string). */
 const PREMIUM_FREQUENCIES = ["monthly", "quarterly", "yearly"] as const;
+
+const FieldLabel = ({ children }: { children: string }) => (
+  <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">{children}</Text>
+);
 
 export default function InsuranceScreen() {
   const colors = useThemeColors();
@@ -47,10 +55,11 @@ export default function InsuranceScreen() {
     setDrawerOpen(true);
   };
   const confirmDelete = (p: Policy) => {
-    Alert.alert("Delete policy", `Delete "${p.name}"? This cannot be undone.`, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => deletePolicy.mutate(p.id) },
-    ]);
+    confirmDestructive({
+      title: "Delete policy",
+      message: `Delete "${p.name}"? This cannot be undone.`,
+      onConfirm: () => deletePolicy.mutate(p.id),
+    });
   };
 
   const activePolicies = (policies.data ?? []).filter((p) => p.is_active);
@@ -129,15 +138,7 @@ export default function InsuranceScreen() {
           </Card>
         </View>
 
-        <View className="mx-4 mt-3 flex-row border-b border-foreground/[0.08]">
-          {TABS.map((t) => (
-            <Pressable key={t} onPress={() => setTab(t)} className={cn("px-3.5 py-2", tab === t && "border-b-2 border-salli-accent")}>
-              <Text className={cn("text-[13px]", tab === t ? "font-sans-semibold text-foreground" : "font-sans-medium text-foreground/35")}>
-                {t}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
 
         {tab === "Policies" ? (
           <View className="gap-1.5 px-4 pt-3">
@@ -290,8 +291,6 @@ function AddEditPolicyDrawer({
   policy: Policy | null;
   onClose: () => void;
 }) {
-  const colors = useThemeColors();
-  const themeVars = useThemeVars();
   const addPolicy = useAddPolicy();
   const updatePolicy = useUpdatePolicy();
   const isEdit = policy !== null;
@@ -370,135 +369,71 @@ function AddEditPolicyDrawer({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable className="flex-1 justify-end" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onPress={onClose}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <Pressable
-            onPress={() => {}}
-            style={themeVars}
-            className="max-h-[88%] rounded-t-[28px] border-t border-foreground/10 bg-background px-4 pb-8 pt-2.5"
-          >
-            <View className="items-center pb-1">
-              <View className="h-1 w-10 rounded-full bg-foreground/20" />
-            </View>
-            <View className="flex-row items-center px-0.5 pb-3.5 pt-1.5">
-              <Text className="flex-1 font-sans-bold text-[18px] text-foreground">
-                {isEdit ? "Edit Policy" : "New Policy"}
-              </Text>
-              <Pressable onPress={onClose} className="h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.08]">
-                <X size={14} color={colors.mutedForeground} strokeWidth={2} />
-              </Pressable>
-            </View>
+    <Drawer
+      visible={visible}
+      onClose={onClose}
+      title={isEdit ? "Edit Policy" : "New Policy"}
+      footer={
+        <>
+          <PillButton variant="accent" loading={pending} disabled={!canSubmit} onPress={submit}>
+            {isEdit ? "Save Changes" : "Add Policy"}
+          </PillButton>
+          {isError ? (
+            <Text className="mt-2 text-center text-[11px] text-destructive">
+              Could not save policy. Please try again.
+            </Text>
+          ) : null}
+        </>
+      }
+    >
+      <TextField
+        className="mb-2.5"
+        label="Policy Name *"
+        value={name}
+        onChangeText={setName}
+        placeholder="Family Life Cover"
+      />
+      <TextField
+        className="mb-3"
+        label="Provider *"
+        value={provider}
+        onChangeText={setProvider}
+        placeholder="Ceylinco Life"
+      />
 
-            <ScrollView keyboardShouldPersistTaps="handled">
-              <TextField
-                className="mb-2.5"
-                label="Policy Name *"
-                value={name}
-                onChangeText={setName}
-                placeholder="Family Life Cover"
-              />
-              <TextField
-                className="mb-3"
-                label="Provider *"
-                value={provider}
-                onChangeText={setProvider}
-                placeholder="Ceylinco Life"
-              />
+      <FieldLabel>Policy Type *</FieldLabel>
+      <ChipSelect className="mb-3" options={POLICY_TYPES} value={policyType} onChange={setPolicyType} capitalize />
 
-              {/* policy type chips */}
-              <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">
-                Policy Type *
-              </Text>
-              <View className="mb-3 flex-row flex-wrap gap-1.5">
-                {POLICY_TYPES.map((pt) => (
-                  <Pressable
-                    key={pt}
-                    onPress={() => setPolicyType(pt)}
-                    className={cn(
-                      "rounded-pill px-3.5 py-1.5",
-                      policyType === pt ? "bg-salli-accent" : "border border-foreground/10 bg-card",
-                    )}
-                  >
-                    <Text
-                      className={cn(
-                        "text-[12px] capitalize",
-                        policyType === pt ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/50",
-                      )}
-                    >
-                      {pt}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
+      <View className="mb-3 flex-row gap-2">
+        <TextField
+          className="flex-1"
+          label="Coverage *"
+          value={coverage}
+          onChangeText={setCoverage}
+          keyboardType="decimal-pad"
+          placeholder="0"
+        />
+        <TextField
+          className="flex-1"
+          label="Premium *"
+          value={premium}
+          onChangeText={setPremium}
+          keyboardType="decimal-pad"
+          placeholder="0"
+        />
+      </View>
 
-              {/* coverage + premium */}
-              <View className="mb-3 flex-row gap-2">
-                <TextField
-                  className="flex-1"
-                  label="Coverage *"
-                  value={coverage}
-                  onChangeText={setCoverage}
-                  keyboardType="decimal-pad"
-                  placeholder="0"
-                />
-                <TextField
-                  className="flex-1"
-                  label="Premium *"
-                  value={premium}
-                  onChangeText={setPremium}
-                  keyboardType="decimal-pad"
-                  placeholder="0"
-                />
-              </View>
+      <FieldLabel>Premium Frequency *</FieldLabel>
+      <ChipSelect className="mb-3" options={PREMIUM_FREQUENCIES} value={frequency} onChange={setFrequency} capitalize />
 
-              {/* premium frequency chips */}
-              <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">
-                Premium Frequency *
-              </Text>
-              <View className="mb-3 flex-row flex-wrap gap-1.5">
-                {PREMIUM_FREQUENCIES.map((f) => (
-                  <Pressable
-                    key={f}
-                    onPress={() => setFrequency(f)}
-                    className={cn(
-                      "rounded-pill px-3.5 py-1.5",
-                      frequency === f ? "bg-salli-accent" : "border border-foreground/10 bg-card",
-                    )}
-                  >
-                    <Text
-                      className={cn(
-                        "text-[12px] capitalize",
-                        frequency === f ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/50",
-                      )}
-                    >
-                      {f}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <TextField
-                className="mb-4"
-                label="Expiry Date *"
-                value={expiry}
-                onChangeText={setExpiry}
-                autoCapitalize="none"
-                placeholder="YYYY-MM-DD"
-              />
-
-              <PillButton variant="accent" loading={pending} disabled={!canSubmit} onPress={submit}>
-                {isEdit ? "Save Changes" : "Add Policy"}
-              </PillButton>
-              {isError ? (
-                <Text className="mt-2 text-center text-[11px] text-destructive">
-                  Could not save policy. Please try again.
-                </Text>
-              ) : null}
-            </ScrollView>
-          </Pressable>
-        </KeyboardAvoidingView>
-      </Pressable>
-    </Modal>
+      <TextField
+        className="mb-1"
+        label="Expiry Date *"
+        value={expiry}
+        onChangeText={setExpiry}
+        autoCapitalize="none"
+        placeholder="YYYY-MM-DD"
+      />
+    </Drawer>
   );
 }

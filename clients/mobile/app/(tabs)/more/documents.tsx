@@ -5,9 +5,9 @@ import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-nativ
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
+import { Tabs } from "@/components/ui/tabs";
 import { useDeleteDocument, useDocuments, type SalliDocument } from "@/hooks/useDocuments";
 import { useThemeColors, useThemeVars } from "@/lib/theme";
-import { cn } from "@/lib/utils";
 
 const TABS = ["Documents", "Memories"] as const;
 
@@ -29,15 +29,7 @@ export default function DocumentsScreen() {
     <PageShell>
       <ScreenHeader title="Documents" back />
 
-      <View className="mx-4 mt-3 flex-row border-b border-foreground/[0.08]">
-        {TABS.map((t) => (
-          <Pressable key={t} onPress={() => setTab(t)} className={cn("px-3.5 py-2", tab === t && "border-b-2 border-salli-accent")}>
-            <Text className={cn("text-[13px]", tab === t ? "font-sans-semibold text-foreground" : "font-sans-medium text-foreground/35")}>
-              {t}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <Tabs items={TABS} value={tab} onChange={setTab} className="mt-3" />
 
       <View className="mt-3 flex-row items-center gap-2 px-4">
         <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-[10px] border border-foreground/[0.08] bg-card px-3">

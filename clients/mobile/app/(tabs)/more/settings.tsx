@@ -1,11 +1,13 @@
+import { File, Paths } from "expo-file-system";
 import { useRouter } from "expo-router";
+import * as Sharing from "expo-sharing";
 import { AlertTriangle, Check, ChevronRight, Download, LogOut } from "lucide-react-native";
-import { Alert, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { useEntitlements } from "@/hooks/useSettings";
+import { useDeleteAccount, useEntitlements, useExportData } from "@/hooks/useSettings";
 import { useMore } from "@/hooks/useMore";
 import { logout } from "@/lib/auth";
 import { useDarkModeToggle, useThemeColors } from "@/lib/theme";
@@ -31,11 +33,71 @@ export default function SettingsScreen() {
   const { isDark, toggle } = useDarkModeToggle();
   const { profile } = useMore();
   const entitlements = useEntitlements();
+  const exportData = useExportData();
+  const deleteAccount = useDeleteAccount();
 
   const isFree = entitlements.data?.plan === "free";
   const usage = entitlements.data?.usage ?? [];
   const messages = usage.find((u) => u.metric === "messages");
   const resetsAt = formatShortDate(usage[0]?.resets_at ?? entitlements.data?.current_period_end);
+
+  async function handleSignOut() {
+    await logout();
+    router.replace("/(auth)/login");
+  }
+
+  async function handleExport() {
+    try {
+      const data = await exportData.mutateAsync();
+      const file = new File(Paths.cache, "salli-export.json");
+      if (file.exists) file.delete();
+      file.create();
+      file.write(JSON.stringify(data, null, 2));
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(file.uri, {
+          mimeType: "application/json",
+          dialogTitle: "Export my data",
+          UTI: "public.json",
+        });
+      } else {
+        Alert.alert("Export ready", "Your data was exported, but sharing isn't available on this device.");
+      }
+    } catch {
+      Alert.alert("Export failed", "Could not export your data right now. Please try again.");
+    }
+  }
+
+  function confirmDelete() {
+    const email = profile?.email;
+    if (!email) {
+      Alert.alert(
+        "Delete account",
+        "We couldn't confirm your account email on this device. Please use the web app to delete your account.",
+        [{ text: "OK" }],
+      );
+      return;
+    }
+    Alert.alert(
+      "Delete my account",
+      `This permanently deletes all data for ${email}. This cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteAccount.mutateAsync(email);
+              await logout();
+              router.replace("/(auth)/login");
+            } catch {
+              Alert.alert("Delete failed", "Could not delete your account right now. Please try again.");
+            }
+          },
+        },
+      ],
+    );
+  }
 
   return (
     <PageShell>
@@ -149,16 +211,13 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        <Card
-          onTouchEnd={async () => {
-            await logout();
-            router.replace("/(auth)/login");
-          }}
-          className="flex-row items-center justify-between p-4"
+        <Pressable
+          onPress={handleSignOut}
+          className="flex-row items-center justify-between rounded-card border border-foreground/10 bg-card p-4"
         >
           <Text className="font-sans-medium text-[14px] text-foreground">Sign Out</Text>
           <LogOut size={16} color={colors.mutedForeground} strokeWidth={2} />
-        </Card>
+        </Pressable>
 
         <Card className="overflow-hidden p-0">
           <View className="px-4 pb-2 pt-3">
@@ -166,22 +225,29 @@ export default function SettingsScreen() {
               Danger Zone
             </Text>
           </View>
-          <Pressable className="flex-row items-center justify-between border-t border-foreground/[0.05] px-4 py-2.5">
+          <Pressable
+            onPress={handleExport}
+            disabled={exportData.isPending}
+            className="flex-row items-center justify-between border-t border-foreground/[0.05] px-4 py-2.5"
+          >
             <Text className="font-sans-medium text-[14px] text-foreground/60">Export my data</Text>
-            <Download size={14} color={colors.mutedForeground} strokeWidth={2} />
+            {exportData.isPending ? (
+              <ActivityIndicator size="small" color={colors.mutedForeground} />
+            ) : (
+              <Download size={14} color={colors.mutedForeground} strokeWidth={2} />
+            )}
           </Pressable>
           <Pressable
-            onPress={() =>
-              Alert.alert(
-                "Delete account",
-                "This permanently deletes all your data. This cannot be undone. Please use the web app to confirm this action.",
-                [{ text: "OK" }],
-              )
-            }
+            onPress={confirmDelete}
+            disabled={deleteAccount.isPending}
             className="flex-row items-center justify-between border-t border-foreground/[0.05] px-4 py-2.5"
           >
             <Text className="font-sans-medium text-[14px] text-destructive/90">Delete my account</Text>
-            <AlertTriangle size={14} color="#EF4444" strokeWidth={2} />
+            {deleteAccount.isPending ? (
+              <ActivityIndicator size="small" color="#EF4444" />
+            ) : (
+              <AlertTriangle size={14} color="#EF4444" strokeWidth={2} />
+            )}
           </Pressable>
         </Card>
       </View>

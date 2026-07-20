@@ -1,6 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { deleteMyAccountOnboardingAccountDelete, getSubscriptionBillingSubscriptionGet } from "@/lib/api/sdk.gen";
+import {
+  deleteMyAccountOnboardingAccountDelete,
+  exportMyDataOnboardingExportGet,
+  getSubscriptionBillingSubscriptionGet,
+} from "@/lib/api/sdk.gen";
 
 export type Usage = { metric: string; used: number; limit: number; remaining: number; resets_at: string };
 export type Entitlements = {
@@ -18,6 +22,15 @@ export function useEntitlements() {
     queryFn: async () => {
       const { data } = await getSubscriptionBillingSubscriptionGet({ throwOnError: true });
       return data as unknown as Entitlements;
+    },
+  });
+}
+
+export function useExportData() {
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await exportMyDataOnboardingExportGet({ throwOnError: true });
+      return data as unknown;
     },
   });
 }

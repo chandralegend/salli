@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   Car,
-  CreditCard,
   Home,
   type LucideIcon,
+  Pencil,
   Plus,
   ShoppingBag,
   Utensils,
@@ -19,7 +19,7 @@ import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { getScoreFiScoreGet } from "@/lib/api/sdk.gen";
-import { useBudgetSummaryFull, useBudgets, useCreateBudget } from "@/hooks/useBudget";
+import { useBudgetSummaryFull, useBudgets, useCreateBudget, useUpdateBudget } from "@/hooks/useBudget";
 import { useAccounts } from "@/hooks/useLedger";
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -60,8 +60,10 @@ export default function BudgetScreen() {
   const budgets = useBudgets();
   const accounts = useAccounts();
   const createBudget = useCreateBudget();
+  const updateBudget = useUpdateBudget();
   const latestBudget = budgets.data?.[0];
   const summary = useBudgetSummaryFull(latestBudget?.id);
+  const [editing, setEditing] = useState(false);
 
   const fiScore = useQuery({
     queryKey: ["fi-score"],
@@ -84,28 +86,64 @@ export default function BudgetScreen() {
   const unallocated = effectiveLimit - allocated;
   const dominantId = Object.entries(limits).sort((a, b) => Number(b[1]) - Number(a[1]))[0]?.[0];
 
+  const enterEdit = () => {
+    const pre: Record<string, string> = {};
+    let total = 0;
+    (latestBudget?.lines ?? []).forEach((l) => {
+      pre[l.account_id] = String(Math.round(Number(l.limit_amount)));
+      total += Number(l.limit_amount);
+    });
+    setLimits(pre);
+    setMonthlyLimit(total);
+    setEditing(true);
+  };
+
+  const autoSplit = () => {
+    const target = effectiveLimit || recommended;
+    if (!target || expenseAccounts.length === 0) return;
+    const per = Math.round(target / expenseAccounts.length);
+    setLimits(Object.fromEntries(expenseAccounts.map((a) => [a.id, String(per)])));
+  };
+
   const handleSave = () => {
     const { from, to } = monthRange();
     const lines = Object.entries(limits)
       .filter(([, v]) => Number(v) > 0)
       .map(([account_id, v]) => ({ account_id, limit_amount: Number(v) }));
     if (lines.length === 0) return;
-    createBudget.mutate({ period_start: from, period_end: to, lines });
+    const onSuccess = () => setEditing(false);
+    if (latestBudget && editing) {
+      updateBudget.mutate({ id: latestBudget.id, period_start: from, period_end: to, lines }, { onSuccess });
+    } else {
+      createBudget.mutate({ period_start: from, period_end: to, lines }, { onSuccess });
+    }
   };
+
+  const saving = createBudget.isPending || updateBudget.isPending;
 
   return (
     <PageShell>
       <ScreenHeader
-        title={latestBudget ? "Budget" : "Budget Setup"}
+        title={latestBudget && !editing ? "Budget" : "Budget Setup"}
         back
         trailing={
-          <View className="rounded-pill border border-foreground/10 bg-foreground/[0.07] px-3 py-1">
-            <Text className="text-[12px] font-sans-medium text-foreground/45">{currentMonthLabel()}</Text>
+          <View className="flex-row items-center gap-2">
+            {latestBudget && summary.data && !editing ? (
+              <Pressable
+                onPress={enterEdit}
+                className="h-[30px] w-[30px] items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.07]"
+              >
+                <Pencil size={13} color="rgba(128,128,128,0.8)" strokeWidth={2} />
+              </Pressable>
+            ) : null}
+            <View className="rounded-pill border border-foreground/10 bg-foreground/[0.07] px-3 py-1">
+              <Text className="text-[12px] font-sans-medium text-foreground/45">{currentMonthLabel()}</Text>
+            </View>
           </View>
         }
       />
 
-      {latestBudget && summary.data ? (
+      {latestBudget && summary.data && !editing ? (
         (() => {
           const spent = Number(summary.data.total_actual);
           const limit = Number(summary.data.total_limit);
@@ -292,7 +330,9 @@ export default function BudgetScreen() {
             <Text className="text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
               Category Limits
             </Text>
-            <Text className="text-[11px] font-sans-medium text-salli-accent">Auto-split</Text>
+            <Pressable onPress={autoSplit}>
+              <Text className="text-[11px] font-sans-medium text-salli-accent">Auto-split</Text>
+            </Pressable>
           </View>
 
           <View className="gap-1.5">
@@ -304,6 +344,7 @@ export default function BudgetScreen() {
               expenseAccounts.map((a) => {
                 const isDominant = a.id === dominantId && Number(limits[a.id] ?? 0) > 0;
                 const share = effectiveLimit > 0 ? Math.min(100, (Number(limits[a.id] ?? 0) / effectiveLimit) * 100) : 0;
+                const Icon = categoryIcon(a.name);
                 return (
                   <View
                     key={a.id}
@@ -315,7 +356,7 @@ export default function BudgetScreen() {
                         isDominant ? "border border-salli-accent/20 bg-salli-accent/[0.12]" : "bg-foreground/[0.06]",
                       )}
                     >
-                      <CreditCard
+                      <Icon
                         size={13}
                         color={isDominant ? "#2563EB" : "rgba(128,128,128,0.7)"}
                         strokeWidth={2.5}
@@ -330,15 +371,16 @@ export default function BudgetScreen() {
                         />
                       </View>
                     </View>
-                    <View className="min-w-[80px] flex-row items-center justify-end gap-1 rounded-[8px] border border-foreground/10 bg-muted px-2.5 py-1.5">
-                      <Text className="text-[13px] font-sans-medium text-foreground/40">Rs.</Text>
+                    <View className="flex-none flex-row items-center gap-1 rounded-[8px] border border-foreground/10 bg-muted px-2.5 py-1.5">
+                      <Text className="text-[12px] font-sans-medium text-foreground/40">Rs.</Text>
                       <TextInput
                         value={limits[a.id] ?? ""}
                         onChangeText={(v) => setLimits((prev) => ({ ...prev, [a.id]: v }))}
                         keyboardType="numeric"
                         placeholder="0"
                         placeholderTextColor="rgba(128,128,128,0.4)"
-                        className="min-w-[36px] text-right font-sans-semibold text-[13px] text-foreground"
+                        style={{ width: 56 }}
+                        className="text-right font-sans-semibold text-[13px] text-foreground"
                       />
                     </View>
                   </View>
@@ -365,10 +407,16 @@ export default function BudgetScreen() {
             </View>
           ) : null}
 
-          <PillButton className="mb-2 mt-4" loading={createBudget.isPending} disabled={allocated === 0} onPress={handleSave}>
-            Save Budget
+          <PillButton className="mb-2 mt-4" loading={saving} disabled={allocated === 0} onPress={handleSave}>
+            {editing ? "Update Budget" : "Save Budget"}
           </PillButton>
-          <Text className="mb-4 text-center text-[11px] text-foreground/25">Skip category limits for now</Text>
+          {editing ? (
+            <Pressable onPress={() => setEditing(false)} className="mb-4 items-center">
+              <Text className="text-[11px] text-foreground/40">Cancel</Text>
+            </Pressable>
+          ) : (
+            <Text className="mb-4 text-center text-[11px] text-foreground/25">Skip category limits for now</Text>
+          )}
         </View>
       )}
     </PageShell>

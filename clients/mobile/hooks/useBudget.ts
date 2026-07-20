@@ -1,8 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { createBudgetBudgetPost, getBudgetSummaryBudgetBudgetIdSummaryGet, listBudgetsBudgetGet } from "@/lib/api/sdk.gen";
+import {
+  createBudgetBudgetPost,
+  getBudgetSummaryBudgetBudgetIdSummaryGet,
+  listBudgetsBudgetGet,
+  updateBudgetBudgetBudgetIdPatch,
+} from "@/lib/api/sdk.gen";
 
-export type BudgetListItem = { id: string; period_start: string; period_end: string; lines: unknown[] };
+export type BudgetLine = { account_id: string; limit_amount: string };
+export type BudgetListItem = { id: string; period_start: string; period_end: string; lines: BudgetLine[] };
 export type BudgetSummaryLine = { category: string; limit_amount: string; actual_amount: string; variance: string };
 export type BudgetSummaryFull = {
   period_start: string;
@@ -37,12 +43,30 @@ export function useBudgetSummaryFull(budgetId: string | undefined) {
   });
 }
 
+type BudgetInput = { period_start: string; period_end: string; lines: { account_id: string; limit_amount: number }[] };
+
 export function useCreateBudget() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { period_start: string; period_end: string; lines: { account_id: string; limit_amount: number }[] }) => {
+    mutationFn: async (input: BudgetInput) => {
       await createBudgetBudgetPost({ body: input, throwOnError: true });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["budgets"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["budgets"] });
+      qc.invalidateQueries({ queryKey: ["budget-summary-full"] });
+    },
+  });
+}
+
+export function useUpdateBudget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...input }: BudgetInput & { id: string }) => {
+      await updateBudgetBudgetBudgetIdPatch({ path: { budget_id: id }, body: input, throwOnError: true });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["budgets"] });
+      qc.invalidateQueries({ queryKey: ["budget-summary-full"] });
+    },
   });
 }

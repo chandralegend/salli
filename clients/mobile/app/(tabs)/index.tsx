@@ -45,8 +45,10 @@ export default function DashboardScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Navy hero fades into the page background (pure black in dark, light
+          canvas in light) so there's no hard edge where content leaves it. */}
       <LinearGradient
-        colors={["#0B20E0", "#0912B0", "#060A6A", "#020518", "#000000"]}
+        colors={["#0B20E0", "#0912B0", "#060A6A", "#020518", colors.background]}
         locations={[0, 0.28, 0.52, 0.78, 1]}
         style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400 }}
       />
@@ -149,19 +151,19 @@ export default function DashboardScreen() {
         </View>
 
         <View className="flex-row gap-2 px-4 pb-3.5">
-          <Pressable className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-white/10 bg-white/[0.08]">
-            <Upload size={13} color="rgba(255,255,255,0.6)" strokeWidth={2} />
-            <Text className="font-sans-medium text-[11px] text-white/60">Upload</Text>
+          <Pressable className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-foreground/10 bg-card">
+            <Upload size={13} color={colors.mutedForeground} strokeWidth={2} />
+            <Text className="font-sans-medium text-[11px] text-foreground/70">Upload</Text>
           </Pressable>
           <Pressable
             onPress={() => {
               requestQuickAddEntry();
               router.push("/(tabs)/ledger");
             }}
-            className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-white/10 bg-white/[0.08]"
+            className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-foreground/10 bg-card"
           >
-            <Plus size={13} color="rgba(255,255,255,0.6)" strokeWidth={2.5} />
-            <Text className="font-sans-medium text-[11px] text-white/60">New Entry</Text>
+            <Plus size={13} color={colors.mutedForeground} strokeWidth={2.5} />
+            <Text className="font-sans-medium text-[11px] text-foreground/70">New Entry</Text>
           </Pressable>
           <Pressable
             onPress={() => router.push("/(tabs)/agent")}
@@ -263,7 +265,7 @@ export default function DashboardScreen() {
                     <View className="h-[38px] w-[38px] items-center justify-center rounded-[12px] bg-foreground/[0.06]">
                       <EntryIcon
                         size={17}
-                        color={isIncome ? "#FFFFFF" : "rgba(255,255,255,0.5)"}
+                        color={isIncome ? colors.accent : colors.mutedForeground}
                         strokeWidth={2}
                       />
                     </View>

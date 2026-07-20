@@ -1,37 +1,52 @@
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { LayoutGrid, PiggyBank, Plus, Table, TrendingUp } from "lucide-react-native";
-import { Pressable, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useSalliStore } from "../../lib/store";
+import { useAppTheme, useThemeColors } from "../../lib/theme";
 
-const ROUTE_ICONS: Record<string, typeof LayoutGrid> = {
-  index: LayoutGrid,
-  ledger: Table,
-  agent: PiggyBank,
-  "financial-independence": TrendingUp,
+const ROUTE_META: Record<string, { Icon: typeof LayoutGrid; label: string }> = {
+  index: { Icon: LayoutGrid, label: "Home" },
+  ledger: { Icon: Table, label: "Ledger" },
+  agent: { Icon: PiggyBank, label: "Scrooge" },
+  "financial-independence": { Icon: TrendingUp, label: "FI" },
 };
 
+const ACCENT = "#2563EB";
+
 /**
- * Flush-to-bottom-edge dock (not a floating rounded pill) — matches the mockup
- * exactly: rgba(4,4,4,.97) bg, hairline top border, 64px tall, with a raised
- * white "+" button at center that deep-links to Ledger's New Entry form.
- * Theme-invariant: stays dark in both light and dark mode, like the mockup.
+ * Floating rounded dock — theme-aware (a light card in light mode, an elevated
+ * dark surface in dark mode) with an active-state accent pill + label and a
+ * raised branded "+" that deep-links to Ledger's New Entry form.
  */
 export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
+  const { isDark } = useAppTheme();
   const requestQuickAddEntry = useSalliStore((s) => s.requestQuickAddEntry);
 
   // Filter by name (not position) — "more" is a hidden route (href: null) that
   // still appears in state.routes, so positional slicing would misplace it.
-  const visibleRoutes = state.routes.filter((r) => r.name in ROUTE_ICONS);
+  const visibleRoutes = state.routes.filter((r) => r.name in ROUTE_META);
   const leftRoutes = visibleRoutes.slice(0, 2);
   const rightRoutes = visibleRoutes.slice(2);
+
+  const dockShadow =
+    Platform.OS === "web"
+      ? ({ boxShadow: isDark ? "0 8px 30px rgba(0,0,0,0.55)" : "0 8px 30px rgba(10,10,10,0.12)" } as object)
+      : {
+          shadowColor: "#000000",
+          shadowOpacity: isDark ? 0.5 : 0.15,
+          shadowRadius: 20,
+          shadowOffset: { width: 0, height: 8 },
+          elevation: 12,
+        };
 
   const renderTab = (route: (typeof state.routes)[number]) => {
     const { options } = descriptors[route.key];
     const isFocused = state.routes[state.index].key === route.key;
-    const Icon = ROUTE_ICONS[route.name] ?? LayoutGrid;
+    const { Icon, label } = ROUTE_META[route.name] ?? ROUTE_META.index;
 
     const onPress = () => {
       const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
@@ -46,23 +61,41 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
         onPress={onPress}
         accessibilityRole="button"
         accessibilityState={isFocused ? { selected: true } : {}}
-        accessibilityLabel={options.title ?? route.name}
-        className="flex-1 items-center justify-center"
+        accessibilityLabel={options.title ?? label}
+        className="flex-1 items-center justify-center gap-0.5"
       >
-        <Icon size={26} color={isFocused ? "#2563EB" : "rgba(255,255,255,0.4)"} strokeWidth={1.8} />
+        <View
+          style={isFocused ? { backgroundColor: isDark ? "rgba(37,99,235,0.18)" : "rgba(37,99,235,0.12)" } : undefined}
+          className="items-center justify-center rounded-full px-4 py-1"
+        >
+          <Icon size={22} color={isFocused ? ACCENT : colors.mutedForeground} strokeWidth={isFocused ? 2.2 : 1.9} />
+        </View>
+        <Text
+          style={{ color: isFocused ? ACCENT : colors.mutedForeground, fontSize: 10 }}
+          className={isFocused ? "font-sans-semibold" : "font-sans-medium"}
+        >
+          {label}
+        </Text>
       </Pressable>
     );
   };
 
   return (
     <View
-      style={{ paddingBottom: insets.bottom, backgroundColor: "rgba(4,4,4,0.97)" }}
-      className="absolute bottom-0 left-0 right-0 border-t border-white/10"
+      pointerEvents="box-none"
+      className="absolute bottom-0 left-0 right-0 items-center"
+      style={{ paddingBottom: Math.max(insets.bottom, 10), paddingHorizontal: 14 }}
     >
-      <View style={{ height: 64 }} className="flex-row items-center px-2">
+      <View
+        style={[
+          { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, width: "100%", maxWidth: 460 },
+          dockShadow,
+        ]}
+        className="flex-row items-center rounded-[26px] px-2 py-2"
+      >
         {leftRoutes.map(renderTab)}
 
-        <View className="flex-1 items-center justify-center" style={{ marginTop: -14 }}>
+        <View className="flex-1 items-center justify-center">
           <Pressable
             onPress={() => {
               requestQuickAddEntry();
@@ -71,20 +104,24 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
             accessibilityRole="button"
             accessibilityLabel="New entry"
             style={{
-              width: 46,
-              height: 46,
-              borderRadius: 23,
-              backgroundColor: "#FFFFFF",
+              width: 48,
+              height: 48,
+              borderRadius: 24,
+              backgroundColor: ACCENT,
               alignItems: "center",
               justifyContent: "center",
-              shadowColor: "#2563EB",
-              shadowOpacity: 0.35,
-              shadowRadius: 20,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 6,
+              ...(Platform.OS === "web"
+                ? { boxShadow: "0 6px 18px rgba(37,99,235,0.45)" }
+                : {
+                    shadowColor: ACCENT,
+                    shadowOpacity: 0.45,
+                    shadowRadius: 16,
+                    shadowOffset: { width: 0, height: 5 },
+                    elevation: 8,
+                  }),
             }}
           >
-            <Plus size={22} color="#000000" strokeWidth={2.5} />
+            <Plus size={24} color="#FFFFFF" strokeWidth={2.6} />
           </Pressable>
         </View>
 

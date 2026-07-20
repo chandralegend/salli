@@ -545,14 +545,14 @@ function NewHoldingDrawer({ visible, onClose }: { visible: boolean; onClose: () 
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable className="flex-1 justify-end" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onPress={onClose}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <Pressable onPress={() => {}} style={themeVars} className="max-h-[88%] rounded-t-[28px] border-t border-foreground/12 bg-[#111] px-4 pb-8 pt-2.5">
+          <Pressable onPress={() => {}} style={themeVars} className="max-h-[88%] rounded-t-[28px] border-t border-foreground/10 bg-background px-4 pb-8 pt-2.5">
             <View className="items-center pb-1">
-              <View className="h-1 w-10 rounded-full bg-white/20" />
+              <View className="h-1 w-10 rounded-full bg-foreground/20" />
             </View>
             <View className="flex-row items-center px-0.5 pb-3.5 pt-1.5">
-              <Text className="flex-1 font-sans-bold text-[18px] text-white">New Holding</Text>
-              <Pressable onPress={onClose} className="h-[30px] w-[30px] items-center justify-center rounded-full bg-white/[0.08]">
-                <X size={14} color="rgba(255,255,255,0.5)" strokeWidth={2} />
+              <Text className="flex-1 font-sans-bold text-[18px] text-foreground">New Holding</Text>
+              <Pressable onPress={onClose} className="h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.08]">
+                <X size={14} color={colors.mutedForeground} strokeWidth={2} />
               </Pressable>
             </View>
 
@@ -571,7 +571,7 @@ function NewHoldingDrawer({ visible, onClose }: { visible: boolean; onClose: () 
               </View>
 
               {/* asset class chips */}
-              <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-white/30">Asset Class *</Text>
+              <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">Asset Class *</Text>
               <View className="mb-3 flex-row flex-wrap gap-1.5">
                 {ASSET_CLASSES.map((ac) => (
                   <Pressable
@@ -579,10 +579,10 @@ function NewHoldingDrawer({ visible, onClose }: { visible: boolean; onClose: () 
                     onPress={() => setAssetClass(ac)}
                     className={cn(
                       "rounded-pill px-3.5 py-1.5",
-                      assetClass === ac ? "bg-salli-accent" : "border border-white/[0.08] bg-[#1a1a1a]",
+                      assetClass === ac ? "bg-salli-accent" : "border border-foreground/10 bg-card",
                     )}
                   >
-                    <Text className={cn("text-[12px] capitalize", assetClass === ac ? "font-sans-semibold text-white" : "font-sans-medium text-white/40")}>
+                    <Text className={cn("text-[12px] capitalize", assetClass === ac ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/50")}>
                       {ac}
                     </Text>
                   </Pressable>
@@ -617,7 +617,7 @@ function NewHoldingDrawer({ visible, onClose }: { visible: boolean; onClose: () 
                     gain >= 0 ? "border-salli-accent/20 bg-salli-accent/[0.08]" : "border-destructive/20 bg-destructive/[0.08]",
                   )}
                 >
-                  <Text className="text-[12px] text-white/50">Unrealized gain</Text>
+                  <Text className="text-[12px] text-foreground/50">Unrealized gain</Text>
                   <Text className={cn("font-sans-bold text-[14px]", gain >= 0 ? "text-salli-accent" : "text-destructive")}>
                     {gain >= 0 ? "+" : "-"}Rs. {formatLKR(Math.abs(gain), 0)} · {formatPct(gainPct, 1)}
                   </Text>

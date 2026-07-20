@@ -91,7 +91,7 @@ export function EntryDetailSheet({
   return (
     <Modal visible={Boolean(entry)} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable className="flex-1 justify-end" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onPress={onClose}>
-        <Pressable onPress={() => {}} style={themeVars} className="rounded-t-[28px] border-t border-foreground/10 bg-[#111]">
+        <Pressable onPress={() => {}} style={themeVars} className="rounded-t-[28px] border-t border-foreground/10 bg-background">
           <View style={{ paddingBottom: insets.bottom + 16 }} className="px-4">
             <View className="items-center pt-2.5">
               <View className="h-1 w-10 rounded-full bg-foreground/20" />

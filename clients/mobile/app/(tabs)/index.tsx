@@ -20,13 +20,14 @@ import { PageShell } from "@/components/ui/page-shell";
 import { StatTile } from "@/components/ui/stat-tile";
 import { useDashboard } from "@/hooks/useDashboard";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
-import { useThemeColors } from "@/lib/theme";
+import { useAppTheme, useThemeColors } from "@/lib/theme";
 import { useSalliStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export default function DashboardScreen() {
   const router = useRouter();
   const colors = useThemeColors();
+  const { isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
   const { netWorth, fiScore, tax, accounts, entries, budgetSummary, balances, incomeYtd, expensesYtd } =
     useDashboard();
@@ -45,48 +46,50 @@ export default function DashboardScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* Navy hero fades into the page background (pure black in dark, light
-          canvas in light) so there's no hard edge where content leaves it. */}
-      <LinearGradient
-        colors={["#0B20E0", "#0912B0", "#060A6A", "#020518", colors.background]}
-        locations={[0, 0.28, 0.52, 0.78, 1]}
-        style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400 }}
-      />
+      {/* Navy hero — dark mode only. In light mode the hero sits on the plain
+          light canvas (no gradient) and its text uses theme tokens instead. */}
+      {isDark ? (
+        <LinearGradient
+          colors={["#0B20E0", "#0912B0", "#060A6A", "#020518", "#000000"]}
+          locations={[0, 0.28, 0.52, 0.78, 1]}
+          style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400 }}
+        />
+      ) : null}
       <PageShell transparent contentContainerStyle={{ paddingTop: insets.top }}>
         <View className="flex-row items-center px-4 pt-2">
           <AvatarMoreButton initial="D" />
           <View className="flex-1 flex-row items-center justify-center gap-2.5">
-            <ChevronLeft size={14} color="rgba(255,255,255,0.4)" strokeWidth={2} />
-            <Text className="font-sans-semibold text-[14px] text-white">Jul 2026</Text>
-            <ChevronRight size={14} color="rgba(255,255,255,0.4)" strokeWidth={2} />
+            <ChevronLeft size={14} color={colors.mutedForeground} strokeWidth={2} />
+            <Text className="font-sans-semibold text-[14px] text-foreground">Jul 2026</Text>
+            <ChevronRight size={14} color={colors.mutedForeground} strokeWidth={2} />
           </View>
           <View className="flex-row gap-2">
-            <Pressable className="h-9 w-9 items-center justify-center rounded-full bg-white/10">
-              <Bell size={16} color="#FFFFFF" strokeWidth={2} />
+            <Pressable className="h-9 w-9 items-center justify-center rounded-full bg-foreground/10">
+              <Bell size={16} color={colors.foreground} strokeWidth={2} />
             </Pressable>
             <Pressable
               onPress={() => router.push("/(tabs)/more/settings")}
-              className="h-9 w-9 items-center justify-center rounded-full bg-white/10"
+              className="h-9 w-9 items-center justify-center rounded-full bg-foreground/10"
             >
-              <Settings size={16} color="#FFFFFF" strokeWidth={2} />
+              <Settings size={16} color={colors.foreground} strokeWidth={2} />
             </Pressable>
           </View>
         </View>
 
         <View className="items-center px-6 pb-5 pt-4">
-          <Text className="mb-1.5 text-[12px] font-sans-medium uppercase tracking-wide text-white/45">
+          <Text className="mb-1.5 text-[12px] font-sans-medium uppercase tracking-wide text-foreground/45">
             Net Worth
           </Text>
           <View className="flex-row items-baseline gap-1">
-            <Text className="font-sans-bold text-[24px] tracking-tight text-white/45">Rs.</Text>
-            <Text className="font-sans-extrabold text-[52px] tracking-tighter text-white">
+            <Text className="font-sans-bold text-[24px] tracking-tight text-foreground/45">Rs.</Text>
+            <Text className="font-sans-extrabold text-[52px] tracking-tighter text-foreground">
               {netWorth ? formatLKRAbbrev(netWorth.current_net_worth) : "—"}
             </Text>
           </View>
           {momChange != null ? (
-            <View className="mt-2.5 flex-row items-center gap-1.5 rounded-pill border border-white/10 bg-white/[0.08] px-3 py-1">
-              <ArrowUpRight size={9} color="rgba(255,255,255,0.7)" strokeWidth={2.5} />
-              <Text className="font-sans-semibold text-[11px] text-white/70">
+            <View className="mt-2.5 flex-row items-center gap-1.5 rounded-pill border border-foreground/10 bg-foreground/[0.08] px-3 py-1">
+              <ArrowUpRight size={9} color={colors.foreground} strokeWidth={2.5} />
+              <Text className="font-sans-semibold text-[11px] text-foreground/70">
                 {momChange >= 0 ? "+" : ""}
                 {formatPct(momChange)} vs last mo
               </Text>
@@ -97,7 +100,7 @@ export default function DashboardScreen() {
         <View className="gap-2 px-4 pb-3.5">
           <View className="flex-row gap-2">
             <StatTile
-              onDark
+              onDark={isDark}
               label="Income"
               value={incomeYtd != null ? formatLKRAbbrev(incomeYtd) : "—"}
               hint="YTD"
@@ -107,11 +110,11 @@ export default function DashboardScreen() {
               valueClassName="text-[24px]"
             />
             <StatTile
-              onDark
+              onDark={isDark}
               label="Expenses"
               value={expensesYtd != null ? formatLKRAbbrev(expensesYtd) : "—"}
               hint="YTD"
-              valueClassName="text-white/70 text-[24px]"
+              valueClassName="text-foreground/70 text-[24px]"
               className="flex-1 p-4"
               labelClassName="text-[10px]"
               hintClassName="text-[10px]"
@@ -119,7 +122,7 @@ export default function DashboardScreen() {
           </View>
           <View className="flex-row gap-2">
             <StatTile
-              onDark
+              onDark={isDark}
               label="Tax"
               value={tax ? formatLKRAbbrev(tax.tax_payable) : "—"}
               hint="AY 25/26"
@@ -129,13 +132,13 @@ export default function DashboardScreen() {
               valueClassName="text-[24px]"
             />
             <StatTile
-              onDark
+              onDark={isDark}
               label="FI Score"
               value={
                 fiScore ? (
-                  <Text className="font-sans-bold text-[24px] tracking-tight text-white">
+                  <Text className="font-sans-bold text-[24px] tracking-tight text-foreground">
                     {Number(fiScore.overall_score).toFixed(0)}
-                    <Text className="font-sans text-[12px] text-white/30">/100</Text>
+                    <Text className="font-sans text-[12px] text-foreground/30">/100</Text>
                   </Text>
                 ) : (
                   "—"

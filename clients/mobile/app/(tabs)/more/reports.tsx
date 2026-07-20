@@ -1,11 +1,18 @@
 import { ArrowDownRight, ArrowUpRight, Download } from "lucide-react-native";
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import Svg, { Polygon, Polyline } from "react-native-svg";
 
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { useBalanceSheet, useIncomeStatement, useNetWorthStatement } from "@/hooks/useReports";
+import {
+  exportReportCsv,
+  type ExportableReport,
+  useBalanceSheet,
+  useIncomeStatement,
+  useNetWorthStatement,
+} from "@/hooks/useReports";
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -17,6 +24,13 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 
 function currentMonthLabel() {
   const d = new Date();
+  return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/** "2026-07-15T…" → "Jul 2026". Falls back to the raw string if unparseable. */
+function monthLabel(isoDate: string): string {
+  const d = new Date(isoDate);
+  if (Number.isNaN(d.getTime())) return isoDate;
   return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
@@ -45,10 +59,32 @@ function periodRange(period: string): { from: string; to: string; label: string 
   };
 }
 
+/** Net-worth trend line + area fill (mockup's Net Worth hero chart). */
+function TrendChart({ values }: { values: number[] }) {
+  const W = 320;
+  const H = 70;
+  const pad = 8;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const n = values.length;
+  const x = (i: number) => (n <= 1 ? W : (i / (n - 1)) * W);
+  const y = (v: number) => H - pad - ((v - min) / span) * (H - pad * 2);
+  const line = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const area = `${line} ${W},${H} 0,${H}`;
+  return (
+    <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+      <Polygon points={area} fill="rgba(37,99,235,0.12)" stroke="none" />
+      <Polyline points={line} fill="none" stroke="#2563EB" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
 export default function ReportsScreen() {
   const colors = useThemeColors();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Balance Sheet");
   const [period, setPeriod] = useState<(typeof PERIODS)[number]>("Jul 2026");
+  const [exporting, setExporting] = useState(false);
   const range = periodRange(period);
   const balanceSheet = useBalanceSheet();
   const netWorth = useNetWorthStatement();
@@ -64,14 +100,56 @@ export default function ReportsScreen() {
   const saved = income.data ? Number(income.data.net_income) : 0;
   const expensePct = incomeTotal > 0 ? Math.min(100, (expenseTotal / incomeTotal) * 100) : 0;
 
+  // Net-worth trend, chronological, capped to the last 12 months for the chart/list.
+  const trendChron = trend.slice(-12);
+  const trendValues = trendChron.map((p) => Number(p.net_worth));
+  // Year-over-year: latest vs the earliest point that is ≥ ~1 year older.
+  const latestPoint = trend.length > 0 ? trend[trend.length - 1] : null;
+  let yoyPct: number | null = null;
+  if (latestPoint) {
+    const latestVal = Number(latestPoint.net_worth);
+    const latestTime = new Date(latestPoint.date).getTime();
+    const yearAgo = trend.find((p) => latestTime - new Date(p.date).getTime() >= 330 * 864e5);
+    if (yearAgo && Number(yearAgo.net_worth) !== 0) {
+      yoyPct = ((latestVal - Number(yearAgo.net_worth)) / Math.abs(Number(yearAgo.net_worth))) * 100;
+    }
+  }
+
+  // Which server-side CSV report the current tab maps to (Income Stmt has none).
+  const exportType: ExportableReport | null =
+    tab === "Balance Sheet" ? "balance-sheet" : tab === "Net Worth" ? "net-worth" : null;
+
+  async function handleExport() {
+    if (!exportType || exporting) return;
+    setExporting(true);
+    try {
+      await exportReportCsv(exportType);
+    } catch (e) {
+      Alert.alert("Export failed", e instanceof Error ? e.message : "Could not export this report.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <PageShell>
       <ScreenHeader
         title="Reports"
         back
         trailing={
-          <Pressable className="flex-row items-center gap-1.5 rounded-pill border border-foreground/10 bg-foreground/[0.06] px-3.5 py-1.5">
-            <Download size={13} color={colors.mutedForeground} strokeWidth={2} />
+          <Pressable
+            onPress={handleExport}
+            disabled={!exportType || exporting}
+            className={cn(
+              "flex-row items-center gap-1.5 rounded-pill border border-foreground/10 bg-foreground/[0.06] px-3.5 py-1.5",
+              !exportType && "opacity-40",
+            )}
+          >
+            {exporting ? (
+              <ActivityIndicator size="small" color={colors.mutedForeground} />
+            ) : (
+              <Download size={13} color={colors.mutedForeground} strokeWidth={2} />
+            )}
             <Text className="font-sans-medium text-[12px] text-foreground/50">Export</Text>
           </Pressable>
         }
@@ -239,11 +317,25 @@ export default function ReportsScreen() {
             <Text className="mb-1.5 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
               Net Income · {range.label}
             </Text>
-            <View className="flex-row items-baseline gap-1">
+            <View className="mb-2.5 flex-row items-baseline gap-1">
               <Text className="font-sans-semibold text-[18px] text-white/40">Rs.</Text>
               <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
                 {income.data ? formatLKRAbbrev(saved) : "—"}
               </Text>
+            </View>
+            <View className="flex-row gap-1.5">
+              <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+                <Text className="mb-1 text-[10px] text-white/35">Total Income</Text>
+                <Text className="font-sans-bold text-[13px] leading-none text-white">
+                  Rs. {income.data ? formatLKRAbbrev(incomeTotal) : "—"}
+                </Text>
+              </View>
+              <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+                <Text className="mb-1 text-[10px] text-white/35">Total Expenses</Text>
+                <Text className="font-sans-bold text-[13px] leading-none text-white/60">
+                  Rs. {income.data ? formatLKRAbbrev(expenseTotal) : "—"}
+                </Text>
+              </View>
             </View>
           </Card>
 
@@ -277,35 +369,92 @@ export default function ReportsScreen() {
             <Card className="mt-2.5 items-center p-6">
               <Text className="text-[13px] text-foreground/35">No income or expenses this period.</Text>
             </Card>
+          ) : income.data ? (
+            <View className="mt-2.5 flex-row items-center justify-between rounded-2xl border border-salli-accent/20 bg-salli-accent/[0.08] px-4 py-3.5">
+              <Text className="font-sans-bold text-[14px] text-foreground">Net Income</Text>
+              <Text className="font-sans-extrabold text-[20px] tracking-tight text-salli-accent">Rs. {formatLKR(saved, 0)}</Text>
+            </View>
           ) : null}
         </View>
       ) : (
         <View className="px-4 pt-2.5">
           <Card className="bg-salli-navy-card p-[18px]">
-            <Text className="mb-1.5 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
-              Current Net Worth
-            </Text>
-            <View className="mb-1 flex-row items-baseline gap-1">
-              <Text className="font-sans-semibold text-[18px] text-white/40">Rs.</Text>
-              <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
-                {netWorth.data ? formatLKRAbbrev(netWorth.data.current_net_worth) : "—"}
-              </Text>
+            <View className="mb-3.5 flex-row items-start justify-between">
+              <View className="flex-1">
+                <Text className="mb-1.5 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
+                  Current Net Worth
+                </Text>
+                <View className="flex-row items-baseline gap-1">
+                  <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
+                  <Text className="font-sans-extrabold text-[42px] leading-none tracking-tighter text-white">
+                    {netWorth.data ? formatLKRAbbrev(netWorth.data.current_net_worth) : "—"}
+                  </Text>
+                </View>
+                <Text className="mt-1 text-[11px] text-white/30">
+                  As of {netWorth.data?.as_of ? monthLabel(netWorth.data.as_of) : "—"}
+                </Text>
+              </View>
+              {yoyPct !== null ? (
+                <View className="mt-1 rounded-control border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
+                  <Text className="font-sans-semibold text-[11px] text-salli-accent">
+                    {yoyPct >= 0 ? "↑" : "↓"} {Math.abs(yoyPct).toFixed(0)}% YoY
+                  </Text>
+                </View>
+              ) : null}
             </View>
-            <Text className="text-[11px] text-white/30">As of {netWorth.data?.as_of ?? "—"}</Text>
+            {trendValues.length >= 2 ? (
+              <>
+                <TrendChart values={trendValues} />
+                <View className="mt-1 flex-row justify-between">
+                  <Text className="text-[10px] text-white/30">{monthLabel(trendChron[0].date)}</Text>
+                  <Text className="text-[10px] text-white/30">{monthLabel(trendChron[trendChron.length - 1].date)}</Text>
+                </View>
+              </>
+            ) : null}
           </Card>
+
           {trend.length === 0 ? (
             <Card className="mt-2.5 items-center p-6">
               <Text className="text-[13px] text-foreground/35">No history yet.</Text>
             </Card>
           ) : (
-            <Card className="mt-2.5 overflow-hidden p-0">
-              {trend.slice(-12).map((point, i) => (
-                <View key={i} className="flex-row justify-between border-b border-foreground/[0.05] px-4 py-2.5">
-                  <Text className="text-[12px] text-foreground/50">{point.date}</Text>
-                  <Text className="font-sans-medium text-[12px] text-foreground">Rs. {formatLKR(point.net_worth, 0)}</Text>
-                </View>
-              ))}
-            </Card>
+            <>
+              <Text className="px-0.5 pb-1.5 pt-3.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                Monthly Trend
+              </Text>
+              <View className="gap-1.5">
+                {trendChron
+                  .map((point, i) => {
+                    const value = Number(point.net_worth);
+                    const prev = i > 0 ? Number(trendChron[i - 1].net_worth) : null;
+                    const delta = prev !== null ? value - prev : null;
+                    const pct = prev !== null && prev !== 0 ? (delta! / Math.abs(prev)) * 100 : null;
+                    return { point, value, delta, pct };
+                  })
+                  .reverse()
+                  .map(({ point, value, delta, pct }, i) => (
+                    <Card key={i} className="flex-row items-center justify-between p-3.5">
+                      <View>
+                        <Text className="font-sans-semibold text-[13px] text-foreground">{monthLabel(point.date)}</Text>
+                        {delta !== null ? (
+                          <Text className="mt-0.5 text-[11px] text-foreground/30">
+                            {delta >= 0 ? "+" : "−"}Rs. {formatLKRAbbrev(Math.abs(delta))} this month
+                          </Text>
+                        ) : null}
+                      </View>
+                      <View className="items-end">
+                        <Text className="font-sans-bold text-[14px] text-foreground">Rs. {formatLKRAbbrev(value)}</Text>
+                        {pct !== null ? (
+                          <Text className={cn("text-[11px] font-sans-medium", pct >= 0 ? "text-salli-accent" : "text-destructive")}>
+                            {pct >= 0 ? "+" : "−"}
+                            {Math.abs(pct).toFixed(1)}%
+                          </Text>
+                        ) : null}
+                      </View>
+                    </Card>
+                  ))}
+              </View>
+            </>
           )}
         </View>
       )}

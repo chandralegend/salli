@@ -8,12 +8,15 @@ import {
   incomeStatementLedgerIncomeStatementGet,
   listAccountsAccountsGet,
   listEntriesEntriesGet,
+  parseEntryEntriesParsePost,
   reactivateAccountAccountsAccountIdReactivatePost,
   reverseEntryEntriesEntryIdReversePost,
   trialBalanceLedgerTrialBalanceGet,
   updateAccountAccountsAccountIdPatch,
 } from "@/lib/api/sdk.gen";
-import type { AddAccountRequest, UpdateAccountRequest } from "@/lib/api/types.gen";
+import type { AddAccountRequest, ParsedEntryDraft, UpdateAccountRequest } from "@/lib/api/types.gen";
+
+export type EntryDraft = ParsedEntryDraft;
 import type { Account, JournalEntry } from "./useDashboard";
 
 export type AccountTransaction = {
@@ -96,6 +99,16 @@ function useAccountInvalidate() {
     qc.invalidateQueries({ queryKey: ["accounts"] });
     qc.invalidateQueries({ queryKey: ["trial-balance"] });
   };
+}
+
+/** AI-parse a free-text / dictated note into a draft entry (never posts). */
+export function useParseEntry() {
+  return useMutation({
+    mutationFn: async (text: string): Promise<EntryDraft> => {
+      const { data } = await parseEntryEntriesParsePost({ body: { text }, throwOnError: true });
+      return data as unknown as EntryDraft;
+    },
+  });
 }
 
 export function useAddAccount() {

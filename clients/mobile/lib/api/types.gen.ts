@@ -553,6 +553,50 @@ export type OpeningBalanceItem = {
 };
 
 /**
+ * ParseEntryRequest
+ */
+export type ParseEntryRequest = {
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * ParsedEntryDraft
+ */
+export type ParsedEntryDraft = {
+    /**
+     * Entry Type
+     */
+    entry_type: 'income' | 'expense' | 'transfer';
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Debit Account Id
+     */
+    debit_account_id?: string | null;
+    /**
+     * Credit Account Id
+     */
+    credit_account_id?: string | null;
+    /**
+     * Currency
+     */
+    currency?: string;
+    /**
+     * Confidence
+     */
+    confidence?: number;
+};
+
+/**
  * PolicyRequest
  */
 export type PolicyRequest = {
@@ -1089,6 +1133,31 @@ export type ReactivateAccountAccountsAccountIdReactivatePostResponses = {
      */
     200: unknown;
 };
+
+export type ParseEntryEntriesParsePostData = {
+    body: ParseEntryRequest;
+    path?: never;
+    query?: never;
+    url: '/entries/parse';
+};
+
+export type ParseEntryEntriesParsePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ParseEntryEntriesParsePostError = ParseEntryEntriesParsePostErrors[keyof ParseEntryEntriesParsePostErrors];
+
+export type ParseEntryEntriesParsePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: ParsedEntryDraft;
+};
+
+export type ParseEntryEntriesParsePostResponse = ParseEntryEntriesParsePostResponses[keyof ParseEntryEntriesParsePostResponses];
 
 export type ListEntriesEntriesGetData = {
     body?: never;

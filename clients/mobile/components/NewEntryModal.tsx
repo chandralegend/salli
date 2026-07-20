@@ -8,7 +8,7 @@ import {
   Wallet,
   X,
 } from "lucide-react-native";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Modal as RNModal, Platform, Pressable, ScrollView, Text, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
@@ -17,7 +17,7 @@ import { PillButton } from "@/components/ui/pill-button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { TextField } from "@/components/ui/text-field";
 import type { Account } from "@/hooks/useDashboard";
-import { useLedgerMutations } from "@/hooks/useLedger";
+import { useLedgerMutations, type EntryDraft } from "@/hooks/useLedger";
 import { formatLKR } from "@/lib/format";
 import { useThemeColors, useThemeVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,8 @@ type NewEntryModalProps = {
   visible: boolean;
   onClose: () => void;
   accounts: Account[];
+  /** AI-parsed draft to pre-fill the form when opened via voice/text quick-add. */
+  initialDraft?: EntryDraft | null;
 };
 
 const TYPE_META: Record<Account["type"], { Icon: typeof Wallet; label: string }> = {
@@ -41,7 +43,7 @@ const TYPE_META: Record<Account["type"], { Icon: typeof Wallet; label: string }>
 
 /** Add Journal Entry — mockup's "New Entry" screen, as a modal so it can be
  * deep-linked from the tab-bar "+" button from any tab. */
-export function NewEntryModal({ visible, onClose, accounts }: NewEntryModalProps) {
+export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewEntryModalProps) {
   const colors = useThemeColors();
   const themeVars = useThemeVars();
   const { postEntry } = useLedgerMutations();
@@ -53,6 +55,27 @@ export function NewEntryModal({ visible, onClose, accounts }: NewEntryModalProps
   const [creditAccountId, setCreditAccountId] = useState<string | null>(null);
   const [picker, setPicker] = useState<Side | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // On each open, apply the AI draft (voice/text quick-add) or start blank. The
+  // modal instance is persistent, so this also clears stale state between opens.
+  // Set account ids directly (not via handleType, which would clear them).
+  useEffect(() => {
+    if (!visible) return;
+    setPicker(null);
+    if (initialDraft) {
+      setType(initialDraft.entry_type);
+      setAmount(initialDraft.amount ?? "");
+      setDescription(initialDraft.description ?? "");
+      setDebitAccountId(initialDraft.debit_account_id ?? null);
+      setCreditAccountId(initialDraft.credit_account_id ?? null);
+    } else {
+      setType("expense");
+      setAmount("");
+      setDescription("");
+      setDebitAccountId(null);
+      setCreditAccountId(null);
+    }
+  }, [visible, initialDraft]);
 
   const debitCandidates = useMemo(
     () =>

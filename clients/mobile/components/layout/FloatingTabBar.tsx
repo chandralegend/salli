@@ -1,8 +1,11 @@
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { LayoutGrid, PiggyBank, Plus, Table, TrendingUp } from "lucide-react-native";
+import { useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { VoiceCaptureSheet } from "../VoiceCaptureSheet";
+import type { EntryDraft } from "../../hooks/useLedger";
 import { useSalliStore } from "../../lib/store";
 import { useAppTheme, useThemeColors } from "../../lib/theme";
 
@@ -25,6 +28,12 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
   const colors = useThemeColors();
   const { isDark } = useAppTheme();
   const requestQuickAddEntry = useSalliStore((s) => s.requestQuickAddEntry);
+  const [captureOpen, setCaptureOpen] = useState(false);
+
+  const openNewEntry = (draft?: EntryDraft) => {
+    requestQuickAddEntry(draft ?? null);
+    navigation.navigate("ledger");
+  };
 
   // Filter by name (not position) — "more" is a hidden route (href: null) that
   // still appears in state.routes, so positional slicing would misplace it.
@@ -97,12 +106,11 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
 
         <View className="flex-1 items-center justify-center">
           <Pressable
-            onPress={() => {
-              requestQuickAddEntry();
-              navigation.navigate("ledger");
-            }}
+            onPress={() => openNewEntry()}
+            onLongPress={() => setCaptureOpen(true)}
+            delayLongPress={300}
             accessibilityRole="button"
-            accessibilityLabel="New entry"
+            accessibilityLabel="New entry — long-press for voice/text quick add"
             style={{
               width: 48,
               height: 48,
@@ -127,6 +135,15 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
 
         {rightRoutes.map(renderTab)}
       </View>
+
+      <VoiceCaptureSheet
+        visible={captureOpen}
+        onClose={() => setCaptureOpen(false)}
+        onDraft={(draft) => {
+          setCaptureOpen(false);
+          openNewEntry(draft);
+        }}
+      />
     </View>
   );
 }

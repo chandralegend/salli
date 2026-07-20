@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+import type { ParsedEntryDraft } from "@/lib/api/types.gen";
+
 type SalliStore = {
   /** Bearer token (Supabase access_token, or the raw dev-login string). Lives here
    * rather than React context so interceptors/fetch wrappers can read it synchronously. */
@@ -16,7 +18,9 @@ type SalliStore = {
   /** Cross-screen signal: the floating "+" tab-bar button increments this so the
    * Ledger tab (wherever it's mounted) knows to open its New Entry modal. */
   quickAddEntryRequest: number;
-  requestQuickAddEntry: () => void;
+  /** Optional AI-parsed draft to pre-fill the New Entry form (voice/text quick-add). */
+  quickAddDraft: ParsedEntryDraft | null;
+  requestQuickAddEntry: (draft?: ParsedEntryDraft | null) => void;
 };
 
 export const useSalliStore = create<SalliStore>((set) => ({
@@ -30,6 +34,7 @@ export const useSalliStore = create<SalliStore>((set) => ({
   setOnboardingComplete: (onboardingComplete) => set({ onboardingComplete }),
 
   quickAddEntryRequest: 0,
-  requestQuickAddEntry: () =>
-    set((s) => ({ quickAddEntryRequest: s.quickAddEntryRequest + 1 })),
+  quickAddDraft: null,
+  requestQuickAddEntry: (draft = null) =>
+    set((s) => ({ quickAddEntryRequest: s.quickAddEntryRequest + 1, quickAddDraft: draft })),
 }));

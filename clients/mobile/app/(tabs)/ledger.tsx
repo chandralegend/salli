@@ -23,7 +23,14 @@ import { FilterChip } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
 import { Tabs } from "@/components/ui/tabs";
 import type { Account, JournalEntry } from "@/hooks/useDashboard";
-import { useAccounts, useEntries, useIncomeStatement, useLedgerMutations, useTrialBalance } from "@/hooks/useLedger";
+import {
+  useAccounts,
+  useEntries,
+  useIncomeStatement,
+  useLedgerMutations,
+  useTrialBalance,
+  type EntryDraft,
+} from "@/hooks/useLedger";
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
 import { useSalliStore } from "@/lib/store";
 import { useThemeColors } from "@/lib/theme";
@@ -80,6 +87,7 @@ export default function LedgerScreen() {
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [entryDraft, setEntryDraft] = useState<EntryDraft | null>(null);
 
   const accounts = useAccounts();
   const entries = useEntries();
@@ -91,6 +99,8 @@ export default function LedgerScreen() {
   const quickAddEntryRequest = useSalliStore((s) => s.quickAddEntryRequest);
   useEffect(() => {
     if (quickAddEntryRequest > 0) {
+      // Snapshot any AI draft attached to this request (null for a plain "+").
+      setEntryDraft(useSalliStore.getState().quickAddDraft);
       setTab("Journal");
       setModalVisible(true);
     }
@@ -327,7 +337,12 @@ export default function LedgerScreen() {
         </View>
       ) : null}
 
-      <NewEntryModal visible={modalVisible} onClose={() => setModalVisible(false)} accounts={accounts.data ?? []} />
+      <NewEntryModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        accounts={accounts.data ?? []}
+        initialDraft={entryDraft}
+      />
       <EntryDetailSheet
         entry={selectedEntry}
         accounts={(accounts.data ?? []) as Account[]}

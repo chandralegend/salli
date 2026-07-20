@@ -37,8 +37,11 @@ export default function ForgotPasswordScreen() {
         style={{ position: "absolute", top: 0, left: 0, right: 0, height: 430 }}
       />
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-          <View className="items-center px-6 pb-13 pt-[60px]">
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingVertical: 40 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className="items-center px-6 pb-9">
             <Logo size={80} />
             <Text className="mt-[22px] font-sans-bold text-[26px] tracking-tight text-white">
               Forgot password?

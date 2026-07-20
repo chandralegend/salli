@@ -4,35 +4,44 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Bell,
+  ChevronRight,
   PiggyBank,
-  Plus,
   Settings,
   Upload,
 } from "lucide-react-native";
+import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AccountDetailModal } from "@/components/AccountDetailModal";
+import { EntryDetailSheet } from "@/components/EntryDetailSheet";
 import { AvatarMoreButton } from "@/components/layout/AvatarMoreButton";
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { StatTile } from "@/components/ui/stat-tile";
+import type { JournalEntry } from "@/hooks/useDashboard";
 import { useDashboard } from "@/hooks/useDashboard";
+import { useLedgerMutations } from "@/hooks/useLedger";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useAppTheme, useThemeColors } from "@/lib/theme";
-import { useSalliStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export default function DashboardScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const { isDark } = useAppTheme();
-  const insets = useSafeAreaInsets();
   const { netWorth, fiScore, tax, accounts, entries, budgetSummary, balances, incomeYtd, expensesYtd } =
     useDashboard();
-  const requestQuickAddEntry = useSalliStore((s) => s.requestQuickAddEntry);
+  const { reverseEntry } = useLedgerMutations();
 
-  const topAccount = accounts.find((a) => a.type === "asset");
-  const topAccountBalance = topAccount ? balances[topAccount.id] : undefined;
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
+
+  // Dashboard "Accounts" = your real-world money accounts (assets), the biggest
+  // balances first. Non-money ledger accounts (income/expense/equity) are excluded.
+  const topAccounts = accounts
+    .filter((a) => a.type === "asset")
+    .sort((a, b) => Number(balances[b.id] ?? 0) - Number(balances[a.id] ?? 0))
+    .slice(0, 4);
 
   const trend = netWorth?.trend ?? [];
   const prevNetWorth = trend.length >= 2 ? Number(trend[trend.length - 2].net_worth) : null;
@@ -53,8 +62,8 @@ export default function DashboardScreen() {
           style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400 }}
         />
       ) : null}
-      <PageShell transparent contentContainerStyle={{ paddingTop: insets.top }}>
-        <View className="flex-row items-center px-4 pt-2">
+      <PageShell transparent>
+        <View className="flex-row items-center px-4 pt-1">
           <AvatarMoreButton initial="D" />
           <View className="flex-1 flex-row items-center justify-center gap-2.5">
             <Text className="font-sans-semibold text-[14px] text-foreground">Jul 2026</Text>
@@ -161,16 +170,6 @@ export default function DashboardScreen() {
             <Text className="font-sans-medium text-[11px] text-foreground/70">Upload</Text>
           </Pressable>
           <Pressable
-            onPress={() => {
-              requestQuickAddEntry();
-              router.push("/(tabs)/ledger");
-            }}
-            className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-foreground/10 bg-card"
-          >
-            <Plus size={13} color={colors.mutedForeground} strokeWidth={2.5} />
-            <Text className="font-sans-medium text-[11px] text-foreground/70">New Entry</Text>
-          </Pressable>
-          <Pressable
             onPress={() => router.push("/(tabs)/agent")}
             className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control bg-salli-accent"
           >
@@ -180,11 +179,15 @@ export default function DashboardScreen() {
         </View>
 
         {budgetSummary ? (
-          <Card className="mx-4 mb-3.5 p-3.5">
-            <View className="mb-2.5 flex-row items-center justify-between">
-              <Text className="font-sans-semibold text-[14px] text-foreground">Monthly Budget</Text>
-              <Text className="text-[12px] text-foreground/30">Jul 2026</Text>
-            </View>
+          <Pressable onPress={() => router.push("/(tabs)/more/budget")}>
+            <Card className="mx-4 mb-3.5 p-3.5">
+              <View className="mb-2.5 flex-row items-center justify-between">
+                <Text className="font-sans-semibold text-[14px] text-foreground">Monthly Budget</Text>
+                <View className="flex-row items-center gap-1">
+                  <Text className="text-[12px] text-foreground/30">Jul 2026</Text>
+                  <ChevronRight size={14} color={colors.mutedForeground} strokeWidth={2} />
+                </View>
+              </View>
             <View className="flex-row overflow-hidden rounded-[12px] bg-foreground/[0.06]" style={{ gap: 1 }}>
               <View className="flex-1 bg-muted px-3 py-2.5">
                 <Text className="mb-1 text-[10px] font-sans-medium tracking-wide text-foreground/35">SPENT</Text>
@@ -206,7 +209,8 @@ export default function DashboardScreen() {
                 </Text>
               </View>
             </View>
-          </Card>
+            </Card>
+          </Pressable>
         ) : null}
 
         <View className="px-4 pb-3">
@@ -216,23 +220,30 @@ export default function DashboardScreen() {
               <Text className="font-sans-medium text-[13px] text-salli-accent">See all</Text>
             </Pressable>
           </View>
-          {topAccount ? (
-            <Card className="flex-row items-center gap-3 rounded-[16px] border-foreground/[0.08] p-3.5">
-              <View className="h-10 w-10 items-center justify-center rounded-[12px] bg-salli-accent">
-                <Text className="font-sans-bold text-[16px] text-white">{topAccount.name.charAt(0)}</Text>
-              </View>
-              <View className="flex-1">
-                <Text className="font-sans-semibold text-[14px] text-foreground">{topAccount.name}</Text>
-                <Text className="text-[12px] capitalize text-foreground/35">
-                  {topAccount.type} · {topAccount.currency}
-                </Text>
-              </View>
-              {topAccountBalance != null ? (
-                <Text className="font-sans-semibold text-[14px] text-foreground">
-                  Rs. {formatLKRAbbrev(topAccountBalance)}
-                </Text>
-              ) : null}
-            </Card>
+          {topAccounts.length > 0 ? (
+            <View className="gap-2">
+              {topAccounts.map((acc) => (
+                <Pressable key={acc.id} onPress={() => setSelectedAccountId(acc.id)}>
+                  <Card className="flex-row items-center gap-3 rounded-[16px] border-foreground/[0.08] p-3.5">
+                    <View className="h-10 w-10 items-center justify-center rounded-[12px] bg-salli-accent">
+                      <Text className="font-sans-bold text-[16px] text-white">{acc.name.charAt(0)}</Text>
+                    </View>
+                    <View className="flex-1">
+                      <Text className="font-sans-semibold text-[14px] text-foreground">{acc.name}</Text>
+                      <Text className="text-[12px] capitalize text-foreground/35">
+                        {acc.type} · {acc.currency}
+                      </Text>
+                    </View>
+                    {balances[acc.id] != null ? (
+                      <Text className="font-sans-semibold text-[14px] text-foreground">
+                        Rs. {formatLKRAbbrev(balances[acc.id])}
+                      </Text>
+                    ) : null}
+                    <ChevronRight size={16} color={colors.mutedForeground} strokeWidth={2} />
+                  </Card>
+                </Pressable>
+              ))}
+            </View>
           ) : (
             <Card className="items-center p-5">
               <Text className="text-[13px] text-foreground/35">No accounts yet.</Text>
@@ -263,8 +274,8 @@ export default function DashboardScreen() {
                 const isIncome = debitAcc?.type === "asset" && creditAcc?.type === "income";
                 const EntryIcon = isIncome ? ArrowDownLeft : ArrowUpRight;
                 return (
+                  <Pressable key={entry.id} onPress={() => setSelectedEntry(entry)}>
                   <Card
-                    key={entry.id}
                     className="flex-row items-center gap-2.5 rounded-[16px] border-foreground/[0.08] p-3"
                   >
                     <View className="h-[38px] w-[38px] items-center justify-center rounded-[12px] bg-foreground/[0.06]">
@@ -286,12 +297,25 @@ export default function DashboardScreen() {
                       {isIncome ? "+" : "−"}Rs. {formatLKR(debit?.amount ?? "0", 0)}
                     </Text>
                   </Card>
+                  </Pressable>
                 );
               })}
             </View>
           )}
         </View>
       </PageShell>
+
+      <AccountDetailModal
+        visible={selectedAccountId !== null}
+        accountId={selectedAccountId}
+        onClose={() => setSelectedAccountId(null)}
+      />
+      <EntryDetailSheet
+        entry={selectedEntry}
+        accounts={accounts}
+        onReverse={(id) => reverseEntry(id)}
+        onClose={() => setSelectedEntry(null)}
+      />
     </View>
   );
 }

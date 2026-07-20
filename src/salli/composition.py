@@ -17,6 +17,7 @@ from salli.application.services.budget_service import BudgetService
 from salli.application.services.data_portability_service import DataPortabilityService
 from salli.application.services.debt_service import DebtService
 from salli.application.services.document_service import DocumentService
+from salli.application.services.entry_parse_service import EntryParseService
 from salli.application.services.fi_service import FiService
 from salli.application.services.insurance_service import InsuranceService
 from salli.application.services.ledger_service import LedgerService
@@ -52,6 +53,7 @@ class Services:
     insurance: InsuranceService
     reports: ReportService
     data_portability: DataPortabilityService
+    entry_parse: EntryParseService | None
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
@@ -99,6 +101,18 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         uow_factory=uow_factory,
     )
     parsing = ParsingService(uow_factory, storage)
+
+    # Free-text → draft journal entry (voice/text quick-add). Only available when
+    # an Anthropic key is configured; otherwise the /entries/parse route 503s.
+    entry_parse: EntryParseService | None = None
+    if settings.anthropic_api_key:
+        from salli.adapters.llm.anthropic_adapter import AnthropicLLMAdapter
+
+        entry_parse = EntryParseService(
+            ledger,
+            AnthropicLLMAdapter(settings.anthropic_api_key, settings.langsmith_project),
+        )
+
     reminders = ReminderService(uow_factory, budget, subscription, insurance)
     reports = ReportService(ledger, fi)
     data_portability = DataPortabilityService(
@@ -137,6 +151,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         insurance=insurance,
         reports=reports,
         data_portability=data_portability,
+        entry_parse=entry_parse,
     )
 
 

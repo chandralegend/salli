@@ -28,6 +28,36 @@ class AddEntryRequest(BaseModel):
     postings: list[PostingRequest]
 
 
+class ParseEntryRequest(BaseModel):
+    text: str
+
+
+class ParsedEntryDraft(BaseModel):
+    entry_type: Literal["income", "expense", "transfer"]
+    amount: str
+    description: str
+    debit_account_id: str | None = None
+    credit_account_id: str | None = None
+    currency: str = "LKR"
+    confidence: float = 0.0
+
+
+@router.post("/parse")
+async def parse_entry(body: ParseEntryRequest, user_id: CurrentUser, svc: AppServices) -> ParsedEntryDraft:
+    """AI-parse a free-text / dictated note into a DRAFT entry (never posted).
+
+    The LLM extracts the stated amount and maps the note to existing account ids;
+    the client pre-fills the New Entry form for the user to review and post via
+    the deterministic, balance-checked POST /entries/.
+    """
+    if svc.entry_parse is None:
+        raise HTTPException(status_code=503, detail="AI parsing is not configured")
+    if not body.text.strip():
+        raise HTTPException(status_code=400, detail="text is required")
+    draft = await svc.entry_parse.parse_draft(user_id, body.text)
+    return ParsedEntryDraft(**draft)
+
+
 @router.post("/", status_code=201)
 async def add_entry(body: AddEntryRequest, user_id: CurrentUser, svc: AppServices):
     postings_data = [

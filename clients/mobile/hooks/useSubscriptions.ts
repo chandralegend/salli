@@ -1,10 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  addSubscriptionSubscriptionsPost,
   deleteSubscriptionSubscriptionsSubscriptionIdDelete,
   getAllReportsSubscriptionsReportsGet,
   listSubscriptionsSubscriptionsGet,
+  updateSubscriptionSubscriptionsSubscriptionIdPatch,
 } from "@/lib/api/sdk.gen";
+import type { SubscriptionRequest, SubscriptionUpdateRequest } from "@/lib/api/types.gen";
 
 export type Subscription = {
   id: string;
@@ -50,4 +53,37 @@ export function useSubscriptionMutations() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["subscriptions"] }),
   });
   return { remove };
+}
+
+/** Track a new recurring subscription (POST /subscriptions) and refresh the
+ * list plus the derived alert reports. */
+export function useAddSubscription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: SubscriptionRequest) => {
+      await addSubscriptionSubscriptionsPost({ body: input, throwOnError: true });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["subscriptions"] });
+      qc.invalidateQueries({ queryKey: ["subscription-reports"] });
+    },
+  });
+}
+
+/** Edit an existing subscription (PATCH /subscriptions/{id}). */
+export function useUpdateSubscription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, body }: { id: string; body: SubscriptionUpdateRequest }) => {
+      await updateSubscriptionSubscriptionsSubscriptionIdPatch({
+        path: { subscription_id: id },
+        body,
+        throwOnError: true,
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["subscriptions"] });
+      qc.invalidateQueries({ queryKey: ["subscription-reports"] });
+    },
+  });
 }

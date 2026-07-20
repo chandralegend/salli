@@ -2,12 +2,12 @@ import { File, Paths } from "expo-file-system";
 import { useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
 import { AlertTriangle, Check, ChevronRight, Download, LogOut } from "lucide-react-native";
-import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Pressable, Text, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { useDeleteAccount, useEntitlements, useExportData } from "@/hooks/useSettings";
+import { useCreateCheckout, useDeleteAccount, useEntitlements, useExportData } from "@/hooks/useSettings";
 import { useMore } from "@/hooks/useMore";
 import { logout } from "@/lib/auth";
 import { useDarkModeToggle, useThemeColors } from "@/lib/theme";
@@ -35,8 +35,22 @@ export default function SettingsScreen() {
   const entitlements = useEntitlements();
   const exportData = useExportData();
   const deleteAccount = useDeleteAccount();
+  const checkout = useCreateCheckout();
+  const siteUrl = process.env.EXPO_PUBLIC_SITE_URL ?? "https://salli.lk";
 
   const isFree = entitlements.data?.plan === "free";
+
+  async function handleUpgrade(planKey: string) {
+    if (checkout.isPending) return;
+    try {
+      const data = await checkout.mutateAsync(planKey);
+      // The Paddle overlay only runs on web, so open the hosted web checkout page.
+      const url = data.url ?? `${siteUrl}/settings?upgrade=${encodeURIComponent(planKey)}`;
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert("Checkout unavailable", "We couldn't start checkout right now. Please try again.");
+    }
+  }
   const usage = entitlements.data?.usage ?? [];
   const messages = usage.find((u) => u.metric === "messages");
   const resetsAt = formatShortDate(usage[0]?.resets_at ?? entitlements.data?.current_period_end);
@@ -175,11 +189,18 @@ export default function SettingsScreen() {
                 ))}
               </View>
               <Pressable
-                onPress={() => router.push("/(tabs)/more/billing")}
+                onPress={() => handleUpgrade("plus")}
+                disabled={checkout.isPending}
                 className="h-[50px] flex-row items-center justify-center gap-1.5 rounded-pill bg-white"
               >
-                <Text className="font-sans-bold text-[15px] text-black">Upgrade to Plus</Text>
-                <Text className="text-[14px] text-black/40">· $9/mo</Text>
+                {checkout.isPending ? (
+                  <ActivityIndicator size="small" color="#000000" />
+                ) : (
+                  <>
+                    <Text className="font-sans-bold text-[15px] text-black">Upgrade to Plus</Text>
+                    <Text className="text-[14px] text-black/40">· $9/mo</Text>
+                  </>
+                )}
               </Pressable>
               <Text className="mt-2 text-center text-[11px] text-white/25">Cancel anytime · Secure checkout</Text>
             </View>

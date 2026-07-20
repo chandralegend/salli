@@ -1,6 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import {
+  billingPortalBillingPortalPost,
+  createCheckoutBillingCheckoutPost,
   deleteMyAccountOnboardingAccountDelete,
   exportMyDataOnboardingExportGet,
   getSubscriptionBillingSubscriptionGet,
@@ -31,6 +33,31 @@ export function useExportData() {
     mutationFn: async () => {
       const { data } = await exportMyDataOnboardingExportGet({ throwOnError: true });
       return data as unknown;
+    },
+  });
+}
+
+// The /billing/checkout endpoint returns Paddle.js overlay data (price_id,
+// custom_data, …), not a hosted URL — the Paddle overlay only runs on web. On
+// mobile we therefore call the endpoint (which also provisions the Paddle
+// customer) and then open the web checkout page in the system browser. If a
+// future backend ever returns a `url`, we honour it directly.
+export type CheckoutData = { url?: string } & Record<string, unknown>;
+
+export function useCreateCheckout() {
+  return useMutation({
+    mutationFn: async (plan: string) => {
+      const { data } = await createCheckoutBillingCheckoutPost({ body: { plan }, throwOnError: true });
+      return data as unknown as CheckoutData;
+    },
+  });
+}
+
+export function useBillingPortal() {
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await billingPortalBillingPortalPost({ throwOnError: true });
+      return (data as unknown as { url: string }).url;
     },
   });
 }

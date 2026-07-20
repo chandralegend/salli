@@ -1,5 +1,4 @@
 import {
-  ArrowUpDown,
   Calendar,
   Check,
   ChevronRight,
@@ -230,10 +229,6 @@ export default function RemindersScreen() {
             placeholderTextColor="rgba(128,128,128,0.4)"
             className="flex-1 text-[13px] text-foreground"
           />
-        </View>
-        <View className="h-[38px] flex-row items-center gap-1.5 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
-          <ArrowUpDown size={13} color="rgba(128,128,128,0.5)" strokeWidth={2} />
-          <Text className="text-[12px] font-sans-medium text-foreground/40">Date</Text>
         </View>
       </View>
 

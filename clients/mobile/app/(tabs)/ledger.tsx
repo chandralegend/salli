@@ -1,5 +1,6 @@
 import {
   ArrowDown,
+  ArrowUp,
   ChevronRight,
   CreditCard,
   Landmark,
@@ -14,6 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
 import { AccountDetailModal } from "@/components/AccountDetailModal";
+import { AddEditAccountDrawer } from "@/components/AddEditAccountDrawer";
 import { EntryDetailSheet } from "@/components/EntryDetailSheet";
 import { NewEntryModal } from "@/components/NewEntryModal";
 import { Card } from "@/components/ui/card";
@@ -72,6 +74,8 @@ export default function LedgerScreen() {
   const [acctFilter, setAcctFilter] = useState<(typeof ACCT_FILTERS)[number]>("All");
   const [acctSearch, setAcctSearch] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
+  const [addAccountOpen, setAddAccountOpen] = useState(false);
+  const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
@@ -107,8 +111,9 @@ export default function LedgerScreen() {
   const grouped = useMemo(() => {
     const groups: Record<string, typeof filteredEntries> = {};
     for (const entry of filteredEntries) (groups[entry.entry_date] ??= []).push(entry);
-    return Object.entries(groups).sort(([a], [b]) => (a < b ? 1 : -1));
-  }, [filteredEntries]);
+    const factor = sortDir === "desc" ? -1 : 1;
+    return Object.entries(groups).sort(([a], [b]) => (a < b ? 1 : -1) * factor);
+  }, [filteredEntries, sortDir]);
 
   // Accounts grouped by type, filtered by search + type chip.
   const groupedAccounts = useMemo(() => {
@@ -127,7 +132,7 @@ export default function LedgerScreen() {
       <View className="flex-row items-center px-5 pt-2.5">
         <Text className="flex-1 font-sans-bold text-[22px] text-foreground">Ledger</Text>
         <Pressable
-          onPress={() => setModalVisible(true)}
+          onPress={() => (tab === "Accounts" ? setAddAccountOpen(true) : setModalVisible(true))}
           className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
         >
           <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
@@ -157,10 +162,19 @@ export default function LedgerScreen() {
                 className="flex-1 text-[13px] text-foreground"
               />
             </View>
-            <View className="h-[38px] flex-row items-center gap-1.5 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
-              <ArrowDown size={13} color={colors.mutedForeground} strokeWidth={2} />
-              <Text className="font-sans-medium text-[12px] text-foreground/40">Date</Text>
-            </View>
+            <Pressable
+              onPress={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
+              className="h-[38px] flex-row items-center gap-1.5 rounded-[10px] border border-foreground/[0.08] bg-card px-3"
+            >
+              {sortDir === "desc" ? (
+                <ArrowDown size={13} color={colors.mutedForeground} strokeWidth={2} />
+              ) : (
+                <ArrowUp size={13} color={colors.mutedForeground} strokeWidth={2} />
+              )}
+              <Text className="font-sans-medium text-[12px] text-foreground/40">
+                {sortDir === "desc" ? "Newest" : "Oldest"}
+              </Text>
+            </Pressable>
           </View>
           <View className="flex-row flex-wrap gap-1.5 px-4 pb-2.5">
             {TYPE_FILTERS.map((f) => (
@@ -347,6 +361,7 @@ export default function LedgerScreen() {
         accountId={selectedAccountId}
         onClose={() => setSelectedAccountId(null)}
       />
+      <AddEditAccountDrawer visible={addAccountOpen} onClose={() => setAddAccountOpen(false)} />
     </PageShell>
   );
 }

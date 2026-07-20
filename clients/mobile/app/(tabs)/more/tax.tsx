@@ -1,6 +1,6 @@
-import { Bell, CreditCard, Download, Info, Landmark, Percent, User } from "lucide-react-native";
+import { Bell, CreditCard, Info, Landmark, Percent, User } from "lucide-react-native";
 import { useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
@@ -9,6 +9,7 @@ import { ScreenHeader } from "@/components/ui/screen-header";
 import { StatTile } from "@/components/ui/stat-tile";
 import type { TaxComputationFull, TaxPack } from "@/hooks/useTax";
 import { useComputeTax, useLatestTax, useTaxHistory, useTaxPacks } from "@/hooks/useTax";
+import { useReminderMutations } from "@/hooks/useReminders";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,13 @@ function dueDateLabel(pack: TaxPack | undefined, packYear: string): string {
     }
   }
   return `Due 30 Nov ${filingYear}`;
+}
+
+/** The filing deadline as YYYY-MM-DD, for creating a reminder. */
+function filingDueDate(pack: TaxPack | undefined, packYear: string): string {
+  const filingYear = Number(packYear.split("/")[0]) + 1;
+  const md = pack?.return_due && /^\d{2}-\d{2}$/.test(pack.return_due) ? pack.return_due : "11-30";
+  return `${filingYear}-${md}`;
 }
 
 function effRate(r: TaxComputationFull): number {
@@ -130,6 +138,22 @@ function OverviewTab({
   colors: ReturnType<typeof useThemeColors>;
   compute: ReturnType<typeof useComputeTax>;
 }) {
+  const reminders = useReminderMutations();
+
+  const handleSetReminder = () => {
+    reminders.create.mutate(
+      {
+        kind: `Tax Filing · AY ${data.pack_year} income tax`,
+        due_date: filingDueDate(pack, data.pack_year),
+      },
+      {
+        onSuccess: () =>
+          Alert.alert("Reminder set", `Added to your reminders · ${dueDateLabel(pack, data.pack_year)}.`),
+        onError: () => Alert.alert("Couldn't set reminder", "Please try again."),
+      },
+    );
+  };
+
   return (
     <View className="px-4 pt-3">
       <Card className="bg-salli-navy-card p-[18px]">
@@ -152,16 +176,19 @@ function OverviewTab({
         </View>
       </Card>
 
-      <View className="mt-2.5 flex-row gap-2">
-        <Pressable className="h-[38px] flex-1 flex-row items-center justify-center gap-1.5 rounded-pill border border-foreground/[0.08] bg-card">
-          <Download size={13} color={colors.mutedForeground} strokeWidth={2} />
-          <Text className="font-sans-medium text-[12px] text-foreground/50">Download PDF</Text>
-        </Pressable>
-        <Pressable className="h-[38px] flex-1 flex-row items-center justify-center gap-1.5 rounded-pill bg-salli-accent">
-          <Bell size={13} color="#FFFFFF" strokeWidth={2} />
-          <Text className="font-sans-semibold text-[12px] text-white">Set Reminder</Text>
-        </Pressable>
-      </View>
+      <Pressable
+        onPress={handleSetReminder}
+        disabled={reminders.create.isPending}
+        className={cn(
+          "mt-2.5 h-[38px] flex-row items-center justify-center gap-1.5 rounded-pill bg-salli-accent",
+          reminders.create.isPending && "opacity-60",
+        )}
+      >
+        <Bell size={13} color="#FFFFFF" strokeWidth={2} />
+        <Text className="font-sans-semibold text-[12px] text-white">
+          {reminders.create.isPending ? "Setting reminder…" : "Set filing reminder"}
+        </Text>
+      </Pressable>
 
       <Card className="mt-2.5 overflow-hidden p-0">
         <View className="flex-row items-center justify-between border-b border-foreground/[0.06] px-4 py-3">
@@ -476,10 +503,6 @@ function HistoryTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
         })}
       </View>
 
-      <Pressable className="mt-3 h-[50px] flex-row items-center justify-center gap-2 rounded-pill border border-foreground/[0.1] bg-card">
-        <Download size={15} color={colors.mutedForeground} strokeWidth={2} />
-        <Text className="font-sans-semibold text-[15px] text-foreground/60">Export All Returns</Text>
-      </Pressable>
     </View>
   );
 }

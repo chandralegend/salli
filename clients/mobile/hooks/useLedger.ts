@@ -1,14 +1,19 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  addAccountAccountsPost,
   getAccountOverviewAccountsAccountIdOverviewGet,
   addEntryEntriesPost,
+  deactivateAccountAccountsAccountIdDelete,
   incomeStatementLedgerIncomeStatementGet,
   listAccountsAccountsGet,
   listEntriesEntriesGet,
+  reactivateAccountAccountsAccountIdReactivatePost,
   reverseEntryEntriesEntryIdReversePost,
   trialBalanceLedgerTrialBalanceGet,
+  updateAccountAccountsAccountIdPatch,
 } from "@/lib/api/sdk.gen";
+import type { AddAccountRequest, UpdateAccountRequest } from "@/lib/api/types.gen";
 import type { Account, JournalEntry } from "./useDashboard";
 
 export type AccountTransaction = {
@@ -80,6 +85,66 @@ export function useIncomeStatement(fromDate: string, toDate: string) {
       });
       return data as unknown as { net_income: string };
     },
+  });
+}
+
+/** Account CRUD. Invalidate the accounts list + trial balance (balances are
+ * keyed by account id) so a new/edited/(de)activated account reflects at once. */
+function useAccountInvalidate() {
+  const qc = useQueryClient();
+  return () => {
+    qc.invalidateQueries({ queryKey: ["accounts"] });
+    qc.invalidateQueries({ queryKey: ["trial-balance"] });
+  };
+}
+
+export function useAddAccount() {
+  const invalidate = useAccountInvalidate();
+  return useMutation({
+    mutationFn: async (input: AddAccountRequest) => {
+      await addAccountAccountsPost({ body: input, throwOnError: true });
+    },
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateAccount() {
+  const invalidate = useAccountInvalidate();
+  return useMutation({
+    mutationFn: async ({ accountId, body }: { accountId: string; body: UpdateAccountRequest }) => {
+      await updateAccountAccountsAccountIdPatch({
+        path: { account_id: accountId },
+        body,
+        throwOnError: true,
+      });
+    },
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeactivateAccount() {
+  const invalidate = useAccountInvalidate();
+  return useMutation({
+    mutationFn: async (accountId: string) => {
+      await deactivateAccountAccountsAccountIdDelete({
+        path: { account_id: accountId },
+        throwOnError: true,
+      });
+    },
+    onSuccess: invalidate,
+  });
+}
+
+export function useReactivateAccount() {
+  const invalidate = useAccountInvalidate();
+  return useMutation({
+    mutationFn: async (accountId: string) => {
+      await reactivateAccountAccountsAccountIdReactivatePost({
+        path: { account_id: accountId },
+        throwOnError: true,
+      });
+    },
+    onSuccess: invalidate,
   });
 }
 

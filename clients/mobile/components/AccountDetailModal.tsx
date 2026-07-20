@@ -1,9 +1,15 @@
-import { ArrowDownLeft, ArrowUpRight, ChevronLeft, Pencil } from "lucide-react-native";
+import { ArrowDownLeft, ArrowUpRight, ChevronLeft, Pencil, Power, PowerOff } from "lucide-react-native";
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Modal as RNModal, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Modal as RNModal, Pressable, ScrollView, Text, View } from "react-native";
 
+import { AddEditAccountDrawer } from "@/components/AddEditAccountDrawer";
 import { Card } from "@/components/ui/card";
-import { useAccountOverview, type AccountTransaction } from "@/hooks/useLedger";
+import {
+  useAccountOverview,
+  useDeactivateAccount,
+  useReactivateAccount,
+  type AccountTransaction,
+} from "@/hooks/useLedger";
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
 import { useThemeColors, useThemeVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -41,8 +47,31 @@ export function AccountDetailModal({
   const themeVars = useThemeVars();
   const overview = useAccountOverview(accountId);
   const [period, setPeriod] = useState<(typeof PERIODS)[number]>("3M");
+  const [editOpen, setEditOpen] = useState(false);
+  const deactivate = useDeactivateAccount();
+  const reactivate = useReactivateAccount();
 
   const account = overview.data?.account;
+  const activeToggling = deactivate.isPending || reactivate.isPending;
+
+  const confirmToggleActive = () => {
+    if (!account) return;
+    if (account.is_active) {
+      Alert.alert(
+        "Deactivate account",
+        `Deactivate "${account.name}"? It will be hidden from account pickers but its history is kept.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Deactivate", style: "destructive", onPress: () => deactivate.mutate(account.id) },
+        ],
+      );
+    } else {
+      Alert.alert("Reactivate account", `Reactivate "${account.name}"?`, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Reactivate", onPress: () => reactivate.mutate(account.id) },
+      ]);
+    }
+  };
 
   // Chronological deltas from running balances → per-entry signed amount.
   const withDelta = useMemo(() => {
@@ -107,9 +136,12 @@ export function AccountDetailModal({
                     Current balance · {account.is_active ? "Active" : "Inactive"}
                   </Text>
                 </View>
-                <View className="rounded-[10px] border border-white/[0.08] bg-white/[0.06] p-2.5">
+                <Pressable
+                  onPress={() => setEditOpen(true)}
+                  className="rounded-[10px] border border-white/[0.08] bg-white/[0.06] p-2.5"
+                >
                   <Pencil size={20} color="rgba(255,255,255,0.4)" strokeWidth={1.8} />
-                </View>
+                </Pressable>
               </View>
               <View className="flex-row gap-2">
                 <View className="flex-1 rounded-[11px] bg-white/[0.06] px-3 py-2.5">
@@ -184,9 +216,36 @@ export function AccountDetailModal({
                 })}
               </View>
             )}
+
+            {/* activation control */}
+            <Pressable
+              onPress={confirmToggleActive}
+              disabled={activeToggling}
+              className={cn(
+                "mt-3 h-12 flex-row items-center justify-center gap-2 rounded-card border",
+                account.is_active
+                  ? "border-destructive/25 bg-destructive/[0.08]"
+                  : "border-salli-accent/25 bg-salli-accent/[0.08]",
+                activeToggling && "opacity-50",
+              )}
+            >
+              {account.is_active ? (
+                <>
+                  <PowerOff size={15} color="#EF4444" strokeWidth={2} />
+                  <Text className="font-sans-semibold text-[13px] text-destructive">Deactivate account</Text>
+                </>
+              ) : (
+                <>
+                  <Power size={15} color={colors.accent} strokeWidth={2} />
+                  <Text className="font-sans-semibold text-[13px] text-salli-accent">Reactivate account</Text>
+                </>
+              )}
+            </Pressable>
           </ScrollView>
         )}
       </View>
+
+      <AddEditAccountDrawer visible={editOpen} account={account} onClose={() => setEditOpen(false)} />
     </RNModal>
   );
 }

@@ -1,6 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { getPayoffPlanDebtPayoffPlanGet, listDebtsDebtGet } from "@/lib/api/sdk.gen";
+import {
+  addDebtDebtPost,
+  deleteDebtDebtDebtIdDelete,
+  getPayoffPlanDebtPayoffPlanGet,
+  listDebtsDebtGet,
+  updateDebtDebtDebtIdPatch,
+} from "@/lib/api/sdk.gen";
+import type { DebtRequest, DebtUpdateRequest } from "@/lib/api/types.gen";
 
 export type Debt = {
   id: string;
@@ -38,5 +45,45 @@ export function usePayoffPlan(extraMonthlyPayment: number, strategy: "avalanche"
       });
       return data as unknown as PayoffPlan;
     },
+  });
+}
+
+/** Invalidate the debt list and every payoff-plan variant after a mutation. */
+function invalidateDebt(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ["debts"] });
+  qc.invalidateQueries({ queryKey: ["payoff-plan"] });
+  qc.invalidateQueries({ queryKey: ["debt-payoff-plan"] });
+}
+
+/** Add a debt (POST /debt). APR is a fraction (0.24 = 24%). */
+export function useAddDebt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: DebtRequest) => {
+      await addDebtDebtPost({ body: input, throwOnError: true });
+    },
+    onSuccess: () => invalidateDebt(qc),
+  });
+}
+
+/** Update a debt (PATCH /debt/{id}). APR is a fraction (0.24 = 24%). */
+export function useUpdateDebt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, body }: { id: string; body: DebtUpdateRequest }) => {
+      await updateDebtDebtDebtIdPatch({ path: { debt_id: id }, body, throwOnError: true });
+    },
+    onSuccess: () => invalidateDebt(qc),
+  });
+}
+
+/** Delete a debt (DELETE /debt/{id}). */
+export function useDeleteDebt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await deleteDebtDebtDebtIdDelete({ path: { debt_id: id }, throwOnError: true });
+    },
+    onSuccess: () => invalidateDebt(qc),
   });
 }

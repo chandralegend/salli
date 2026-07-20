@@ -1,13 +1,12 @@
-import * as WebBrowser from "expo-web-browser";
 import { Check } from "lucide-react-native";
 import { useQuery } from "@tanstack/react-query";
-import { Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Pressable, Text, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { getPlansBillingPlansGet } from "@/lib/api/sdk.gen";
-import { useEntitlements } from "@/hooks/useSettings";
+import { useBillingPortal, useCreateCheckout, useEntitlements } from "@/hooks/useSettings";
 import { cn } from "@/lib/utils";
 
 type Plan = {
@@ -30,11 +29,33 @@ export default function BillingScreen() {
   });
 
   const currentPlan = entitlements.data?.plan ?? "free";
+  const isPaid = currentPlan !== "free";
   const siteUrl = process.env.EXPO_PUBLIC_SITE_URL ?? "https://salli.lk";
 
-  const handleUpgrade = () => {
-    // No native Paddle SDK — checkout runs on web, matching the brief's mobile behavior.
-    WebBrowser.openBrowserAsync(`${siteUrl}/settings?upgrade=1`);
+  const checkout = useCreateCheckout();
+  const portal = useBillingPortal();
+
+  const handleUpgrade = async (planKey: string) => {
+    if (checkout.isPending) return;
+    try {
+      const data = await checkout.mutateAsync(planKey);
+      // The Paddle overlay only runs on web, so open the hosted web checkout
+      // page (honouring a returned url if the backend provides one).
+      const url = data.url ?? `${siteUrl}/settings?upgrade=${encodeURIComponent(planKey)}`;
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert("Checkout unavailable", "We couldn't start checkout right now. Please try again.");
+    }
+  };
+
+  const handleManage = async () => {
+    if (portal.isPending) return;
+    try {
+      const url = await portal.mutateAsync();
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert("Portal unavailable", "We couldn't open the billing portal right now. Please try again.");
+    }
   };
 
   return (
@@ -98,12 +119,36 @@ export default function BillingScreen() {
                   ))}
                 </View>
                 {isCurrent ? (
-                  <View className="items-center rounded-pill border border-foreground/10 bg-foreground/[0.06] py-2.5">
-                    <Text className="text-[13px] font-sans-semibold text-foreground/40">Current Plan</Text>
-                  </View>
+                  isPaid ? (
+                    <Pressable
+                      onPress={handleManage}
+                      disabled={portal.isPending}
+                      className="h-[42px] flex-row items-center justify-center rounded-pill border border-foreground/10 bg-foreground/[0.06]"
+                    >
+                      {portal.isPending ? (
+                        <ActivityIndicator size="small" color="#2563EB" />
+                      ) : (
+                        <Text className="text-[13px] font-sans-semibold text-foreground/70">Manage subscription</Text>
+                      )}
+                    </Pressable>
+                  ) : (
+                    <View className="items-center rounded-pill border border-foreground/10 bg-foreground/[0.06] py-2.5">
+                      <Text className="text-[13px] font-sans-semibold text-foreground/40">Current Plan</Text>
+                    </View>
+                  )
                 ) : (
-                  <Pressable onPress={handleUpgrade} className="items-center rounded-pill bg-primary py-2.5">
-                    <Text className="text-[13px] font-sans-semibold text-primary-foreground">Upgrade to {plan.name}</Text>
+                  <Pressable
+                    onPress={() => handleUpgrade(plan.key)}
+                    disabled={checkout.isPending}
+                    className="h-[42px] flex-row items-center justify-center rounded-pill bg-primary"
+                  >
+                    {checkout.isPending && checkout.variables === plan.key ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text className="text-[13px] font-sans-semibold text-primary-foreground">
+                        Upgrade to {plan.name}
+                      </Text>
+                    )}
                   </Pressable>
                 )}
               </Card>

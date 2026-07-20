@@ -4,8 +4,6 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Bell,
-  ChevronLeft,
-  ChevronRight,
   PiggyBank,
   Plus,
   Settings,
@@ -59,12 +57,13 @@ export default function DashboardScreen() {
         <View className="flex-row items-center px-4 pt-2">
           <AvatarMoreButton initial="D" />
           <View className="flex-1 flex-row items-center justify-center gap-2.5">
-            <ChevronLeft size={14} color={colors.mutedForeground} strokeWidth={2} />
             <Text className="font-sans-semibold text-[14px] text-foreground">Jul 2026</Text>
-            <ChevronRight size={14} color={colors.mutedForeground} strokeWidth={2} />
           </View>
           <View className="flex-row gap-2">
-            <Pressable className="h-9 w-9 items-center justify-center rounded-full bg-foreground/10">
+            <Pressable
+              onPress={() => router.push("/(tabs)/more/reminders")}
+              className="h-9 w-9 items-center justify-center rounded-full bg-foreground/10"
+            >
               <Bell size={16} color={colors.foreground} strokeWidth={2} />
             </Pressable>
             <Pressable
@@ -154,7 +153,10 @@ export default function DashboardScreen() {
         </View>
 
         <View className="flex-row gap-2 px-4 pb-3.5">
-          <Pressable className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-foreground/10 bg-card">
+          <Pressable
+            onPress={() => router.push("/(tabs)/more/statements")}
+            className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-foreground/10 bg-card"
+          >
             <Upload size={13} color={colors.mutedForeground} strokeWidth={2} />
             <Text className="font-sans-medium text-[11px] text-foreground/70">Upload</Text>
           </Pressable>

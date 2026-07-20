@@ -10,7 +10,6 @@ import {
   Lock,
   MoreVertical,
   Search,
-  SlidersHorizontal,
   Upload,
 } from "lucide-react-native";
 import { useMemo, useState } from "react";
@@ -339,10 +338,6 @@ function ReviewTab({
                 placeholderTextColor="rgba(128,128,128,0.4)"
                 className="flex-1 text-[13px] text-foreground"
               />
-            </View>
-            <View className="h-9 flex-row items-center gap-1.5 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
-              <SlidersHorizontal size={13} color={colors.mutedForeground} strokeWidth={2} />
-              <Text className="font-sans-medium text-[12px] text-foreground/40">Filter</Text>
             </View>
           </View>
 

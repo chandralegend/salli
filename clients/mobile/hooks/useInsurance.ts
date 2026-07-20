@@ -1,13 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  addPolicyInsurancePoliciesPost,
   deletePolicyInsurancePoliciesPolicyIdDelete,
   deleteTargetInsuranceTargetsPolicyTypeDelete,
   getCoverageReportInsuranceReportGet,
   listPoliciesInsurancePoliciesGet,
   listTargetsInsuranceTargetsGet,
   setTargetInsuranceTargetsPut,
+  updatePolicyInsurancePoliciesPolicyIdPatch,
 } from "@/lib/api/sdk.gen";
+import type { PolicyRequest, PolicyUpdateRequest } from "@/lib/api/types.gen";
 
 export type Policy = {
   id: string;
@@ -58,6 +61,36 @@ export function useCoverageReport() {
   });
 }
 
+/** Invalidate every query that reflects the set of policies. */
+function invalidatePolicyViews(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ["insurance-policies"] });
+  qc.invalidateQueries({ queryKey: ["insurance-coverage-report"] });
+}
+
+export function useAddPolicy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: PolicyRequest) => {
+      await addPolicyInsurancePoliciesPost({ body: input, throwOnError: true });
+    },
+    onSuccess: () => invalidatePolicyViews(qc),
+  });
+}
+
+export function useUpdatePolicy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, body }: { id: string; body: PolicyUpdateRequest }) => {
+      await updatePolicyInsurancePoliciesPolicyIdPatch({
+        path: { policy_id: id },
+        body,
+        throwOnError: true,
+      });
+    },
+    onSuccess: () => invalidatePolicyViews(qc),
+  });
+}
+
 export function useInsuranceMutations() {
   const qc = useQueryClient();
 
@@ -65,7 +98,7 @@ export function useInsuranceMutations() {
     mutationFn: async (id: string) => {
       await deletePolicyInsurancePoliciesPolicyIdDelete({ path: { policy_id: id }, throwOnError: true });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["insurance-policies"] }),
+    onSuccess: () => invalidatePolicyViews(qc),
   });
 
   const setTarget = useMutation({

@@ -3,11 +3,12 @@ import {
   Info,
   Plus,
   Search,
+  Trash2,
   TriangleAlert,
   X,
 } from "lucide-react-native";
-import { useMemo, useState } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
 import { Card } from "@/components/ui/card";
@@ -19,8 +20,10 @@ import {
   type AllocationSlice,
   type Holding,
   useAddHolding,
+  useDeleteHolding,
   useHoldings,
   usePortfolioSummary,
+  useUpdateHolding,
 } from "@/hooks/usePortfolio";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useThemeColors, useThemeVars } from "@/lib/theme";
@@ -85,6 +88,7 @@ export default function PortfolioScreen() {
   const [search, setSearch] = useState("");
   const [selectedClass, setSelectedClass] = useState<number | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [editHolding, setEditHolding] = useState<Holding | null>(null);
 
   const holdings = useHoldings();
   const summary = usePortfolioSummary();
@@ -246,29 +250,31 @@ export default function PortfolioScreen() {
                           const pct = totalValue > 0 ? Number(h.current_value) / totalValue : 0;
                           const color = colorForClass[h.asset_class] ?? SLICE_COLORS[0];
                           return (
-                            <Card key={h.id} className="flex-row items-center gap-2.5 p-3">
-                              <View className="h-[42px] w-[3px] rounded-pill" style={{ backgroundColor: color }} />
-                              <View
-                                className="h-[38px] w-[38px] items-center justify-center rounded-[12px]"
-                                style={{ backgroundColor: `${color}1F`, borderWidth: 0.5, borderColor: `${color}33` }}
-                              >
-                                <Text className="font-sans-bold text-[10px]" style={{ color }}>
-                                  {h.symbol.slice(0, 4).toUpperCase()}
-                                </Text>
-                              </View>
-                              <View className="flex-1">
-                                <Text className="font-sans-semibold text-[13px] text-foreground">{h.name}</Text>
-                                <Text className="text-[11px] text-foreground/30">{formatPct(pct, 0)} of portfolio</Text>
-                              </View>
-                              <View className="items-end">
-                                <Text className="font-sans-semibold text-[13px] text-foreground">
-                                  Rs. {formatLKRAbbrev(h.current_value)}
-                                </Text>
-                                <Text className={cn("text-[11px]", gain >= 0 ? "text-foreground/50" : "text-destructive")}>
-                                  {gain >= 0 ? "+" : "-"}Rs. {formatLKRAbbrev(gain)}
-                                </Text>
-                              </View>
-                            </Card>
+                            <Pressable key={h.id} onPress={() => setEditHolding(h)}>
+                              <Card className="flex-row items-center gap-2.5 p-3">
+                                <View className="h-[42px] w-[3px] rounded-pill" style={{ backgroundColor: color }} />
+                                <View
+                                  className="h-[38px] w-[38px] items-center justify-center rounded-[12px]"
+                                  style={{ backgroundColor: `${color}1F`, borderWidth: 0.5, borderColor: `${color}33` }}
+                                >
+                                  <Text className="font-sans-bold text-[10px]" style={{ color }}>
+                                    {h.symbol.slice(0, 4).toUpperCase()}
+                                  </Text>
+                                </View>
+                                <View className="flex-1">
+                                  <Text className="font-sans-semibold text-[13px] text-foreground">{h.name}</Text>
+                                  <Text className="text-[11px] text-foreground/30">{formatPct(pct, 0)} of portfolio</Text>
+                                </View>
+                                <View className="items-end">
+                                  <Text className="font-sans-semibold text-[13px] text-foreground">
+                                    Rs. {formatLKRAbbrev(h.current_value)}
+                                  </Text>
+                                  <Text className={cn("text-[11px]", gain >= 0 ? "text-foreground/50" : "text-destructive")}>
+                                    {gain >= 0 ? "+" : "-"}Rs. {formatLKRAbbrev(gain)}
+                                  </Text>
+                                </View>
+                              </Card>
+                            </Pressable>
                           );
                         })}
                       </View>
@@ -488,18 +494,36 @@ export default function PortfolioScreen() {
         </Pressable>
       </Modal>
 
-      <NewHoldingDrawer visible={addOpen} onClose={() => setAddOpen(false)} />
+      <HoldingDrawer visible={addOpen} onClose={() => setAddOpen(false)} />
+      <HoldingDrawer
+        visible={editHolding !== null}
+        holding={editHolding}
+        onClose={() => setEditHolding(null)}
+      />
     </View>
   );
 }
 
-/** New Holding bottom-sheet — posts a manually-declared holding via AddHolding.
- * Only sends the fields HoldingRequest accepts (symbol, name, asset_class,
- * cost_basis, current_value). */
-function NewHoldingDrawer({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+/** Holding bottom-sheet — adds a new manually-declared holding (POST /portfolio)
+ * or, when a `holding` is passed, edits it (PATCH /portfolio/{id}) and offers a
+ * confirm-gated Delete. Only sends the fields the request types accept (symbol,
+ * name, asset_class, cost_basis, current_value). */
+function HoldingDrawer({
+  visible,
+  holding,
+  onClose,
+}: {
+  visible: boolean;
+  holding?: Holding | null;
+  onClose: () => void;
+}) {
   const colors = useThemeColors();
   const themeVars = useThemeVars();
   const addHolding = useAddHolding();
+  const updateHolding = useUpdateHolding();
+  const deleteHolding = useDeleteHolding();
+
+  const isEdit = Boolean(holding);
 
   const [symbol, setSymbol] = useState("");
   const [name, setName] = useState("");
@@ -507,37 +531,81 @@ function NewHoldingDrawer({ visible, onClose }: { visible: boolean; onClose: () 
   const [cost, setCost] = useState("");
   const [value, setValue] = useState("");
 
+  // Prefill from the holding whenever an edit sheet opens (or clear for add).
+  useEffect(() => {
+    if (!visible) return;
+    if (holding) {
+      setSymbol(holding.symbol);
+      setName(holding.name);
+      setAssetClass(
+        (ASSET_CLASSES as readonly string[]).includes(holding.asset_class)
+          ? (holding.asset_class as (typeof ASSET_CLASSES)[number])
+          : "equity",
+      );
+      setCost(String(holding.cost_basis));
+      setValue(String(holding.current_value));
+    } else {
+      setSymbol("");
+      setName("");
+      setAssetClass("equity");
+      setCost("");
+      setValue("");
+    }
+  }, [visible, holding]);
+
   const costNum = Number(cost) || 0;
   const valueNum = Number(value) || 0;
   const gain = valueNum - costNum;
   const gainPct = costNum > 0 ? gain / costNum : 0;
 
-  const canSubmit = Boolean(symbol.trim() && name.trim() && cost && value);
+  const busy = addHolding.isPending || updateHolding.isPending || deleteHolding.isPending;
+  const isError = addHolding.isError || updateHolding.isError || deleteHolding.isError;
 
-  const reset = () => {
-    setSymbol("");
-    setName("");
-    setAssetClass("equity");
-    setCost("");
-    setValue("");
-  };
+  const canSubmit = Boolean(symbol.trim() && name.trim() && cost && value) && !busy;
 
   const submit = () => {
     if (!canSubmit) return;
-    addHolding.mutate(
-      {
-        symbol: symbol.trim().toUpperCase(),
-        name: name.trim(),
-        asset_class: assetClass,
-        cost_basis: costNum,
-        current_value: valueNum,
-      },
-      {
-        onSuccess: () => {
-          reset();
-          onClose();
+    if (holding) {
+      updateHolding.mutate(
+        {
+          id: holding.id,
+          patch: {
+            symbol: symbol.trim().toUpperCase(),
+            name: name.trim(),
+            asset_class: assetClass,
+            cost_basis: costNum,
+            current_value: valueNum,
+          },
         },
-      },
+        { onSuccess: onClose },
+      );
+    } else {
+      addHolding.mutate(
+        {
+          symbol: symbol.trim().toUpperCase(),
+          name: name.trim(),
+          asset_class: assetClass,
+          cost_basis: costNum,
+          current_value: valueNum,
+        },
+        { onSuccess: onClose },
+      );
+    }
+  };
+
+  const confirmDelete = () => {
+    if (!holding) return;
+    Alert.alert(
+      "Delete holding?",
+      `${holding.name} (${holding.symbol.toUpperCase()}) will be permanently removed from your portfolio.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => deleteHolding.mutate(holding.id, { onSuccess: onClose }),
+        },
+      ],
     );
   };
 
@@ -550,7 +618,9 @@ function NewHoldingDrawer({ visible, onClose }: { visible: boolean; onClose: () 
               <View className="h-1 w-10 rounded-full bg-foreground/20" />
             </View>
             <View className="flex-row items-center px-0.5 pb-3.5 pt-1.5">
-              <Text className="flex-1 font-sans-bold text-[18px] text-foreground">New Holding</Text>
+              <Text className="flex-1 font-sans-bold text-[18px] text-foreground">
+                {isEdit ? "Edit Holding" : "New Holding"}
+              </Text>
               <Pressable onPress={onClose} className="h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.08]">
                 <X size={14} color={colors.mutedForeground} strokeWidth={2} />
               </Pressable>
@@ -624,10 +694,27 @@ function NewHoldingDrawer({ visible, onClose }: { visible: boolean; onClose: () 
                 </View>
               ) : null}
 
-              <PillButton variant="accent" loading={addHolding.isPending} disabled={!canSubmit} onPress={submit}>
-                Add Holding
+              <PillButton
+                variant="accent"
+                loading={addHolding.isPending || updateHolding.isPending}
+                disabled={!canSubmit}
+                onPress={submit}
+              >
+                {isEdit ? "Save Changes" : "Add Holding"}
               </PillButton>
-              {addHolding.isError ? (
+              {isEdit ? (
+                <Pressable
+                  onPress={confirmDelete}
+                  disabled={busy}
+                  className="mt-2.5 h-12 flex-row items-center justify-center gap-2 rounded-pill border border-destructive/25 bg-destructive/[0.08]"
+                >
+                  <Trash2 size={15} color="#EF4444" strokeWidth={2} />
+                  <Text className="font-sans-semibold text-[14px] text-destructive">
+                    {deleteHolding.isPending ? "Deleting…" : "Delete Holding"}
+                  </Text>
+                </Pressable>
+              ) : null}
+              {isError ? (
                 <Text className="mt-2 text-center text-[11px] text-destructive">Could not save holding. Please try again.</Text>
               ) : null}
             </ScrollView>

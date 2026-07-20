@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  createReminderRemindersPost,
   deleteReminderRemindersReminderIdDelete,
   listRemindersRemindersGet,
   markDoneRemindersReminderIdDonePatch,
@@ -30,6 +31,15 @@ export function useReminderMutations() {
   const qc = useQueryClient();
   const invalidate = () => qc.invalidateQueries({ queryKey: ["reminders"] });
 
+  // The backend CreateReminderRequest accepts only { kind, due_date } — the
+  // freeform `kind` string doubles as the reminder's title/description.
+  const create = useMutation({
+    mutationFn: async (input: { kind: string; due_date: string }) => {
+      await createReminderRemindersPost({ body: input, throwOnError: true });
+    },
+    onSuccess: invalidate,
+  });
+
   const markDone = useMutation({
     mutationFn: async (id: string) => {
       await markDoneRemindersReminderIdDonePatch({ path: { reminder_id: id }, throwOnError: true });
@@ -51,5 +61,5 @@ export function useReminderMutations() {
     onSuccess: invalidate,
   });
 
-  return { markDone, remove, seed };
+  return { create, markDone, remove, seed };
 }

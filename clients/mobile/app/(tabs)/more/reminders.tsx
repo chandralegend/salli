@@ -1,17 +1,48 @@
-import { ArrowUpDown, Calendar, Check, ChevronRight, Plus, Search } from "lucide-react-native";
+import {
+  ArrowUpDown,
+  Calendar,
+  Check,
+  ChevronRight,
+  CreditCard,
+  FileText,
+  Landmark,
+  Plus,
+  RefreshCw,
+  Search,
+  X,
+} from "lucide-react-native";
 import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  Modal as RNModal,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 import { PageShell } from "@/components/ui/page-shell";
+import { PillButton } from "@/components/ui/pill-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
+import { TextField } from "@/components/ui/text-field";
 import { useReminderMutations, useReminders, type Reminder } from "@/hooks/useReminders";
-import { useThemeColors } from "@/lib/theme";
+import { useThemeColors, useThemeVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const FILTERS = ["All", "Overdue", "Due Soon", "IRD"] as const;
 
 function daysUntil(dateStr: string) {
   return Math.round((new Date(dateStr).getTime() - Date.now()) / 86400000);
+}
+
+/** Format a valid YYYY-MM-DD string as "30 Sep 2026"; empty string otherwise. */
+function formatDueDate(iso: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 type RowKind = "overdue" | "dueSoon" | "upcoming" | "completed";
@@ -27,9 +58,10 @@ function statusMeta(r: Reminder) {
 export default function RemindersScreen() {
   const colors = useThemeColors();
   const reminders = useReminders();
-  const { markDone, seed } = useReminderMutations();
+  const { create, markDone, seed } = useReminderMutations();
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
   const [search, setSearch] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const q = search.trim().toLowerCase();
   const items = (reminders.data ?? []).filter(
@@ -131,7 +163,7 @@ export default function RemindersScreen() {
             onPress={() => markDone.mutate(r.id)}
             className="rounded-[8px] border border-foreground/10 bg-foreground/[0.06] px-2.5 py-1.5"
           >
-            <Text className="font-sans-semibold text-[11px] text-foreground/50">Snooze</Text>
+            <Text className="font-sans-semibold text-[11px] text-foreground/50">Done</Text>
           </Pressable>
         ) : kind === "upcoming" ? (
           <ChevronRight size={13} color={colors.mutedForeground} strokeWidth={2} />
@@ -162,7 +194,12 @@ export default function RemindersScreen() {
         title="Reminders"
         back
         trailing={
-          <Pressable className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent">
+          <Pressable
+            onPress={() => setDrawerOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="New reminder"
+            className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
+          >
             <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
           </Pressable>
         }
@@ -261,6 +298,161 @@ export default function RemindersScreen() {
           </>
         )}
       </View>
+
+      <NewReminderDrawer
+        visible={drawerOpen}
+        saving={create.isPending}
+        onClose={() => setDrawerOpen(false)}
+        onSubmit={async (input) => {
+          await create.mutateAsync(input);
+          setDrawerOpen(false);
+        }}
+      />
     </PageShell>
+  );
+}
+
+const REMINDER_TYPES = [
+  { label: "Tax Filing", Icon: Landmark },
+  { label: "Payment", Icon: CreditCard },
+  { label: "Renewal", Icon: RefreshCw },
+  { label: "Custom", Icon: FileText },
+] as const;
+
+type ReminderTypeLabel = (typeof REMINDER_TYPES)[number]["label"];
+
+/** Bottom-sheet "New Reminder" form. The backend CreateReminderRequest accepts
+ * only { kind, due_date }, so the freeform `kind` carries the title; the Type
+ * chip is folded into that string (e.g. "Tax Filing · File IRD Annual Return")
+ * so it genuinely persists and round-trips into the list. No repeat/recurrence
+ * control is shown because the backend has no recurrence field. */
+function NewReminderDrawer({
+  visible,
+  saving,
+  onClose,
+  onSubmit,
+}: {
+  visible: boolean;
+  saving: boolean;
+  onClose: () => void;
+  onSubmit: (input: { kind: string; due_date: string }) => Promise<void>;
+}) {
+  const colors = useThemeColors();
+  const themeVars = useThemeVars();
+
+  const [type, setType] = useState<ReminderTypeLabel>("Tax Filing");
+  const [description, setDescription] = useState("");
+  const [dueDate, setDueDate] = useState("");
+
+  const duePreview = formatDueDate(dueDate);
+  const canSubmit = Boolean(description.trim()) && duePreview !== "" && !saving;
+
+  const reset = () => {
+    setType("Tax Filing");
+    setDescription("");
+    setDueDate("");
+  };
+
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
+
+  const handleSubmit = async () => {
+    if (!canSubmit) return;
+    const desc = description.trim();
+    const kind = type === "Custom" ? desc : `${type} · ${desc}`;
+    await onSubmit({ kind, due_date: dueDate });
+    reset();
+  };
+
+  return (
+    <RNModal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
+      <Pressable className="flex-1 justify-end bg-black/50" onPress={handleClose}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
+          <Pressable
+            style={[{ backgroundColor: colors.card }, themeVars]}
+            className="rounded-t-[28px] border-t border-foreground/[0.12] px-4 pb-8 pt-2.5"
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View className="mb-1 items-center">
+              <View className="h-1 w-9 rounded-pill bg-foreground/20" />
+            </View>
+
+            <View className="flex-row items-center px-0.5 pb-3.5 pt-1.5">
+              <Text className="flex-1 font-sans-bold text-[18px] text-foreground">New Reminder</Text>
+              <Pressable
+                onPress={handleClose}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+                className="h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.08]"
+              >
+                <X size={14} color={colors.mutedForeground} strokeWidth={2} />
+              </Pressable>
+            </View>
+
+            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+              <TextField
+                label="Description *"
+                className="mb-2.5"
+                value={description}
+                onChangeText={setDescription}
+                placeholder="File IRD Annual Return"
+                autoFocus
+              />
+
+              <TextField
+                label="Due Date *"
+                className="mb-2.5"
+                value={dueDate}
+                onChangeText={setDueDate}
+                placeholder="YYYY-MM-DD"
+                keyboardType="numbers-and-punctuation"
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={10}
+                rightIcon={<Calendar size={16} color={colors.mutedForeground} strokeWidth={2} />}
+              />
+              <Text className="mb-3 pl-1 text-[11px] text-foreground/35">
+                {duePreview ? duePreview : "Enter a date as YYYY-MM-DD."}
+              </Text>
+
+              <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
+                Type
+              </Text>
+              <View className="mb-4 flex-row flex-wrap gap-1.5">
+                {REMINDER_TYPES.map(({ label, Icon }) => {
+                  const active = type === label;
+                  return (
+                    <Pressable
+                      key={label}
+                      onPress={() => setType(label)}
+                      className={cn(
+                        "flex-row items-center gap-1.5 rounded-pill px-3.5 py-1.5",
+                        active ? "bg-salli-accent" : "border border-foreground/[0.08] bg-card",
+                      )}
+                    >
+                      {active ? <Icon size={11} color="#FFFFFF" strokeWidth={2.5} /> : null}
+                      <Text
+                        className={cn(
+                          "text-[12px]",
+                          active ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/40",
+                        )}
+                      >
+                        {label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <PillButton disabled={!canSubmit} loading={saving} onPress={handleSubmit}>
+                Add Reminder
+              </PillButton>
+            </ScrollView>
+          </Pressable>
+        </KeyboardAvoidingView>
+      </Pressable>
+    </RNModal>
   );
 }

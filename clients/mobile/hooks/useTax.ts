@@ -1,8 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { computeTaxTaxComputePost, getLatestTaxLatestGet } from "@/lib/api/sdk.gen";
+import { computeTaxTaxComputePost, getLatestTaxLatestGet, listPacksTaxPacksGet } from "@/lib/api/sdk.gen";
 
 export type BandWorking = { band: string; rate: string; taxable_in_band: string; tax: string };
+
+export type TaxPack = {
+  country: string;
+  year: string;
+  version: string;
+  period_start: string;
+  period_end: string;
+  personal_relief: string;
+  return_due: string; // "MM-DD"
+};
+
+export type TaxHistoryRow = { pack: TaxPack; result: TaxComputationFull | null };
 
 export type TaxComputationFull = {
   pack_year: string;
@@ -24,6 +36,36 @@ export function useLatestTax(year = "2025/26") {
     queryFn: async () => {
       const { data } = await getLatestTaxLatestGet({ query: { year }, throwOnError: true });
       return (data as unknown as { result: TaxComputationFull | null }).result;
+    },
+  });
+}
+
+export function useTaxPacks() {
+  return useQuery({
+    queryKey: ["tax-packs"],
+    queryFn: async () => {
+      const { data } = await listPacksTaxPacksGet({ throwOnError: true });
+      return data as unknown as TaxPack[];
+    },
+  });
+}
+
+/** Per-assessment-year computations, one row per available pack (newest first).
+ * There is no history endpoint, so we fetch the latest computation for each
+ * pack year — only years with a real pack/computation appear (no fabrication). */
+export function useTaxHistory() {
+  return useQuery({
+    queryKey: ["tax-history"],
+    queryFn: async () => {
+      const { data } = await listPacksTaxPacksGet({ throwOnError: true });
+      const packs = (data as unknown as TaxPack[]) ?? [];
+      const rows = await Promise.all(
+        packs.map(async (pack) => {
+          const { data: r } = await getLatestTaxLatestGet({ query: { year: pack.year }, throwOnError: true });
+          return { pack, result: (r as unknown as { result: TaxComputationFull | null }).result };
+        }),
+      );
+      return rows.sort((a, b) => (a.pack.year < b.pack.year ? 1 : -1)) as TaxHistoryRow[];
     },
   });
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Pencil, Plus, RotateCcw, Search, Archive } from "lucide-react";
+import { BookOpen, Pencil, Plus, RotateCcw, Search, Archive, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,8 +28,11 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { StatusChip, type ChipTone } from "@/components/shared/StatusChip";
 import { MoneyText } from "@/components/shared/MoneyText";
 import { AccountDialog, type AccountType } from "@/components/ledger/AccountDialog";
-import { EntryDialog } from "@/components/ledger/EntryDialog";
+import { EntryDialog, type EntryDraftInit } from "@/components/ledger/EntryDialog";
+import { QuickAddDialog } from "@/components/ledger/QuickAddDialog";
 import { ReverseConfirm } from "@/components/ledger/ReverseConfirm";
+import { AccountDetailSheet } from "@/components/ledger/AccountDetailSheet";
+import { EntryDetailSheet } from "@/components/ledger/EntryDetailSheet";
 import { useLedger, type Account, type JournalEntry } from "@/hooks/useLedger";
 import { useSalliStore } from "@/lib/store";
 import { assessmentYearRange, formatMoney } from "@/lib/format";
@@ -59,7 +62,11 @@ export default function LedgerPage() {
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [deactivating, setDeactivating] = useState<Account | null>(null);
   const [entryDialogOpen, setEntryDialogOpen] = useState(false);
+  const [entryDraft, setEntryDraft] = useState<EntryDraftInit | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
   const [reversing, setReversing] = useState<JournalEntry | null>(null);
+  const [detailAccountId, setDetailAccountId] = useState<string | null>(null);
+  const [detailEntry, setDetailEntry] = useState<JournalEntry | null>(null);
 
   // Mobile-dock "+" (and dashboard new-entry) land here via the store signal.
   const quickAddRequest = useSalliStore((s) => s.quickAddEntryRequest);
@@ -135,7 +142,15 @@ export default function LedgerPage() {
             >
               <Plus className="size-4" /> Account
             </Button>
-            <Button onClick={() => setEntryDialogOpen(true)}>
+            <Button variant="outline" onClick={() => setAiOpen(true)}>
+              <Sparkles className="size-4" /> AI entry
+            </Button>
+            <Button
+              onClick={() => {
+                setEntryDraft(null);
+                setEntryDialogOpen(true);
+              }}
+            >
               <Plus className="size-4" /> Entry
             </Button>
           </>
@@ -196,7 +211,11 @@ export default function LedgerPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredAccounts.map((a) => (
-                    <TableRow key={a.id} className="group">
+                    <TableRow
+                      key={a.id}
+                      className="group cursor-pointer"
+                      onClick={() => setDetailAccountId(a.id)}
+                    >
                       <TableCell className="font-mono text-xs text-muted-foreground">{a.code}</TableCell>
                       <TableCell className="font-medium">{a.name}</TableCell>
                       <TableCell>
@@ -218,7 +237,8 @@ export default function LedgerPage() {
                             variant="ghost"
                             size="icon-sm"
                             aria-label="Edit account"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setEditingAccount(a);
                               setAccountDialogOpen(true);
                             }}
@@ -229,7 +249,10 @@ export default function LedgerPage() {
                             variant="ghost"
                             size="icon-sm"
                             aria-label="Deactivate account"
-                            onClick={() => setDeactivating(a)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeactivating(a);
+                            }}
                           >
                             <Archive className="size-3.5" />
                           </Button>
@@ -275,7 +298,11 @@ export default function LedgerPage() {
                     const reversed = Boolean(e.reversed_by);
                     const amount = e.postings.find((p) => p.direction === 1)?.amount ?? "0";
                     return (
-                      <TableRow key={e.id} className="group">
+                      <TableRow
+                        key={e.id}
+                        className="group cursor-pointer"
+                        onClick={() => setDetailEntry(e)}
+                      >
                         <TableCell className="font-mono text-xs text-muted-foreground">{e.entry_date}</TableCell>
                         <TableCell className={reversed ? "line-through text-muted-foreground" : "font-medium"}>
                           {e.description}
@@ -297,7 +324,10 @@ export default function LedgerPage() {
                               variant="ghost"
                               size="sm"
                               className="opacity-40 group-hover:opacity-100 transition-opacity"
-                              onClick={() => setReversing(e)}
+                              onClick={(ev) => {
+                                ev.stopPropagation();
+                                setReversing(e);
+                              }}
                             >
                               <RotateCcw className="size-3.5" /> Reverse
                             </Button>
@@ -368,11 +398,29 @@ export default function LedgerPage() {
       />
       <EntryDialog
         open={entryDialogOpen}
-        onOpenChange={setEntryDialogOpen}
+        onOpenChange={(v) => {
+          setEntryDialogOpen(v);
+          if (!v) setEntryDraft(null);
+        }}
         accounts={accounts}
         onSubmit={submitEntry}
         pending={ledger.addEntry.isPending}
         serverError={ledger.addEntry.error instanceof Error ? ledger.addEntry.error.message : null}
+        initialDraft={entryDraft}
+      />
+      <QuickAddDialog
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        onDraft={(draft) => {
+          setEntryDraft({
+            description: draft.description,
+            amount: draft.amount,
+            debitId: draft.debit_account_id ?? "",
+            creditId: draft.credit_account_id ?? "",
+          });
+          setTab("entries");
+          setEntryDialogOpen(true);
+        }}
       />
       <ReverseConfirm
         open={Boolean(reversing)}
@@ -406,6 +454,30 @@ export default function LedgerPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Detail sheets (click-through from rows) */}
+      <AccountDetailSheet
+        accountId={detailAccountId}
+        open={Boolean(detailAccountId)}
+        onOpenChange={(v) => !v && setDetailAccountId(null)}
+        onEdit={(a) => {
+          setEditingAccount(a);
+          setAccountDialogOpen(true);
+        }}
+        onDeactivate={(id) => ledger.deactivateAccount.mutate(id)}
+        onReactivate={(id) => ledger.reactivateAccount.mutate(id)}
+        actionPending={ledger.deactivateAccount.isPending || ledger.reactivateAccount.isPending}
+      />
+      <EntryDetailSheet
+        entry={detailEntry}
+        accounts={accounts}
+        open={Boolean(detailEntry)}
+        onOpenChange={(v) => !v && setDetailEntry(null)}
+        onReverse={(id) => {
+          ledger.reverseEntry.mutate(id);
+          setDetailEntry(null);
+        }}
+      />
     </div>
   );
 }

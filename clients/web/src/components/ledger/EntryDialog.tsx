@@ -26,6 +26,14 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
+/** Optional prefill for the entry form (e.g. from the AI quick-add parse). */
+export type EntryDraftInit = {
+  description?: string;
+  amount?: string;
+  debitId?: string;
+  creditId?: string;
+};
+
 export function EntryDialog({
   open,
   onOpenChange,
@@ -33,6 +41,7 @@ export function EntryDialog({
   onSubmit,
   pending,
   serverError,
+  initialDraft,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -47,13 +56,19 @@ export function EntryDialog({
   pending: boolean;
   /** 422 detail from the API, rendered inline. */
   serverError?: string | null;
+  /** Prefill values (AI quick-add) applied when the dialog opens. */
+  initialDraft?: EntryDraftInit | null;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>New journal entry</DialogTitle>
-          <DialogDescription>One balanced double entry — equal debit and credit.</DialogDescription>
+          <DialogTitle>{initialDraft ? "Review entry" : "New journal entry"}</DialogTitle>
+          <DialogDescription>
+            {initialDraft
+              ? "Salli drafted this from your note — review, adjust, and post."
+              : "One balanced double entry — equal debit and credit."}
+          </DialogDescription>
         </DialogHeader>
         {/* Mounted only while open — form state resets via remount. */}
         {open && (
@@ -63,6 +78,7 @@ export function EntryDialog({
             onCancel={() => onOpenChange(false)}
             pending={pending}
             serverError={serverError}
+            initial={initialDraft}
           />
         )}
       </DialogContent>
@@ -76,6 +92,7 @@ function EntryForm({
   onCancel,
   pending,
   serverError,
+  initial,
 }: {
   accounts: Account[];
   onSubmit: (data: {
@@ -88,12 +105,13 @@ function EntryForm({
   onCancel: () => void;
   pending: boolean;
   serverError?: string | null;
+  initial?: EntryDraftInit | null;
 }) {
   const [date, setDate] = useState(todayIso());
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
-  const [debitId, setDebitId] = useState("");
-  const [creditId, setCreditId] = useState("");
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [amount, setAmount] = useState(initial?.amount ?? "");
+  const [debitId, setDebitId] = useState(initial?.debitId ?? "");
+  const [creditId, setCreditId] = useState(initial?.creditId ?? "");
   const [error, setError] = useState<string | null>(null);
 
   const active = accounts.filter((a) => a.is_active !== false);
@@ -116,10 +134,19 @@ function EntryForm({
     onSubmit({ entry_date: date, description: description.trim(), amount, debitId, creditId });
   }
 
-  const accountSelect = (value: string, onChange: (v: string) => void, placeholder: string) => (
+  const accountSelect = (value: string, onChange: (v: string) => void, placeholder: string) => {
+    const selected = active.find((a) => a.id === value);
+    return (
     <Select value={value || undefined} onValueChange={(v) => onChange(v ?? "")}>
       <SelectTrigger>
-        <SelectValue placeholder={placeholder} />
+        <SelectValue placeholder={placeholder}>
+          {selected ? (
+            <>
+              <span className="font-mono text-xs text-muted-foreground mr-1.5">{selected.code}</span>
+              {selected.name}
+            </>
+          ) : undefined}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {active.map((a) => (
@@ -130,7 +157,8 @@ function EntryForm({
         ))}
       </SelectContent>
     </Select>
-  );
+    );
+  };
 
   return (
     <form onSubmit={submit} className="space-y-4">

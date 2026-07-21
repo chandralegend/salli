@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   getLatestTaxLatestGet,
   computeTaxTaxComputePost,
+  listPacksTaxPacksGet,
 } from "@/lib/api/sdk.gen";
 
 export type TaxBand = {
@@ -27,6 +28,19 @@ export type TaxResult = {
   bands: TaxBand[];
   currency: string;
 };
+
+/** A versioned tax pack `(country, year, version)`. `return_due` is "MM-DD". */
+export type TaxPack = {
+  country: string;
+  year: string;
+  version: string;
+  period_start: string;
+  period_end: string;
+  personal_relief: string;
+  return_due: string;
+};
+
+export type TaxHistoryRow = { pack: TaxPack; result: TaxResult | null };
 
 function fmt(n: string | number | null | undefined): string {
   if (n == null) return "0.00";
@@ -93,4 +107,41 @@ export function useTax() {
   });
 
   return { latest, compute };
+}
+
+/** All versioned tax packs the engine knows about. */
+export function useTaxPacks() {
+  return useQuery({
+    queryKey: ["tax", "packs"],
+    queryFn: async () => {
+      const res = await listPacksTaxPacksGet();
+      return (res.data as unknown as TaxPack[]) ?? [];
+    },
+    retry: false,
+  });
+}
+
+/** Per-assessment-year computations, one row per available pack (newest first).
+ * There is no history endpoint, so we fetch the latest computation for each
+ * pack year — only years with a real pack/computation appear (no fabrication). */
+export function useTaxHistory() {
+  return useQuery({
+    queryKey: ["tax", "history"],
+    queryFn: async (): Promise<TaxHistoryRow[]> => {
+      const res = await listPacksTaxPacksGet();
+      const packs = (res.data as unknown as TaxPack[]) ?? [];
+      const rows = await Promise.all(
+        packs.map(async (pack) => {
+          const r = await getLatestTaxLatestGet({ query: { year: pack.year } });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const payload = r.data as any;
+          const raw = payload?.result ?? payload;
+          const result = raw && raw.pack_year ? normalize(raw) : null;
+          return { pack, result };
+        }),
+      );
+      return rows.sort((a, b) => (a.pack.year < b.pack.year ? 1 : -1));
+    },
+    retry: false,
+  });
 }

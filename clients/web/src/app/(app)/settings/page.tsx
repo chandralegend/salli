@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusChip } from "@/components/shared/StatusChip";
 import { UsageMeter } from "@/components/billing/UsageMeter";
 import { UpgradeDialog } from "@/components/billing/UpgradeDialog";
+import { DangerZone } from "@/components/settings/DangerZone";
 import { useSubscription, useBillingPortal } from "@/hooks/useBilling";
 import { useAuth } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
@@ -177,6 +178,15 @@ function SettingsContent() {
           </Button>
           <p className="text-xs text-muted-foreground mt-2">Signs you out on this device only.</p>
         </div>
+
+        {/* Danger zone */}
+        <DangerZone
+          onDeleted={async () => {
+            await logout();
+            localStorage.removeItem("salli_onboarding_complete");
+            router.replace("/login");
+          }}
+        />
       </div>
 
       <footer className="text-center text-[13px] text-muted-foreground pt-4">

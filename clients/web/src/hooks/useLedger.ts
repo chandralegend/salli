@@ -8,6 +8,8 @@ import {
   listEntriesEntriesGet,
   addEntryEntriesPost,
   incomeStatementLedgerIncomeStatementGet,
+  getAccountOverviewAccountsAccountIdOverviewGet,
+  reactivateAccountAccountsAccountIdReactivatePost,
 } from "@/lib/api/sdk.gen";
 import { apiFetch } from "@/lib/api-fetch";
 
@@ -44,6 +46,37 @@ export type IncomeStatement = {
   expenses: Record<string, string>;
   net_income: string;
 };
+
+export type AccountTransaction = {
+  entry_id: string;
+  entry_date: string;
+  description: string;
+  source: string;
+  external_ref?: string | null;
+  running_balance: string;
+};
+
+export type AccountOverview = {
+  account: Account;
+  current_balance: string;
+  transactions: AccountTransaction[];
+};
+
+/** Balance hero + running transaction history for one account.
+ * Wraps GET /accounts/{id}/overview; disabled until an id is selected. */
+export function useAccountOverview(accountId: string | null) {
+  return useQuery({
+    queryKey: ["account-overview", accountId],
+    queryFn: async () => {
+      const res = await getAccountOverviewAccountsAccountIdOverviewGet({
+        path: { account_id: accountId! },
+        throwOnError: true,
+      });
+      return res.data as unknown as AccountOverview;
+    },
+    enabled: Boolean(accountId),
+  });
+}
 
 export function useLedger(fromDate?: string, toDate?: string) {
   const qc = useQueryClient();
@@ -129,12 +162,30 @@ export function useLedger(fromDate?: string, toDate?: string) {
     mutationFn: async (accountId: string) => {
       return apiFetch("DELETE", `/accounts/${accountId}`);
     },
-    onSuccess: () => {
+    onSuccess: (_data, accountId) => {
       qc.invalidateQueries({ queryKey: ["accounts"] });
       qc.invalidateQueries({ queryKey: ["trial-balance"] });
+      qc.invalidateQueries({ queryKey: ["account-overview", accountId] });
       toast.success("Account deactivated");
     },
     onError: (e) => toast.error(`Failed to deactivate account: ${e instanceof Error ? e.message : "Unknown error"}`),
+  });
+
+  const reactivateAccount = useMutation({
+    mutationFn: async (accountId: string) => {
+      const res = await reactivateAccountAccountsAccountIdReactivatePost({
+        path: { account_id: accountId },
+        throwOnError: true,
+      });
+      return res.data;
+    },
+    onSuccess: (_data, accountId) => {
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+      qc.invalidateQueries({ queryKey: ["trial-balance"] });
+      qc.invalidateQueries({ queryKey: ["account-overview", accountId] });
+      toast.success("Account reactivated");
+    },
+    onError: (e) => toast.error(`Failed to reactivate account: ${e instanceof Error ? e.message : "Unknown error"}`),
   });
 
   const addEntry = useMutation({
@@ -168,5 +219,15 @@ export function useLedger(fromDate?: string, toDate?: string) {
     onError: (e) => toast.error(`Failed to reverse entry: ${e instanceof Error ? e.message : "Unknown error"}`),
   });
 
-  return { accounts, entries, incomeStatement, addAccount, updateAccount, deactivateAccount, addEntry, reverseEntry };
+  return {
+    accounts,
+    entries,
+    incomeStatement,
+    addAccount,
+    updateAccount,
+    deactivateAccount,
+    reactivateAccount,
+    addEntry,
+    reverseEntry,
+  };
 }

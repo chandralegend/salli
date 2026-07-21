@@ -5,18 +5,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
+  BarChart3,
   Bell,
   BookOpen,
+  CreditCard,
   FileText,
+  History,
   LayoutGrid,
   Moon,
   Percent,
+  PieChart,
   Pin,
   PinOff,
+  Receipt,
+  Repeat,
   Settings,
+  Shield,
   Sparkles,
   Sun,
   TrendingUp,
+  Wallet,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,8 +38,16 @@ const PRIMARY_NAV: { href: string; label: string; icon: LucideIcon }[] = [
 ];
 
 const SECONDARY_NAV: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/budget", label: "Budget", icon: Wallet },
+  { href: "/debt", label: "Debt", icon: CreditCard },
+  { href: "/portfolio", label: "Portfolio", icon: PieChart },
+  { href: "/subscriptions", label: "Subscriptions", icon: Repeat },
+  { href: "/insurance", label: "Insurance", icon: Shield },
+  { href: "/reports", label: "Reports", icon: BarChart3 },
+  { href: "/statements", label: "Statements", icon: Receipt },
   { href: "/documents", label: "Documents", icon: FileText },
   { href: "/reminders", label: "Reminders", icon: Bell },
+  { href: "/audit-log", label: "Audit Log", icon: History },
 ];
 
 const PIN_KEY = "salli-nav-pinned";

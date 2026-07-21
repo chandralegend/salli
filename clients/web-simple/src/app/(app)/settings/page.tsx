@@ -1,0 +1,204 @@
+"use client";
+
+import { Suspense, useEffect, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+import { Copy, ExternalLink, Loader2, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { StatusChip } from "@/components/shared/StatusChip";
+import { UsageMeter } from "@/components/billing/UsageMeter";
+import { UpgradeDialog } from "@/components/billing/UpgradeDialog";
+import { useSubscription, useBillingPortal } from "@/hooks/useBilling";
+import { useAuth } from "@/lib/auth";
+import { formatDate } from "@/lib/format";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://salli.leafmonkey.org";
+
+function maskToken(token: string | null): string {
+  if (!token) return "—";
+  return token.length <= 8 ? "••••" : `${token.slice(0, 4)}••••••••${token.slice(-4)}`;
+}
+
+/** True after hydration — the token comes from localStorage, so SSR renders "—". */
+function useMounted() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+}
+
+function SettingsContent() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const { token, logout } = useAuth();
+  const subscription = useSubscription();
+  const portal = useBillingPortal();
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const mounted = useMounted();
+
+  // Every 402 upgrade banner in the app lands here with ?upgrade=1.
+  useEffect(() => {
+    if (params.get("upgrade") === "1") {
+      const t = setTimeout(() => setUpgradeOpen(true), 0);
+      return () => clearTimeout(t);
+    }
+  }, [params]);
+
+  const sub = subscription.data;
+
+  async function openPortal() {
+    try {
+      const { url } = await portal.mutateAsync();
+      window.location.assign(url);
+    } catch {
+      toast.error("Billing portal unavailable — try again shortly.");
+    }
+  }
+
+  function redoProfile() {
+    localStorage.removeItem("salli_onboarding_complete");
+    router.push("/onboarding");
+  }
+
+  async function signOut() {
+    await logout();
+    localStorage.removeItem("salli_onboarding_complete");
+    router.replace("/login");
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title="Settings" subtitle="Plan, usage, and account" />
+
+      <div className="grid lg:grid-cols-2 gap-4">
+        {/* Subscription */}
+        <div className="rounded-lg border bg-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[15px] font-semibold">Subscription</h2>
+            {sub && (
+              <StatusChip tone={sub.status === "active" ? "success" : "neutral"}>
+                {sub.status === "active" ? "Active" : sub.status}
+              </StatusChip>
+            )}
+          </div>
+          {subscription.isLoading ? (
+            <Skeleton className="h-20" />
+          ) : sub ? (
+            <>
+              <p className="text-2xl font-semibold">
+                {sub.plan_name || sub.plan}
+                <span className="text-sm font-normal text-muted-foreground"> · billed via Paddle</span>
+              </p>
+              <p className="text-[13px] text-muted-foreground mt-1">
+                {sub.cancel_at_period_end
+                  ? `Cancels ${formatDate(sub.current_period_end)}`
+                  : sub.current_period_end
+                    ? `Renews ${formatDate(sub.current_period_end)}`
+                    : "Free plan — no billing date"}
+              </p>
+              <div className="flex gap-2 mt-5">
+                <Button variant="outline" onClick={openPortal} disabled={portal.isPending}>
+                  {portal.isPending ? <Loader2 className="size-4 animate-spin" /> : <ExternalLink className="size-4" />}
+                  Manage billing
+                </Button>
+                <Button onClick={() => setUpgradeOpen(true)}>Change plan</Button>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">Couldn&apos;t load subscription.</p>
+          )}
+        </div>
+
+        {/* Usage */}
+        <div className="rounded-lg border bg-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[15px] font-semibold">Usage this month</h2>
+            {sub?.usage?.[0]?.resets_at && (
+              <span className="text-xs text-muted-foreground">Resets {formatDate(sub.usage[0].resets_at)}</span>
+            )}
+          </div>
+          {subscription.isLoading ? (
+            <Skeleton className="h-24" />
+          ) : (
+            <div className="space-y-5">
+              {(sub?.usage ?? []).map((m) => (
+                <UsageMeter key={m.metric} metric={m} />
+              ))}
+              {sub && (
+                <p className="text-xs text-muted-foreground">
+                  Quotas are per calendar month on the {sub.plan_name || sub.plan} plan.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Profile */}
+        <div className="rounded-lg border bg-card p-5">
+          <h2 className="text-[15px] font-semibold mb-3">Profile</h2>
+          <p className="text-[13px] text-muted-foreground leading-relaxed">
+            Your tax profile, income sources, and goals drive your chart of accounts and the
+            advisor&apos;s guidance. Rerun setup if your situation changes — existing accounts and
+            entries are never deleted.
+          </p>
+          <Button variant="outline" className="mt-4" onClick={redoProfile}>
+            Redo profile setup
+          </Button>
+        </div>
+
+        {/* Session */}
+        <div className="rounded-lg border bg-card p-5">
+          <h2 className="text-[15px] font-semibold mb-3">Session</h2>
+          <p className="text-xs text-muted-foreground mb-1.5">API token</p>
+          <div className="flex items-center gap-2">
+            <code className="rounded-md bg-muted px-3 py-1.5 font-mono text-[13px]">
+              {mounted ? maskToken(token) : "—"}
+            </code>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Copy token"
+              onClick={() => {
+                if (token) {
+                  navigator.clipboard.writeText(token);
+                  toast.success("Token copied");
+                }
+              }}
+            >
+              <Copy className="size-3.5" />
+            </Button>
+          </div>
+          <Button variant="destructive" className="mt-5" onClick={signOut}>
+            <LogOut className="size-4" /> Sign out
+          </Button>
+          <p className="text-xs text-muted-foreground mt-2">Signs you out on this device only.</p>
+        </div>
+      </div>
+
+      <footer className="text-center text-[13px] text-muted-foreground pt-4">
+        <Link href={`${SITE_URL}/terms`} className="hover:text-foreground">Terms</Link>
+        {" · "}
+        <Link href={`${SITE_URL}/privacy`} className="hover:text-foreground">Privacy</Link>
+        {" · "}
+        <Link href={`${SITE_URL}/security`} className="hover:text-foreground">Security</Link>
+        {" · "}
+        <Link href={`${SITE_URL}/cookies`} className="hover:text-foreground">Cookies</Link>
+        <span className="block text-xs mt-1.5">Salli · © 2026</span>
+      </footer>
+
+      <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} currentPlan={sub?.plan ?? "free"} />
+    </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SettingsContent />
+    </Suspense>
+  );
+}

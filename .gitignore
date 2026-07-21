@@ -62,3 +62,7 @@ node_modules/
 .pulumi/
 .vercel
 .env*
+
+# build/install caches
+.pnpm-store/
+*.tsbuildinfo

@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated OpenAPI SDK — regenerate with `pnpm gen:api`, never lint.
+    "src/lib/api/**",
+    ".pnpmfile.cjs",
   ]),
 ]);
 

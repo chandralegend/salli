@@ -1,45 +1,49 @@
+import Link from "next/link";
 import { metricLabel, type UsageMetric } from "@/hooks/useBilling";
 import { cn } from "@/lib/utils";
 
-function fmtReset(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-  } catch {
-    return "";
-  }
-}
-
-export function UsageMeter({ usage }: { usage: UsageMetric }) {
-  const pct = usage.limit > 0 ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 0;
-  const near = pct >= 80;
-  const full = usage.remaining <= 0;
+/** One metered quota row: label, count, thin bar; amber >80%, red at limit. */
+export function UsageMeter({ metric }: { metric: UsageMetric }) {
+  const pct = metric.limit > 0 ? Math.min(100, (metric.used / metric.limit) * 100) : 0;
+  const atLimit = metric.limit > 0 && metric.used >= metric.limit;
+  const nearLimit = !atLimit && pct >= 80;
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[13px] text-foreground">{metricLabel(usage.metric)}</span>
-        <span className="font-ledger text-[12px] text-muted-foreground">
-          <span className={cn(full && "text-rose-600", near && !full && "text-amber-600")}>
-            {usage.used.toLocaleString()}
-          </span>
-          {" / "}
-          {usage.limit.toLocaleString()}
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[13px] font-medium">{metricLabel(metric.metric)}</span>
+        <span className="money text-[13px] text-muted-foreground">
+          {metric.used} / {metric.limit}
+          {atLimit && (
+            <span className="ml-2 rounded-full bg-[var(--status-danger-bg)] text-[var(--status-danger-text)] px-2 py-0.5 text-[11px] font-semibold">
+              limit reached
+            </span>
+          )}
+          {nearLimit && (
+            <span className="ml-2 rounded-full bg-[var(--status-warning-bg)] text-[var(--status-warning-text)] px-2 py-0.5 text-[11px] font-semibold">
+              {Math.round(pct)}%
+            </span>
+          )}
         </span>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
         <div
           className={cn(
-            "h-full rounded-full transition-[width] duration-500",
-            full ? "bg-rose-500" : near ? "bg-amber-500" : "bg-primary",
+            "h-full rounded-full transition-[width]",
+            atLimit
+              ? "bg-[var(--status-danger-text)]"
+              : nearLimit
+                ? "bg-[var(--status-warning-text)]"
+                : "bg-foreground"
           )}
-          style={{ width: `${Math.max(pct, usage.used > 0 ? 4 : 0)}%` }}
+          style={{ width: `${pct}%` }}
         />
       </div>
-      <p className="text-[11px] text-muted-foreground">
-        {full
-          ? `Limit reached · resets ${fmtReset(usage.resets_at)}`
-          : `${usage.remaining.toLocaleString()} left · resets ${fmtReset(usage.resets_at)}`}
-      </p>
+      {atLimit && (
+        <Link href="/settings?upgrade=1" className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 mt-1 inline-block">
+          Upgrade for more →
+        </Link>
+      )}
     </div>
   );
 }

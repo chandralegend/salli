@@ -113,6 +113,7 @@ export function useDashboard() {
       trialBalance.isLoading ||
       reminders.isLoading ||
       recentEntries.isLoading,
+    accountMap,
     netWorth: fmt(netWorth),
     incomeYtd: fmt(incomeYtd),
     expensesYtd: fmt(expensesYtd),

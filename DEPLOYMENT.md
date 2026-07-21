@@ -9,7 +9,7 @@ Salli is a single repo serving three surfaces on three hosts. The domain layout:
 | API (FastAPI)        | `src/salli`    | `api.salli.lk`  | Container host / Supabase |
 
 The marketing site is a separate, self-contained Next.js project — it shares **no** code with
-`clients/web` (the Ledger Paper design tokens and the logo are copied in), so each builds
+`clients/web` (design tokens and the logo are copied in), so each builds
 independently from its own root directory.
 
 ## Vercel — two projects from one repo

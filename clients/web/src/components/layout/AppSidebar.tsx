@@ -1,277 +1,195 @@
 "use client";
 
+import { useCallback, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useScroogePanel } from "@/lib/store";
+import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
+import {
+  Bell,
+  BookOpen,
+  FileText,
+  LayoutGrid,
+  Moon,
+  Percent,
+  Pin,
+  PinOff,
+  Settings,
+  Sparkles,
+  Sun,
+  TrendingUp,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Sun, Moon, Settings, LayoutGrid, BookOpen, Percent, TrendingUp, MessageCircle, FileText, Bell, Pin, PinOff, MoreHorizontal } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useScroogePanel } from "@/lib/store";
 
-const NAV_PRIMARY = [
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    icon: <LayoutGrid className="size-[17px]" />,
-  },
-  {
-    href: "/ledger",
-    label: "Ledger",
-    icon: <BookOpen className="size-[17px]" />,
-  },
-  {
-    href: "/tax",
-    label: "Tax",
-    icon: <Percent className="size-[17px]" />,
-  },
-  {
-    href: "/financial-independence",
-    label: "Financial Independence",
-    icon: <TrendingUp className="size-[17px]" />,
-  },
+const PRIMARY_NAV: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
+  { href: "/ledger", label: "Ledger", icon: BookOpen },
+  { href: "/tax", label: "Tax", icon: Percent },
+  { href: "/financial-independence", label: "Financial Independence", icon: TrendingUp },
 ];
 
-const NAV_SECONDARY = [
-  {
-    href: "/documents",
-    label: "Documents",
-    icon: <FileText className="size-[17px]" />,
-  },
-  {
-    href: "/reminders",
-    label: "Reminders",
-    icon: <Bell className="size-[17px]" />,
-  },
-  {
-    href: "/more",
-    label: "More",
-    icon: <MoreHorizontal className="size-[17px]" />,
-  },
+const SECONDARY_NAV: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/documents", label: "Documents", icon: FileText },
+  { href: "/reminders", label: "Reminders", icon: Bell },
 ];
 
-// ── NavRow ────────────────────────────────────────────────────────────────────
-// Collapsed: a centered 38×38 icon button. Expanded: a full-width row with the
-// icon fixed in place and a label revealed alongside it — the icon never moves,
-// so expand/collapse never feels like a layout jump.
+const PIN_KEY = "salli-nav-pinned";
+const PIN_EVENT = "salli-nav-pin-change";
 
-function NavRow({
+/** Pin state lives in localStorage; useSyncExternalStore keeps hydration safe. */
+function usePinned(): [boolean, () => void] {
+  const pinned = useSyncExternalStore(
+    (onChange) => {
+      window.addEventListener(PIN_EVENT, onChange);
+      window.addEventListener("storage", onChange);
+      return () => {
+        window.removeEventListener(PIN_EVENT, onChange);
+        window.removeEventListener("storage", onChange);
+      };
+    },
+    () => localStorage.getItem(PIN_KEY) === "true",
+    () => false
+  );
+  const toggle = useCallback(() => {
+    localStorage.setItem(PIN_KEY, String(!(localStorage.getItem(PIN_KEY) === "true")));
+    window.dispatchEvent(new Event(PIN_EVENT));
+  }, []);
+  return [pinned, toggle];
+}
+
+/** True after hydration — gates theme-dependent icons. */
+function useMounted() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+}
+
+function NavItem({
   href,
   label,
-  icon,
+  icon: Icon,
   active,
   expanded,
-  onClick,
 }: {
-  href?: string;
+  href: string;
   label: string;
-  icon: React.ReactNode;
+  icon: LucideIcon;
   active: boolean;
   expanded: boolean;
-  onClick?: () => void;
 }) {
-  const inner = (
-    <div
-      className={cn(
-        "flex items-center gap-3 h-[42px] rounded-[13px] transition-colors duration-[var(--motion-fast)]",
-        expanded ? "w-full px-[10px]" : "w-[38px] justify-center",
-        !active && "text-white/55 hover:text-white hover:bg-white/[0.07]",
-      )}
-      style={
-        active
-          ? {
-              color: "#E8FC85",
-              background: "linear-gradient(90deg, rgba(232,252,133,0.16), rgba(255,255,255,0.05))",
-              boxShadow: "inset 0 0 0 1px rgba(232,252,133,0.18)",
-            }
-          : undefined
-      }
-    >
-      <span className="w-[20px] h-[20px] flex items-center justify-center shrink-0">{icon}</span>
-      {expanded && (
-        <span className="text-[13px] font-semibold whitespace-nowrap overflow-hidden text-ellipsis">
-          {label}
-        </span>
-      )}
-    </div>
-  );
-
-  if (onClick) {
-    return (
-      <button
-        onClick={onClick}
-        title={expanded ? undefined : label}
-        aria-label={label}
-        aria-current={active ? "page" : undefined}
-        className="w-full"
-      >
-        {inner}
-      </button>
-    );
-  }
   return (
     <Link
-      href={href!}
+      href={href}
       title={expanded ? undefined : label}
-      aria-label={label}
-      aria-current={active ? "page" : undefined}
-      className="w-full block"
+      className={cn(
+        "relative flex items-center gap-3 h-10 rounded-md px-2.5 text-sm font-medium transition-colors overflow-hidden",
+        active ? "text-foreground bg-accent" : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
+      )}
     >
-      {inner}
+      {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-full bg-foreground" />}
+      <Icon className="size-[18px] shrink-0" />
+      <span className={cn("whitespace-nowrap transition-opacity", expanded ? "opacity-100" : "opacity-0")}>
+        {label}
+      </span>
     </Link>
   );
 }
 
+/** Slim fixed left rail: 64px collapsed → 240px on hover, pinnable. */
 export function AppSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { toggle: toggleScrooge, isOpen: scroogeOpen } = useScroogePanel();
-  const [dark, setDark] = useState(false);
-  const [pinned, setPinned] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const togglePanel = useScroogePanel((s) => s.toggle);
+
+  const [pinned, togglePin] = usePinned();
   const [hovered, setHovered] = useState(false);
-  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mounted = useMounted();
 
   const expanded = pinned || hovered;
 
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(href + "/");
-
-  useEffect(() => {
-    const storedDark = localStorage.getItem("salli-dark") === "1";
-    setDark(storedDark);
-    document.documentElement.classList.toggle("dark", storedDark);
-
-    const storedPin = localStorage.getItem("salli-nav-pinned") === "1";
-    setPinned(storedPin);
-  }, []);
-
-  function toggleDark() {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("salli-dark", next ? "1" : "0");
-  }
-
-  function togglePin() {
-    const next = !pinned;
-    setPinned(next);
-    localStorage.setItem("salli-nav-pinned", next ? "1" : "0");
-  }
-
-  function onEnter() {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    hoverTimer.current = setTimeout(() => setHovered(true), 150);
-  }
-  function onLeave() {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    setHovered(false);
-  }
-
   return (
-    <>
-      {/* Reserved rail slot — the actual nav is a fixed overlay, so hover-expand
-          never pushes page content (per redesign spec §9). Desktop only —
-          narrow viewports use the floating MobileNav dock instead. */}
-      <div className="hidden md:block w-[68px] min-w-[68px] shrink-0" aria-hidden />
-
-      <aside
-        onMouseEnter={onEnter}
-        onMouseLeave={onLeave}
-        className="hidden md:flex fixed left-0 top-0 bottom-0 z-50 flex-col items-center justify-center py-5 gap-3 pl-2 overflow-visible transition-[width] duration-[var(--motion-default)] ease-[var(--ease-premium)]"
-        style={{ width: expanded ? 232 : 68 }}
-      >
-        {/* Consolidated nav dock — logo, nav items, and utilities all live in
-            one continuous rail instead of separate boxes, per the
-            navigation-system spec. */}
-        <div
+    <aside
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className={cn(
+        "hidden md:flex fixed inset-y-0 left-0 z-40 flex-col bg-sidebar border-r px-2.5 py-4 transition-[width] duration-200",
+        expanded ? "w-60" : "w-16"
+      )}
+    >
+      <Link href="/dashboard" className="flex items-center gap-2.5 h-10 px-2 mb-6">
+        <span className="size-7 shrink-0 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-[13px] font-bold">
+          S
+        </span>
+        <span
           className={cn(
-            "flex flex-col gap-[3px] bg-[#010001] rounded-[20px] py-[8px] shadow-[var(--shadow-navigation)] shrink-0",
-            expanded ? "w-full px-[10px]" : "px-[6px] items-center",
+            "text-[17px] font-bold tracking-tight transition-opacity",
+            expanded ? "opacity-100" : "opacity-0"
           )}
         >
-          {/* Logo — first row of the same rail */}
-          <Link
-            href="/dashboard"
-            aria-label="Salli — Dashboard"
-            className={cn(
-              "flex items-center gap-3 h-[42px] rounded-[13px] shrink-0",
-              expanded ? "w-full px-[10px]" : "w-[38px] justify-center",
-            )}
-          >
-            <span className="w-[20px] h-[20px] flex items-center justify-center shrink-0">
-              <span className="text-[#E8FC85] font-black leading-none text-[20px] tracking-[-0.05em]">
-                රු
-              </span>
-            </span>
-            {expanded && (
-              <span className="text-[13px] font-black tracking-[-0.03em] text-white whitespace-nowrap">
-                Salli
-              </span>
-            )}
-          </Link>
+          Salli
+        </span>
+      </Link>
 
-          <div className={cn("h-px bg-white/12 my-2", expanded ? "w-full" : "w-[24px]")} />
+      <nav className="flex flex-col gap-1">
+        {PRIMARY_NAV.map((item) => (
+          <NavItem key={item.href} {...item} active={pathname.startsWith(item.href)} expanded={expanded} />
+        ))}
+      </nav>
 
-          {NAV_PRIMARY.map(({ href, label, icon }) => (
-            <NavRow
-              key={href}
-              href={href}
-              label={label}
-              icon={icon}
-              active={isActive(href)}
-              expanded={expanded}
-            />
-          ))}
+      <button
+        type="button"
+        onClick={togglePanel}
+        title={expanded ? undefined : "Ask Salli AI"}
+        className="flex items-center gap-3 h-10 rounded-md px-2.5 mt-4 bg-[#0A2540] text-white text-sm font-medium hover:brightness-110 transition-all overflow-hidden"
+      >
+        <Sparkles className="size-[18px] shrink-0" />
+        <span className={cn("whitespace-nowrap transition-opacity", expanded ? "opacity-100" : "opacity-0")}>
+          Ask Salli AI
+        </span>
+      </button>
 
-          <NavRow
-            label="Scrooge AI"
-            icon={<MessageCircle className="size-[17px]" />}
-            active={scroogeOpen}
-            expanded={expanded}
-            onClick={toggleScrooge}
-          />
+      <div className="h-px bg-border my-4 mx-1" />
 
-          {NAV_SECONDARY.map(({ href, label, icon }) => (
-            <NavRow
-              key={href}
-              href={href}
-              label={label}
-              icon={icon}
-              active={isActive(href)}
-              expanded={expanded}
-            />
-          ))}
+      <nav className="flex flex-col gap-1">
+        {SECONDARY_NAV.map((item) => (
+          <NavItem key={item.href} {...item} active={pathname.startsWith(item.href)} expanded={expanded} />
+        ))}
+      </nav>
 
-          <div className={cn("h-px bg-white/12 my-2", expanded ? "w-full" : "w-[24px]")} />
-
-          <NavRow
-            label={dark ? "Light mode" : "Dark mode"}
-            icon={dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-            active={false}
-            expanded={expanded}
-            onClick={toggleDark}
-          />
-          <NavRow
-            label="Settings"
-            icon={<Settings className="size-4" />}
-            active={isActive("/settings")}
-            expanded={expanded}
-            onClick={() => router.push("/settings")}
-          />
-          {expanded && (
-            <button
-              onClick={togglePin}
-              title={pinned ? "Unpin navigation" : "Keep navigation expanded"}
-              className="w-full flex items-center gap-3 h-[36px] rounded-[13px] px-[10px] text-white/40 hover:text-white hover:bg-white/[0.07] transition-colors duration-[var(--motion-fast)] shrink-0"
-            >
-              <span className="w-[20px] h-[20px] flex items-center justify-center shrink-0">
-                {pinned ? <PinOff className="size-[15px]" /> : <Pin className="size-[15px]" />}
-              </span>
-              <span className="text-[12px] font-semibold whitespace-nowrap">
-                {pinned ? "Unpin" : "Pin open"}
-              </span>
-            </button>
-          )}
-        </div>
-      </aside>
-    </>
+      <div className="mt-auto flex flex-col gap-1">
+        <button
+          type="button"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          title="Toggle dark mode"
+          className="flex items-center gap-3 h-10 rounded-md px-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors overflow-hidden"
+        >
+          {mounted && theme === "dark" ? <Sun className="size-[18px] shrink-0" /> : <Moon className="size-[18px] shrink-0" />}
+          <span className={cn("whitespace-nowrap transition-opacity", expanded ? "opacity-100" : "opacity-0")}>
+            {mounted && theme === "dark" ? "Light mode" : "Dark mode"}
+          </span>
+        </button>
+        <NavItem
+          href="/settings"
+          label="Settings"
+          icon={Settings}
+          active={pathname.startsWith("/settings")}
+          expanded={expanded}
+        />
+        <button
+          type="button"
+          onClick={togglePin}
+          title={pinned ? "Unpin sidebar" : "Pin sidebar open"}
+          className="flex items-center gap-3 h-10 rounded-md px-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors overflow-hidden"
+        >
+          {pinned ? <PinOff className="size-[18px] shrink-0" /> : <Pin className="size-[18px] shrink-0" />}
+          <span className={cn("whitespace-nowrap transition-opacity", expanded ? "opacity-100" : "opacity-0")}>
+            {pinned ? "Unpin" : "Pin"}
+          </span>
+        </button>
+      </div>
+    </aside>
   );
 }

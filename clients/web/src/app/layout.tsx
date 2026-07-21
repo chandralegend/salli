@@ -1,25 +1,18 @@
 import type { Metadata } from "next";
-import { DM_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { CookieConsent } from "@/components/CookieConsent";
 
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
-});
-
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
   title: "Salli — Stop guessing. Start knowing.",
-  description: "Track your money. Understand your tax. Build your freedom.",
+  description:
+    "A real ledger, a Sri Lanka tax engine, and an AI advisor that works from your actual numbers.",
 };
 
 export default function RootLayout({
@@ -28,12 +21,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${plexMono.variable} h-full`} suppressHydrationWarning>
-      <body className="min-h-full flex flex-col">
+    <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
+      <body className="min-h-full flex flex-col font-sans">
         <Providers>
           <TooltipProvider>{children}</TooltipProvider>
         </Providers>
-        <CookieConsent />
       </body>
     </html>
   );

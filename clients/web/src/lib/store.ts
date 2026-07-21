@@ -46,7 +46,11 @@ interface ScroogePanelStore {
   threadId: string;
   width: number;
   isFullPage: boolean;
+  /** Question queued by a CTA (dashboard pills) for the composer to pick up. */
+  pendingPrompt: string | null;
   open: (threadId?: string) => void;
+  openWithPrompt: (prompt: string) => void;
+  consumePendingPrompt: () => void;
   close: () => void;
   toggle: () => void;
   setThread: (id: string) => void;
@@ -62,8 +66,11 @@ export const useScroogePanel = create<ScroogePanelStore>((set) => ({
   threadId: initialThreadId(),
   width: readStoredWidth(),
   isFullPage: false,
+  pendingPrompt: null,
   open: (threadId?: string) =>
     set((s) => ({ isOpen: true, threadId: threadId ?? s.threadId })),
+  openWithPrompt: (prompt: string) => set({ isOpen: true, pendingPrompt: prompt }),
+  consumePendingPrompt: () => set({ pendingPrompt: null }),
   close: () => set({ isOpen: false }),
   toggle: () => set((s) => ({ isOpen: !s.isOpen })),
   setThread: (id: string) => set({ threadId: id }),

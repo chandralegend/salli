@@ -83,7 +83,7 @@ export function useTax() {
   });
 
   const compute = useMutation({
-    mutationFn: async (_year?: string) => {
+    mutationFn: async () => {
       const res = await computeTaxTaxComputePost();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const raw = res.data as any;

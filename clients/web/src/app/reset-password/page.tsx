@@ -2,64 +2,59 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
-import { AuthShell } from "@/components/auth/AuthShell";
+import { AuthCard } from "@/components/auth/AuthCard";
 import { getSupabase } from "@/lib/supabase";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const supabase = getSupabase();
-    if (!supabase) {
-      setError("Supabase not configured");
+    setError(null);
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
-    setLoading(true);
-    setError("");
-    try {
-      const { error: err } = await supabase.auth.updateUser({ password });
-      if (err) throw err;
-      router.replace("/dashboard");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't update password");
-    } finally {
-      setLoading(false);
+    const supabase = getSupabase();
+    if (!supabase) {
+      setError("Supabase isn't configured.");
+      return;
     }
+    setBusy(true);
+    const { error: err } = await supabase.auth.updateUser({ password });
+    if (err) {
+      setError("Couldn't update the password. The link may have expired.");
+      setBusy(false);
+      return;
+    }
+    router.replace("/dashboard");
   }
 
   return (
-    <AuthShell title="Set a new password" subtitle="Choose a strong password for your account.">
-      <form onSubmit={handleSubmit} className="space-y-3.5">
+    <AuthCard title="Set a new password" subtitle="Choose something strong — at least 8 characters.">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium">New password</Label>
+          <Label htmlFor="password">New password</Label>
           <Input
+            id="password"
             type="password"
-            placeholder="At least 8 characters"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            minLength={8}
-            className="h-10 text-[13px]"
           />
         </div>
-        {error && (
-          <p className="text-[12px] text-rose-600 bg-rose-50 rounded-md px-3 py-2 border border-rose-200">
-            {error}
-          </p>
-        )}
-        <Button type="submit" disabled={loading} className="w-full h-10">
-          {loading && <Loader2 className="size-3.5 mr-2 animate-spin" />}
-          Update password
+        {error && <p className="text-[13px] text-destructive">{error}</p>}
+        <Button type="submit" className="w-full h-11" disabled={busy}>
+          {busy ? <Loader2 className="size-4 animate-spin" /> : "Update password"}
         </Button>
       </form>
-    </AuthShell>
+    </AuthCard>
   );
 }

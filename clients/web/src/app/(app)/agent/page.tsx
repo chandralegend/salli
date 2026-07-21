@@ -1,22 +1,30 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { useScroogePanel } from "@/lib/store";
 
+/** Deep-link entry point: /agent?s=<threadId> opens the drawer on the dashboard. */
 function AgentRedirect() {
   const router = useRouter();
   const params = useSearchParams();
-  const { open } = useScroogePanel();
+  const open = useScroogePanel((s) => s.open);
 
   useEffect(() => {
-    const threadId = params.get("s") ?? undefined;
-    open(threadId);
-    router.replace("/dashboard");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const t = setTimeout(() => {
+      const threadId = params.get("s") ?? undefined;
+      open(threadId);
+      router.replace("/dashboard");
+    }, 0);
+    return () => clearTimeout(t);
+  }, [params, open, router]);
 
-  return null;
+  return (
+    <div className="flex items-center justify-center py-24">
+      <Loader2 className="size-5 animate-spin text-muted-foreground" />
+    </div>
+  );
 }
 
 export default function AgentPage() {

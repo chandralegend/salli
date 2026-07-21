@@ -1,28 +1,18 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useSalliStore } from "@/lib/store";
-import { type ColumnDef } from "@tanstack/react-table";
-import { Eye, Pencil, Trash2, RotateCcw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { BookOpen, Pencil, Plus, RotateCcw, Search, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
   TableCell,
+  TableHead,
+  TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
-import { PageShell } from "@/components/ui/page-shell";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,587 +23,382 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useLedger, type Account } from "@/hooks/useLedger";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { StatusChip, type ChipTone } from "@/components/shared/StatusChip";
+import { MoneyText } from "@/components/shared/MoneyText";
+import { AccountDialog, type AccountType } from "@/components/ledger/AccountDialog";
+import { EntryDialog } from "@/components/ledger/EntryDialog";
+import { ReverseConfirm } from "@/components/ledger/ReverseConfirm";
+import { useLedger, type Account, type JournalEntry } from "@/hooks/useLedger";
+import { useSalliStore } from "@/lib/store";
+import { assessmentYearRange, formatMoney } from "@/lib/format";
 
-const ACCOUNT_TYPES = ["asset", "liability", "equity", "income", "expense"] as const;
-type AccountType = typeof ACCOUNT_TYPES[number];
-
-const TYPE_COLORS: Record<string, string> = {
-  asset:     "badge-info",
-  liability: "badge-danger",
-  equity:    "badge-purple",
-  income:    "badge-success",
-  expense:   "badge-warning",
+const TYPE_TONES: Record<string, ChipTone> = {
+  asset: "info",
+  liability: "danger",
+  equity: "neutral",
+  income: "success",
+  expense: "warning",
 };
 
-type JournalEntry = {
-  id: string;
-  entry_date: string;
-  description: string;
-  source: string;
-  reversed_by?: string | null;
-  postings: Array<{ direction: number; amount: string | number; currency: string }>;
+const SOURCE_TONES: Record<string, ChipTone> = {
+  manual: "neutral",
+  statement: "info",
+  system: "neutral",
+  sms: "neutral",
 };
-
-function fmt(v: string | number) {
-  return Number(v).toLocaleString("en-LK", { minimumFractionDigits: 2 });
-}
-
-function TypeBadge({ type }: { type: string }) {
-  return (
-    <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] font-medium capitalize ${TYPE_COLORS[type] ?? "bg-muted text-muted-foreground"}`}>
-      {type}
-    </span>
-  );
-}
 
 export default function LedgerPage() {
-  const router = useRouter();
-  const { accounts, entries, incomeStatement, addAccount, updateAccount, deactivateAccount, addEntry, reverseEntry } = useLedger();
+  const ledger = useLedger();
+  const ay = assessmentYearRange();
 
-  // Add Account
-  const [acctOpen, setAcctOpen] = useState(false);
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
-  const [type, setType] = useState<AccountType>("asset");
-  const [currency, setCurrency] = useState("LKR");
+  const [tab, setTab] = useState("accounts");
+  const [search, setSearch] = useState("");
+  const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [deactivating, setDeactivating] = useState<Account | null>(null);
+  const [entryDialogOpen, setEntryDialogOpen] = useState(false);
+  const [reversing, setReversing] = useState<JournalEntry | null>(null);
 
-  // Edit Account
-  const [editAcct, setEditAcct] = useState<Account | null>(null);
-  const [editCode, setEditCode] = useState("");
-  const [editName, setEditName] = useState("");
-  const [editType, setEditType] = useState<AccountType>("asset");
-  const [editCurrency, setEditCurrency] = useState("LKR");
-
-  // Deactivate confirm
-  const [deactivateTarget, setDeactivateTarget] = useState<Account | null>(null);
-
-  // Add Entry
-  const [entryOpen, setEntryOpen] = useState(false);
-  const [entryDate, setEntryDate] = useState(new Date().toISOString().split("T")[0]);
-  const [entryDesc, setEntryDesc] = useState("");
-  const [debitAccountId, setDebitAccountId] = useState("");
-  const [creditAccountId, setCreditAccountId] = useState("");
-  const [amount, setAmount] = useState("");
-
-  // Reverse confirm
-  const [reverseTarget, setReverseTarget] = useState<string | null>(null);
-
-  const accountsList = accounts.data ?? [];
-
-  function openEdit(a: Account) {
-    setEditAcct(a);
-    setEditCode(a.code);
-    setEditName(a.name);
-    setEditType(a.type as AccountType);
-    setEditCurrency(a.currency);
-  }
-
-  async function handleAddAccount() {
-    if (!code || !name) return;
-    await addAccount.mutateAsync({ code, name, type, currency });
-    setAcctOpen(false);
-    setCode(""); setName(""); setType("asset"); setCurrency("LKR");
-  }
-
-  async function handleUpdateAccount() {
-    if (!editAcct || !editCode || !editName) return;
-    await updateAccount.mutateAsync({ id: editAcct.id, code: editCode, name: editName, type: editType, currency: editCurrency });
-    setEditAcct(null);
-  }
-
-  async function handleAddEntry() {
-    if (!entryDate || !entryDesc || !debitAccountId || !creditAccountId || !amount) return;
-    await addEntry.mutateAsync({
-      entry_date: entryDate,
-      description: entryDesc,
-      postings: [
-        { account_id: debitAccountId, direction: 1, amount, currency: "LKR" },
-        { account_id: creditAccountId, direction: -1, amount, currency: "LKR" },
-      ],
-    });
-    setEntryOpen(false);
-    setEntryDesc(""); setDebitAccountId(""); setCreditAccountId(""); setAmount("");
-  }
-
-  /* ── Column definitions ── */
-
-  const accountColumns = useMemo<ColumnDef<Account>[]>(() => [
-    {
-      accessorKey: "code",
-      size: 90,
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Code" />,
-      cell: ({ row }) => (
-        <span className="font-mono text-[12px] text-muted-foreground tabular-nums">{row.original.code}</span>
-      ),
-    },
-    {
-      accessorKey: "name",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
-      cell: ({ row }) => <span className="text-[13px] font-medium">{row.original.name}</span>,
-    },
-    {
-      accessorKey: "type",
-      size: 110,
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
-      cell: ({ row }) => <TypeBadge type={row.original.type} />,
-    },
-    {
-      accessorKey: "currency",
-      size: 90,
-      enableSorting: false,
-      header: () => <span className="text-secondary-label">Currency</span>,
-      cell: ({ row }) => (
-        <span className="text-[12px] text-muted-foreground font-mono">{row.original.currency}</span>
-      ),
-    },
-    {
-      accessorKey: "is_active",
-      size: 90,
-      enableSorting: false,
-      header: () => <span className="text-secondary-label">Status</span>,
-      cell: ({ row }) => (
-        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${row.original.is_active ? "badge-success" : "bg-muted text-muted-foreground"}`}>
-          {row.original.is_active ? "Active" : "Inactive"}
-        </span>
-      ),
-    },
-    {
-      id: "actions",
-      size: 80,
-      enableSorting: false,
-      header: () => null,
-      cell: ({ row }) => (
-        <div className="flex gap-1 justify-end">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => router.push(`/ledger/${row.original.id}`)}
-            title="View account"
-          >
-            <Eye className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => openEdit(row.original)}
-            title="Edit account"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-          </Button>
-          {row.original.is_active && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-destructive"
-              onClick={() => setDeactivateTarget(row.original)}
-              title="Deactivate"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
-          )}
-        </div>
-      ),
-    },
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], []);
-
-  const entryColumns = useMemo<ColumnDef<JournalEntry>[]>(() => [
-    {
-      accessorKey: "entry_date",
-      size: 100,
-      sortingFn: "datetime",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
-      cell: ({ row }) => (
-        <span className="text-[12px] font-mono text-muted-foreground tabular-nums">{row.original.entry_date}</span>
-      ),
-    },
-    {
-      accessorKey: "description",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Description" />,
-      cell: ({ row }) => {
-        const reversed = !!row.original.reversed_by;
-        return (
-          <div>
-            <p className={`text-[13px] font-medium ${reversed ? "line-through text-muted-foreground" : ""}`}>
-              {row.original.description}
-            </p>
-            {reversed && <p className="text-[11px] text-muted-foreground">Reversed</p>}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "source",
-      size: 100,
-      enableSorting: false,
-      header: () => <span className="text-secondary-label">Source</span>,
-      cell: ({ row }) => (
-        <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium capitalize">
-          {row.original.source}
-        </span>
-      ),
-    },
-    {
-      id: "amount",
-      size: 130,
-      enableSorting: false,
-      header: () => <span className="text-secondary-label block text-right">Amount</span>,
-      cell: ({ row }) => {
-        const dr = row.original.postings.find((p) => p.direction === 1);
-        return (
-          <span className="text-[13px] font-medium tabular-nums block text-right">
-            {dr ? `${dr.currency} ${fmt(dr.amount)}` : "—"}
-          </span>
-        );
-      },
-    },
-    {
-      id: "actions",
-      size: 60,
-      enableSorting: false,
-      header: () => null,
-      cell: ({ row }) =>
-        !row.original.reversed_by ? (
-          <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-amber-600"
-              onClick={() => setReverseTarget(row.original.id)}
-              title="Create reversing entry"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        ) : null,
-    },
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], []);
-
-  const entriesList = (entries.data ?? []) as JournalEntry[];
-
-  const [ledgerTab, setLedgerTab] = useState<"accounts" | "entries" | "income">("accounts");
-
-  // Mobile bottom-dock "+" button signals a quick-add via the store rather
-  // than route params. The request fires just before navigation, so this
-  // page mounts fresh with the signal already set — the "consumed" marker
-  // must live in the store too, or a local ref would never see it change.
-  const quickAddEntryRequest = useSalliStore((s) => s.quickAddEntryRequest);
-  const quickAddEntryConsumed = useSalliStore((s) => s.quickAddEntryConsumed);
-  const consumeQuickAddEntry = useSalliStore((s) => s.consumeQuickAddEntry);
+  // Mobile-dock "+" (and dashboard new-entry) land here via the store signal.
+  const quickAddRequest = useSalliStore((s) => s.quickAddEntryRequest);
+  const quickAddConsumed = useSalliStore((s) => s.quickAddEntryConsumed);
+  const consumeQuickAdd = useSalliStore((s) => s.consumeQuickAddEntry);
   useEffect(() => {
-    if (quickAddEntryRequest !== 0 && quickAddEntryRequest !== quickAddEntryConsumed) {
-      consumeQuickAddEntry();
-      setLedgerTab("entries");
-      setEntryOpen(true);
+    if (quickAddRequest <= quickAddConsumed) return;
+    // Deferred: state updates happen in the timeout callback, not the effect body.
+    const t = setTimeout(() => {
+      consumeQuickAdd();
+      setTab("entries");
+      setEntryDialogOpen(true);
+    }, 0);
+    return () => clearTimeout(t);
+  }, [quickAddRequest, quickAddConsumed, consumeQuickAdd]);
+
+  const accounts = useMemo(() => ledger.accounts.data ?? [], [ledger.accounts.data]);
+  const entries = ledger.entries.data ?? [];
+  const stmt = ledger.incomeStatement.data;
+
+  const filteredAccounts = useMemo(() => {
+    const q = search.toLowerCase();
+    return q
+      ? accounts.filter((a) => a.name.toLowerCase().includes(q) || a.code.includes(q))
+      : accounts;
+  }, [accounts, search]);
+
+  function submitAccount(data: { code: string; name: string; type: AccountType; currency: string }) {
+    const close = () => {
+      setAccountDialogOpen(false);
+      setEditingAccount(null);
+    };
+    if (editingAccount) {
+      ledger.updateAccount.mutate({ id: editingAccount.id, ...data }, { onSuccess: close });
+    } else {
+      ledger.addAccount.mutate(data, { onSuccess: close });
     }
-  }, [quickAddEntryRequest, quickAddEntryConsumed, consumeQuickAddEntry]);
+  }
+
+  function submitEntry(data: {
+    entry_date: string;
+    description: string;
+    amount: string;
+    debitId: string;
+    creditId: string;
+  }) {
+    ledger.addEntry.mutate(
+      {
+        entry_date: data.entry_date,
+        description: data.description,
+        postings: [
+          { account_id: data.debitId, direction: 1, amount: data.amount, currency: "LKR" },
+          { account_id: data.creditId, direction: -1, amount: data.amount, currency: "LKR" },
+        ],
+      },
+      { onSuccess: () => setEntryDialogOpen(false) }
+    );
+  }
 
   return (
-    <PageShell>
-      <div className="flex items-end justify-between mb-6 gap-5">
-        <div>
-          <h1 className="text-[38px] font-black tracking-[-0.05em] leading-[1.1] text-foreground">
-            Ledger
-          </h1>
-          <p className="text-[13px] text-muted-foreground mt-2 font-medium">
-            Double-entry accounting · YA 2025/26
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setAcctOpen(true)}
-            className="px-5 py-2.5 border border-border rounded-full bg-card text-foreground text-[13.5px] font-bold hover:bg-muted transition-colors"
-          >
-            + Account
-          </button>
-          <button
-            onClick={() => setEntryOpen(true)}
-            className="px-5 py-2.5 bg-foreground text-background rounded-full text-[13.5px] font-bold hover:bg-foreground/85 transition-colors"
-          >
-            + Entry
-          </button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Ledger"
+        subtitle={`Double-entry accounting · YA ${ay.label}`}
+        actions={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditingAccount(null);
+                setAccountDialogOpen(true);
+              }}
+            >
+              <Plus className="size-4" /> Account
+            </Button>
+            <Button onClick={() => setEntryDialogOpen(true)}>
+              <Plus className="size-4" /> Entry
+            </Button>
+          </>
+        }
+      />
 
-      <div className="inline-flex bg-muted rounded-full p-1 gap-0.5 mb-5">
-        <button
-          onClick={() => setLedgerTab("accounts")}
-          className={`px-4 py-1.5 rounded-full text-[13.5px] font-semibold transition-colors ${ledgerTab === "accounts" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-        >
-          Chart of Accounts
-        </button>
-        <button
-          onClick={() => setLedgerTab("entries")}
-          className={`px-4 py-1.5 rounded-full text-[13.5px] font-semibold transition-colors ${ledgerTab === "entries" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-        >
-          Journal Entries
-        </button>
-        <button
-          onClick={() => setLedgerTab("income")}
-          className={`px-4 py-1.5 rounded-full text-[13.5px] font-semibold transition-colors ${ledgerTab === "income" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-        >
-          Income Statement
-        </button>
-      </div>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList>
+          <TabsTrigger value="accounts">Chart of Accounts</TabsTrigger>
+          <TabsTrigger value="entries">Journal Entries</TabsTrigger>
+          <TabsTrigger value="income">Income Statement</TabsTrigger>
+        </TabsList>
 
-        {/* ── Accounts ── */}
-        {ledgerTab === "accounts" && (<>
-          <Card className="overflow-hidden">
-            <DataTable
-              columns={accountColumns}
-              data={accountsList}
-              isLoading={accounts.isLoading}
-              searchPlaceholder="Search accounts…"
-              emptyNode={
-                <span className="text-[13px] text-muted-foreground">
-                  No accounts yet.{" "}
-                  <button onClick={() => setAcctOpen(true)} className="underline text-primary hover:text-primary/80">
-                    Add your first account
-                  </button>
-                </span>
-              }
-            />
-          </Card>
-        </>)}
+        {/* ── Chart of Accounts ── */}
+        <TabsContent value="accounts" className="mt-4">
+          <div className="rounded-lg border bg-card">
+            <div className="p-4 border-b">
+              <div className="relative max-w-xs">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search accounts…"
+                  className="pl-8"
+                />
+              </div>
+            </div>
+            {ledger.accounts.isLoading ? (
+              <p className="p-6 text-sm text-muted-foreground">Loading…</p>
+            ) : filteredAccounts.length === 0 ? (
+              <EmptyState
+                icon={BookOpen}
+                title={search ? "No matches" : "No accounts yet"}
+                body={
+                  search
+                    ? "Try a different name or code."
+                    : "Add your first account, or redo profile setup to seed a starter chart."
+                }
+                action={
+                  !search ? (
+                    <Button size="sm" variant="outline" onClick={() => setAccountDialogOpen(true)}>
+                      Add account
+                    </Button>
+                  ) : undefined
+                }
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-20">Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Currency</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-24 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAccounts.map((a) => (
+                    <TableRow key={a.id} className="group">
+                      <TableCell className="font-mono text-xs text-muted-foreground">{a.code}</TableCell>
+                      <TableCell className="font-medium">{a.name}</TableCell>
+                      <TableCell>
+                        <StatusChip tone={TYPE_TONES[a.type] ?? "neutral"}>
+                          {a.type[0].toUpperCase() + a.type.slice(1)}
+                        </StatusChip>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-[13px]">{a.currency}</TableCell>
+                      <TableCell>
+                        {a.is_active !== false ? (
+                          <StatusChip tone="success">Active</StatusChip>
+                        ) : (
+                          <StatusChip tone="neutral">Inactive</StatusChip>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="inline-flex gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="Edit account"
+                            onClick={() => {
+                              setEditingAccount(a);
+                              setAccountDialogOpen(true);
+                            }}
+                          >
+                            <Pencil className="size-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="Deactivate account"
+                            onClick={() => setDeactivating(a)}
+                          >
+                            <Archive className="size-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </TabsContent>
 
         {/* ── Journal Entries ── */}
-        {ledgerTab === "entries" && (<>
-          <Card className="overflow-hidden">
-            <DataTable
-              columns={entryColumns}
-              data={entriesList}
-              isLoading={entries.isLoading}
-              searchPlaceholder="Search entries…"
-              getRowClassName={(row) =>
-                (row.original as JournalEntry).reversed_by ? "opacity-50" : ""
-              }
-              emptyNode={
-                <span className="text-[13px] text-muted-foreground">
-                  No journal entries yet.{" "}
-                  <button onClick={() => setEntryOpen(true)} className="underline text-primary hover:text-primary/80">
-                    Post the first entry
-                  </button>
-                </span>
-              }
-            />
-          </Card>
-        </>)}
+        <TabsContent value="entries" className="mt-4">
+          <div className="rounded-lg border bg-card">
+            {ledger.entries.isLoading ? (
+              <p className="p-6 text-sm text-muted-foreground">Loading…</p>
+            ) : entries.length === 0 ? (
+              <EmptyState
+                icon={BookOpen}
+                title="Nothing posted yet"
+                body="Add an entry, or upload a bank statement and post the parsed transactions."
+                action={
+                  <Button size="sm" variant="outline" onClick={() => setEntryDialogOpen(true)}>
+                    Add entry
+                  </Button>
+                }
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-28">Date</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Source</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="w-28 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {entries.map((e) => {
+                    const reversed = Boolean(e.reversed_by);
+                    const amount = e.postings.find((p) => p.direction === 1)?.amount ?? "0";
+                    return (
+                      <TableRow key={e.id} className="group">
+                        <TableCell className="font-mono text-xs text-muted-foreground">{e.entry_date}</TableCell>
+                        <TableCell className={reversed ? "line-through text-muted-foreground" : "font-medium"}>
+                          {e.description}
+                          {reversed && (
+                            <StatusChip tone="neutral" className="ml-2 no-underline">
+                              reversed
+                            </StatusChip>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <StatusChip tone={SOURCE_TONES[e.source] ?? "neutral"}>{e.source}</StatusChip>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <MoneyText value={amount} prefix="LKR" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {!reversed && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="opacity-40 group-hover:opacity-100 transition-opacity"
+                              onClick={() => setReversing(e)}
+                            >
+                              <RotateCcw className="size-3.5" /> Reverse
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </TabsContent>
 
         {/* ── Income Statement ── */}
-        {ledgerTab === "income" && (<>
-          {incomeStatement.isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[0, 1].map((i) => (
-                <Card key={i} className="overflow-hidden">
-                  <div className="px-4 py-3 border-b bg-muted/30 h-11" />
-                  {[...Array(4)].map((_, j) => (
-                    <div key={j} className="flex justify-between px-4 py-2.5 border-b">
-                      <div className="h-4 bg-muted rounded w-32 animate-pulse" />
-                      <div className="h-4 bg-muted rounded w-20 animate-pulse" />
-                    </div>
-                  ))}
-                </Card>
-              ))}
-            </div>
-          ) : !incomeStatement.data ? (
-            <Card className="p-12 text-center">
-              <p className="text-[13px] text-muted-foreground">No income statement data available.</p>
-            </Card>
-          ) : (
-            <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Income */}
-                <Card className="overflow-hidden">
-                  <div className="px-4 py-2.5 border-b">
-                    <p className="text-[11px] font-bold text-[#7DA6A9] uppercase tracking-[0.1em]">Income</p>
-                  </div>
-                  <Table>
-                    <TableBody>
-                      {Object.entries(incomeStatement.data.income ?? {}).length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={2} className="text-center text-muted-foreground py-6 text-[13px]">No income recorded</TableCell>
-                        </TableRow>
-                      ) : (
-                        Object.entries(incomeStatement.data.income ?? {}).map(([k, v]) => (
-                          <TableRow key={k} className="border-b last:border-0">
-                            <TableCell className="text-[13px] px-4 py-2.5 text-foreground">{k}</TableCell>
-                            <TableCell className="text-right tabular-nums font-medium text-[13px] px-4 py-2.5 text-foreground font-mono">
-                              {fmt(v as string | number)}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                  {Object.entries(incomeStatement.data.income ?? {}).length > 0 && (
-                    <div className="mx-3 mb-3 px-4 py-2.5 flex items-center justify-between bg-[#A5FFB9] rounded-xl">
-                      <p className="text-[13px] font-bold text-[#010001]">Total Income</p>
-                      <p className="text-[13px] font-bold tabular-nums text-[#010001] font-mono">
-                        {fmt(Object.values(incomeStatement.data.income ?? {}).reduce((s, v) => s + Number(v), 0))}
-                      </p>
-                    </div>
-                  )}
-                </Card>
-
-                {/* Expenses */}
-                <Card className="overflow-hidden">
-                  <div className="px-4 py-2.5 border-b">
-                    <p className="text-[11px] font-bold text-rose-500 uppercase tracking-[0.1em]">Expenses</p>
-                  </div>
-                  <Table>
-                    <TableBody>
-                      {Object.entries(incomeStatement.data.expenses ?? {}).length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={2} className="text-center text-muted-foreground py-6 text-[13px]">No expenses recorded</TableCell>
-                        </TableRow>
-                      ) : (
-                        Object.entries(incomeStatement.data.expenses ?? {}).map(([k, v]) => (
-                          <TableRow key={k} className="border-b last:border-0">
-                            <TableCell className="text-[13px] px-4 py-2.5 text-foreground">{k}</TableCell>
-                            <TableCell className="text-right tabular-nums font-medium text-[13px] px-4 py-2.5 text-foreground font-mono">
-                              {fmt(v as string | number)}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                  {Object.entries(incomeStatement.data.expenses ?? {}).length > 0 && (
-                    <div className="mx-3 mb-3 px-4 py-2.5 flex items-center justify-between bg-rose-100 dark:bg-rose-400/15 rounded-xl">
-                      <p className="text-[13px] font-bold text-rose-900 dark:text-rose-300">Total Expenses</p>
-                      <p className="text-[13px] font-bold tabular-nums text-rose-900 dark:text-rose-300 font-mono">
-                        {fmt(Object.values(incomeStatement.data.expenses ?? {}).reduce((s, v) => s + Number(v), 0))}
-                      </p>
-                    </div>
-                  )}
-                </Card>
-              </div>
-
-              {/* Net Income summary bar */}
-              <div className="rounded-2xl bg-[#010001] px-5 py-4 flex items-center justify-between">
-                <p className="text-[13px] font-semibold text-[#F0EEE8]/60">Net Income</p>
-                <p className="text-[22px] font-black tabular-nums tracking-tight text-[#E8FC85] font-mono">
-                  {fmt(incomeStatement.data.net_income)}
-                </p>
-              </div>
-            </div>
+        <TabsContent value="income" className="mt-4 space-y-4">
+          {stmt && (
+            <p className="text-[13px] text-muted-foreground">
+              {stmt.from_date} – {stmt.to_date} · derived from posted entries
+            </p>
           )}
-        </>)}
-
-      {/* ── Add Account Dialog ── */}
-      <Dialog open={acctOpen} onOpenChange={setAcctOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Account</DialogTitle>
-            <DialogDescription>Create a new account in your chart of accounts.</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label>Code <span className="text-destructive">*</span></Label>
-                <Input placeholder="e.g. 1100" value={code} onChange={(e) => setCode(e.target.value)} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label>Currency</Label>
-                <Input placeholder="LKR" value={currency} onChange={(e) => setCurrency(e.target.value)} />
-              </div>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label>Name <span className="text-destructive">*</span></Label>
-              <Input placeholder="e.g. Cash at Bank" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label>Type</Label>
-              <Select value={type} onValueChange={(v) => setType((v ?? "asset") as AccountType)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ACCOUNT_TYPES.map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            {(["income", "expenses"] as const).map((side) => {
+              const rows = Object.entries(stmt?.[side] ?? {});
+              const total = rows.reduce((s, [, v]) => s + Number(v), 0);
+              return (
+                <div key={side} className="rounded-lg border bg-card p-5">
+                  <h3 className="text-[15px] font-semibold capitalize mb-3">{side}</h3>
+                  {rows.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4">Nothing posted in this period.</p>
+                  ) : (
+                    <div className="divide-y">
+                      {rows.map(([name, amount]) => (
+                        <div key={name} className="flex justify-between py-2 text-sm">
+                          <span>{name}</span>
+                          <MoneyText value={amount} />
+                        </div>
+                      ))}
+                      <div className="flex justify-between py-2.5 text-sm font-semibold">
+                        <span>Total</span>
+                        <MoneyText value={String(total)} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAcctOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddAccount} disabled={addAccount.isPending || !code || !name}>
-              {addAccount.isPending ? "Creating…" : "Create Account"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ── Edit Account Dialog ── */}
-      <Dialog open={!!editAcct} onOpenChange={(open) => { if (!open) setEditAcct(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Account</DialogTitle>
-            <DialogDescription>Update account details.</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label>Code <span className="text-destructive">*</span></Label>
-                <Input value={editCode} onChange={(e) => setEditCode(e.target.value)} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label>Currency</Label>
-                <Input value={editCurrency} onChange={(e) => setEditCurrency(e.target.value)} />
-              </div>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label>Name <span className="text-destructive">*</span></Label>
-              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label>Type</Label>
-              <Select value={editType} onValueChange={(v) => setEditType((v ?? editType) as AccountType)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ACCOUNT_TYPES.map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="rounded-lg bg-[#0A2540] text-white px-5 py-4 flex items-center justify-between">
+            <p className="eyebrow text-white/60">Net Income</p>
+            <p className="money text-[24px] font-semibold text-[var(--status-success-text)]">
+              LKR {formatMoney(stmt?.net_income)}
+            </p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditAcct(null)}>Cancel</Button>
-            <Button onClick={handleUpdateAccount} disabled={updateAccount.isPending || !editCode || !editName}>
-              {updateAccount.isPending ? "Saving…" : "Save Changes"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </TabsContent>
+      </Tabs>
 
-      {/* ── Deactivate Confirm ── */}
-      <AlertDialog open={!!deactivateTarget} onOpenChange={(open) => { if (!open) setDeactivateTarget(null); }}>
+      {/* Dialogs */}
+      <AccountDialog
+        open={accountDialogOpen}
+        onOpenChange={(v) => {
+          setAccountDialogOpen(v);
+          if (!v) setEditingAccount(null);
+        }}
+        account={editingAccount}
+        onSubmit={submitAccount}
+        pending={ledger.addAccount.isPending || ledger.updateAccount.isPending}
+      />
+      <EntryDialog
+        open={entryDialogOpen}
+        onOpenChange={setEntryDialogOpen}
+        accounts={accounts}
+        onSubmit={submitEntry}
+        pending={ledger.addEntry.isPending}
+        serverError={ledger.addEntry.error instanceof Error ? ledger.addEntry.error.message : null}
+      />
+      <ReverseConfirm
+        open={Boolean(reversing)}
+        onOpenChange={(v) => !v && setReversing(null)}
+        description={reversing?.description}
+        onConfirm={() => {
+          if (reversing) ledger.reverseEntry.mutate(reversing.id);
+          setReversing(null);
+        }}
+      />
+      <AlertDialog open={Boolean(deactivating)} onOpenChange={(v) => !v && setDeactivating(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Deactivate account?</AlertDialogTitle>
             <AlertDialogDescription>
-              <strong>{deactivateTarget?.name}</strong> will be hidden from the chart of accounts.
-              Existing journal entries are unaffected.
+              {deactivating ? `“${deactivating.code} · ${deactivating.name}” — ` : ""}
+              postings keep their history; the account is hidden from new entries.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={async () => {
-                if (deactivateTarget) {
-                  await deactivateAccount.mutateAsync(deactivateTarget.id);
-                  setDeactivateTarget(null);
-                }
+              variant="destructive"
+              onClick={() => {
+                if (deactivating) ledger.deactivateAccount.mutate(deactivating.id);
+                setDeactivating(null);
               }}
             >
               Deactivate
@@ -621,94 +406,6 @@ export default function LedgerPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* ── Add Journal Entry Dialog ── */}
-      <Dialog open={entryOpen} onOpenChange={setEntryOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>New Journal Entry</DialogTitle>
-            <DialogDescription>Record a double-entry transaction manually.</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label>Date <span className="text-destructive">*</span></Label>
-                <Input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label>Amount (LKR) <span className="text-destructive">*</span></Label>
-                <Input type="number" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} />
-              </div>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label>Description <span className="text-destructive">*</span></Label>
-              <Input placeholder="e.g. Office supplies" value={entryDesc} onChange={(e) => setEntryDesc(e.target.value)} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label>Debit Account <span className="text-destructive">*</span></Label>
-                <Select value={debitAccountId} onValueChange={(v) => setDebitAccountId(v ?? "")}>
-                  <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
-                  <SelectContent>
-                    {accountsList.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>{a.code} — {a.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label>Credit Account <span className="text-destructive">*</span></Label>
-                <Select value={creditAccountId} onValueChange={(v) => setCreditAccountId(v ?? "")}>
-                  <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
-                  <SelectContent>
-                    {accountsList.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>{a.code} — {a.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <p className="text-[12px] text-muted-foreground">
-              Debit and credit use the same amount to keep the entry balanced.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEntryOpen(false)}>Cancel</Button>
-            <Button
-              onClick={handleAddEntry}
-              disabled={addEntry.isPending || !entryDate || !entryDesc || !debitAccountId || !creditAccountId || !amount}
-            >
-              {addEntry.isPending ? "Posting…" : "Post Entry"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ── Reverse Entry Confirm ── */}
-      <AlertDialog open={!!reverseTarget} onOpenChange={(open) => { if (!open) setReverseTarget(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Create reversing entry?</AlertDialogTitle>
-            <AlertDialogDescription>
-              A new journal entry with all debits and credits swapped will be posted.
-              Journal entries are immutable — this is the standard correction method.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={async () => {
-                if (reverseTarget) {
-                  await reverseEntry.mutateAsync(reverseTarget);
-                  setReverseTarget(null);
-                }
-              }}
-            >
-              Post Reversal
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </PageShell>
+    </div>
   );
 }

@@ -45,7 +45,9 @@ services:
   web:
     image: node:22-alpine
     working_dir: /app
-    command: sh -c "corepack enable && pnpm install --frozen-lockfile --ignore-scripts && pnpm dev"
+    # The web app's own dev script binds :3003; inside the container we bind :3000
+    # (mapped to host :3002) and 0.0.0.0 so it's reachable from the host.
+    command: sh -c "corepack enable && pnpm install --frozen-lockfile --ignore-scripts && pnpm exec next dev -p 3000 -H 0.0.0.0"
     volumes:
       - ./clients/web:/app
       - web_node_modules:/app/node_modules

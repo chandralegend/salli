@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3003",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3003",
     "lint": "eslint",
     "gen:api": "openapi-ts"
   },
@@ -13,13 +13,10 @@
     "@base-ui/react": "^1.5.0",
     "@supabase/supabase-js": "^2.108.2",
     "@tanstack/react-query": "^5.101.0",
-    "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "cmdk": "^1.1.1",
     "eventsource-parser": "^3.1.0",
     "lucide-react": "^1.20.0",
-    "motion": "^12.42.0",
     "next": "16.2.9",
     "next-themes": "^0.4.6",
     "react": "19.2.4",
@@ -45,5 +42,6 @@
     "shadcn": "^4.11.0",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "packageManager": "pnpm@11.13.1+sha512.b2fc7683b8a6525414e7d13e1ba28caaddde96bf66ec540bfaeb7e702b81f3e0be4d1f295edf7f9fe0396740a8dce4509c582ddf79891f4543fea32d37645f25"
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
@@ -9,12 +9,10 @@ import { resolvePostLoginRoute } from "@/lib/auth";
 /**
  * Lands here after an OAuth redirect, an email confirmation, or a password-reset
  * link. The Supabase client (detectSessionInUrl) parses the URL and establishes
- * the session; we then route the user onward. The (app) layout decides whether a
- * returning user needs onboarding.
+ * the session; we then route the user onward.
  */
 export default function AuthCallbackPage() {
   const router = useRouter();
-  const [error, setError] = useState("");
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -51,11 +49,9 @@ export default function AuthCallbackPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-background ledger-paper">
+    <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-background">
       <Loader2 className="size-5 animate-spin text-muted-foreground" />
-      <p className="text-[13px] text-muted-foreground">
-        {error || "Signing you in…"}
-      </p>
+      <p className="text-[13px] text-muted-foreground">Signing you in…</p>
     </div>
   );
 }

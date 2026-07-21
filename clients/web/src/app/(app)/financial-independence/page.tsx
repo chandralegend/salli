@@ -1,679 +1,484 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Loader2, Trash2, Sparkles, Check, X, Clock, BadgeCheck, Plus, Target, Home, Calendar, Percent } from "lucide-react";
-import { IconBadge, SparklineWatermark, RingWatermark } from "@/components/ui/card-watermarks";
-import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import remarkGfm from "remark-gfm";
 import {
-  useFiScore,
-  useRecomputeScore,
-  useGoals,
-  useCreateGoal,
-  useDeleteGoal,
-  useLatestAdvisory,
-  useRunAdvisor,
-  useApplyRecommendation,
-  useDismissRecommendation,
-  useFireStrategy,
-  useFireProjections,
-  useFireSurplus,
-  type Goal,
-  type Recommendation,
-} from "@/hooks/useFi";
-import { ProjectionChart } from "@/components/fi/ProjectionChart";
-import { AllocationBuckets } from "@/components/fi/AllocationBuckets";
-import { StrategySetup } from "@/components/fi/StrategySetup";
-import { SectionTitle } from "@/components/ui/page-shell";
+  CalendarClock,
+  ChevronDown,
+  Landmark,
+  Loader2,
+  PiggyBank,
+  Plus,
+  RefreshCw,
+  Sparkles,
+  Target,
+  Trash2,
+  TrendingUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { StatCard } from "@/components/shared/StatCard";
+import { SectionLabel } from "@/components/shared/SectionLabel";
+import { StatusChip } from "@/components/shared/StatusChip";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { QuotaBanner } from "@/components/shared/QuotaBanner";
+import { ProjectionChart } from "@/components/fi/ProjectionChart";
+import { StrategySetup } from "@/components/fi/StrategySetup";
+import {
+  useApplyRecommendation,
+  useCreateGoal,
+  useDeleteGoal,
+  useDismissRecommendation,
+  useFiScore,
+  useFireProjections,
+  useFireStrategy,
+  useGoals,
+  useLatestAdvisory,
+  useRecomputeScore,
+  useRunAdvisor,
+} from "@/hooks/useFi";
+import { formatCompact, formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-// ── Formatters ────────────────────────────────────────────────────────────────
+const BUCKET_RULES = ["bg-[var(--chart-3)]", "bg-[var(--chart-2)]", "bg-[var(--chart-1)]", "bg-[var(--chart-4)]", "bg-[var(--chart-5)]"];
 
-function lkr(v: string | number): string {
-  const n = typeof v === "string" ? Number(v) : v;
-  if (!isFinite(n)) return "—";
-  if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  return n.toLocaleString("en-LK", { maximumFractionDigits: 0 });
-}
-
-function pct(v: string | number, dp = 1): string {
-  const n = (typeof v === "string" ? Number(v) : v) * 100;
-  return `${n.toFixed(dp)}%`;
-}
-
-// ── Stat tile ─────────────────────────────────────────────────────────────────
-
-function StatTile({
-  bg, label, sub, value, badge, badgeStyle, lightText, icon, watermark,
+function AddGoalDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+  pending,
 }: {
-  bg: string; label: string; sub?: string; value: string;
-  badge?: string; badgeStyle?: React.CSSProperties; lightText?: boolean;
-  icon?: React.ReactNode; watermark?: React.ReactNode;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onSubmit: (data: { name: string; target_amount: number; target_date?: string }) => void;
+  pending: boolean;
 }) {
-  const isBlack = bg === "#010001";
-  const dark = isBlack || lightText;
-  const adaptive = bg.startsWith("var(") && !lightText;
-  const labelColor = dark ? "rgba(255,255,255,0.48)" : adaptive ? "var(--muted-foreground)" : "rgba(0,0,0,0.45)";
-  const subColor = dark ? "rgba(255,255,255,0.38)" : adaptive ? "var(--muted-foreground)" : "rgba(0,0,0,0.35)";
-  const valueColor = isBlack ? "#E8FC85" : dark ? "#FFFFFF" : adaptive ? "var(--foreground)" : "#010001";
-
-  return (
-    <div className="metric-card" style={{ background: bg, borderRadius: "var(--radius-card)" }}>
-      {watermark && (
-        <div
-          className="absolute inset-0 z-0 overflow-hidden rounded-[inherit] pointer-events-none"
-          style={{
-            maskImage: "linear-gradient(to top, black 0%, black 45%, transparent 92%)",
-            WebkitMaskImage: "linear-gradient(to top, black 0%, black 45%, transparent 92%)",
-          }}
-        >
-          {watermark}
-        </div>
-      )}
-      <div style={{
-        position: "relative", zIndex: 1, padding: 22, minHeight: 160,
-        display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%",
-      }}>
-        {icon && (
-          // Match BentoTile: a position:absolute child's containing block is
-          // the padding box, so top:0/right:0 ignores the 22px padding above
-          // entirely. Use the same explicit 22px inset to line up with it.
-          <div className="absolute opacity-70" style={{ top: 22, right: 22 }}>{icon}</div>
-        )}
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: labelColor }}>{label}</div>
-          {sub && <div style={{ fontSize: 12, color: subColor, marginTop: 3 }}>{sub}</div>}
-        </div>
-        <div>
-          <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.05em", color: valueColor, lineHeight: 1, marginBottom: 5, fontVariantNumeric: "tabular-nums" }}>
-            {value}
-          </div>
-          {badge && (
-            <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999, ...badgeStyle }}>
-              {badge}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Goal row ──────────────────────────────────────────────────────────────────
-
-function GoalRow({ goal, onDelete }: { goal: Goal; onDelete: () => void }) {
-  const progress = Math.round(goal.progress * 100);
-  return (
-    <div className="rounded-[14px] bg-muted p-3.5">
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
-        <span className="text-[13px] font-bold text-foreground">{goal.name}</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {goal.target_date && <span className="text-[12px] text-muted-foreground">{goal.target_date.slice(0, 4)}</span>}
-          <button
-            onClick={onDelete}
-            className="opacity-40 hover:opacity-100 transition-opacity text-destructive"
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-          >
-            <Trash2 className="size-3.5" />
-          </button>
-        </div>
-      </div>
-      <div className="h-[3px] rounded-full bg-border overflow-hidden mb-1.5">
-        <div style={{ width: `${progress}%`, height: "100%", background: "#E8FC85", borderRadius: 999 }} />
-      </div>
-      <div className="text-[11.5px] text-muted-foreground">
-        LKR {lkr(goal.current_amount)} / {lkr(goal.target_amount)}
-      </div>
-    </div>
-  );
-}
-
-// ── Add goal dialog ────────────────────────────────────────────────────────────
-
-function AddGoalDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
-  const create = useCreateGoal();
-  const [name, setName] = useState("");
-  const [target, setTarget] = useState("");
-  const [current, setCurrent] = useState("");
-  const [date, setDate] = useState("");
-
-  async function submit() {
-    if (!name.trim() || !target) return;
-    await create.mutateAsync({ name, kind: "custom", target_amount: Number(target), current_amount: Number(current || 0), target_date: date || null, priority: 2 });
-    onOpenChange(false);
-    setName(""); setTarget(""); setCurrent(""); setDate("");
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>New goal</DialogTitle>
-          <DialogDescription>Track progress toward a financial milestone.</DialogDescription>
+          <DialogDescription>Salli tracks progress from your ledger.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label className="text-[12px]">Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. House down payment" className="h-9 text-[13px]" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-[12px]">Target (LKR)</Label>
-              <Input inputMode="numeric" value={target} onChange={(e) => setTarget(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="5000000" className="h-9 text-[13px]" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px]">Saved so far</Label>
-              <Input inputMode="numeric" value={current} onChange={(e) => setCurrent(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0" className="h-9 text-[13px]" />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-[12px]">Target date (optional)</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-9 text-[13px]" />
-          </div>
-          <Button onClick={submit} disabled={create.isPending || !name.trim() || !target} className="w-full">
-            {create.isPending && <Loader2 className="size-3.5 mr-2 animate-spin" />}Add goal
-          </Button>
-        </div>
+        {open && <GoalForm onSubmit={onSubmit} onCancel={() => onOpenChange(false)} pending={pending} />}
       </DialogContent>
     </Dialog>
   );
 }
 
-// ── Rec item ──────────────────────────────────────────────────────────────────
-
-const PRIO_STYLE: Record<number, { color: string; bg: string }> = {
-  1: { color: "#DC2626", bg: "rgba(220,38,38,0.2)" },
-  2: { color: "#D97706", bg: "rgba(217,119,6,0.2)" },
-  3: { color: "#7DA6A9", bg: "rgba(125,166,169,0.2)" },
-};
-
-function RecItem({ rec, reportId }: { rec: Recommendation; reportId: string }) {
-  const apply = useApplyRecommendation();
-  const dismiss = useDismissRecommendation();
-  const prio = PRIO_STYLE[rec.priority] ?? PRIO_STYLE[3];
-  const done = rec.status !== "pending";
+function GoalForm({
+  onSubmit,
+  onCancel,
+  pending,
+}: {
+  onSubmit: (data: { name: string; target_amount: number; target_date?: string }) => void;
+  onCancel: () => void;
+  pending: boolean;
+}) {
+  const [name, setName] = useState("");
+  const [amount, setAmount] = useState("");
+  const [date, setDate] = useState("");
 
   return (
-    <div style={{ padding: "11px 13px", background: "rgba(255,255,255,0.05)", borderRadius: 12, opacity: done ? 0.5 : 1 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-        <span style={{ fontSize: 10, fontWeight: 900, color: prio.color, background: prio.bg, padding: "1px 7px", borderRadius: 5 }}>
-          P{rec.priority}
-        </span>
-        <span style={{ fontSize: 12.5, fontWeight: 700, color: "#fff" }}>{rec.title}</span>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit({
+          name: name.trim(),
+          target_amount: Number(amount) || 0,
+          target_date: date || undefined,
+        });
+      }}
+      className="space-y-4"
+    >
+      <div className="space-y-1.5">
+        <Label htmlFor="goal-name">Goal</Label>
+        <Input
+          id="goal-name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Emergency fund"
+          required
+        />
       </div>
-      <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.38)", lineHeight: 1.5 }}>{rec.rationale}</div>
-      {!done && (
-        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-          {rec.action_type === "reminder" && (
-            <button
-              onClick={() => apply.mutate({ reportId, recId: rec.id })}
-              disabled={apply.isPending}
-              style={{ fontSize: 11, color: "#E8FC85", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}
-            >
-              <Check className="inline size-3 mr-1" />Create reminder
-            </button>
-          )}
-          <button
-            onClick={() => dismiss.mutate({ reportId, recId: rec.id })}
-            disabled={dismiss.isPending}
-            style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}
-          >
-            <X className="inline size-3 mr-1" />Dismiss
-          </button>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="goal-amount">Target (LKR)</Label>
+          <Input
+            id="goal-amount"
+            type="number"
+            inputMode="numeric"
+            min="0"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="1500000"
+            required
+          />
         </div>
-      )}
-    </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="goal-date">Target date (optional)</Label>
+          <Input id="goal-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button type="button" variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={pending || !name.trim()}>
+          {pending ? <Loader2 className="size-4 animate-spin" /> : "Add goal"}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
-
 export default function FinancialIndependencePage() {
-  const qc = useQueryClient();
-  const score = useFiScore();
-  const recompute = useRecomputeScore();
-  const goals = useGoals();
-  const deleteGoal = useDeleteGoal();
-  const advisory = useLatestAdvisory();
-  const runAdvisor = useRunAdvisor();
   const strategy = useFireStrategy();
+  const score = useFiScore();
   const projections = useFireProjections();
-  const surplus = useFireSurplus();
+  const goals = useGoals();
+  const advisory = useLatestAdvisory();
+  const recompute = useRecomputeScore();
+  const runAdvisor = useRunAdvisor();
+  const applyRec = useApplyRecommendation();
+  const dismissRec = useDismissRecommendation();
+  const createGoal = useCreateGoal();
+  const deleteGoal = useDeleteGoal();
 
-  const [addOpen, setAddOpen] = useState(false);
-  const [showSetup, setShowSetup] = useState(false);
-  const [strategyOpen, setStrategyOpen] = useState(false);
+  const [goalDialogOpen, setGoalDialogOpen] = useState(false);
+  const [rationaleOpen, setRationaleOpen] = useState(false);
 
-  const s = score.data;
-  const strat = strategy.data;
+  const s = strategy.data;
+  const fi = score.data;
   const proj = projections.data;
-  const surplusData = surplus.data;
-  const hasStrategy = !!strat;
+  const report = advisory.data;
 
-  const handleStrategyComplete = useCallback(() => {
-    qc.invalidateQueries({ queryKey: ["fi", "strategy"] });
-    qc.invalidateQueries({ queryKey: ["fi", "projections"] });
-    qc.invalidateQueries({ queryKey: ["fi", "surplus"] });
-    setShowSetup(false);
-    toast.success("Your FIRE strategy has been updated!");
-  }, [qc]);
+  const advisorQuotaHit =
+    runAdvisor.error instanceof Error && runAdvisor.error.message.includes("quota_exceeded");
 
-  async function handleRun() {
-    try {
-      await runAdvisor.mutateAsync();
-      toast.success("Advisor updated your recommendations");
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "";
-      if (msg.includes("402") || msg.toLowerCase().includes("quota")) {
-        toast.error("You've used all your advisor runs this month — upgrade for more.");
-      } else {
-        toast.error("Couldn't run the advisor. Try again.");
-      }
-    }
-  }
-
-  // ── Setup / Refresh flow ────────────────────────────────────────────────────
-
-  if ((!hasStrategy && !strategy.isLoading) || showSetup) {
+  if (strategy.isLoading) {
     return (
-      <div className="p-8 max-w-[1320px] mx-auto">
-        {showSetup && (
-          <button
-            onClick={() => setShowSetup(false)}
-            className="text-[13px] text-muted-foreground hover:text-foreground transition mb-5 block"
-          >
-            ← Back
-          </button>
-        )}
-        <StrategySetup isRefresh={hasStrategy} onComplete={handleStrategyComplete} />
+      <div className="space-y-6">
+        <PageHeader title="Financial Independence" subtitle="Loading…" />
+        <Skeleton className="h-96" />
       </div>
     );
   }
 
-  // ── Active dashboard ────────────────────────────────────────────────────────
+  // First run — no strategy yet (404 → null)
+  if (!s) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Financial Independence"
+          subtitle="Design a FIRE strategy from your real numbers"
+        />
+        <StrategySetup />
+      </div>
+    );
+  }
 
-  const fiNumber = proj?.fi_number ?? s?.fi_number;
-  const netWorth = s?.net_worth ?? "0";
-  const progressToFi = proj?.fi_number
-    ? Number(netWorth) / Number(proj.fi_number)
-    : Number(s?.progress_to_fi ?? 0);
-  const yearsToFire = proj?.fire_year_base;
-  const savingsRate = surplusData
-    ? Number(surplusData.savings_rate) * 100
-    : Number(s?.savings_rate ?? 0) * 100;
-
-  const stratDate = strat
-    ? new Date(strat.created_at).toLocaleDateString("en-LK", { month: "short", day: "numeric", year: "numeric" })
-    : "";
+  const fireStyle = s.fire_style[0].toUpperCase() + s.fire_style.slice(1);
+  const yearsToFire =
+    proj?.fire_year_base != null ? String(proj.fire_year_base) : fi?.projected_fi_date ?? "—";
 
   return (
-    <div className="p-8 max-w-[1320px] mx-auto">
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 20 }}>
-        <div>
-          <h1 style={{ fontSize: 40, fontWeight: 900, letterSpacing: "-0.05em", lineHeight: 1.1, color: "var(--foreground)" }}>
-            Financial Independence
-          </h1>
-          <p style={{ fontSize: 13, color: "var(--muted-foreground)", marginTop: 8, fontWeight: 500 }}>
-            {strat
-              ? `${strat.fire_style.charAt(0).toUpperCase() + strat.fire_style.slice(1)} FIRE · Strategy v${strat.version} · ${stratDate} · SWR ${(strat.swr * 100).toFixed(1)}%`
-              : "FIRE planning · Sri Lanka · LKR"}
-          </p>
+    <div className="space-y-8">
+      <PageHeader
+        title="Financial Independence"
+        subtitle={`${fireStyle} FIRE · Strategy v${s.version} · SWR ${(s.swr * 100).toFixed(1)}%`}
+        actions={
+          <>
+            <Button variant="outline" onClick={() => recompute.mutate()} disabled={recompute.isPending}>
+              {recompute.isPending ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+              Recompute
+            </Button>
+          </>
+        }
+      />
+
+      {/* ── Overview ── */}
+      <section>
+        <SectionLabel className="mb-3">Overview</SectionLabel>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            label="FI Number"
+            icon={Target}
+            loading={score.isLoading}
+            value={`LKR ${formatCompact(fi?.fi_number)}`}
+            caption={`${(s.swr * 100).toFixed(1)}% safe withdrawal rate`}
+          />
+          <StatCard
+            label="Net Worth"
+            icon={Landmark}
+            loading={score.isLoading}
+            value={`LKR ${formatCompact(fi?.net_worth)}`}
+            caption={fi ? `${Number(fi.progress_to_fi).toFixed(1)}% of FI number` : undefined}
+          />
+          <StatCard label="Years to FIRE" emphasis loading={projections.isLoading} icon={CalendarClock}>
+            <p className="money text-[44px] font-semibold leading-none">{yearsToFire}</p>
+            <p className="text-xs text-white/60 mt-1.5">base scenario · {(s.return_base * 100).toFixed(0)}% return</p>
+          </StatCard>
+          <StatCard
+            label="Savings Rate"
+            icon={PiggyBank}
+            loading={score.isLoading}
+            value={fi ? `${Number(fi.savings_rate).toFixed(1)}%` : "—"}
+            badge={
+              fi && Number(fi.savings_rate) >= 40 ? <StatusChip tone="success">above 40% target</StatusChip> : undefined
+            }
+            caption="monthly surplus ratio"
+          />
         </div>
-        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-          <button
-            onClick={() => recompute.mutate()}
-            disabled={recompute.isPending}
-            className="text-foreground border-border bg-card hover:bg-muted transition-colors"
-            style={{ padding: "10px 20px", border: "1.5px solid", borderRadius: 999, fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
-          >
-            {recompute.isPending ? <Loader2 className="inline size-3.5 mr-1 animate-spin" /> : null}
-            Recompute
-          </button>
-          <button
-            onClick={() => setShowSetup(true)}
-            style={{ padding: "10px 20px", background: "#010001", color: "#fff", border: "none", borderRadius: 999, fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
-          >
-            ↺ Refresh Strategy
-          </button>
-        </div>
-      </div>
+      </section>
 
-      {/* BENTO GRID */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 }}>
-
-        {/* ── Section: Overview ───────────────────────────────────────────── */}
-        <SectionTitle>Overview</SectionTitle>
-
-        {/* Row 1 — 4 stat tiles */}
-        <StatTile
-          bg="var(--card)"
-          label="FI Number"
-          sub={strat ? `${(strat.swr * 100).toFixed(1)}% safe withdrawal rate` : "25× annual expenses"}
-          value={fiNumber ? lkr(fiNumber) : "—"}
-          icon={<IconBadge><Target className="size-4 text-foreground" /></IconBadge>}
-        />
-        <StatTile
-          bg="var(--card-green)"
-          lightText
-          label="Net Worth"
-          sub={`${(progressToFi * 100).toFixed(1)}% of FI number`}
-          value={lkr(netWorth)}
-          badge={s ? `+${pct(s.savings_rate, 1)}` : undefined}
-          badgeStyle={{ background: "rgba(255,255,255,0.2)", color: "#FFFFFF" }}
-          icon={<IconBadge><Home className="size-4 text-white" /></IconBadge>}
-          watermark={<SparklineWatermark />}
-        />
-        {/* Years to FIRE — dark tile */}
-        <div className="metric-card" style={{ background: "#010001", borderRadius: "var(--radius-card)" }}>
-          <div style={{
-            position: "relative", zIndex: 1, padding: 22, minHeight: 160,
-            display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%",
-          }}>
-            <div className="absolute opacity-70" style={{ top: 22, right: 22 }}>
-              <IconBadge><Calendar className="size-4 text-[#E8FC85]" /></IconBadge>
+      {/* ── Portfolio projection ── */}
+      <section>
+        <SectionLabel className="mb-3">Portfolio Projection</SectionLabel>
+        <div className="grid lg:grid-cols-3 gap-4 items-start">
+          <div className="lg:col-span-2 rounded-lg border bg-card p-5">
+            <div className="mb-1">
+              <h2 className="text-[15px] font-semibold">Portfolio Projection</h2>
+              <p className="text-xs text-muted-foreground">Conservative · Base · Growth scenarios, 15 years</p>
             </div>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>Years to FIRE</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.28)", marginTop: 3 }}>
-                Base scenario · {strat ? `${(strat.return_base * 100).toFixed(0)}% return` : "9% return"}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: "-0.06em", color: "#E8FC85", lineHeight: 1, marginBottom: 5, fontVariantNumeric: "tabular-nums" }}>
-                {yearsToFire ?? "—"}
-              </div>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>years remaining</span>
-            </div>
-          </div>
-        </div>
-        <StatTile
-          bg="var(--card-blue-grey)"
-          lightText
-          label="Savings Rate"
-          sub="Monthly surplus ratio"
-          value={`${savingsRate.toFixed(1)}`}
-          icon={<IconBadge><Percent className="size-4 text-white" /></IconBadge>}
-          watermark={<RingWatermark />}
-          badge={savingsRate >= 40 ? "↑ above 40% target" : savingsRate >= 20 ? "→ building" : "↓ below target"}
-          badgeStyle={{
-            background: savingsRate >= 40 ? "#DCFCE7" : savingsRate >= 20 ? "#FEF3C7" : "#FEE2E2",
-            color: savingsRate >= 40 ? "#16A34A" : savingsRate >= 20 ? "#D97706" : "#DC2626",
-            fontWeight: 800,
-          }}
-        />
-
-        {/* ── Section: Projection ─────────────────────────────────────────── */}
-        <SectionTitle>Portfolio Projection</SectionTitle>
-
-        {/* Row 2 — Chart (col 1-3) + FI Score (col 4) */}
-        <div style={{ gridColumn: "1/4", background: "var(--card)", borderRadius: 20, padding: 26, minHeight: 320, display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--foreground)" }}>Portfolio Projection</div>
-              <div style={{ fontSize: 12, color: "var(--muted-foreground)", marginTop: 3 }}>Conservative · Base · Growth scenarios</div>
-            </div>
-            <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <div style={{ width: 16, height: 2, background: "#CBD5E1", borderRadius: 2 }} />
-                <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>Conservative</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <div style={{ width: 16, height: 2.5, background: "#010001", borderRadius: 2 }} />
-                <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>Base</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <div style={{ width: 16, height: 2, background: "#F59E0B", borderRadius: 2 }} />
-                <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>Growth</span>
-              </div>
-            </div>
-          </div>
-          <div style={{ flex: 1 }}>
-            {projections.isLoading || !proj ? (
-              <div className="h-48 bg-muted rounded-xl animate-pulse" />
+            {projections.isLoading ? (
+              <Skeleton className="h-72 mt-3" />
+            ) : proj && proj.points.length > 0 ? (
+              <ProjectionChart points={proj.points} fiNumber={proj.fi_number} />
             ) : (
-              <ProjectionChart data={proj} />
+              <EmptyState
+                icon={TrendingUp}
+                title="No projection yet"
+                body="Post some entries so Salli has a portfolio to project."
+              />
             )}
           </div>
+
+          <StatCard label="FI Score" emphasis loading={score.isLoading} icon={Sparkles}>
+            {fi && (
+              <>
+                <p className="money leading-none">
+                  <span className="text-[44px] font-semibold">{Number(fi.overall_score).toFixed(0)}</span>
+                  <span className="text-white/50 text-base">/100</span>
+                </p>
+                <p className="text-[13px] text-white/70">{fi.grade}</p>
+                <div className="space-y-2.5 mt-2">
+                  {fi.components.map((c) => (
+                    <div key={c.key}>
+                      <div className="flex justify-between text-xs text-white/60 mb-1">
+                        <span>{c.label}</span>
+                        <span className="money">{Number(c.score).toFixed(0)}</span>
+                      </div>
+                      <div className="h-1 rounded-full bg-white/15 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-white"
+                          style={{ width: `${Math.min(100, Number(c.score))}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </StatCard>
+        </div>
+      </section>
+
+      {/* ── Allocation buckets + rationale ── */}
+      <section>
+        <SectionLabel className="mb-3">Allocation Buckets</SectionLabel>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {s.buckets.map((b, i) => (
+            <div key={b.key} className="rounded-lg border bg-card overflow-hidden">
+              <div className={cn("h-1", BUCKET_RULES[i % BUCKET_RULES.length])} />
+              <div className="p-4">
+                <p className="text-sm font-semibold">{b.name}</p>
+                <p className="money text-xl font-semibold mt-1">{b.target_pct}%</p>
+                <p className="text-xs text-muted-foreground mt-1.5 leading-snug">{b.description}</p>
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* FI Score tile */}
-        <div className="metric-card" style={{ background: "#010001", borderRadius: "var(--radius-card)", padding: 24, display: "flex", flexDirection: "column", position: "relative" }}>
-          <div className="absolute opacity-70" style={{ top: 24, right: 24, zIndex: 1 }}>
-            <IconBadge><Sparkles className="size-4 text-[#E8FC85]" /></IconBadge>
+        <Collapsible open={rationaleOpen} onOpenChange={setRationaleOpen} className="mt-4">
+          <div className="rounded-lg border bg-card">
+            <CollapsibleTrigger
+              render={
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-3 p-4 text-left hover:bg-accent/40 transition-colors rounded-lg"
+                />
+              }
+            >
+              <span className="text-sm font-semibold shrink-0">AI Strategy rationale</span>
+              <span className="flex flex-wrap gap-1.5">
+                {s.theories_applied.slice(0, 4).map((t) => (
+                  <StatusChip key={t} tone="neutral">
+                    {t}
+                  </StatusChip>
+                ))}
+              </span>
+              <ChevronDown
+                className={cn("size-4 ml-auto shrink-0 text-muted-foreground transition-transform", rationaleOpen && "rotate-180")}
+              />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 pb-4 space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: "Conservative", v: s.return_conservative },
+                    { label: "Base", v: s.return_base },
+                    { label: "Growth", v: s.return_growth },
+                  ].map((r) => (
+                    <div key={r.label} className="rounded-md bg-muted/60 border p-3 text-center">
+                      <p className="money text-lg font-semibold">{(r.v * 100).toFixed(0)}%</p>
+                      <p className="text-xs text-muted-foreground">{r.label} return</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="prose-sm text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{s.ai_rationale}</ReactMarkdown>
+                </div>
+              </div>
+            </CollapsibleContent>
           </div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 14, position: "relative", zIndex: 1 }}>FI Score</div>
-          {score.isLoading || !s ? (
-            <div className="flex-1 bg-white/5 rounded-xl animate-pulse" />
-          ) : (
-            <>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: 4 }}>
-                <span style={{ fontSize: 52, fontWeight: 900, letterSpacing: "-0.06em", color: "#E8FC85", lineHeight: 1 }}>
-                  {Number(s.overall_score).toFixed(0)}
-                </span>
-                <span style={{ fontSize: 17, fontWeight: 600, color: "rgba(255,255,255,0.2)" }}>/100</span>
-              </div>
-              <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.38)", marginBottom: 18 }}>
-                {s.grade} · {strat?.fire_style ?? "Standard"} FIRE
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
-                {s.components.slice(0, 5).map((c) => {
-                  const v = Number(c.score);
-                  const amber = v < 50;
+        </Collapsible>
+      </section>
+
+      {/* ── Goals & mentoring ── */}
+      <section>
+        <SectionLabel className="mb-3">Goals &amp; Mentoring</SectionLabel>
+        <div className="grid lg:grid-cols-2 gap-4 items-start">
+          <div className="rounded-lg border bg-card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-[15px] font-semibold">Goals</h2>
+              <Button variant="outline" size="sm" onClick={() => setGoalDialogOpen(true)}>
+                <Plus className="size-3.5" /> Add goal
+              </Button>
+            </div>
+            {goals.isLoading ? (
+              <Skeleton className="h-24" />
+            ) : !goals.data || goals.data.length === 0 ? (
+              <EmptyState
+                icon={Target}
+                title="No goals yet"
+                body="Set one and Salli tracks it from your ledger."
+              />
+            ) : (
+              <div className="space-y-4">
+                {goals.data.map((g) => {
+                  const pct = Math.min(100, Math.round((g.progress ?? 0) * 100) / 1);
                   return (
-                    <div key={c.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>{c.label}</span>
-                      <div style={{ flex: 1, height: 3, background: "rgba(255,255,255,0.08)", borderRadius: 999, overflow: "hidden" }}>
-                        <div style={{ width: `${v}%`, height: "100%", background: amber ? "#F59E0B" : "#E8FC85", borderRadius: 999 }} />
+                    <div key={g.id} className="group">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <p className="text-sm font-medium">{g.name}</p>
+                        <button
+                          type="button"
+                          aria-label={`Delete ${g.name}`}
+                          onClick={() => deleteGoal.mutate(g.id)}
+                          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
                       </div>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: amber ? "#F59E0B" : "rgba(255,255,255,0.5)", width: 20, textAlign: "right" }}>
-                        {v.toFixed(0)}
-                      </span>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-foreground" style={{ width: `${pct}%` }} />
+                      </div>
+                      <p className="money text-xs text-muted-foreground mt-1.5">
+                        LKR {formatMoney(g.current_amount, 0)} / {formatMoney(g.target_amount, 0)} · {pct}%
+                      </p>
                     </div>
                   );
                 })}
               </div>
-            </>
-          )}
-        </div>
-
-        {/* ── Section: Allocation ─────────────────────────────────────────── */}
-        <SectionTitle>Allocation Buckets</SectionTitle>
-
-        {/* Row 3 — Allocation Buckets full width */}
-        <div style={{ gridColumn: "1/5" }}>
-          {strategy.isLoading ? (
-            <div className="h-36 bg-muted rounded-xl animate-pulse" />
-          ) : (
-            <AllocationBuckets buckets={strat?.buckets ?? []} surplus={surplusData} />
-          )}
-        </div>
-
-        {/* ── Section: Strategy ───────────────────────────────────────────── */}
-        <SectionTitle>AI Strategy</SectionTitle>
-
-        {/* Row 4 — AI Strategy full width */}
-        <div style={{ gridColumn: "1/5", background: "var(--card)", borderRadius: 20, overflow: "hidden" }}>
-          <div
-            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px", cursor: "pointer" }}
-            onClick={() => setStrategyOpen((p) => !p)}
-          >
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                <span style={{ fontSize: 14, fontWeight: 800, color: "var(--foreground)" }}>AI Strategy</span>
-                {strat && (
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#7DA6A9", background: "#D5E9EA", padding: "2px 9px", borderRadius: 999 }}>
-                    {strat.fire_style.charAt(0).toUpperCase() + strat.fire_style.slice(1)} FIRE
-                  </span>
-                )}
-                {strat && (
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "var(--muted-foreground)", background: "var(--muted)", padding: "2px 9px", borderRadius: 999 }}>
-                    v{strat.version}
-                  </span>
-                )}
-              </div>
-              {strat && (
-                <div style={{ fontSize: 12, color: "var(--muted-foreground)" }}>
-                  {stratDate} · SWR {(strat.swr * 100).toFixed(1)}%{strat.target_age ? ` · Target age ${strat.target_age}` : ""}
-                </div>
-              )}
-            </div>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--muted-foreground)" strokeWidth="1.5"
-              style={{ transform: strategyOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s", flexShrink: 0 }}>
-              <polyline points="4 6 8 10 12 6" />
-            </svg>
-          </div>
-
-          {strategyOpen && strat && (
-            <div style={{ padding: "0 24px 24px", borderTop: "1px solid var(--border)" }}>
-              <div className="text-[13.5px] leading-relaxed mt-4 mb-3.5" style={{ color: "var(--foreground)" }}>
-                <ReactMarkdown
-                  components={{
-                    h1: (props) => <h1 className="text-[16px] font-bold text-foreground mt-4 mb-2 first:mt-0">{props.children}</h1>,
-                    h2: (props) => <h2 className="text-[13px] font-semibold text-foreground uppercase tracking-wide mt-4 mb-1.5 first:mt-0 border-b border-border/40 pb-1">{props.children}</h2>,
-                    h3: (props) => <h3 className="text-[13px] font-semibold text-foreground mt-3 mb-1">{props.children}</h3>,
-                    h4: (props) => <h4 className="text-[12px] font-semibold text-foreground mt-2 mb-0.5">{props.children}</h4>,
-                    p: (props) => <p className="text-foreground/80 mb-2.5 last:mb-0">{props.children}</p>,
-                    strong: (props) => <strong className="font-semibold text-foreground">{props.children}</strong>,
-                    em: (props) => <em className="italic text-foreground/70">{props.children}</em>,
-                    ul: (props) => <ul className="list-disc pl-4 space-y-1 mb-2.5">{props.children}</ul>,
-                    ol: (props) => <ol className="list-decimal pl-4 space-y-1 mb-2.5">{props.children}</ol>,
-                    li: (props) => <li className="text-foreground/80">{props.children}</li>,
-                    hr: () => <hr className="border-border/40 my-3.5" />,
-                    blockquote: (props) => <blockquote className="border-l-2 border-primary/40 pl-3 italic text-foreground/60 my-2.5">{props.children}</blockquote>,
-                  }}
-                >
-                  {strat.ai_rationale}
-                </ReactMarkdown>
-              </div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>
-                {strat.theories_applied.map((t) => (
-                  <span key={t} style={{ fontSize: 11.5, fontWeight: 700, color: "var(--foreground)", background: "var(--muted)", padding: "4px 11px", borderRadius: 999 }}>
-                    {t}
-                  </span>
-                ))}
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                <div style={{ padding: 14, background: "#A5FFB9", borderRadius: 14 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(0,0,0,0.4)", marginBottom: 6 }}>Conservative</div>
-                  <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", color: "#010001" }}>{(strat.return_conservative * 100).toFixed(1)}%</div>
-                </div>
-                <div style={{ padding: 14, background: "#E8FC85", borderRadius: 14 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(0,0,0,0.4)", marginBottom: 6 }}>Base</div>
-                  <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", color: "#010001" }}>{(strat.return_base * 100).toFixed(1)}%</div>
-                </div>
-                <div style={{ padding: 14, background: "#010001", borderRadius: 14 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(255,255,255,0.35)", marginBottom: 6 }}>Growth</div>
-                  <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", color: "#E8FC85" }}>{(strat.return_growth * 100).toFixed(1)}%</div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ── Section: Goals & Mentoring ──────────────────────────────────── */}
-        <SectionTitle>Goals & Mentoring</SectionTitle>
-
-        {/* Row 5 — Goals (col-span-2) + FI Mentor (col-span-2) */}
-
-        {/* Goals */}
-        <div style={{ gridColumn: "span 2", background: "var(--card)", borderRadius: 20, padding: 22 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "var(--foreground)" }}>Goals</div>
-            <button
-              onClick={() => setAddOpen(true)}
-              className="text-foreground border-border hover:bg-muted transition-colors"
-              style={{ padding: "7px 14px", border: "1.5px solid", borderRadius: 999, background: "transparent", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
-            >
-              + Add
-            </button>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {goals.isLoading ? (
-              <div className="h-20 bg-muted rounded-xl animate-pulse" />
-            ) : (goals.data ?? []).length === 0 ? (
-              <p className="text-[13px] text-muted-foreground text-center py-4">No goals yet.</p>
-            ) : (
-              goals.data!.map((g) => (
-                <GoalRow key={g.id} goal={g} onDelete={() => deleteGoal.mutate(g.id)} />
-              ))
             )}
           </div>
-        </div>
 
-        {/* FI Mentor */}
-        <div style={{ gridColumn: "span 2", background: "#010001", borderRadius: 20, padding: 26, minHeight: 240, display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>FI Mentor</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {advisory.data?.created_at && (
-                <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "rgba(255,255,255,0.3)" }}>
-                  <Clock className="size-3" />
-                  {new Date(advisory.data.created_at).toLocaleDateString("en-LK", { month: "short", day: "numeric" })}
-                </span>
-              )}
+          <div className="rounded-lg bg-[#0A2540] text-white p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-[15px] font-semibold">FI Mentor</h2>
               <button
-                onClick={handleRun}
+                type="button"
+                onClick={() => runAdvisor.mutate()}
                 disabled={runAdvisor.isPending}
-                style={{ padding: "6px 12px", background: "rgba(255,255,255,0.1)", color: "#E8FC85", border: "none", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+                className="rounded-full bg-white/10 hover:bg-white/20 px-3 py-1.5 text-[12px] font-medium inline-flex items-center gap-1.5 transition-colors disabled:opacity-50"
               >
-                {runAdvisor.isPending ? <Loader2 className="inline size-3 mr-1 animate-spin" /> : <Sparkles className="inline size-3 mr-1" />}
-                {runAdvisor.isPending ? "Running…" : "Run"}
+                {runAdvisor.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+                Run advisor
               </button>
             </div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-            {advisory.isLoading ? (
-              <div className="h-20 bg-white/5 rounded-xl animate-pulse" />
-            ) : !advisory.data?.id ? (
-              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", textAlign: "center", lineHeight: 1.6, maxWidth: 280 }}>
-                  {strat
-                    ? `Your FI Mentor has access to your ${strat.fire_style.toUpperCase()} strategy. Click Run for personalised guidance.`
-                    : "Generate your FIRE strategy first, then run a mentoring session."}
-                </p>
+            {advisorQuotaHit && (
+              <div className="mb-3">
+                <QuotaBanner metric="advisor_runs" />
               </div>
+            )}
+            {!report || !report.recommendations ? (
+              <p className="text-[13px] text-white/60 py-6 text-center">
+                Run the advisor for a personalized assessment and next moves.
+              </p>
             ) : (
-              <>
-                {advisory.data.fire_tier_assessment && (
-                  <div style={{ padding: "10px 13px", background: "rgba(232,252,133,0.1)", borderRadius: 12, marginBottom: 4 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <BadgeCheck className="size-3.5 text-[#E8FC85] shrink-0" />
-                      <span style={{ fontSize: 12, color: "#E8FC85", fontWeight: 600, lineHeight: 1.4 }}>
-                        {advisory.data.fire_tier_assessment}
-                      </span>
-                    </div>
-                  </div>
+              <div className="space-y-3">
+                {(report.fire_tier_assessment || report.summary) && (
+                  <p className="text-[13px] text-white/80 leading-relaxed">
+                    {report.fire_tier_assessment || report.summary}
+                  </p>
                 )}
-                {advisory.data.recommendations
-                  .slice()
-                  .sort((a, b) => a.priority - b.priority)
-                  .slice(0, 4)
+                {report.recommendations
+                  .filter((r) => r.status === "pending")
                   .map((r) => (
-                    <RecItem key={r.id} rec={r} reportId={advisory.data!.id} />
+                    <div key={r.id} className="rounded-md bg-white/[0.08] p-3.5">
+                      <p className="text-[13px] font-semibold">{r.title}</p>
+                      <p className="text-[11px] text-white/50 mt-0.5">
+                        Priority {r.priority}
+                        {r.bucket_key ? ` · ${r.bucket_key.replaceAll("_", " ")}` : ""}
+                      </p>
+                      <p className="text-[12px] text-white/70 mt-1.5 leading-relaxed">{r.rationale}</p>
+                      <div className="flex gap-3 mt-2.5">
+                        <button
+                          type="button"
+                          onClick={() => applyRec.mutate({ reportId: report.id, recId: r.id })}
+                          className="text-[12px] font-semibold text-[var(--status-success-text)] hover:underline"
+                        >
+                          {r.action_type === "reminder" ? "Create reminder" : "Apply"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => dismissRec.mutate({ reportId: report.id, recId: r.id })}
+                          className="text-[12px] text-white/50 hover:text-white"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    </div>
                   ))}
-              </>
+                {report.recommendations.every((r) => r.status !== "pending") && (
+                  <p className="text-[13px] text-white/60">All recommendations handled. Run again anytime.</p>
+                )}
+              </div>
             )}
           </div>
         </div>
+      </section>
 
-      </div>
-
-      <p className="text-[11px] text-muted-foreground/60 text-center mt-4">
-        Guidance is informational, not financial advice.
-      </p>
-
-      <AddGoalDialog open={addOpen} onOpenChange={setAddOpen} />
+      <AddGoalDialog
+        open={goalDialogOpen}
+        onOpenChange={setGoalDialogOpen}
+        pending={createGoal.isPending}
+        onSubmit={(data) => createGoal.mutate(data, { onSuccess: () => setGoalDialogOpen(false) })}
+      />
     </div>
   );
 }

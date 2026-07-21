@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# web
 
-## Getting Started
+Minimal "finance-trust" web client for Salli — behavior-identical to `clients/web`
+(same routes, hooks, and API contracts), with a simpler visual system: white canvas,
+near-black ink, deep-navy `#0A2540` emphasis, semantic-only green/amber/red, shadcn/ui.
 
-First, run the development server:
+## Dev
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+corepack pnpm install
+corepack pnpm dev        # http://localhost:3003
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Backend: the FastAPI server from the repo root. Point `NEXT_PUBLIC_API_URL` at it
+(`.env.local` — defaults to `http://localhost:8010` because :8000 may be taken locally):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# from the repo root — Supabase vars cleared so the "Dev login (skip auth)" button works
+SUPABASE_URL= SUPABASE_JWT_SECRET= SUPABASE_ANON_KEY= SUPABASE_SERVICE_ROLE_KEY= \
+  uv run uvicorn salli.interfaces.api.main:app --port 8010
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Without `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY`, `/login` shows a
+**Dev login** button (token `dev-seed-user`). With them set, email/password + Google
+OAuth via Supabase work as in `clients/web`.
 
-## Learn More
+Note: if `DATABASE_URL` goes through the Supabase **transaction pooler** (`:6543`),
+asyncpg prepared statements fail intermittently; use the session pooler (`:5432`)
+for local runs and for `alembic upgrade head`.
 
-To learn more about Next.js, take a look at the following resources:
+## Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `src/lib`, `src/hooks` — copied verbatim from `clients/web` (generated SDK, auth,
+  zustand store, SSE client, react-query hooks). Regenerate the SDK with `pnpm gen:api`.
+- `src/components/ui` — shadcn base-nova primitives (add more via `pnpm dlx shadcn add <name>`).
+- `src/components/shared` — PageHeader, StatCard, MoneyText (decimal-string display,
+  parentheses negatives), EmptyState, StatusChip, QuotaBanner, SectionLabel.
+- `src/app` — all visual code, written new. Screen behaviors follow
+  `../../STITCH_PROMPTS.md` (the behavior inventory + per-screen specs).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Invariants
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Money values from the API are decimal **strings** — never parsed to float for math.
+- Journal entries are immutable — corrections via reversing entries only.
+- The AI never computes figures; tax screens carry the planning-estimate disclaimer.
+- 402 responses render an upgrade banner linking to `/settings?upgrade=1`.

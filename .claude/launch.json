@@ -9,6 +9,13 @@
       "autoPort": true
     },
     {
+      "name": "salli-web-simple",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "clients/web-simple", "--config.verify-deps-before-run=false", "dev"],
+      "port": 3003,
+      "autoPort": true
+    },
+    {
       "name": "salli-site",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--dir", "clients/site", "--config.verify-deps-before-run=false", "dev"],

@@ -29,6 +29,8 @@ import { StatCard } from "@/components/shared/StatCard";
 import { SectionLabel } from "@/components/shared/SectionLabel";
 import { StatusChip } from "@/components/shared/StatusChip";
 import { MoneyText } from "@/components/shared/MoneyText";
+import { EntityCard } from "@/components/shared/EntityCard";
+import { FilterChips } from "@/components/shared/FilterChips";
 import { DebtDialog, type DebtFormValues } from "@/components/debt/DebtDialog";
 import { StrategyToggle } from "@/components/debt/StrategyToggle";
 import { BalanceChart } from "@/components/debt/BalanceChart";
@@ -201,83 +203,68 @@ export default function DebtPage() {
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="inline-flex gap-1.5">
-                {FILTERS.map((f) => (
-                  <Button
-                    key={f}
-                    size="sm"
-                    variant={filter === f ? "default" : "outline"}
-                    onClick={() => setFilter(f)}
-                  >
-                    {f}
-                  </Button>
-                ))}
-              </div>
+              <FilterChips options={FILTERS} value={filter} onChange={setFilter} />
               <div className="inline-flex items-center gap-2">
                 <SectionLabel>Strategy</SectionLabel>
                 <StrategyToggle value={strategy} onChange={setStrategy} />
               </div>
             </div>
 
-            <div className="rounded-lg border bg-card">
-              {visibleDebts.length === 0 ? (
+            {visibleDebts.length === 0 ? (
+              <div className="rounded-lg border bg-card">
                 <p className="p-6 text-sm text-muted-foreground">No debts match this filter.</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">APR</TableHead>
-                      <TableHead className="text-right">Principal</TableHead>
-                      <TableHead className="text-right">Min / mo</TableHead>
-                      <TableHead className="w-24 text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {visibleDebts.map((d) => (
-                      <TableRow key={d.id} className="group">
-                        <TableCell className="font-medium">{d.name}</TableCell>
-                        <TableCell>
-                          {d.is_active ? (
-                            <StatusChip tone="info">Active</StatusChip>
-                          ) : (
-                            <StatusChip tone="success">Paid Off</StatusChip>
-                          )}
-                        </TableCell>
-                        <TableCell className="money text-right">{pct(d.apr)}</TableCell>
-                        <TableCell className="text-right">
-                          <MoneyText value={d.principal} prefix="LKR" />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <MoneyText value={d.minimum_payment} prefix="LKR" />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="inline-flex gap-1 opacity-40 transition-opacity group-hover:opacity-100">
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label="Edit debt"
-                              onClick={() => openEdit(d)}
-                            >
-                              <Pencil className="size-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label="Delete debt"
-                              onClick={() => setDeleting(d)}
-                            >
-                              <Trash2 className="size-3.5" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {visibleDebts.map((d) => (
+                  <EntityCard
+                    key={d.id}
+                    onClick={() => openEdit(d)}
+                    dimmed={!d.is_active}
+                    accent={d.is_active ? "accent" : "muted"}
+                    icon={CreditCard}
+                    iconTone={d.is_active ? "accent" : "muted"}
+                    title={d.name}
+                    titleChip={
+                      d.is_active ? (
+                        <StatusChip tone="info">Active</StatusChip>
+                      ) : (
+                        <StatusChip tone="success">Paid Off</StatusChip>
+                      )
+                    }
+                    subtitle={`${pct(d.apr)} APR · Min LKR ${formatMoney(d.minimum_payment, 0)}/mo`}
+                    value={`LKR ${formatMoney(d.principal, 0)}`}
+                    valueMuted={!d.is_active}
+                    trailing={
+                      <div className="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label="Edit debt"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEdit(d);
+                          }}
+                        >
+                          <Pencil className="size-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label="Delete debt"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleting(d);
+                          }}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
+                    }
+                  />
+                ))}
+              </div>
+            )}
 
             <p className="text-center text-[12px] text-muted-foreground">
               Planning estimate only · assumes fixed APR and on-time payments

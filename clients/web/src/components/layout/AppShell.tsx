@@ -1,7 +1,6 @@
 "use client";
 
 import { AppSidebar } from "./AppSidebar";
-import { MobileDock } from "./MobileDock";
 import { ChatDrawer } from "@/components/chat/ChatDrawer";
 import { useScroogePanel } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -26,7 +25,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <ChatDrawer />
-      <MobileDock />
     </div>
   );
 }

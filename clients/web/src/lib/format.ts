@@ -7,6 +7,11 @@
 export function formatMoney(value: string | null | undefined, decimals = 2): string {
   if (value == null || value === "") return "—";
   let v = String(value).trim();
+  // Normalize exponential decimal strings (e.g. Python Decimal "0E-8") to plain.
+  if (/e/i.test(v)) {
+    const n = Number(v);
+    if (Number.isFinite(n)) v = n.toFixed(20).replace(/0+$/, "").replace(/\.$/, "");
+  }
   const negative = v.startsWith("-") || (v.startsWith("(") && v.endsWith(")"));
   v = v.replace(/^[-(]|\)$/g, "");
   const [intRaw, fracRaw = ""] = v.split(".");

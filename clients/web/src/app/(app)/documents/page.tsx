@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { FileText, FolderOpen, Search, Trash2 } from "lucide-react";
+import { Book, FileText, FolderOpen, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,17 +25,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { EntityCard } from "@/components/shared/EntityCard";
 import { StatusChip, type ChipTone } from "@/components/shared/StatusChip";
 import { useDocuments, type AgentDocument } from "@/hooks/useDocuments";
 import { formatDate } from "@/lib/format";
@@ -93,16 +86,16 @@ export default function DocumentsPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border bg-card">
+      <div>
         {tab === "memories" && docs.length > 0 && (
-          <p className="px-4 pt-3 text-xs text-muted-foreground">
+          <p className="mb-3 text-xs text-muted-foreground">
             Facts Salli remembers about you across conversations. Delete anything — it forgets immediately.
           </p>
         )}
         {documents.isLoading ? (
-          <div className="p-4 space-y-2">
+          <div className="space-y-1.5">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-11" />
+              <Skeleton key={i} className="h-[62px] rounded-xl" />
             ))}
           </div>
         ) : docs.length === 0 ? (
@@ -118,47 +111,30 @@ export default function DocumentsPage() {
             }
           />
         ) : tab === "documents" ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Tags</TableHead>
-                <TableHead className="w-28">Updated</TableHead>
-                <TableHead className="w-14 text-right" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {docs.map((d) => {
-                const src = SOURCE_META[d.source] ?? { label: d.source, tone: "neutral" as ChipTone };
-                return (
-                  <TableRow key={d.id} className="group cursor-pointer" onClick={() => setViewing(d)}>
-                    <TableCell>
-                      <p className="font-medium">{d.title}</p>
-                      {d.description && (
-                        <p className="text-xs text-muted-foreground truncate max-w-md">{d.description}</p>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <StatusChip tone={src.tone}>{src.label}</StatusChip>
-                    </TableCell>
-                    <TableCell>
-                      <span className="flex flex-wrap gap-1">
-                        {d.tags.slice(0, 3).map((t) => (
-                          <StatusChip key={t} tone="neutral">
-                            {t}
-                          </StatusChip>
-                        ))}
-                        {d.tags.length > 3 && <StatusChip tone="neutral">+{d.tags.length - 3}</StatusChip>}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{formatDate(d.updated_at)}</TableCell>
-                    <TableCell className="text-right">
+          <div className="space-y-1.5">
+            {docs.map((d) => {
+              const src = SOURCE_META[d.source] ?? { label: d.source, tone: "neutral" as ChipTone };
+              const preview = (d.description || d.content || "").trim();
+              return (
+                <EntityCard
+                  key={d.id}
+                  icon={FileText}
+                  title={d.title}
+                  titleChip={<StatusChip tone={src.tone}>{src.label}</StatusChip>}
+                  subtitle={
+                    <span className="flex items-center gap-1.5">
+                      {preview && <span className="truncate">{preview}</span>}
+                      {preview && <span className="text-muted-foreground/50">·</span>}
+                      <span className="shrink-0">{formatDate(d.updated_at)}</span>
+                    </span>
+                  }
+                  onClick={() => setViewing(d)}
+                  trailing={
+                    <div className="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
                       <Button
                         variant="ghost"
                         size="icon-sm"
                         aria-label="Delete document"
-                        className="opacity-40 group-hover:opacity-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           setDeleting(d);
@@ -166,43 +142,44 @@ export default function DocumentsPage() {
                       >
                         <Trash2 className="size-3.5" />
                       </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                    </div>
+                  }
+                />
+              );
+            })}
+          </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-56">Key</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead className="w-28">Updated</TableHead>
-                <TableHead className="w-14 text-right" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {docs.map((d) => (
-                <TableRow key={d.id} className="group">
-                  <TableCell className="font-mono text-xs">{d.slug ?? d.title}</TableCell>
-                  <TableCell className="text-[13px] truncate max-w-lg">{d.content ?? "—"}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{formatDate(d.updated_at)}</TableCell>
-                  <TableCell className="text-right">
+          <div className="space-y-1.5">
+            {docs.map((d) => (
+              <EntityCard
+                key={d.id}
+                icon={Book}
+                title={d.slug ?? d.title}
+                subtitle={
+                  <span className="flex items-center gap-1.5">
+                    <span className="truncate">{d.content ?? "—"}</span>
+                    <span className="text-muted-foreground/50">·</span>
+                    <span className="shrink-0">{formatDate(d.updated_at)}</span>
+                  </span>
+                }
+                trailing={
+                  <div className="flex shrink-0 gap-0.5 opacity-40 transition-opacity group-hover:opacity-100">
                     <Button
                       variant="ghost"
                       size="icon-sm"
                       aria-label="Delete memory"
-                      className="opacity-40 group-hover:opacity-100"
-                      onClick={() => setDeleting(d)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleting(d);
+                      }}
                     >
                       <Trash2 className="size-3.5" />
                     </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </div>
+                }
+              />
+            ))}
+          </div>
         )}
       </div>
 

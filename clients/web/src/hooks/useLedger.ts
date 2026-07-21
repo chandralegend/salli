@@ -10,6 +10,7 @@ import {
   incomeStatementLedgerIncomeStatementGet,
   getAccountOverviewAccountsAccountIdOverviewGet,
   reactivateAccountAccountsAccountIdReactivatePost,
+  trialBalanceLedgerTrialBalanceGet,
 } from "@/lib/api/sdk.gen";
 import { apiFetch } from "@/lib/api-fetch";
 
@@ -97,6 +98,16 @@ export function useLedger(fromDate?: string, toDate?: string) {
         throwOnError: true,
       });
       return res.data as JournalEntry[];
+    },
+  });
+
+  // Per-account balances (account_id → signed balance string), for the
+  // account cards. Mirrors the mobile trial-balance query.
+  const trialBalance = useQuery({
+    queryKey: ["trial-balance"],
+    queryFn: async () => {
+      const res = await trialBalanceLedgerTrialBalanceGet({ throwOnError: true });
+      return (res.data as unknown as { balances: Record<string, string> }).balances;
     },
   });
 
@@ -222,6 +233,7 @@ export function useLedger(fromDate?: string, toDate?: string) {
   return {
     accounts,
     entries,
+    trialBalance,
     incomeStatement,
     addAccount,
     updateAccount,

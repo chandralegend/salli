@@ -1,18 +1,25 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Pencil, Plus, RotateCcw, Search, Archive, Sparkles } from "lucide-react";
+import {
+  ArrowDownUp,
+  Archive,
+  BookOpen,
+  CreditCard,
+  Landmark,
+  type LucideIcon,
+  Pencil,
+  PieChart,
+  Plus,
+  RotateCcw,
+  Search,
+  ShoppingBag,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,7 +33,8 @@ import {
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StatusChip, type ChipTone } from "@/components/shared/StatusChip";
-import { MoneyText } from "@/components/shared/MoneyText";
+import { EntityCard, CardSection } from "@/components/shared/EntityCard";
+import { FilterChips } from "@/components/shared/FilterChips";
 import { AccountDialog, type AccountType } from "@/components/ledger/AccountDialog";
 import { EntryDialog, type EntryDraftInit } from "@/components/ledger/EntryDialog";
 import { QuickAddDialog } from "@/components/ledger/QuickAddDialog";
@@ -36,6 +44,7 @@ import { EntryDetailSheet } from "@/components/ledger/EntryDetailSheet";
 import { useLedger, type Account, type JournalEntry } from "@/hooks/useLedger";
 import { useSalliStore } from "@/lib/store";
 import { assessmentYearRange, formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 const TYPE_TONES: Record<string, ChipTone> = {
   asset: "info",
@@ -52,12 +61,47 @@ const SOURCE_TONES: Record<string, ChipTone> = {
   sms: "neutral",
 };
 
+const ACCT_ORDER = ["asset", "liability", "equity", "income", "expense"] as const;
+const ACCT_LABEL: Record<string, string> = {
+  asset: "Assets",
+  liability: "Liabilities",
+  equity: "Equity",
+  income: "Income",
+  expense: "Expenses",
+};
+const ACCT_ICON: Record<string, LucideIcon> = {
+  asset: Landmark,
+  liability: CreditCard,
+  equity: PieChart,
+  income: TrendingUp,
+  expense: ShoppingBag,
+};
+
+const ACCT_FILTERS = ["All", "Asset", "Liability", "Income", "Expense"] as const;
+const ENTRY_FILTERS = ["All", "Income", "Expense", "Manual", "Statement"] as const;
+
+/** "Today — 15 Jul 2026" / "Yesterday — …" / "12 Jul 2026" for a date group. */
+function dateGroupLabel(iso: string): string {
+  const d = new Date(iso);
+  const pretty = d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  const today = new Date();
+  const same = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+  const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+  if (same(d, today)) return `Today — ${pretty}`;
+  if (same(d, yesterday)) return `Yesterday — ${pretty}`;
+  return pretty;
+}
+
 export default function LedgerPage() {
   const ledger = useLedger();
   const ay = assessmentYearRange();
 
   const [tab, setTab] = useState("accounts");
   const [search, setSearch] = useState("");
+  const [acctFilter, setAcctFilter] = useState<(typeof ACCT_FILTERS)[number]>("All");
+  const [entrySearch, setEntrySearch] = useState("");
+  const [entryFilter, setEntryFilter] = useState<(typeof ENTRY_FILTERS)[number]>("All");
+  const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [deactivating, setDeactivating] = useState<Account | null>(null);
@@ -74,7 +118,6 @@ export default function LedgerPage() {
   const consumeQuickAdd = useSalliStore((s) => s.consumeQuickAddEntry);
   useEffect(() => {
     if (quickAddRequest <= quickAddConsumed) return;
-    // Deferred: state updates happen in the timeout callback, not the effect body.
     const t = setTimeout(() => {
       consumeQuickAdd();
       setTab("entries");
@@ -85,14 +128,45 @@ export default function LedgerPage() {
 
   const accounts = useMemo(() => ledger.accounts.data ?? [], [ledger.accounts.data]);
   const entries = ledger.entries.data ?? [];
+  const balances = ledger.trialBalance.data;
   const stmt = ledger.incomeStatement.data;
 
-  const filteredAccounts = useMemo(() => {
+  const accountsById = useMemo(() => {
+    const m: Record<string, Account> = {};
+    for (const a of accounts) m[a.id] = a;
+    return m;
+  }, [accounts]);
+
+  // Accounts filtered by search + type chip, then grouped by type.
+  const groupedAccounts = useMemo(() => {
     const q = search.toLowerCase();
-    return q
-      ? accounts.filter((a) => a.name.toLowerCase().includes(q) || a.code.includes(q))
-      : accounts;
-  }, [accounts, search]);
+    const list = accounts.filter((a) => {
+      if (acctFilter !== "All" && a.type !== acctFilter.toLowerCase()) return false;
+      if (q && !`${a.code} ${a.name}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+    return ACCT_ORDER.map((type) => ({ type, items: list.filter((a) => a.type === type) })).filter(
+      (g) => g.items.length > 0
+    );
+  }, [accounts, acctFilter, search]);
+
+  // Entries filtered by search + type chip, then grouped by date (sorted).
+  const groupedEntries = useMemo(() => {
+    const q = entrySearch.toLowerCase();
+    let list = entries;
+    if (q) list = list.filter((e) => e.description.toLowerCase().includes(q));
+    if (entryFilter === "Manual" || entryFilter === "Statement") {
+      list = list.filter((e) => e.source === entryFilter.toLowerCase());
+    } else if (entryFilter === "Income" || entryFilter === "Expense") {
+      list = list.filter((e) =>
+        e.postings.some((p) => accountsById[p.account_id]?.type === entryFilter.toLowerCase())
+      );
+    }
+    const groups: Record<string, JournalEntry[]> = {};
+    for (const e of list) (groups[e.entry_date] ??= []).push(e);
+    const factor = sortDir === "desc" ? -1 : 1;
+    return Object.entries(groups).sort(([a], [b]) => (a < b ? 1 : -1) * factor);
+  }, [entries, entrySearch, entryFilter, sortDir, accountsById]);
 
   function submitAccount(data: { code: string; name: string; type: AccountType; currency: string }) {
     const close = () => {
@@ -165,165 +239,185 @@ export default function LedgerPage() {
         </TabsList>
 
         {/* ── Chart of Accounts ── */}
-        <TabsContent value="accounts" className="mt-4">
-          <div className="rounded-lg border bg-card">
-            <div className="p-4 border-b">
-              <div className="relative max-w-xs">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search accounts…"
-                  className="pl-8"
-                />
-              </div>
-            </div>
-            {ledger.accounts.isLoading ? (
-              <p className="p-6 text-sm text-muted-foreground">Loading…</p>
-            ) : filteredAccounts.length === 0 ? (
+        <TabsContent value="accounts" className="mt-4 space-y-3">
+          <div className="relative max-w-xs">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search accounts…"
+              className="pl-8"
+            />
+          </div>
+          <FilterChips options={ACCT_FILTERS} value={acctFilter} onChange={setAcctFilter} />
+
+          {ledger.accounts.isLoading ? (
+            <p className="p-6 text-sm text-muted-foreground">Loading…</p>
+          ) : groupedAccounts.length === 0 ? (
+            <div className="rounded-lg border bg-card">
               <EmptyState
                 icon={BookOpen}
-                title={search ? "No matches" : "No accounts yet"}
+                title={search || acctFilter !== "All" ? "No matches" : "No accounts yet"}
                 body={
-                  search
-                    ? "Try a different name or code."
+                  search || acctFilter !== "All"
+                    ? "Try a different name, code, or filter."
                     : "Add your first account, or redo profile setup to seed a starter chart."
                 }
                 action={
-                  !search ? (
+                  !search && acctFilter === "All" ? (
                     <Button size="sm" variant="outline" onClick={() => setAccountDialogOpen(true)}>
                       Add account
                     </Button>
                   ) : undefined
                 }
               />
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-20">Code</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Currency</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-24 text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAccounts.map((a) => (
-                    <TableRow
-                      key={a.id}
-                      className="group cursor-pointer"
-                      onClick={() => setDetailAccountId(a.id)}
-                    >
-                      <TableCell className="font-mono text-xs text-muted-foreground">{a.code}</TableCell>
-                      <TableCell className="font-medium">{a.name}</TableCell>
-                      <TableCell>
-                        <StatusChip tone={TYPE_TONES[a.type] ?? "neutral"}>
-                          {a.type[0].toUpperCase() + a.type.slice(1)}
-                        </StatusChip>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-[13px]">{a.currency}</TableCell>
-                      <TableCell>
-                        {a.is_active !== false ? (
-                          <StatusChip tone="success">Active</StatusChip>
-                        ) : (
-                          <StatusChip tone="neutral">Inactive</StatusChip>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="inline-flex gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label="Edit account"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingAccount(a);
-                              setAccountDialogOpen(true);
-                            }}
-                          >
-                            <Pencil className="size-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label="Deactivate account"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeactivating(a);
-                            }}
-                          >
-                            <Archive className="size-3.5" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {groupedAccounts.map((group) => {
+                const Icon = ACCT_ICON[group.type] ?? Landmark;
+                return (
+                  <CardSection
+                    key={group.type}
+                    label={ACCT_LABEL[group.type]}
+                    meta={`${group.items.length} account${group.items.length === 1 ? "" : "s"}`}
+                  >
+                    {group.items.map((a) => {
+                      const isAsset = a.type === "asset";
+                      const bal = balances?.[a.id];
+                      return (
+                        <EntityCard
+                          key={a.id}
+                          onClick={() => setDetailAccountId(a.id)}
+                          dimmed={a.is_active === false}
+                          accent={isAsset && a.is_active !== false ? "accent" : "muted"}
+                          icon={Icon}
+                          iconTone={isAsset ? "accent" : "muted"}
+                          title={a.name}
+                          titleChip={
+                            <StatusChip tone={TYPE_TONES[a.type] ?? "neutral"}>
+                              {a.type[0].toUpperCase() + a.type.slice(1)}
+                            </StatusChip>
+                          }
+                          subtitle={`${a.code} · ${a.currency} · ${a.is_active === false ? "Inactive" : "Active"}`}
+                          value={bal !== undefined ? `LKR ${formatMoney(bal, 0)}` : "—"}
+                          valueMuted={!isAsset}
+                          chevron
+                          trailing={
+                            <div className="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Edit account"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingAccount(a);
+                                  setAccountDialogOpen(true);
+                                }}
+                              >
+                                <Pencil className="size-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Deactivate account"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeactivating(a);
+                                }}
+                              >
+                                <Archive className="size-3.5" />
+                              </Button>
+                            </div>
+                          }
+                        />
+                      );
+                    })}
+                  </CardSection>
+                );
+              })}
+            </div>
+          )}
         </TabsContent>
 
         {/* ── Journal Entries ── */}
-        <TabsContent value="entries" className="mt-4">
-          <div className="rounded-lg border bg-card">
-            {ledger.entries.isLoading ? (
-              <p className="p-6 text-sm text-muted-foreground">Loading…</p>
-            ) : entries.length === 0 ? (
+        <TabsContent value="entries" className="mt-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                value={entrySearch}
+                onChange={(e) => setEntrySearch(e.target.value)}
+                placeholder="Search entries…"
+                className="pl-8"
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
+            >
+              <ArrowDownUp className="size-3.5" /> {sortDir === "desc" ? "Newest" : "Oldest"}
+            </Button>
+          </div>
+          <FilterChips options={ENTRY_FILTERS} value={entryFilter} onChange={setEntryFilter} />
+
+          {ledger.entries.isLoading ? (
+            <p className="p-6 text-sm text-muted-foreground">Loading…</p>
+          ) : groupedEntries.length === 0 ? (
+            <div className="rounded-lg border bg-card">
               <EmptyState
                 icon={BookOpen}
-                title="Nothing posted yet"
-                body="Add an entry, or upload a bank statement and post the parsed transactions."
+                title={entrySearch || entryFilter !== "All" ? "No matching entries" : "Nothing posted yet"}
+                body={
+                  entrySearch || entryFilter !== "All"
+                    ? "Try a different search or filter."
+                    : "Add an entry, or upload a bank statement and post the parsed transactions."
+                }
                 action={
-                  <Button size="sm" variant="outline" onClick={() => setEntryDialogOpen(true)}>
-                    Add entry
-                  </Button>
+                  !entrySearch && entryFilter === "All" ? (
+                    <Button size="sm" variant="outline" onClick={() => setEntryDialogOpen(true)}>
+                      Add entry
+                    </Button>
+                  ) : undefined
                 }
               />
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-28">Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="w-28 text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {entries.map((e) => {
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {groupedEntries.map(([date, dayEntries]) => (
+                <CardSection key={date} label={dateGroupLabel(date)}>
+                  {dayEntries.map((e) => {
                     const reversed = Boolean(e.reversed_by);
-                    const amount = e.postings.find((p) => p.direction === 1)?.amount ?? "0";
+                    const debit = e.postings.find((p) => p.direction === 1);
+                    const credit = e.postings.find((p) => p.direction === -1);
+                    const debitAcc = debit ? accountsById[debit.account_id] : undefined;
+                    const creditAcc = credit ? accountsById[credit.account_id] : undefined;
+                    const isIncome = debitAcc?.type === "asset" && creditAcc?.type === "income";
+                    const amount = debit?.amount ?? "0";
                     return (
-                      <TableRow
+                      <EntityCard
                         key={e.id}
-                        className="group cursor-pointer"
                         onClick={() => setDetailEntry(e)}
-                      >
-                        <TableCell className="font-mono text-xs text-muted-foreground">{e.entry_date}</TableCell>
-                        <TableCell className={reversed ? "line-through text-muted-foreground" : "font-medium"}>
-                          {e.description}
-                          {reversed && (
-                            <StatusChip tone="neutral" className="ml-2 no-underline">
-                              reversed
-                            </StatusChip>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <StatusChip tone={SOURCE_TONES[e.source] ?? "neutral"}>{e.source}</StatusChip>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <MoneyText value={amount} prefix="LKR" />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {!reversed && (
+                        dimmed={reversed}
+                        accent={isIncome ? "accent" : "muted"}
+                        title={<span className={cn(reversed && "line-through")}>{e.description}</span>}
+                        titleChip={
+                          reversed ? (
+                            <StatusChip tone="neutral">reversed</StatusChip>
+                          ) : (
+                            <StatusChip tone={SOURCE_TONES[e.source] ?? "neutral"}>{e.source}</StatusChip>
+                          )
+                        }
+                        subtitle={`DR: ${debitAcc?.name ?? "—"} · CR: ${creditAcc?.name ?? "—"}`}
+                        value={`${isIncome ? "+" : "−"} LKR ${formatMoney(amount, 0)}`}
+                        valueMuted={!isIncome}
+                        trailing={
+                          !reversed ? (
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-40 group-hover:opacity-100 transition-opacity"
+                              className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
                               onClick={(ev) => {
                                 ev.stopPropagation();
                                 setReversing(e);
@@ -331,15 +425,15 @@ export default function LedgerPage() {
                             >
                               <RotateCcw className="size-3.5" /> Reverse
                             </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
+                          ) : undefined
+                        }
+                      />
                     );
                   })}
-                </TableBody>
-              </Table>
-            )}
-          </div>
+                </CardSection>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         {/* ── Income Statement ── */}
@@ -363,12 +457,12 @@ export default function LedgerPage() {
                       {rows.map(([name, amount]) => (
                         <div key={name} className="flex justify-between py-2 text-sm">
                           <span>{name}</span>
-                          <MoneyText value={amount} />
+                          <span className="money">{formatMoney(amount)}</span>
                         </div>
                       ))}
                       <div className="flex justify-between py-2.5 text-sm font-semibold">
                         <span>Total</span>
-                        <MoneyText value={String(total)} />
+                        <span className="money">{formatMoney(String(total))}</span>
                       </div>
                     </div>
                   )}
@@ -455,7 +549,7 @@ export default function LedgerPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Detail sheets (click-through from rows) */}
+      {/* Detail sheets (click-through from cards) */}
       <AccountDetailSheet
         accountId={detailAccountId}
         open={Boolean(detailAccountId)}

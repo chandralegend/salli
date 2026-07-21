@@ -4,14 +4,6 @@ import { useState } from "react";
 import { AlertTriangle, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -25,7 +17,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StatCard } from "@/components/shared/StatCard";
 import { StatusChip } from "@/components/shared/StatusChip";
-import { MoneyText } from "@/components/shared/MoneyText";
+import { EntityCard } from "@/components/shared/EntityCard";
 import {
   SubscriptionDialog,
   type SubscriptionFormData,
@@ -117,10 +109,10 @@ export default function SubscriptionsPage() {
       </div>
 
       {/* List */}
-      <div className="rounded-lg border bg-card">
-        {subscriptions.isLoading ? (
-          <p className="p-6 text-sm text-muted-foreground">Loading…</p>
-        ) : rows.length === 0 ? (
+      {subscriptions.isLoading ? (
+        <p className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">Loading…</p>
+      ) : rows.length === 0 ? (
+        <div className="rounded-lg border bg-card">
           <EmptyState
             icon={RefreshCw}
             title="No subscriptions tracked yet"
@@ -131,87 +123,75 @@ export default function SubscriptionsPage() {
               </Button>
             }
           />
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Frequency</TableHead>
-                <TableHead className="w-32">Next due</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-right">Monthly eq.</TableHead>
-                <TableHead className="w-24 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((s) => {
-                const report = reportFor(s.id);
-                const alerts = report?.alerts ?? [];
-                const monthly = monthlyEquivalent(Number(s.amount), s.frequency);
-                return (
-                  <TableRow key={s.id} className="group">
-                    <TableCell className="font-medium">
-                      {s.name}
-                      {!s.is_active && (
-                        <StatusChip tone="neutral" className="ml-2">
-                          inactive
-                        </StatusChip>
-                      )}
-                      {alerts.length > 0 && (
-                        <div className="mt-1 space-y-0.5">
-                          {alerts.map((a, i) => (
-                            <div
-                              key={i}
-                              className="flex items-center gap-1 text-[11px] text-[var(--status-danger-text)]"
-                            >
-                              <AlertTriangle className="size-3" />
-                              <span>{a.message}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {rows.map((s) => {
+            const report = reportFor(s.id);
+            const alerts = report?.alerts ?? [];
+            const monthly = monthlyEquivalent(Number(s.amount), s.frequency);
+            return (
+              <div key={s.id} className="space-y-1">
+                <EntityCard
+                  onClick={() => openEdit(s)}
+                  dimmed={!s.is_active}
+                  icon={RefreshCw}
+                  title={s.name}
+                  titleChip={
+                    <>
                       <StatusChip tone="neutral" className="capitalize">
                         {s.frequency}
                       </StatusChip>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-[13px]">
-                      {formatDate(s.next_due_date)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <MoneyText value={s.amount} prefix="LKR" />
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      <MoneyText value={String(monthly)} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="inline-flex gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label="Edit subscription"
-                          onClick={() => openEdit(s)}
-                        >
-                          <Pencil className="size-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label="Delete subscription"
-                          onClick={() => setDeleting(s)}
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
+                      {!s.is_active && <StatusChip tone="neutral">inactive</StatusChip>}
+                    </>
+                  }
+                  subtitle={`next ${formatDate(s.next_due_date)} · LKR ${formatMoney(String(monthly))}/mo`}
+                  value={`LKR ${formatMoney(s.amount)}`}
+                  trailing={
+                    <div className="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Edit subscription"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEdit(s);
+                        }}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Delete subscription"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleting(s);
+                        }}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  }
+                />
+                {alerts.length > 0 && (
+                  <div className="space-y-0.5 pl-3">
+                    {alerts.map((a, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-1 text-[11px] text-[var(--status-danger-text)]"
+                      >
+                        <AlertTriangle className="size-3 shrink-0" />
+                        <span>{a.message}</span>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <SubscriptionDialog
         open={dialogOpen}

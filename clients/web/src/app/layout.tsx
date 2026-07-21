@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { MobileGate } from "@/components/layout/MobileGate";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -25,6 +26,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans">
         <Providers>
           <TooltipProvider>{children}</TooltipProvider>
+          <MobileGate />
         </Providers>
       </body>
     </html>

@@ -26,8 +26,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StatCard } from "@/components/shared/StatCard";
-import { StatusChip } from "@/components/shared/StatusChip";
-import { MoneyText } from "@/components/shared/MoneyText";
+import { StatusChip, type ChipTone } from "@/components/shared/StatusChip";
+import { EntityCard, CardSection } from "@/components/shared/EntityCard";
 import {
   PolicyDialog,
   type PolicyFormValues,
@@ -37,6 +37,23 @@ import { useInsurance, type Policy, type Target as CoverageTarget } from "@/hook
 import { formatMoney, formatDate } from "@/lib/format";
 
 const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+
+/** Tinted chip tone per policy type (life/health/motor/property/other). */
+const POLICY_TYPE_TONES: Record<string, ChipTone> = {
+  life: "info",
+  health: "success",
+  motor: "warning",
+  property: "neutral",
+  other: "neutral",
+};
+
+/** Short label for a premium cadence, e.g. yearly → "yr". */
+const FREQ_ABBREV: Record<string, string> = {
+  yearly: "yr",
+  monthly: "mo",
+  quarterly: "qtr",
+};
+const freqAbbrev = (f: string) => FREQ_ABBREV[f] ?? f;
 
 export default function InsurancePage() {
   const ins = useInsurance();
@@ -142,14 +159,14 @@ export default function InsurancePage() {
 
         {/* ── Policies ── */}
         <TabsContent value="policies" className="mt-4">
-          <div className="rounded-lg border bg-card">
-            {ins.policies.isLoading ? (
-              <div className="p-4 space-y-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-11" />
-                ))}
-              </div>
-            ) : activePolicies.length === 0 ? (
+          {ins.policies.isLoading ? (
+            <div className="space-y-1.5">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-[62px] rounded-xl" />
+              ))}
+            </div>
+          ) : activePolicies.length === 0 ? (
+            <div className="rounded-lg border bg-card">
               <EmptyState
                 icon={Shield}
                 title="No policies yet"
@@ -167,78 +184,70 @@ export default function InsurancePage() {
                   </Button>
                 }
               />
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Provider</TableHead>
-                    <TableHead className="text-right">Coverage</TableHead>
-                    <TableHead className="text-right">Premium</TableHead>
-                    <TableHead className="w-28">Expires</TableHead>
-                    <TableHead className="w-24 text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {activePolicies.map((p) => (
-                    <TableRow key={p.id} className="group">
-                      <TableCell className="font-medium">{p.name}</TableCell>
-                      <TableCell>
-                        <StatusChip tone="info">{cap(p.policy_type)}</StatusChip>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-[13px]">{p.provider}</TableCell>
-                      <TableCell className="text-right">
-                        <MoneyText value={p.coverage_amount} prefix="LKR" decimals={0} />
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground text-[13px]">
-                        <MoneyText value={p.premium_amount} decimals={0} />
-                        <span className="ml-1 text-xs">/{p.premium_frequency}</span>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {formatDate(p.expiry_date)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="inline-flex gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label="Edit policy"
-                            onClick={() => {
-                              setEditingPolicy(p);
-                              setPolicyDialogOpen(true);
-                            }}
-                          >
-                            <Pencil className="size-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label="Delete policy"
-                            onClick={() => setDeletingPolicy(p)}
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {activePolicies.map((p) => (
+                <EntityCard
+                  key={p.id}
+                  onClick={() => {
+                    setEditingPolicy(p);
+                    setPolicyDialogOpen(true);
+                  }}
+                  accent="accent"
+                  icon={Shield}
+                  iconTone="accent"
+                  title={p.name}
+                  titleChip={
+                    <StatusChip tone={POLICY_TYPE_TONES[p.policy_type] ?? "neutral"}>
+                      {cap(p.policy_type)}
+                    </StatusChip>
+                  }
+                  subtitle={`${p.provider} · LKR ${formatMoney(p.premium_amount, 0)}/${freqAbbrev(p.premium_frequency)} · expires ${formatDate(p.expiry_date)}`}
+                  value={`LKR ${formatMoney(p.coverage_amount, 0)}`}
+                  trailing={
+                    <div className="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Edit policy"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingPolicy(p);
+                          setPolicyDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Delete policy"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeletingPolicy(p);
+                        }}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  }
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         {/* ── Targets ── */}
         <TabsContent value="targets" className="mt-4">
-          <div className="rounded-lg border bg-card">
-            {ins.targets.isLoading ? (
-              <div className="p-4 space-y-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-11" />
-                ))}
-              </div>
-            ) : targets.length === 0 ? (
+          {ins.targets.isLoading ? (
+            <div className="space-y-1.5">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-[52px] rounded-xl" />
+              ))}
+            </div>
+          ) : targets.length === 0 ? (
+            <div className="rounded-lg border bg-card">
               <EmptyState
                 icon={Target}
                 title="No coverage targets"
@@ -249,39 +258,30 @@ export default function InsurancePage() {
                   </Button>
                 }
               />
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Policy type</TableHead>
-                    <TableHead className="text-right">Target amount</TableHead>
-                    <TableHead className="w-16 text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {targets.map((t) => (
-                    <TableRow key={t.policy_type} className="group">
-                      <TableCell className="font-medium">{cap(t.policy_type)}</TableCell>
-                      <TableCell className="text-right">
-                        <MoneyText value={t.target_amount} prefix="LKR" decimals={0} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label="Delete target"
-                          className="opacity-40 group-hover:opacity-100 transition-opacity"
-                          onClick={() => setDeletingTarget(t)}
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {targets.map((t) => (
+                <EntityCard
+                  key={t.policy_type}
+                  icon={Target}
+                  title={cap(t.policy_type)}
+                  value={`LKR ${formatMoney(t.target_amount, 0)}`}
+                  trailing={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Delete target"
+                      className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={() => setDeletingTarget(t)}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  }
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         {/* ── Coverage Report ── */}

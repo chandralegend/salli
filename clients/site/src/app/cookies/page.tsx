@@ -12,13 +12,13 @@ export default function CookiesPage() {
     <LegalLayout title="Cookie Policy" updated="9 July 2026">
       <p>
         Cookies are small pieces of data a website stores in your browser. Salli keeps its use of
-        cookies deliberately minimal — we don&apos;t run third-party advertising trackers.
+        cookies deliberately minimal, and we don&apos;t run third-party advertising trackers.
       </p>
 
       <h2>1. Strictly necessary</h2>
       <p>
         Used to keep you signed in and to protect your account (authentication tokens, session
-        state, and CSRF protection). Salli won&apos;t function without these — they can&apos;t be turned
+        state, and CSRF protection). Salli won&apos;t function without these: they can&apos;t be turned
         off, though you can clear them at any time by signing out or clearing your browser
         storage.
       </p>
@@ -33,7 +33,7 @@ export default function CookiesPage() {
       <h2>3. Analytics</h2>
       <p>
         We may use privacy-respecting, aggregate analytics to understand how the product is used
-        and where it breaks — for example, page views or error rates. We do not use this data to
+        and where it breaks, for example page views or error rates. We do not use this data to
         build advertising profiles, and we don&apos;t share it with ad networks.
       </p>
 

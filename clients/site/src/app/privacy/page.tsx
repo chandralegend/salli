@@ -20,16 +20,16 @@ export default function PrivacyPage() {
       <p>We collect information in three ways:</p>
       <ul>
         <li>
-          <strong>Account information</strong> — your name, email address, and authentication
+          <strong>Account information</strong>: your name, email address, and authentication
           details when you sign up (directly, or via Google/Apple sign-in).
         </li>
         <li>
-          <strong>Financial data you provide</strong> — ledger entries, account balances, income
+          <strong>Financial data you provide</strong>: ledger entries, account balances, income
           and expense records, goals, and any bank statements or documents you upload for
           parsing.
         </li>
         <li>
-          <strong>Usage data</strong> — how you interact with the product (pages visited, features
+          <strong>Usage data</strong>: how you interact with the product (pages visited, features
           used, AI messages sent), collected to operate and improve the service.
         </li>
       </ul>
@@ -52,7 +52,7 @@ export default function PrivacyPage() {
       <p>
         When you ask Scrooge a question, relevant parts of your ledger data are sent to our AI
         provider to generate a response. This is used only to answer your query within your
-        session — it is not used to train the underlying model. All monetary figures shown to you
+        session; it is not used to train the underlying model. All monetary figures shown to you
         are computed by Salli&apos;s own deterministic engine beforehand; the AI explains and
         contextualises numbers, it does not calculate them.
       </p>
@@ -69,10 +69,10 @@ export default function PrivacyPage() {
       <h2>5. Sub-processors</h2>
       <p>We rely on a small number of vetted infrastructure and service providers to run Salli:</p>
       <ul>
-        <li><strong>Database, authentication &amp; storage</strong> — for the ledger database, login, and document storage.</li>
-        <li><strong>Application hosting</strong> — for running the API and web application.</li>
-        <li><strong>AI provider</strong> — to power the Scrooge assistant.</li>
-        <li><strong>Payment processor</strong> — to handle paid subscriptions as merchant of record.</li>
+        <li><strong>Database, authentication &amp; storage</strong>: for the ledger database, login, and document storage.</li>
+        <li><strong>Application hosting</strong>: for running the API and web application.</li>
+        <li><strong>AI provider</strong>: to power the Scrooge assistant.</li>
+        <li><strong>Payment processor</strong>: to handle paid subscriptions as merchant of record.</li>
       </ul>
       <p>
         Each of these providers processes data only as needed to deliver their part of the

@@ -44,10 +44,10 @@ const TIERS: Tier[] = [
 const COMPARE = [
   { label: "Immutable double-entry ledger", free: "✓", plus: "✓", pro: "✓" },
   { label: "Connected accounts", free: "1", plus: "Unlimited", pro: "Unlimited" },
-  { label: "2025/26 tax engine & payable", free: "—", plus: "✓", pro: "✓" },
-  { label: "AI quick-add & explanations", free: "—", plus: "✓", pro: "✓" },
-  { label: "Debt payoff & FIRE planning", free: "—", plus: "✓", pro: "✓" },
-  { label: "Guided return + human review", free: "—", plus: "—", pro: "✓" },
+  { label: "2025/26 tax engine & payable", free: "✕", plus: "✓", pro: "✓" },
+  { label: "AI quick-add & explanations", free: "✕", plus: "✓", pro: "✓" },
+  { label: "Debt payoff & FIRE planning", free: "✕", plus: "✓", pro: "✓" },
+  { label: "Guided return + human review", free: "✕", plus: "✕", pro: "✓" },
   { label: "Support", free: "Community", plus: "Email", pro: "Priority" },
 ];
 

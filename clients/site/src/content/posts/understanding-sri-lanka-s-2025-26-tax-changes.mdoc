@@ -2,50 +2,62 @@
 title: Understanding Sri Lanka's 2025/26 tax changes
 excerpt: >-
   Relief thresholds, the progressive bands, and how APIT withholding actually
-  works — explained without the jargon.
+  works, explained without the jargon.
 category: Tax
 publishedDate: 2026-02-10
 readTime: 8 min read
 coverStyle: red-gradient
+coverImage: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?q=80&w=1600&auto=format&fit=crop"
+coverImageAlt: "A pile of banknotes, evoking personal income and take-home pay"
 author: The Salli team
 ---
-If you earn in Sri Lanka, the 2025/26 year brought changes worth understanding — not because you need to become a tax expert, but because a little clarity is the difference between confidently knowing your number and quietly hoping you got it right.
+If you earn in Sri Lanka, the 2025/26 year brought changes worth understanding, not because you need to become a tax expert, but because a little clarity is the difference between confidently knowing your number and quietly hoping you got it right.
 
-This is a plain-language overview of how personal income tax is structured. It is general guidance, not advice for your specific situation — always confirm the current figures with the Inland Revenue Department or a qualified professional before you file.
+![A pile of banknotes, evoking personal income and take-home pay](https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?q=80&w=1600&auto=format&fit=crop)
+
+This is a plain-language overview of how personal income tax is structured. It is general guidance, not advice for your specific situation, so always confirm the current figures with the Inland Revenue Department or a qualified professional before you file.
 
 ## Start with relief
 
 Before any tax is calculated, a portion of your income is set aside as tax-free personal relief. Think of it as a threshold: income up to that line isn't taxed at all. Only what you earn above it enters the calculation.
 
-This matters because it changes the shape of the whole result. Two people with similar salaries can owe very different amounts once relief, deductions and credits are applied — which is exactly why guessing from a percentage rarely works.
+For the 2025/26 year of assessment, that threshold is **LKR 1,800,000**, up from LKR 1,200,000 the year before, a 50% increase effective 1 April 2025. This matters because it changes the shape of the whole result. Two people with similar salaries can owe very different amounts once relief, deductions and credits are applied, which is exactly why guessing from a percentage rarely works.
 
 ## Then the progressive bands
 
-Income above the relief threshold is taxed progressively. That means it's sliced into bands, and each band is taxed at its own rate — the lowest slice at the lowest rate, the next slice higher, and so on. A common misunderstanding is that moving into a higher band taxes *all* your income at that rate. It doesn't: only the portion inside each band is taxed at that band's rate.
+Income above the relief threshold is taxed progressively. That means it's sliced into bands, and each band is taxed at its own rate: the lowest slice at the lowest rate, the next slice higher, and so on. Here's the current structure for taxable income (income after relief has already been deducted):
 
-- Your first slice of taxable income is taxed at the lowest rate.
-- Each further slice is taxed at a progressively higher rate.
-- Only income that reaches a band is taxed at that band's rate.
+| Band | Taxable income slice | Rate |
+|---|---|---|
+| 1 | First LKR 1,000,000 | 6% |
+| 2 | Next LKR 500,000 | 18% |
+| 3 | Next LKR 500,000 | 24% |
+| 4 | Next LKR 500,000 | 30% |
+| 5 | Balance above that | 36% |
 
-Progressive tax is not a cliff. Earning one rupee more never leaves you worse off — only that extra rupee is taxed at the higher rate.
+*Source: [TaxCalculator.lk, "New Sri Lanka Income Tax Rates 2025/2026 Explained"](https://taxcalculator.lk/new-sri-lanka-income-tax-rates-2025-2026-explained-what-changed-and-how-it-affects-your-salary/).*
+
+A common misunderstanding is that moving into a higher band taxes *all* your income at that rate. It doesn't: only the portion inside each band is taxed at that band's rate. Someone with LKR 2,500,000 of taxable income doesn't pay 18% on all of it: the first LKR 1,000,000 is still taxed at 6%, and only the next LKR 500,000 (the slice that falls in band 2) is taxed at 18%.
+
+Progressive tax is not a cliff. Earning one rupee more never leaves you worse off; only that extra rupee is taxed at the higher rate.
 
 ## Withholding: APIT and AIT
 
 Much of your tax may already be collected before you ever file, through withholding. Two names come up most often:
 
-- **APIT** — advance tax withheld from employment income by your employer, based on your expected annual earnings.
-- **AIT** — advance tax withheld on certain investment income, such as interest, at the point it's paid to you.
+- **APIT**: advance tax withheld from employment income by your employer, based on your expected annual earnings.
+- **AIT**: advance tax withheld on certain investment income, such as interest, at the point it's paid to you.
 
-Both are credits against your final bill. If more was withheld than you actually owe, that difference is yours to reclaim — which is one of the most common ways people leave money on the table simply because they never checked.
+Both are credits against your final bill. If more was withheld than you actually owe, that difference is yours to reclaim, and that's one of the most common ways people leave money on the table simply because they never checked.
 
 ## Foreign income
 
-If you're paid from abroad — a growing reality for freelancers and remote workers — there are specific rules and concessions that can apply, along with credits for tax already paid overseas. The details reward a careful read, because the difference between handling them well and poorly can be significant.
+If you're paid from abroad (a growing reality for freelancers and remote workers), there are specific rules and concessions that can apply, along with credits for tax already paid overseas. The details reward a careful read, because the difference between handling them well and poorly can be significant.
 
 > The goal isn't to memorise the tax code. It's to arrive at a number you can defend.
 
 ## How Salli handles all this
 
-Salli runs a deterministic tax engine over a versioned, chartered-accountant-reviewed rule pack. It applies relief, walks the progressive bands, credits your APIT and AIT, and handles foreign-income rules — then records exactly which rules produced your figure, so it stays reproducible years later even after rates change.
+Salli runs a deterministic tax engine over a versioned, chartered-accountant-reviewed rule pack. It applies relief, walks the progressive bands, credits your APIT and AIT, and handles foreign-income rules, then records exactly which rules produced your figure, so it stays reproducible years later even after rates change.
 
 The AI never invents any of it. It reads your documents and explains the result in plain language, but the math stays in the engine, auditable and repeatable. That's the whole point: a number you understand, and one you can stand behind.

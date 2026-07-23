@@ -1,24 +1,61 @@
 ---
 title: "Double-entry, explained for humans"
 excerpt: >-
-  Why every rupee shows up twice — and how that makes your numbers impossible
+  Why every rupee shows up twice, and how that makes your numbers impossible
   to fudge.
 category: Money basics
 publishedDate: 2026-01-22
-readTime: 5 min read
+readTime: 7 min read
 coverStyle: red-gradient
+coverImage: "https://images.unsplash.com/photo-1591696205602-2f950c417cb9?q=80&w=1600&auto=format&fit=crop"
+coverImageAlt: "A green upward-trending line chart displayed on a laptop screen"
 author: The Salli team
 ---
-Double-entry accounting has a reputation for being intimidating, but the core idea is simple: every transaction touches two accounts, not one.
+Double-entry accounting has a reputation for being intimidating, but the core idea is simple: every transaction touches two accounts, not one. It's a 500-year-old idea, first written down by the Venetian friar Luca Pacioli in 1494, and it's still how every real accounting system, including Salli's, keeps your numbers honest.
+
+![A green upward-trending line chart displayed on a laptop screen](https://images.unsplash.com/photo-1591696205602-2f950c417cb9?q=80&w=1600&auto=format&fit=crop)
 
 ## Every rupee, twice
 
-Spend 4,500 on groceries from your card, and two things happened: your groceries expense went up by 4,500, and your card balance went up by 4,500 too (you owe more). One entry, two sides — a debit and a credit that always balance to zero.
+Spend LKR 4,500 on groceries from your card, and two things happened, not one: your groceries expense went up by 4,500, and your card balance went up by 4,500 too (you owe more). One entry, two sides: a debit and a credit that always balance to zero.
+
+That "always balances" part is the whole point. It's not a rule imposed for accountants' convenience; it falls directly out of what a transaction *is*. Money doesn't appear or disappear; it moves from one place to another, or an obligation is created alongside an expense. Recording only one side of that movement would mean recording half of what actually happened.
+
+## The five account types, and which way they move
+
+Every account in a ledger is one of five types, and each has a "normal" direction it grows in:
+
+| Account type | Grows with | Example |
+|---|---|---|
+| Assets | Debit | Bank balance, cash, receivables |
+| Liabilities | Credit | Credit card balance, loans owed |
+| Equity | Credit | Owner's capital, retained earnings |
+| Income | Credit | Salary received, freelance invoice paid |
+| Expenses | Debit | Groceries, rent, utilities |
+
+You don't need to memorize which side is which to use Salli, but this table is why the groceries example above works the way it does: an expense (groceries) debits, and a liability (card balance owed) credits. Same transaction, opposite-direction entries, net effect zero.
+
+## A worked example: getting paid and paying rent
+
+Take a simple month. You're paid a LKR 200,000 salary into your bank account, then you pay LKR 45,000 in rent from that same account.
+
+| Entry | Account | Debit | Credit |
+|---|---|---|---|
+| Salary received | Bank (asset) | LKR 200,000 | |
+| Salary received | Salary income | | LKR 200,000 |
+| Rent paid | Rent expense | LKR 45,000 | |
+| Rent paid | Bank (asset) | | LKR 45,000 |
+
+Notice the bank account appears twice: once as a debit (money arriving) and once as a credit (money leaving), and each of the two transactions balances on its own. Add up every debit column and every credit column across your whole ledger, for any period, and they must be exactly equal. If they're not, something was recorded wrong, and you know it immediately rather than discovering it months later when a report doesn't add up.
 
 ## Why this matters more than it sounds
 
-Because both sides must always balance, an error or an attempt to quietly alter a number shows up immediately as an imbalance. It's the same discipline that's kept real accounting honest for centuries — Salli just automates the bookkeeping so you never have to think about which side is which.
+Because both sides must always balance, an error (or an attempt to quietly alter a number) shows up immediately as an imbalance. A single-entry system (just a list of "money in" and "money out," like a simple spreadsheet) has no such check: delete a row, mistype a figure, and nothing else in the system notices. Double-entry catches that class of mistake structurally, not by asking you to be careful.
+
+It's the same discipline that's kept real accounting honest for centuries. Salli just automates the bookkeeping so you never have to think about which side is which, and you get the trustworthiness of proper double-entry books without needing to be a bookkeeper yourself.
 
 ## What it means for you
 
-You never have to understand debits and credits to use Salli day-to-day. Type "spent 4,500 on groceries" and the correct double-entry gets drafted for you. But the rigor underneath is exactly why the numbers you see are ones you can trust.
+You never have to understand debits and credits to use Salli day-to-day. Type "spent 4,500 on groceries" and the correct double-entry gets drafted for you: the right accounts, the right sides, balanced automatically. But the rigor underneath is exactly why the numbers you see (your net worth, your tax position, your spending by category) are ones you can trust. When a number in Salli looks wrong, the first question is never "did the math break" (double-entry structurally prevents that); it's "was this transaction categorized the way I meant."
+
+Double-entry mechanics are a well-established accounting standard, not something that varies by jurisdiction, so the account types and balancing rule above apply the same way whether you're tracking rupees, dollars, or any other currency.

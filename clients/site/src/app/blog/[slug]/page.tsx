@@ -35,11 +35,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       publishedTime: post.publishedDate,
       authors: [post.author],
       tags: [post.category],
+      ...(post.coverImage ? { images: [{ url: post.coverImage, alt: post.coverImageAlt || post.title }] } : {}),
     },
     twitter: {
       card: "summary_large_image",
       title: post.title,
       description: post.excerpt,
+      ...(post.coverImage ? { images: [post.coverImage] } : {}),
     },
   };
 }
@@ -68,6 +70,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     "@type": "Article",
     headline: post.title,
     description: post.excerpt,
+    ...(post.coverImage ? { image: [post.coverImage] } : {}),
     datePublished: post.publishedDate,
     dateModified: post.publishedDate,
     author: { "@type": "Organization", name: post.author },

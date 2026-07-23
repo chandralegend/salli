@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { LegalLayout } from "@/components/LegalLayout";
 
 export const metadata: Metadata = {
-  title: "Security — Salli",
+  title: "Security",
   description: "How Salli protects your financial data.",
+  alternates: { canonical: "/security" },
 };
 
 export default function SecurityPage() {

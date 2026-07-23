@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Cookie } from "lucide-react";
 
 const STORAGE_KEY = "salli_cookie_consent";
 
@@ -13,58 +11,60 @@ const STORAGE_KEY = "salli_cookie_consent";
  */
 export function CookieConsent() {
   const [visible, setVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) setVisible(true);
+    // Reads an external system (localStorage) to decide first-mount visibility —
+    // can't be computed as lazy initial state since this also prerenders at
+    // build time, where localStorage doesn't exist.
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setVisible(true);
+      requestAnimationFrame(() => setMounted(true));
+    }
   }, []);
 
   function choose(choice: "accepted" | "rejected") {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ choice, at: new Date().toISOString() }));
-    setVisible(false);
+    setMounted(false);
+    setTimeout(() => setVisible(false), 300);
   }
 
+  if (!visible) return null;
+
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          transition={{ type: "spring", stiffness: 260, damping: 28 }}
-          className="fixed inset-x-4 bottom-4 z-[60] sm:inset-x-auto sm:left-4 sm:right-auto sm:max-w-md"
-          role="region"
-          aria-label="Cookie notice"
-        >
-          <div className="rounded-2xl bg-[#101210]/95 backdrop-blur-xl ring-1 ring-white/10 shadow-[0_24px_64px_-24px_rgba(0,0,0,0.7)] p-5">
-            <div className="flex items-start gap-3">
-              <div className="size-8 rounded-xl bg-[#E8FC85] flex items-center justify-center shrink-0">
-                <Cookie className="size-4 text-[#010001]" />
-              </div>
-              <p className="text-[13px] text-muted-foreground leading-relaxed">
-                We use essential cookies to keep you signed in, plus optional analytics to improve
-                Salli. No ad trackers, ever.{" "}
-                <a href="/cookies" className="text-foreground underline underline-offset-2">
-                  Cookie Policy
-                </a>
-              </p>
-            </div>
-            <div className="flex items-center gap-2 mt-4">
-              <button
-                onClick={() => choose("accepted")}
-                className="flex-1 text-[13px] font-bold h-9 rounded-full bg-[#E8FC85] text-[#010001] hover:brightness-95 transition-all"
-              >
-                Accept all
-              </button>
-              <button
-                onClick={() => choose("rejected")}
-                className="flex-1 text-[13px] font-semibold h-9 rounded-full bg-white/5 text-foreground ring-1 ring-white/12 hover:ring-white/25 transition-all"
-              >
-                Essential only
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div
+      role="region"
+      aria-label="Cookie notice"
+      className="fixed inset-x-4 bottom-4 z-60 transition-all duration-300 ease-out sm:inset-x-auto sm:left-4 sm:right-auto sm:max-w-md"
+      style={{
+        transform: mounted ? "translateY(0)" : "translateY(100px)",
+        opacity: mounted ? 1 : 0,
+      }}
+    >
+      <div className="rounded-2xl bg-ink p-5 text-cream shadow-[0_24px_64px_-24px_rgba(0,0,0,0.7)]">
+        <p className="font-mono text-[12.5px] leading-relaxed text-cream-60">
+          We use essential cookies to keep you signed in, plus optional analytics to improve
+          Salli. No ad trackers, ever.{" "}
+          <a href="/cookies" className="text-cream underline underline-offset-2 hover:text-red">
+            Cookie Policy
+          </a>
+        </p>
+        <div className="mt-4 flex items-center gap-2">
+          <button
+            onClick={() => choose("accepted")}
+            className="h-10 flex-1 rounded-full bg-red text-[13px] font-bold text-cream transition-transform active:scale-[0.98]"
+          >
+            Accept all
+          </button>
+          <button
+            onClick={() => choose("rejected")}
+            className="h-10 flex-1 rounded-full border border-cream/20 text-[13px] font-semibold text-cream transition-colors hover:border-cream/40"
+          >
+            Essential only
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

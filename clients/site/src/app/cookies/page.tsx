@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { LegalLayout } from "@/components/LegalLayout";
 
 export const metadata: Metadata = {
-  title: "Cookie Policy — Salli",
+  title: "Cookie Policy",
   description: "How Salli uses cookies and local storage.",
+  alternates: { canonical: "/cookies" },
 };
 
 export default function CookiesPage() {

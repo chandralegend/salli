@@ -1,189 +1,317 @@
 @import "tailwindcss";
 
-/* ── Salli marketing site — DARK ONLY (mirrors the app's dark surfaces) ──────── */
+@theme {
+  --color-cream: #f2efe6;
+  --color-cream-soft: #f5f2ea;
+  --color-ink: #16130f;
+  --color-ink-soft: #221d17;
+  --color-red: #f5310f;
+  --color-red-deep: #c9260a;
+  --color-green: #1b6b47;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
-  --color-ink: var(--ink);
-  --color-ink-foreground: var(--ink-foreground);
-  --font-sans: var(--font-dm-sans);
-  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
-}
+  --color-ink-70: #2c2822;
+  --color-ink-60: #4b463d;
+  --color-ink-50: #6b6459;
+  --color-ink-40: #8c877c;
 
-:root {
-  color-scheme: dark;
+  --color-cream-80: #d9d3c8;
+  --color-cream-70: #e4e0d6;
+  --color-cream-60: #b7b1a5;
 
-  --background: #0A0B0A;        /* near-black canvas */
-  --foreground: #F2F1EC;        /* warm off-white text */
-  --card: #171916;             /* elevated dark tile */
-  --primary: #E8FC85;          /* lime accent */
-  --primary-foreground: #010001;
-  --muted: #1F211D;
-  --muted-foreground: #93A6A6;  /* teal-gray — light enough on dark */
-  --border: #2A2C28;
-  --ink: #010001;
-  --ink-foreground: #F2F1EC;
-
-  /* Brand accents */
-  --salli-lime: #E8FC85;
-  --salli-mint: #A5FFB9;
-  --salli-teal: #D5E9EA;
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-archivo), sans-serif;
+  --font-mono: var(--font-jetbrains), monospace;
 }
 
-* { border-color: var(--border); }
+/* Base element resets — layered so utility classes (text-cream, etc.) still win the cascade. */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
 
-html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  scroll-behavior: smooth;
-  text-rendering: optimizeLegibility;
-}
+  body {
+    margin: 0;
+    background: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 15px;
-  line-height: 1.55;
-}
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 
-/* ── Type scale ─────────────────────────────────────────────────────────────
-   Display + headings use DM Sans (the app's family) at heavy weights with
-   tight tracking; figures use IBM Plex Mono. Sizes are deliberately stepped
-   so hierarchy reads clearly at every breakpoint. */
+  ::selection {
+    background: var(--color-red);
+    color: var(--color-cream);
+  }
 
-.t-display {            /* hero headline */
-  font-weight: 900;
-  letter-spacing: -0.05em;
-  line-height: 0.95;
-  font-size: clamp(2.75rem, 6.5vw, 4.75rem);   /* 44 → 76px */
-  text-wrap: balance;
-}
-.t-h2 {                 /* section heading */
-  font-weight: 900;
-  letter-spacing: -0.04em;
-  line-height: 1.02;
-  font-size: clamp(1.9rem, 3.8vw, 2.85rem);    /* ~30 → 46px */
-  text-wrap: balance;
-}
-.t-tile-title {         /* bento / card title */
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  font-size: 1.0625rem;                         /* 17px */
-  line-height: 1.25;
-}
-.t-lead {               /* intro paragraph */
-  font-size: clamp(1rem, 1.3vw, 1.1875rem);     /* 16 → 19px */
-  line-height: 1.6;
-  text-wrap: pretty;
-}
-.t-body { font-size: 0.875rem; line-height: 1.6; }   /* 14px */
-.t-eyebrow {
-  font-size: 0.6875rem;                         /* 11px */
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--muted-foreground);
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
-/* Figures — tabular mono */
-.font-ledger {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+@layer components {
+  /* ---- Nav underline ---- */
+  .navlink {
+    position: relative;
+  }
+  .navlink::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -5px;
+    height: 3px;
+    width: 100%;
+    background: var(--color-red);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.34s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .navlink:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  /* ---- FAQ accordion ---- */
+  details.faq summary {
+    list-style: none;
+    cursor: pointer;
+  }
+  details.faq summary::-webkit-details-marker {
+    display: none;
+  }
+  details.faq .faqicon {
+    transition: transform 0.32s cubic-bezier(0.34, 1.4, 0.5, 1);
+    display: inline-block;
+  }
+  details.faq[open] .faqicon {
+    transform: rotate(135deg);
+  }
+  details.faq[open] .faqa {
+    animation: fadeUp 0.5s ease both;
+  }
+
+  /* ---- Grain overlay ---- */
+  .grain {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.5;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.28'/%3E%3C/svg%3E");
+  }
+
+  /* ---- Long-form article body ---- */
+  .article a {
+    color: var(--color-red);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .article p {
+    font-size: 18px;
+    line-height: 1.72;
+    color: var(--color-ink-70);
+    margin: 22px 0 0;
+  }
+  .article h2 {
+    font-family: var(--font-display);
+    font-size: clamp(26px, 3vw, 36px);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    font-weight: 800;
+    margin: 52px 0 0;
+  }
+  .article ul {
+    margin: 20px 0 0;
+    padding-left: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .article li {
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--color-ink-70);
+    display: flex;
+    gap: 12px;
+  }
+  .article li::before {
+    content: "→";
+    color: var(--color-red);
+    font-weight: 700;
+    flex: none;
+  }
+  .article strong {
+    font-weight: 700;
+  }
+  .article blockquote {
+    margin: 40px 0 0;
+    padding: 8px 0 8px 28px;
+    border-left: 4px solid var(--color-red);
+  }
+  .article blockquote p {
+    font-family: var(--font-display);
+    font-size: 24px;
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .article h3 {
+    font-family: var(--font-display);
+    font-size: clamp(20px, 2.2vw, 25px);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    margin: 36px 0 0;
+  }
+  .article figure {
+    margin: 32px 0 0;
+  }
+  .article img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 18px;
+    margin: 32px 0 0;
+  }
+  .article figure img {
+    margin: 0;
+  }
+  .article figcaption {
+    margin-top: 10px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--color-ink-40);
+    text-align: center;
+  }
+  .article table {
+    display: block;
+    width: 100%;
+    margin: 32px 0 0;
+    border-collapse: collapse;
+    font-size: 15px;
+    overflow-x: auto;
+  }
+  .article th {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-ink-40);
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--color-ink);
+    white-space: nowrap;
+  }
+  .article td {
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(22, 19, 15, 0.1);
+    color: var(--color-ink-70);
+    font-variant-numeric: tabular-nums;
+  }
+  .article tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* ---- Reveal-on-scroll ---- */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition:
+      opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1),
+      transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1);
+    will-change: opacity, transform;
+  }
+  .reveal.in-view {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* ---- Word-up hero animation ---- */
+  .wm {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: bottom;
+    padding-bottom: 0.04em;
+  }
+  .wm > span {
+    display: inline-block;
+    animation: wordUp 1s cubic-bezier(0.2, 0.7, 0.12, 1) both;
+  }
+
+  .ctaring {
+    animation: ring 4.8s ease-out infinite;
+  }
 }
 
-/* keep the old label name working */
-.text-secondary-label {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--muted-foreground);
+@keyframes wordUp {
+  from {
+    opacity: 0;
+    transform: translateY(112%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-
-/* Bento tile colour helpers */
-.tile-lime { background: var(--salli-lime); }
-.tile-mint { background: var(--salli-mint); }
-.tile-teal { background: var(--salli-teal); }
-
-/* Soft lime/mint ambient wash on the near-black canvas (hero + CTA). */
-.brand-wash {
-  background:
-    radial-gradient(55% 55% at 78% -8%, rgba(232, 252, 133, 0.12), transparent 60%),
-    radial-gradient(50% 60% at 8% 18%, rgba(165, 255, 185, 0.08), transparent 55%),
-    var(--background);
+@keyframes tick {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
-
-/* Deeper "vault" band with a faint lime grid. */
-.brand-vault {
-  background-color: var(--ink);
-  background-image:
-    linear-gradient(to right, rgba(232, 252, 133, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(232, 252, 133, 0.05) 1px, transparent 1px);
-  background-size: 44px 44px;
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
 }
-
-.nav-scrolled {
-  box-shadow:
-    0 1px 0 rgba(232, 252, 133, 0.06),
-    0 12px 36px -20px rgba(0, 0, 0, 0.8);
+@keyframes flowIn {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  14%,
+  74% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  92%,
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
 }
-
-/* Infinite marquee track. */
-@keyframes marquee-scroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-100%); }
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.marquee-track { animation: marquee-scroll linear infinite; }
-.group:hover .marquee-track { animation-play-state: paused; }
-
-/* Lime sweep under highlighted words / progress fills. */
-@keyframes hl-sweep {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
+@keyframes ring {
+  0% {
+    transform: translate(-50%, -50%) scale(0.35);
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.6);
+    opacity: 0;
+  }
 }
-
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
-
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  .marquee-track { animation: none; }
-}
-
-/* Legal page prose (Terms / Privacy / Security / Cookies). */
-.legal-prose h2 {
-  font-size: 1.125rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--foreground);
-  margin-top: 2.25rem;
-  margin-bottom: 0.75rem;
-}
-.legal-prose h2:first-child { margin-top: 0; }
-.legal-prose p {
-  font-size: 0.9375rem;
-  line-height: 1.7;
-  color: var(--muted-foreground);
-  margin-bottom: 1rem;
-}
-.legal-prose ul {
-  margin: 0.75rem 0 1.25rem 1.25rem;
-  list-style: disc;
-}
-.legal-prose li {
-  font-size: 0.9375rem;
-  line-height: 1.7;
-  color: var(--muted-foreground);
-  margin-bottom: 0.5rem;
-}
-.legal-prose strong { color: var(--foreground); font-weight: 700; }
-.legal-prose a { color: #E8FC85; text-decoration: underline; text-underline-offset: 2px; }

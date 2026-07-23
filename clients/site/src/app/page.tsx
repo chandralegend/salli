@@ -1,417 +1,540 @@
 import Image from "next/image";
-import {
-  BookOpen, Calculator, Bot, Compass, FileText, ShieldCheck,
-  ArrowRight, Check, TrendingUp,
-} from "lucide-react";
-import { Navbar } from "@/components/Navbar";
-import { SiteFooter } from "@/components/SiteFooter";
-import { FadeIn } from "@/components/ui/fade-in";
-import { FiScoreCard } from "@/components/FiScoreCard";
-import { Spotlight } from "@/components/ui/spotlight";
-import { GridBackground } from "@/components/ui/grid-bg";
-import { BentoGrid, BentoCard } from "@/components/ui/bento";
-import { Marquee } from "@/components/ui/marquee";
-import { AnimatedNumber } from "@/components/ui/animated-number";
-import { Sparkline } from "@/components/ui/sparkline";
-import { CometCard } from "@/components/ui/comet-card";
-import { AnimatedTestimonials, type Testimonial } from "@/components/ui/animated-testimonials";
-import { ContainerScroll } from "@/components/ui/container-scroll";
-import { PhoneFrame } from "@/components/ui/phone-frame";
-import { StoreBadges } from "@/components/ui/store-badges";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { Loader } from "@/components/Loader";
+import { HeroCanvas } from "@/components/HeroCanvas";
+import { EngineCanvas } from "@/components/EngineCanvas";
+import { Marquee, MarqueeItem } from "@/components/Marquee";
+import { Reveal } from "@/components/Reveal";
+import { TiltCard } from "@/components/TiltCard";
+import { MagneticButton } from "@/components/MagneticButton";
+import { Highlight } from "@/components/Highlight";
+import { WordUp } from "@/components/WordUp";
+import { CountUp } from "@/components/CountUp";
+import { FeatureDeepDive } from "@/components/FeatureDeepDive";
+import { FaqAccordion } from "@/components/FaqAccordion";
 
-const APP = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.salli.leafmonkey.org";
-
-const FEATURES = [
-  { icon: BookOpen, tile: "mint" as const, span: "md:col-span-2", title: "Double-entry ledger", body: "Every rupee accounted for. Proper bookkeeping that balances — not a spreadsheet that quietly drifts out of sync." },
-  { icon: Calculator, tile: "card" as const, span: "", title: "Sri Lanka tax engine", body: "Deterministic income-tax for YA 2025/26 — bands, reliefs, APIT/AIT credits, FSI. IRD-aligned, never guessed." },
-  { icon: Bot, tile: "card" as const, span: "", title: "AI agent on your ledger", body: "Ask about your tax or spending. It pulls real numbers from your books — it doesn't invent them." },
-  { icon: Compass, tile: "lime" as const, span: "md:col-span-2", title: "Financial Independence score", body: "A FIRE-based 0–100 score from your savings rate, net worth, and goals — with your projected freedom date." },
-  { icon: FileText, tile: "card" as const, span: "", title: "Statement parsing", body: "Drop in a bank statement; Salli extracts and classifies transactions for you to review and post." },
-  { icon: ShieldCheck, tile: "teal" as const, span: "", title: "Your data, your control", body: "Money is computed on a deterministic engine — the AI never does the arithmetic on your figures." },
+const PROBLEMS = [
+  { n: "01", bad: "Scattered money", badsub: "Accounts, cards, loans, investments — spreadsheets go stale.", good: "One truthful picture" },
+  { n: "02", bad: "Confusing tax", badsub: "2025/26 rules changed. Most people overpay or guess.", good: "A figure you can defend" },
+  { n: "03", bad: "Untrustworthy AI", badsub: "Chatbots hallucinate the numbers that matter most.", good: "AI that never guesses" },
 ];
 
-const TRUST = ["YA 2025/26", "IRD-aligned", "FIRE methodology", "Double-entry accounting", "Deterministic tax engine", "Your data, your database", "4% rule", "Daily wealth advisor"];
-
-const SCREENS = [
-  {
-    src: "/screens/web-ledger.webp",
-    eyebrow: "Ledger",
-    title: "Every account, balanced automatically.",
-    body: "Proper double-entry bookkeeping — every posting balanced. Search, filter, and drill into any transaction across your full chart of accounts.",
-  },
-  {
-    src: "/screens/web-tax.webp",
-    eyebrow: "Tax engine",
-    title: "Your tax, broken down and explained",
-    body: "Gross income, reliefs, progressive bands, APIT/AIT/FTC credits — computed deterministically and laid out so you can see exactly how the number was reached.",
-  },
+const PILLARS = [
+  { n: "01", title: "A real ledger", tag: "Double-entry", body: "Proper double-entry accounting under the hood. Immutable, auditable — every rupee accounted for." },
+  { n: "02", title: "A Sri Lankan tax engine", tag: "Deterministic", body: "Relief, rate bands, the 15% foreign-service final tax, and credits — against versioned, CA-reviewed packs." },
+  { n: "03", title: "An AI advisor", tag: "Grounded", body: "Reads your statements, explains your tax, drafts guidance — powered by the ledger and engine, never guesswork." },
+  { n: "04", title: "A full money toolkit", tag: "Budgets · FIRE", body: "Budgets, debt payoff, portfolio, insurance, reports and FI projections — all on the same ledger." },
 ];
 
-const MOBILE_SCREENS = [
-  { src: "/screens/mobile-dashboard.webp", alt: "Salli mobile — Overview dashboard" },
-  { src: "/screens/mobile-tax.webp", alt: "Salli mobile — Tax breakdown" },
-  { src: "/screens/mobile-fi.webp", alt: "Salli mobile — Financial Independence" },
+const STEPS = [
+  { n: "01", title: "Enter your money", body: "Type, speak, or upload statements. Salli drafts; you approve." },
+  { n: "02", title: "See your true picture", body: "A live ledger, net worth, and a defensible tax figure." },
+  { n: "03", title: "Act with AI guidance", body: "Plan payoffs and goals, and prep your return — grounded in your numbers." },
 ];
 
-const TESTIMONIALS: Testimonial[] = [
-  { quote: "I finally stopped dreading April. Salli worked out my APIT and FSI credits exactly the way my accountant did — in seconds.", name: "Dileepa Fernando", designation: "Freelance developer · Colombo", initials: "DF", gradient: "linear-gradient(140deg, #E8FC85, #A5FFB9)" },
-  { quote: "It showed me I was three years from coast-FIRE without changing a thing. That one number reframed how I think about every purchase.", name: "Anjana Perera", designation: "Product designer · Kandy", initials: "AP", gradient: "linear-gradient(140deg, #D5E9EA, #E8FC85)" },
-  { quote: "Two foreign-currency accounts, rental income, a side business — Salli reconciled all of it into one clean ledger I actually trust.", name: "Nuwan Jayasuriya", designation: "SME owner · Galle", initials: "NJ", gradient: "linear-gradient(140deg, #A5FFB9, #D5E9EA)" },
-  { quote: "The advisor told me to top up my emergency fund first, then move idle cash into a fixed deposit. Simple, specific, and mine.", name: "Hashini Silva", designation: "Doctor · Negombo", initials: "HS", gradient: "linear-gradient(140deg, #E8FC85, #D5E9EA)" },
+const TRUST = [
+  { title: "Deterministic math", body: "Every figure computed by the engine — never AI-generated." },
+  { title: "Immutable ledger", body: "Double-entry, auditable, append-only. Nothing quietly changes." },
+  { title: "CA-reviewed packs", body: "Versioned tax packs reviewed by a chartered accountant." },
+  { title: "Reproducible returns", body: "Recompute a past return years later, even after rates change." },
+  { title: "Human checkpoint", body: "A human-review step before any return is finalized." },
+  { title: "Your data, private", body: "Everything Salli reads is kept for you, under your control." },
 ];
 
-const PLANS = [
-  { name: "Free", price: "$0", note: "To get started", features: ["Ledger & tax engine", "20 AI messages / mo", "3 statement uploads / mo", "3 advisor runs / mo"], cta: "Start free", highlight: false },
-  { name: "Plus", price: "$9", note: "per month", features: ["Everything in Free", "500 AI messages / mo", "50 statement uploads / mo", "Daily wealth advisor"], cta: "Start free trial", highlight: true },
-  { name: "Pro", price: "$29", note: "per month", features: ["Everything in Plus", "5,000 AI messages / mo", "500 statement uploads / mo", "Priority model access"], cta: "Start free trial", highlight: false },
+const FAQS = [
+  { q: "Is Salli's tax figure accurate?", a: "Every figure is produced by a deterministic engine running versioned, chartered-accountant-reviewed tax packs — not by AI. It applies relief, rate bands, foreign-income rules and credits, and records exactly which rules produced the number." },
+  { q: "Does the AI calculate my tax?", a: "No. The AI reads documents, explains results, and drafts guidance, but it never computes your money or your tax. The math stays auditable and reproducible in the engine." },
+  { q: "Is this financial or investment advice?", a: "No. Salli is not a licensed financial or investment advisor. It gives you tools, clarity, and tax computation — never personalized investment advice or promised returns." },
+  { q: "Which tax year and country does it cover?", a: "Salli launches with the Sri Lanka 2025/26 tax pack, aligned to Inland Revenue rules. Packs are versioned, so past returns stay reproducible even after rates change." },
+  { q: "Is my data safe?", a: "Your ledger is immutable and auditable, and everything Salli reads is kept for you, under your control. A human-review checkpoint sits before any return is finalized." },
 ];
 
-function chipClasses(tone: string) {
-  return tone === "card"
-    ? { box: "bg-[#E8FC85]", icon: "text-[#010001]" }
-    : { box: "bg-[#010001]", icon: "text-[#E8FC85]" };
-}
+const FAQ_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQS.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: { "@type": "Answer", text: f.a },
+  })),
+};
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <main className="min-h-screen">
-      <Navbar />
+    <div className="relative">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }}
+      />
+      <Loader />
+      <Header active="/" />
 
-      {/* ── Hero: bento dashboard ───────────────────────────────────────── */}
-      <section id="top" className="relative brand-wash overflow-hidden">
-        <Spotlight />
-        <div className="relative max-w-6xl mx-auto px-5 pt-28 pb-16 sm:pt-36 sm:pb-24">
-          <FadeIn className="text-center max-w-3xl mx-auto">
-            <span className="inline-flex items-center gap-2 text-[12px] font-semibold text-foreground/75 bg-white/5 rounded-full pl-2.5 pr-3.5 py-1.5 ring-1 ring-white/10">
-              <span className="size-1.5 rounded-full bg-[#A5FFB9] animate-pulse" />
-              Personal finance &amp; tax · Sri Lanka
-            </span>
-            <h1 className="t-display mt-6 text-foreground">
-              Stop guessing.{" "}
-              <span className="block sm:inline">
-                Start{" "}
-                <span className="relative inline-block">
-                  <span className="absolute inset-x-[-0.12em] inset-y-[0.08em] bg-[#E8FC85] rounded-md origin-left" style={{ animation: "hl-sweep 0.7s 0.45s cubic-bezier(0.16,1,0.3,1) both" }} />
-                  <span className="relative text-[#010001]">knowing</span>
-                </span>
-                .
-              </span>
-            </h1>
-            <p className="t-lead mt-7 max-w-xl mx-auto text-muted-foreground">
-              A real ledger, a Sri&nbsp;Lanka tax engine, and an AI advisor that works from
-              your actual numbers — so you always know your tax, your net worth, and how
-              close you are to freedom.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-9">
-              <a href={`${APP}/signup`} className="inline-flex items-center gap-1.5 text-[14px] font-bold px-6 h-12 rounded-full bg-[#E8FC85] text-[#010001] hover:brightness-95 hover:-translate-y-0.5 active:translate-y-0 transition-all">
-                Get started free <ArrowRight className="size-4" />
-              </a>
-              <a href="#features" className="inline-flex items-center text-[14px] font-bold px-6 h-12 rounded-full bg-white/5 text-foreground ring-1 ring-white/12 hover:ring-white/25 hover:-translate-y-0.5 transition-all">
-                See how it works
-              </a>
+      {/* HERO */}
+      <section id="top" className="relative z-2">
+        <HeroCanvas />
+        <div className="relative z-1 mx-auto max-w-[1320px] px-6 pt-16 pb-10 sm:px-10">
+          <div className="absolute right-5 top-10 z-5 hidden sm:block md:right-[280px]">
+            <div className="rounded-full bg-red px-4 py-2.5 font-mono text-xs font-semibold uppercase tracking-[.08em] text-cream shadow-[0_12px_26px_-12px_rgba(245,49,15,.7)]" style={{ transform: "rotate(-7deg)" }}>
+              ★ Made for Sri Lanka
             </div>
-            <p className="text-[12px] text-muted-foreground/70 mt-4 font-ledger">Free to start · No card required</p>
-          </FadeIn>
+          </div>
+          <div className="grid items-center gap-10 lg:grid-cols-[1.12fr_0.88fr]">
+            <div>
+              <div className="font-mono text-xs font-semibold uppercase tracking-[.14em] text-red">
+                Personal finance &amp; tax · 2025/26
+              </div>
+              <h1 className="mt-5.5 font-display text-[clamp(56px,8.6vw,124px)] font-extrabold leading-[0.9] tracking-[-0.05em]">
+                <WordUp delay={0.05}>Stop</WordUp> <WordUp delay={0.13}>guessing.</WordUp>
+                <br />
+                <WordUp delay={0.24}>Start</WordUp> <WordUp delay={0.34}><Highlight>knowing.</Highlight></WordUp>
+              </h1>
+              <p className="mt-7.5 max-w-[460px] text-[clamp(17px,1.5vw,21px)] leading-[1.5] text-ink-60">
+                A real ledger, a deterministic Sri Lankan tax engine, and an AI advisor that works
+                only from your actual numbers — never guesswork.
+              </p>
+              <div className="mt-9.5 flex flex-wrap gap-3.5">
+                <MagneticButton href="#cta" className="rounded-full bg-red px-8 py-4.5 text-[17px] font-bold text-cream shadow-[0_16px_34px_-14px_rgba(245,49,15,.8)]">
+                  Get started free
+                </MagneticButton>
+                <MagneticButton href="#download" className="rounded-full border-2 border-ink px-7.5 py-4 text-[17px] font-bold hover:bg-ink hover:text-cream">
+                  Download the app
+                </MagneticButton>
+              </div>
+              <div className="mt-7.5 flex flex-wrap items-center gap-4 font-mono text-[12.5px] text-ink-50">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="size-2 rounded-full bg-green" />CA-reviewed engine
+                </span>
+                <span className="opacity-40">/</span>
+                <span>LKR-native</span>
+                <span className="opacity-40">/</span>
+                <span>No hallucinated numbers</span>
+              </div>
+            </div>
 
-          {/* Bento preview */}
-          <FadeIn delay={0.15} className="mt-14">
-            <div className="grid grid-cols-1 md:grid-cols-4 md:auto-rows-[210px] gap-3 sm:gap-4">
-              <BentoCard tone="card" className="md:col-span-2 flex flex-col justify-between">
-                <div>
-                  <p className="t-eyebrow text-[#E8FC85]">Your money, in focus</p>
-                  <p className="text-[22px] sm:text-[25px] font-black tracking-[-0.03em] leading-[1.12] mt-3 text-foreground">
-                    One ledger that answers your tax, your wealth, and your path to FIRE — live.
-                  </p>
+            <div className="relative" style={{ perspective: "1200px" }}>
+              <div className="absolute -left-7.5 -top-6.5 z-6 hidden sm:block">
+                <div className="rounded-full bg-ink px-3.5 py-2.25 font-mono text-[11px] font-semibold uppercase tracking-[.08em] text-cream shadow-[0_12px_24px_-12px_rgba(22,19,15,.6)]" style={{ transform: "rotate(6deg)" }}>
+                  No guessing ✓
                 </div>
-                <div className="grid grid-cols-3 gap-2.5 mt-5">
+              </div>
+              <TiltCard className="rounded-[32px] bg-white p-6.5 shadow-[0_40px_80px_-30px_rgba(22,19,15,.5),0_0_0_1px_rgba(22,19,15,.05)]">
+                <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-[.1em] text-ink-40">
+                  <span className="flex items-center gap-1.75">
+                    <span className="flex size-5.5 items-center justify-center rounded-[7px] bg-ink font-display text-xs font-extrabold text-cream">S</span>
+                    Salli engine
+                  </span>
+                  <span className="flex items-center gap-1.5 text-green">
+                    <span className="size-1.75 rounded-full bg-green" />Deterministic
+                  </span>
+                </div>
+                <div className="mt-4.5 flex h-[130px] flex-col gap-2">
                   {[
-                    { v: 100, suffix: "%", note: "engine-computed" },
-                    { v: 6, suffix: "", note: "tax bands · 25/26" },
-                    { v: 18.4, suffix: "%", note: "net worth · YTD", decimals: 1 },
-                  ].map((s, i) => (
-                    <div key={i} className="rounded-2xl bg-white/[0.05] ring-1 ring-white/10 px-3 py-2.5">
-                      <p className="font-ledger text-[20px] sm:text-[23px] text-[#E8FC85] leading-none">
-                        <AnimatedNumber to={s.v} suffix={s.suffix} decimals={s.decimals ?? 0} />
-                      </p>
-                      <p className="text-[10px] text-muted-foreground mt-1.5 leading-tight">{s.note}</p>
+                    ["Payslip · APIT", "−312,000"],
+                    ["Foreign fee · 15%", "+840,000"],
+                    ["FD interest · AIT", "−48,500"],
+                  ].map(([label, amt]) => (
+                    <div key={label} className="flex justify-between rounded-[11px] bg-cream-soft px-3.25 py-3 font-mono text-[12.5px]">
+                      <span className="text-ink-50">{label}</span>
+                      <span>{amt}</span>
                     </div>
                   ))}
                 </div>
-              </BentoCard>
-
-              <BentoCard tone="lime" glow={false} className="flex flex-col justify-between">
-                <p className="t-eyebrow text-[#010001]/55">FI score</p>
-                <div>
-                  <p className="font-ledger text-[46px] leading-none text-[#010001]">
-                    <AnimatedNumber to={62} /><span className="text-[16px] text-[#010001]/45">/100</span>
-                  </p>
-                  <div className="h-1.5 w-full rounded-full bg-[#010001]/15 overflow-hidden mt-3">
-                    <div className="h-full rounded-full bg-[#010001] origin-left" style={{ width: "62%", animation: "hl-sweep 1.1s 0.3s cubic-bezier(0.16,1,0.3,1) both" }} />
+                <div className="mt-1.5 rounded-[20px] bg-ink px-5.5 py-5 text-cream">
+                  <div className="font-mono text-[10.5px] uppercase tracking-[.1em] text-ink-40">
+                    Tax payable · computed
                   </div>
-                  <p className="text-[11px] font-semibold text-[#010001]/60 mt-2">On track · FI by 2041</p>
-                </div>
-              </BentoCard>
-
-              <BentoCard tone="card" className="flex flex-col justify-between">
-                <p className="t-eyebrow">Tax payable · YA&nbsp;25/26</p>
-                <div>
-                  <p className="font-ledger text-[28px] sm:text-[31px] leading-none text-foreground">
-                    <AnimatedNumber to={248500} prefix="Rs " />
-                  </p>
-                  <p className="text-[11px] text-muted-foreground mt-2">IRD-aligned · after reliefs &amp; credits</p>
-                </div>
-              </BentoCard>
-
-              <BentoCard tone="card" className="md:col-span-2 flex flex-col justify-between">
-                <div className="flex items-center justify-between">
-                  <p className="t-eyebrow">Net worth</p>
-                  <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-[#A5FFB9]">
-                    <TrendingUp className="size-3" /> +18.4%
-                  </span>
-                </div>
-                <Sparkline className="w-full h-14 my-1" color="#A5FFB9" fill="rgba(165,255,185,0.12)" />
-                <p className="font-ledger text-[24px] text-foreground">
-                  <AnimatedNumber to={9.2} prefix="Rs " decimals={1} suffix="M" />
-                </p>
-              </BentoCard>
-
-              <BentoCard tone="mint" glow={false} className="flex flex-col justify-between">
-                <p className="t-eyebrow text-[#010001]/55">Savings rate</p>
-                <div>
-                  <p className="font-ledger text-[40px] leading-none text-[#010001]"><AnimatedNumber to={51} suffix="%" /></p>
-                  <p className="text-[11px] font-semibold text-[#010001]/60 mt-2">of monthly income, automated</p>
-                </div>
-              </BentoCard>
-
-              <BentoCard tone="card" className="flex flex-col justify-between">
-                <div className="size-9 rounded-xl bg-[#E8FC85] flex items-center justify-center">
-                  <Bot className="size-5 text-[#010001]" />
-                </div>
-                <div>
-                  <p className="t-tile-title text-foreground">Ask anything about your money</p>
-                  <div className="mt-2.5 text-[11px] text-muted-foreground bg-white/5 rounded-full px-3 py-1.5 ring-1 ring-white/10">
-                    &ldquo;Am I on track for FIRE?&rdquo;
+                  <div className="mt-0.5 font-mono font-display text-[44px] font-extrabold tracking-[-0.02em]">
+                    <CountUp target={486000} prefix="LKR " />
+                  </div>
+                  <div className="mt-3.5 flex items-center gap-2.25 border-t border-cream/16 pt-3.5">
+                    <span className="flex size-5.5 items-center justify-center rounded-[7px] bg-red font-display text-xs font-extrabold text-cream">S</span>
+                    <span className="text-[12.5px] text-cream-60">
+                      Explained by AI — <span className="font-mono font-semibold text-cream">never invented</span>
+                    </span>
                   </div>
                 </div>
-              </BentoCard>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ── Dashboard preview (real screenshot) ──────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-5 pt-6 pb-20 sm:pb-28">
-        <ContainerScroll
-          titleComponent={
-            <>
-              <p className="t-eyebrow">Dashboard</p>
-              <h2 className="t-h2 mt-3 text-foreground">Everything, in one view.</h2>
-              <p className="t-lead mt-4 max-w-lg mx-auto text-muted-foreground">
-                Net worth, income, tax payable, your FI score — updated the moment you post an entry.
-              </p>
-            </>
-          }
-        >
-          <Image
-            src="/screens/web-dashboard.webp"
-            alt="Salli web dashboard — Overview with Net Worth, Income, Tax Payable, and FI Score"
-            width={1600}
-            height={1000}
-            className="w-full h-auto"
-            priority
-          />
-        </ContainerScroll>
-      </section>
-
-      {/* ── Trust marquee ───────────────────────────────────────────────── */}
-      <section className="border-y border-border bg-card/40 py-4">
-        <Marquee speed={36}>
-          {TRUST.map((t) => (
-            <span key={t} className="inline-flex items-center gap-3 text-[13px] font-ledger text-muted-foreground whitespace-nowrap">
-              {t} <span className="text-[#E8FC85] text-[10px]">●</span>
-            </span>
-          ))}
-        </Marquee>
-      </section>
-
-      {/* ── Features bento ──────────────────────────────────────────────── */}
-      <section id="features" className="max-w-6xl mx-auto px-5 py-20 sm:py-28">
-        <FadeIn className="max-w-2xl">
-          <p className="t-eyebrow">What&apos;s inside</p>
-          <h2 className="t-h2 mt-3 text-foreground">One ledger. Every answer.</h2>
-          <p className="t-lead mt-4 text-muted-foreground">
-            Salli keeps proper books, computes your Sri Lanka income tax deterministically,
-            and turns the result into clear, actionable guidance.
-          </p>
-        </FadeIn>
-        <FadeIn delay={0.1} className="mt-10">
-          <BentoGrid className="md:auto-rows-[minmax(190px,1fr)]">
-            {FEATURES.map((f) => {
-              const chip = chipClasses(f.tile);
-              return (
-                <BentoCard key={f.title} tone={f.tile} className={f.span}>
-                  <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${chip.box}`}>
-                    <f.icon className={`size-5 ${chip.icon}`} strokeWidth={2} />
-                  </div>
-                  <h3 className="t-tile-title mt-5">{f.title}</h3>
-                  <p className={`t-body mt-2 ${f.tile === "card" ? "text-muted-foreground" : "text-[#010001]/70"}`}>
-                    {f.body}
-                  </p>
-                </BentoCard>
-              );
-            })}
-          </BentoGrid>
-        </FadeIn>
-      </section>
-
-      {/* ── Screens: product walkthrough ─────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-5 py-20 sm:py-28 space-y-20 sm:space-y-28">
-        {SCREENS.map((s, i) => (
-          <FadeIn key={s.title} className={`grid lg:grid-cols-2 gap-10 lg:gap-16 items-center ${i % 2 === 1 ? "lg:[&>*:first-child]:order-2" : ""}`}>
-            <div>
-              <p className="t-eyebrow">{s.eyebrow}</p>
-              <h2 className="t-h2 mt-3 text-foreground">{s.title}</h2>
-              <p className="t-lead mt-4 text-muted-foreground max-w-md">{s.body}</p>
-            </div>
-            <div className="rounded-2xl overflow-hidden ring-1 ring-white/12 shadow-[0_40px_100px_-30px_rgba(0,0,0,0.6)]">
-              <Image src={s.src} alt={s.title} width={1600} height={1000} className="w-full h-auto" />
-            </div>
-          </FadeIn>
-        ))}
-      </section>
-
-      {/* ── FI deep-dive (vault) ────────────────────────────────────────── */}
-      <section className="relative brand-vault text-ink-foreground overflow-hidden">
-        <GridBackground />
-        <div className="relative max-w-6xl mx-auto px-5 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 items-center">
-          <FadeIn>
-            <p className="t-eyebrow text-[#E8FC85]">Financial Independence</p>
-            <h2 className="t-h2 mt-4 text-foreground">Know exactly how close you are to freedom.</h2>
-            <p className="t-lead mt-5 text-muted-foreground max-w-md">
-              Salli scores your finances against the 4% rule and proven money principles,
-              then a daily wealth advisor tells you the next move — top up your emergency
-              fund, park idle cash in a fixed deposit, automate investing.
-            </p>
-            <div className="flex flex-wrap gap-x-9 gap-y-4 mt-8">
-              <div>
-                <p className="font-ledger text-[30px] text-[#E8FC85] leading-none"><AnimatedNumber to={4} suffix="%" /></p>
-                <p className="text-[12px] text-muted-foreground mt-1.5">Safe withdrawal rate</p>
-              </div>
-              <div>
-                <p className="font-ledger text-[30px] text-[#E8FC85] leading-none"><AnimatedNumber to={2041} /></p>
-                <p className="text-[12px] text-muted-foreground mt-1.5">Your projected FI year</p>
-              </div>
-              <div>
-                <p className="font-ledger text-[30px] text-[#E8FC85] leading-none"><AnimatedNumber to={51} suffix="%" /></p>
-                <p className="text-[12px] text-muted-foreground mt-1.5">Current savings rate</p>
-              </div>
-            </div>
-            <a href={`${APP}/signup`} className="inline-flex items-center gap-1.5 text-[14px] font-bold px-6 h-12 rounded-full bg-[#E8FC85] text-[#010001] hover:brightness-95 hover:-translate-y-0.5 transition-all mt-9">
-              Check your FI score <ArrowRight className="size-4" />
-            </a>
-          </FadeIn>
-          <FiScoreCard />
-        </div>
-      </section>
-
-      {/* ── Mobile app: coming soon ──────────────────────────────────────── */}
-      <section className="relative overflow-hidden">
-        <div className="max-w-6xl mx-auto px-5 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 items-center">
-          <FadeIn className="order-2 lg:order-1">
-            <p className="t-eyebrow">Mobile</p>
-            <h2 className="t-h2 mt-3 text-foreground">Your numbers, in your pocket.</h2>
-            <p className="t-lead mt-4 text-muted-foreground max-w-md">
-              The same ledger, tax engine, and FI score — redesigned for iOS and Android.
-              We&apos;re polishing the last details before launch.
-            </p>
-            <StoreBadges className="mt-8" />
-          </FadeIn>
-          <FadeIn delay={0.1} className="order-1 lg:order-2 flex justify-center items-end">
-            <div className="flex items-end sm:-space-x-8 lg:-space-x-10">
-              <div className="hidden sm:block rotate-[-8deg] translate-y-4">
-                <PhoneFrame src={MOBILE_SCREENS[1].src} alt={MOBILE_SCREENS[1].alt} className="w-[150px] lg:w-[190px]" />
-              </div>
-              <div className="z-10 sm:-translate-y-2">
-                <PhoneFrame src={MOBILE_SCREENS[0].src} alt={MOBILE_SCREENS[0].alt} className="w-[210px] sm:w-[180px] lg:w-[250px]" priority />
-              </div>
-              <div className="hidden sm:block rotate-[8deg] translate-y-4">
-                <PhoneFrame src={MOBILE_SCREENS[2].src} alt={MOBILE_SCREENS[2].alt} className="w-[150px] lg:w-[190px]" />
-              </div>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ── Testimonials ────────────────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-5 py-20 sm:py-28">
-        <FadeIn className="max-w-2xl">
-          <p className="t-eyebrow">Trusted by</p>
-          <h2 className="t-h2 mt-3 text-foreground">People building their freedom.</h2>
-        </FadeIn>
-        <FadeIn delay={0.1} className="mt-12">
-          <AnimatedTestimonials testimonials={TESTIMONIALS} autoplay />
-        </FadeIn>
-      </section>
-
-      {/* ── Pricing (comet cards) ───────────────────────────────────────── */}
-      <section id="pricing" className="max-w-6xl mx-auto px-5 py-20 sm:py-28">
-        <FadeIn className="text-center max-w-xl mx-auto">
-          <p className="t-eyebrow">Pricing</p>
-          <h2 className="t-h2 mt-3 text-foreground">Simple, honest pricing</h2>
-          <p className="t-lead mt-4 text-muted-foreground">
-            Start free. Upgrade when the AI becomes part of your routine. Cancel anytime.
-          </p>
-        </FadeIn>
-        <FadeIn delay={0.1} className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-12 max-w-4xl mx-auto">
-          {PLANS.map((p) => (
-            <CometCard key={p.name} rotateDepth={9} translateDepth={7} className={p.highlight ? "md:-mt-3" : ""}>
-              <div className={`h-full flex flex-col rounded-[26px] p-6 sm:p-7 bg-card ${p.highlight ? "ring-2 ring-[#E8FC85]/55 shadow-[0_30px_70px_-30px_rgba(232,252,133,0.35)]" : "ring-1 ring-white/10"}`}>
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[15px] font-bold text-foreground">{p.name}</h3>
-                  {p.highlight && (
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#010001] bg-[#E8FC85] rounded-full px-2.5 py-1">Popular</span>
-                  )}
-                </div>
-                <p className="font-ledger text-[36px] mt-3 text-foreground">
-                  {p.price}<span className="text-[13px] font-sans text-muted-foreground"> · {p.note}</span>
-                </p>
-                <ul className="space-y-2.5 mt-6 flex-1">
-                  {p.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-[13px] text-foreground/85">
-                      <Check className="size-3.5 shrink-0 mt-0.5 text-[#E8FC85]" /> {f}
-                    </li>
-                  ))}
-                </ul>
-                <a href={`${APP}/signup`} className={`mt-7 inline-flex items-center justify-center text-[13px] font-bold h-11 rounded-full transition-all ${p.highlight ? "bg-[#E8FC85] text-[#010001] hover:brightness-95" : "bg-white/5 text-foreground ring-1 ring-white/12 hover:ring-white/25"}`}>
-                  {p.cta}
-                </a>
-              </div>
-            </CometCard>
-          ))}
-        </FadeIn>
-      </section>
-
-      {/* ── Final CTA panel ─────────────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-5 pb-24 sm:pb-32">
-        <CometCard rotateDepth={6} translateDepth={5}>
-          <div className="relative overflow-hidden rounded-[32px] bg-[#0C0E0B] ring-1 ring-[#E8FC85]/15 px-6 py-20 sm:py-24 text-center shadow-[0_40px_120px_-50px_rgba(232,252,133,0.4)]">
-            <GridBackground />
-            <Spotlight />
-            <div className="relative">
-              <h2 className="t-display text-foreground">Stop guessing.<br />Start building freedom.</h2>
-              <p className="t-lead mt-6 max-w-md mx-auto text-muted-foreground">
-                Take control of your money, your tax, and your path to financial independence.
-              </p>
-              <a href={`${APP}/signup`} className="inline-flex items-center gap-1.5 text-[14px] font-bold px-7 h-12 rounded-full bg-[#E8FC85] text-[#010001] hover:brightness-95 hover:-translate-y-0.5 transition-all mt-9">
-                Get started free <ArrowRight className="size-4" />
-              </a>
-              <p className="text-[12px] text-muted-foreground/70 mt-4 font-ledger">Free to start · No card required</p>
+              </TiltCard>
             </div>
           </div>
-        </CometCard>
+        </div>
       </section>
 
-      <SiteFooter />
-    </main>
+      {/* MARQUEE */}
+      <Marquee>
+        <MarqueeItem>Salaried professionals</MarqueeItem>
+        <MarqueeItem>Freelancers &amp; remote workers</MarqueeItem>
+        <MarqueeItem>Foreign-income earners</MarqueeItem>
+        <MarqueeItem>Investors &amp; savers</MarqueeItem>
+        <MarqueeItem>FIRE planners</MarqueeItem>
+      </Marquee>
+
+      {/* PROBLEM -> PROMISE */}
+      <section className="relative z-2 mx-auto max-w-[1320px] px-6 pt-27.5 pb-10 sm:px-10">
+        <h2 className="max-w-[720px] font-display text-[clamp(34px,4.4vw,58px)] font-extrabold leading-[1.0] tracking-[-0.04em]">
+          Three problems.
+          <br />
+          One ledger that <span className="text-red">closes them.</span>
+        </h2>
+        <div className="mt-14">
+          {PROBLEMS.map((p) => (
+            <Reveal key={p.n} className="grid grid-cols-[88px_1fr_1fr] items-center gap-6 border-t-2 border-ink py-7.5 transition-[padding] hover:pl-3.5">
+              <div className="font-display text-[34px] font-extrabold tracking-[-0.03em] text-red">{p.n}</div>
+              <div>
+                <div className="font-display text-[clamp(22px,2.2vw,28px)] font-bold tracking-[-0.02em]">{p.bad}</div>
+                <div className="mt-1.25 text-[14.5px] text-ink-50">{p.badsub}</div>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="font-display text-[30px] font-extrabold text-red">→</span>
+                <div className="font-display text-[clamp(20px,2vw,24px)] font-bold tracking-[-0.01em]">{p.good}</div>
+              </div>
+            </Reveal>
+          ))}
+          <div className="border-t-2 border-ink" />
+        </div>
+      </section>
+
+      {/* ENGINE (inverted) */}
+      <section id="engine" className="relative z-2 mt-25 overflow-hidden bg-ink text-cream">
+        <EngineCanvas />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-16 -right-10 z-0 hidden font-display text-[clamp(120px,20vw,320px)] font-extrabold leading-none tracking-[-0.06em] whitespace-nowrap text-red/8 lg:block"
+        >
+          DETERMINISTIC
+        </div>
+        <div className="relative z-1 mx-auto max-w-[1320px] px-6 py-24 sm:px-10">
+          <div className="relative z-1 max-w-[900px]">
+            <div className="font-mono text-xs uppercase tracking-[.14em] text-red">The core difference</div>
+            <h2 className="mt-5 font-display text-[clamp(40px,6.2vw,86px)] font-extrabold leading-[0.92] tracking-[-0.045em]">
+              The AI never
+              <br />
+              invents your <span className="text-red">numbers.</span>
+            </h2>
+          </div>
+          <div className="relative z-1 mt-17 grid gap-5.5 lg:grid-cols-[1fr_1.15fr_1fr] lg:items-center">
+            <div>
+              <div className="mb-3.5 font-mono text-[11px] uppercase tracking-[.1em] text-ink-40">01 · Your documents</div>
+              <div className="flex flex-col gap-2.5">
+                {["Bank statement.pdf", "Payslip · APIT", "FD interest · AIT"].map((line) => (
+                  <div key={line} className="rounded-xl border border-cream/12 bg-cream/6 px-3.75 py-3.5 font-mono text-[13px]">
+                    {line}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 text-[13px] text-cream-60">Parsed by AI — approved by you.</div>
+            </div>
+            <TiltCard className="rounded-3xl bg-cream p-8 text-ink shadow-[0_40px_80px_-24px_rgba(0,0,0,.6)]">
+              <div className="font-mono text-[11px] uppercase tracking-[.1em] text-red">02 · Deterministic engine</div>
+              <div className="mt-2 font-display text-[26px] font-extrabold tracking-[-0.02em]">Sri Lankan tax engine</div>
+              <div className="mt-4.5 flex flex-col gap-2 font-mono text-xs text-ink-60">
+                {[
+                  ["Personal relief", "applied"],
+                  ["Rate bands 6/18/24%", "applied"],
+                  ["Foreign service 15%", "final"],
+                  ["APIT · AIT · FTC", "credited"],
+                ].map(([label, val]) => (
+                  <div key={label} className="flex justify-between">
+                    <span>{label}</span>
+                    <span className="text-green">{val}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4.5 border-t-2 border-ink/12 pt-4">
+                <div className="font-mono font-display text-[36px] font-extrabold tracking-[-0.02em]">
+                  <CountUp target={486000} prefix="LKR " />
+                </div>
+              </div>
+            </TiltCard>
+            <div>
+              <div className="mb-3.5 font-mono text-[11px] uppercase tracking-[.1em] text-ink-40">03 · Explained by AI</div>
+              <div className="rounded-2xl border border-cream/12 bg-cream/6 p-5">
+                <div className="text-[15px] leading-[1.55] text-cream-70">
+                  &ldquo;Your foreign fees hit the 15% final tax; APIT already covered most of it. You
+                  over-withheld by <span className="font-mono font-semibold text-red">LKR 74,000</span>.&rdquo;
+                </div>
+              </div>
+              <div className="mt-4 text-[13px] text-cream-60">
+                A number you can defend — every rule recorded, reproducible years later.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PILLARS */}
+      <section id="pillars" className="relative z-2 mx-auto max-w-[1320px] px-6 pt-27.5 pb-10 sm:px-10">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <h2 className="max-w-[560px] font-display text-[clamp(34px,4.4vw,58px)] font-extrabold leading-[1.0] tracking-[-0.04em]">
+            Four pillars, one
+            <br />
+            trustworthy ledger.
+          </h2>
+          <div className="font-mono text-xs uppercase tracking-[.1em] text-ink-40">Index 01—04</div>
+        </div>
+        <div className="mt-13">
+          {PILLARS.map((p) => (
+            <Reveal key={p.n} className="grid grid-cols-1 items-baseline gap-4 border-t-2 border-ink py-8.5 transition-[padding,background] hover:bg-red/5 hover:pl-3.5 md:grid-cols-[96px_300px_1fr_auto] md:gap-7">
+              <div className="font-display text-[34px] font-extrabold tracking-[-0.03em] text-red">{p.n}</div>
+              <div className="font-display text-[clamp(24px,2.4vw,30px)] font-bold tracking-[-0.025em]">{p.title}</div>
+              <div className="max-w-[540px] text-[15.5px] leading-[1.55] text-ink-60">{p.body}</div>
+              <div className="font-mono text-xs uppercase tracking-[.06em] text-ink-40">{p.tag}</div>
+            </Reveal>
+          ))}
+          <div className="border-t-2 border-ink" />
+        </div>
+      </section>
+
+      {/* FEATURES DEEP DIVES */}
+      <section className="relative z-2 mx-auto flex max-w-[1320px] flex-col gap-25 px-6 pt-27.5 pb-10 sm:px-10">
+        <FeatureDeepDive
+          eyebrow="AI quick-add"
+          title={<>Say it.<br />Salli books it.</>}
+          body="Type or speak a transaction — Salli drafts the correct double-entry for you to approve. No accounting degree required."
+          visual={
+            <TiltCard className="rounded-3xl bg-white p-6 shadow-[0_34px_70px_-30px_rgba(22,19,15,.4),0_0_0_1px_rgba(22,19,15,.05)]">
+              <div className="flex justify-end">
+                <div className="max-w-[75%] rounded-[16px_16px_4px_16px] bg-ink px-4 py-3 text-[14.5px] text-cream">
+                  Spent 4,500 on groceries at Keells
+                </div>
+              </div>
+              <div className="mt-4 flex items-start gap-2.5">
+                <span className="flex size-7 flex-none items-center justify-center rounded-lg bg-red font-display text-sm font-extrabold text-cream">S</span>
+                <div className="w-full rounded-[4px_16px_16px_16px] bg-cream-soft p-4">
+                  <div className="mb-2.75 font-mono text-[11px] font-semibold uppercase tracking-[.06em] text-ink-40">
+                    Draft · review to post
+                  </div>
+                  <div className="flex justify-between border-b border-dashed border-ink/16 py-1.5 font-mono text-[13.5px]">
+                    <span className="text-ink-50">Dr · Groceries</span>
+                    <span className="font-semibold">4,500.00</span>
+                  </div>
+                  <div className="flex justify-between py-1.5 font-mono text-[13.5px]">
+                    <span className="text-ink-50">Cr · Card</span>
+                    <span className="font-semibold">4,500.00</span>
+                  </div>
+                  <div className="mt-3.25 flex gap-2">
+                    <div className="flex-1 rounded-full bg-green py-2.5 text-center text-[13px] font-bold text-cream">Approve</div>
+                    <div className="flex-1 rounded-full border border-ink/16 bg-white py-2.5 text-center text-[13px] font-semibold">Edit</div>
+                  </div>
+                </div>
+              </div>
+            </TiltCard>
+          }
+        />
+
+        <FeatureDeepDive
+          reverse
+          eyebrow="Tax overview &amp; return prep"
+          title={<>See exactly<br />what you owe.</>}
+          body="Payable, deductions, bands and credits — then a guided return with a human-review checkpoint before you file."
+          visual={
+            <div className="relative aspect-4/3 overflow-hidden rounded-3xl shadow-[0_34px_70px_-30px_rgba(245,49,15,.6)]">
+              <Image src="/screens/web-tax.webp" alt="Salli tax overview screen" fill className="object-cover" />
+            </div>
+          }
+        />
+
+        <FeatureDeepDive
+          eyebrow="Debt · FIRE · Reports"
+          title={<>Plan the next<br />ten years.</>}
+          body="Avalanche vs. snowball, years-to-FI, and exportable reports — all on the same trustworthy ledger."
+          extra={
+            <div className="mt-7.5 flex gap-9">
+              <div>
+                <div className="font-mono font-display text-[38px] font-extrabold tracking-[-0.02em]">Nov 2029</div>
+                <div className="mt-1 font-mono text-[11px] uppercase tracking-[.06em] text-ink-40">Debt-free date</div>
+              </div>
+              <div className="w-0.5 bg-ink" />
+              <div>
+                <div className="font-mono font-display text-[38px] font-extrabold tracking-[-0.02em] text-red">
+                  <CountUp target={14.2} decimals={1} suffix=" yrs" />
+                </div>
+                <div className="mt-1 font-mono text-[11px] uppercase tracking-[.06em] text-ink-40">Years to FI</div>
+              </div>
+            </div>
+          }
+          visual={
+            <div className="relative aspect-4/3 overflow-hidden rounded-3xl shadow-[0_34px_70px_-30px_rgba(22,19,15,.5)]">
+              <Image src="/screens/web-fi.webp" alt="Salli financial independence screen" fill className="object-cover" />
+            </div>
+          }
+        />
+      </section>
+
+      {/* MADE FOR SRI LANKA */}
+      <section className="relative z-2 mt-27.5 overflow-hidden text-cream">
+        <Image
+          src="https://images.unsplash.com/photo-1742277295191-9e0349f77ea2?q=80&w=1900&auto=format&fit=crop"
+          alt="Lotus Tower, Colombo, Sri Lanka"
+          fill
+          className="object-cover object-[center_30%]"
+        />
+        <div className="absolute inset-0 bg-linear-to-b from-ink/72 via-ink/82 to-ink/94" />
+        <div className="relative mx-auto max-w-[1320px] px-6 py-30 sm:px-10">
+          <div className="font-mono text-xs uppercase tracking-[.14em] text-red">
+            Made for Sri Lanka — not bent to fit
+          </div>
+          <h2 className="mt-4.5 max-w-[680px] font-display text-[clamp(40px,5.6vw,74px)] font-extrabold leading-[0.94] tracking-[-0.045em]">
+            Local by design.
+            <br />
+            From Colombo out.
+          </h2>
+          <p className="mt-4.5 max-w-[480px] text-[17px] leading-[1.55] text-cream-80">
+            Built around IRD rules for 2025/26 — LKR-native, aligned to local banks, reviewed by a
+            chartered accountant.
+          </p>
+          <div className="mt-14 grid grid-cols-2 gap-5.5 md:grid-cols-4">
+            {[
+              ["2025/26", "IRD tax pack, versioned"],
+              ["LKR", "Native currency & local banks"],
+              ["15%", "Foreign service final tax"],
+              ["CA", "Chartered-accountant reviewed"],
+            ].map(([big, label]) => (
+              <div key={label} className="border-t-3 border-red pt-5">
+                <div className="font-mono font-display text-[clamp(30px,3.4vw,46px)] font-extrabold tracking-[-0.02em]">{big}</div>
+                <div className="mt-1.5 text-[13.5px] text-cream-80">{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section className="relative z-2 mx-auto max-w-[1320px] px-6 pt-27.5 pb-10 sm:px-10">
+        <h2 className="font-display text-[clamp(34px,4.4vw,58px)] font-extrabold leading-[1.0] tracking-[-0.04em]">
+          Three steps to <span className="text-red">knowing.</span>
+        </h2>
+        <div className="mt-14 grid gap-9 md:grid-cols-3">
+          {STEPS.map((s) => (
+            <Reveal key={s.n} className="border-t-3 border-ink pt-5.5">
+              <div className="font-display text-[56px] font-extrabold leading-none tracking-[-0.04em] text-red">{s.n}</div>
+              <div className="mt-3.5 font-display text-[26px] font-bold tracking-[-0.02em]">{s.title}</div>
+              <p className="mt-2.5 text-[15px] leading-[1.55] text-ink-60">{s.body}</p>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* SECURITY / TRUST */}
+      <section id="security" className="relative z-2 mx-auto max-w-[1320px] px-6 pt-27.5 pb-10 sm:px-10">
+        <div className="rounded-[32px] bg-ink px-6 py-18 text-cream sm:px-15">
+          <h2 className="max-w-[680px] font-display text-[clamp(34px,4.6vw,60px)] font-extrabold leading-[1.0] tracking-[-0.04em]">
+            Numbers you can defend —
+            <br />
+            <span className="text-red">years later.</span>
+          </h2>
+          <div className="mt-13 grid gap-0 md:grid-cols-3">
+            {TRUST.map((t) => (
+              <div key={t.title} className="border-t border-cream/16 py-7 pr-6.5">
+                <div className="font-display text-[19px] font-bold">{t.title}</div>
+                <p className="mt-2.25 text-sm leading-[1.55] text-cream-60">{t.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PLATFORMS */}
+      <section id="download" className="relative z-2 mx-auto grid max-w-[1320px] items-center gap-15 px-6 pt-27.5 pb-10 sm:px-10 md:grid-cols-2">
+        <div>
+          <div className="font-mono text-xs uppercase tracking-[.14em] text-red">Platforms</div>
+          <h2 className="mt-4 font-display text-[clamp(34px,4.6vw,60px)] font-extrabold leading-[1.0] tracking-[-0.04em]">
+            On your desk.
+            <br />
+            In your pocket.
+          </h2>
+          <p className="mt-4.5 max-w-[400px] text-[17px] leading-[1.55] text-ink-60">
+            Full-power web app for desktop, and a dedicated dark mobile app for iOS &amp; Android —
+            always in sync.
+          </p>
+          <div className="mt-7.5 flex flex-wrap gap-3">
+            <MagneticButton href="#cta" className="rounded-full bg-ink px-6 py-3.5 text-[15px] font-bold text-cream hover:bg-red">
+              App Store
+            </MagneticButton>
+            <MagneticButton href="#cta" className="rounded-full bg-ink px-6 py-3.5 text-[15px] font-bold text-cream hover:bg-red">
+              Google Play
+            </MagneticButton>
+            <MagneticButton href="#cta" className="rounded-full border-2 border-ink px-5.5 py-3 text-[15px] font-bold hover:bg-ink hover:text-cream">
+              Open web app
+            </MagneticButton>
+          </div>
+        </div>
+        <div className="flex justify-center gap-5.5">
+          <div className="w-[200px] flex-none rounded-[38px] bg-ink p-2.5 shadow-[0_40px_80px_-30px_rgba(22,19,15,.5)]">
+            <div className="flex h-full flex-col rounded-[30px] bg-ink-soft px-4 py-5.5">
+              <div className="font-mono text-[10.5px] uppercase tracking-[.08em] text-ink-40">Net worth</div>
+              <div className="mt-0.5 font-mono font-display text-2xl font-extrabold text-cream">LKR 8.4M</div>
+              <div className="mt-5 flex flex-col gap-2.25">
+                <div className="h-10.5 rounded-xl bg-cream/6" />
+                <div className="h-10.5 rounded-xl bg-cream/6" />
+                <div className="h-10.5 rounded-xl bg-cream/6" />
+              </div>
+              <div className="mt-auto flex h-12 items-center justify-center rounded-full bg-red text-[13px] font-bold text-cream">
+                Ask Salli
+              </div>
+            </div>
+          </div>
+          <div className="relative h-[330px] w-[256px] overflow-hidden rounded-3xl shadow-[0_36px_70px_-30px_rgba(22,19,15,.5)]">
+            <Image
+              src="https://images.unsplash.com/photo-1681825984459-47ee999da245?q=80&w=900&auto=format&fit=crop"
+              alt="Managing money on a phone"
+              fill
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-linear-to-b from-transparent to-ink/62" />
+            <div className="absolute bottom-3.75 left-3.75 font-mono text-[11px] tracking-[.06em] text-cream">
+              Banking in hand
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="relative z-2 mx-auto max-w-[940px] px-6 pt-27.5 pb-10 sm:px-10">
+        <h2 className="mb-11 font-display text-[clamp(34px,4.6vw,60px)] font-extrabold leading-[1.0] tracking-[-0.04em]">
+          Questions,
+          <br />
+          <span className="text-red">answered.</span>
+        </h2>
+        <FaqAccordion faqs={FAQS} />
+        <p className="mt-7 font-mono text-[11.5px] leading-[1.7] tracking-[.02em] text-ink-40">
+          Salli is not a licensed financial or investment advisor. Tools, clarity, and tax
+          computation — not personalized investment advice or promised returns.
+        </p>
+      </section>
+
+      {/* CTA */}
+      <section id="cta" className="relative z-2 mx-auto max-w-[1320px] px-6 pt-20 pb-25 sm:px-10">
+        <div className="relative overflow-hidden rounded-[36px] bg-red px-6 py-[clamp(64px,9vw,120px)] text-center text-cream">
+          <div className="ctaring absolute left-1/2 top-1/2 size-[300px] rounded-full border-2 border-cream/40" />
+          <div className="ctaring absolute left-1/2 top-1/2 size-[300px] rounded-full border-2 border-cream/40" style={{ animationDelay: "1.6s" }} />
+          <div className="ctaring absolute left-1/2 top-1/2 size-[300px] rounded-full border-2 border-cream/40" style={{ animationDelay: "3.2s" }} />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-[-6%] left-1/2 hidden -translate-x-1/2 font-display text-[clamp(140px,26vw,420px)] font-extrabold leading-none tracking-[-0.06em] whitespace-nowrap text-cream/10 lg:block"
+          >
+            Salli
+          </div>
+          <div className="relative z-1 font-mono text-xs uppercase tracking-[.14em] opacity-80">
+            Get started free · Sri Lanka 2025/26
+          </div>
+          <h2 className="relative z-1 mt-4.5 font-display text-[clamp(48px,8vw,120px)] font-extrabold leading-[0.9] tracking-[-0.05em]">
+            Stop guessing.
+            <br />
+            Start knowing.
+          </h2>
+          <div className="relative z-1 mt-11 flex flex-wrap justify-center gap-3.5">
+            <MagneticButton href="#top" className="rounded-full bg-cream px-8.5 py-4.5 text-[17px] font-bold text-ink">
+              Get started free
+            </MagneticButton>
+            <MagneticButton href="#download" className="rounded-full border-2 border-cream/60 px-8 py-4 text-[17px] font-bold hover:bg-cream/14">
+              Download the app
+            </MagneticButton>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
   );
 }

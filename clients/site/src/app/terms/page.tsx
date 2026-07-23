@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { LegalLayout } from "@/components/LegalLayout";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Salli",
+  title: "Terms of Service",
   description: "The terms that govern your use of Salli.",
+  alternates: { canonical: "/terms" },
 };
 
 export default function TermsPage() {

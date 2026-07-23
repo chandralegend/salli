@@ -15,6 +15,7 @@ import { FeatureDeepDive } from "@/components/FeatureDeepDive";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { AppleLogo, GooglePlayLogo } from "@/components/StoreIcons";
+import { APP_URL } from "@/lib/config";
 
 const PROBLEMS = [
   { n: "01", bad: "Scattered money", badsub: "Accounts, cards, loans, investments: spreadsheets go stale.", good: "One truthful picture" },
@@ -527,7 +528,7 @@ export default function HomePage() {
               <GooglePlayLogo className="size-4" />
               Google Play
             </MagneticButton>
-            <MagneticButton href="#cta" className="rounded-full border-2 border-ink px-5.5 py-3 text-[15px] font-bold hover:bg-ink hover:text-cream">
+            <MagneticButton href={APP_URL} className="rounded-full border-2 border-ink px-5.5 py-3 text-[15px] font-bold hover:bg-ink hover:text-cream">
               Open web app
             </MagneticButton>
           </div>

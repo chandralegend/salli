@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { MagneticButton } from "@/components/MagneticButton";
+import { APP_LOGIN_URL } from "@/lib/config";
 
 const NAV = [
   { href: "/features", label: "Features" },
@@ -55,7 +56,7 @@ export function Header({ active }: { active?: string }) {
           ))}
         </div>
         <div className="ml-auto hidden items-center gap-5 md:flex">
-          <Link href="/pricing" className="text-[14.5px] font-semibold">
+          <Link href={APP_LOGIN_URL} className="text-[14.5px] font-semibold">
             Log in
           </Link>
           <MagneticButton
@@ -84,7 +85,7 @@ export function Header({ active }: { active?: string }) {
             ))}
           </div>
           <div className="mt-6 flex flex-col gap-3">
-            <Link href="/pricing" onClick={() => setMenuOpen(false)} className="text-[15px] font-semibold">
+            <Link href={APP_LOGIN_URL} onClick={() => setMenuOpen(false)} className="text-[15px] font-semibold">
               Log in
             </Link>
             <Link

@@ -184,7 +184,7 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
                 <View className="self-start flex-row items-center gap-1.5 rounded-pill border border-salli-accent/40 bg-salli-accent/25 px-3 py-1">
                   {(() => {
                     const Icon = TYPE_META[categoryAccount.type].Icon;
-                    return <Icon size={11} color="#f5310f" strokeWidth={2.5} />;
+                    return <Icon size={11} color={colors.accent} strokeWidth={2.5} />;
                   })()}
                   <Text className="font-sans-semibold text-[12px] text-salli-accent">{categoryAccount.name}</Text>
                 </View>
@@ -272,6 +272,7 @@ function AccountRow({
   position: "top" | "bottom";
   onPress: () => void;
 }) {
+  const colors = useThemeColors();
   const meta = account ? TYPE_META[account.type] : null;
   const Icon = meta?.Icon ?? (side === "debit" ? ShoppingBag : Landmark);
   const filled = Boolean(account);
@@ -290,7 +291,7 @@ function AccountRow({
           filled ? "border border-salli-accent/20 bg-salli-accent/10" : "bg-foreground/[0.06]",
         )}
       >
-        <Icon size={13} color={filled ? "#f5310f" : "rgba(148,163,184,0.6)"} strokeWidth={2.5} />
+        <Icon size={13} color={filled ? colors.accent : "rgba(148,163,184,0.6)"} strokeWidth={2.5} />
       </View>
       <View className="flex-1">
         <Text className="mb-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
@@ -332,6 +333,7 @@ function AccountPickerSheet({
   onSelect: (id: string) => void;
   onClose: () => void;
 }) {
+  const colors = useThemeColors();
   return (
     <Drawer
       visible={visible}
@@ -362,7 +364,7 @@ function AccountPickerSheet({
                     active ? "border border-salli-accent/20 bg-salli-accent/10" : "bg-foreground/[0.06]",
                   )}
                 >
-                  <Icon size={13} color={active ? "#f5310f" : "rgba(148,163,184,0.7)"} strokeWidth={2.5} />
+                  <Icon size={13} color={active ? colors.accent : "rgba(148,163,184,0.7)"} strokeWidth={2.5} />
                 </View>
                 <View className="flex-1">
                   <Text

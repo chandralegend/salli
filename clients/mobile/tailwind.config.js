@@ -31,15 +31,15 @@ module.exports = {
         destructive: "rgb(var(--color-destructive) / <alpha-value>)",
         "salli-success": "#1b6b47",
 
-        // Salli accent — theme-invariant red-orange, the one fixed hue across
-        // light/dark (matches the marketing site's primary: active states,
-        // CTAs, icon fills).
-        "salli-accent": "#f5310f",
-        // Hero gradient stops (Login / Dashboard top) — always dark, both themes,
-        // red-orange fading to ink instead of the old navy-to-black treatment.
-        "salli-hero-1": "#f5310f",
-        "salli-hero-2": "#b8280f",
-        "salli-hero-3": "#5c1f13",
+        // Salli accent — red-orange in light mode, shifts to true orange in
+        // dark mode (see global.css --color-salli-accent) since red-orange
+        // reads muddy against near-black. Active states, CTAs, icon fills.
+        "salli-accent": "rgb(var(--color-salli-accent) / <alpha-value>)",
+        // Hero gradient stops (Login / Dashboard top) — always dark (these
+        // screens don't follow the light/dark toggle), orange fading to ink.
+        "salli-hero-1": "#F97316",
+        "salli-hero-2": "#c85a0f",
+        "salli-hero-3": "#6b3212",
         "salli-hero-4": "#16130f",
         // Deep-ink card (Tax hero, New Entry amount hero) — theme-invariant.
         "salli-navy-card": "#221d17",
@@ -47,7 +47,7 @@ module.exports = {
         // badge), mirrors the old app's "stays dark in both modes" tokens.
         "salli-dock": "rgba(4,4,4,.97)",
         "salli-badge": "#FFFFFF",
-        "salli-badge-foreground": "#f5310f",
+        "salli-badge-foreground": "#F97316",
       },
       fontFamily: {
         sans: ["Archivo_400Regular"],

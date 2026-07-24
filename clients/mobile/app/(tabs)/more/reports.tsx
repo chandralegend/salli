@@ -63,6 +63,7 @@ function periodRange(period: string): { from: string; to: string; label: string 
 
 /** Net-worth trend line + area fill (mockup's Net Worth hero chart). */
 function TrendChart({ values }: { values: number[] }) {
+  const colors = useThemeColors();
   const W = 320;
   const H = 70;
   const pad = 8;
@@ -76,8 +77,8 @@ function TrendChart({ values }: { values: number[] }) {
   const area = `${line} ${W},${H} 0,${H}`;
   return (
     <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
-      <Polygon points={area} fill="rgba(245,49,15,0.12)" stroke="none" />
-      <Polyline points={line} fill="none" stroke="#f5310f" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+      <Polygon points={area} fill={`${colors.accent}1F`} stroke="none" />
+      <Polyline points={line} fill="none" stroke={colors.accent} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
@@ -188,7 +189,7 @@ export default function ReportsScreen() {
                   )}
                 >
                   {nwDelta >= 0 ? (
-                    <ArrowUpRight size={9} color="#f5310f" strokeWidth={2.5} />
+                    <ArrowUpRight size={9} color={colors.accent} strokeWidth={2.5} />
                   ) : (
                     <ArrowDownRight size={9} color="#EF4444" strokeWidth={2.5} />
                   )}

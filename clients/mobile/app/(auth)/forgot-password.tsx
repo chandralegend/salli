@@ -32,7 +32,7 @@ export default function ForgotPasswordScreen() {
   return (
     <View className="flex-1 bg-black">
       <LinearGradient
-        colors={["#f5310f", "#b8280f", "#5c1f13", "#16130f", "#000000"]}
+        colors={["#F97316", "#c85a0f", "#6b3212", "#16130f", "#000000"]}
         locations={[0, 0.3, 0.55, 0.8, 1]}
         style={{ position: "absolute", top: 0, left: 0, right: 0, height: 430 }}
       />
@@ -54,7 +54,7 @@ export default function ForgotPasswordScreen() {
           {sent ? (
             <View className="items-center gap-3 px-6">
               <View className="h-14 w-14 items-center justify-center rounded-full bg-salli-accent/20">
-                <Mail size={22} color="#f5310f" strokeWidth={2} />
+                <Mail size={22} color="#F97316" strokeWidth={2} />
               </View>
               <Text className="text-center font-sans-semibold text-[16px] text-white">
                 Check your inbox

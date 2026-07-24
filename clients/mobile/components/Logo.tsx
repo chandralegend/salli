@@ -9,8 +9,8 @@ type LogoProps = {
 };
 
 /** White rounded-square badge with the Sinhala "රු" wordmark — theme-invariant
- * (always white bg / red-orange glyph), per the mockup's Login/Onboarding hero. */
-export function Logo({ size = 80, radius, bg = "#FFFFFF", fg = "#f5310f", className }: LogoProps) {
+ * (always white bg / orange glyph), per the mockup's Login/Onboarding hero. */
+export function Logo({ size = 80, radius, bg = "#FFFFFF", fg = "#F97316", className }: LogoProps) {
   const r = radius ?? Math.round(size * 0.3);
   return (
     <View

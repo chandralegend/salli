@@ -126,9 +126,10 @@
   --popover: #221d17;
   --popover-foreground: #f2efe6;
 
-  /* Primary stays the same red-orange in dark mode — it doesn't flip like the
-     old navy scheme did, matching the marketing site's convention. */
-  --primary: #f5310f;
+  /* Primary shifts to orange in dark mode — the light-mode red-orange reads
+     muddy against near-black surfaces, where a true orange has better
+     contrast and vibrance. Still distinct from --destructive either way. */
+  --primary: #F97316;
   --primary-foreground: #ffffff;
 
   --secondary: #2c2822;
@@ -144,16 +145,16 @@
 
   --border: #2c2822;
   --input: #2c2822;
-  --ring: #f5310f;
+  --ring: #F97316;
 
   --sidebar: #16130f;
   --sidebar-foreground: #f2efe6;
-  --sidebar-primary: #f5310f;
+  --sidebar-primary: #F97316;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #2c2822;
   --sidebar-accent-foreground: #f2efe6;
   --sidebar-border: #2c2822;
-  --sidebar-ring: #f5310f;
+  --sidebar-ring: #F97316;
 
   /* Scenario triad re-validated against the dark card surface #221d17 */
   --chart-1: #D97706;

@@ -60,6 +60,7 @@ const GOAL_ICON: Record<string, LucideIcon> = {
 /** Portfolio-projection line chart (mockup's Strategy hero): three engine
  * series (growth/base/conservative) plus a dashed FIRE-target line. */
 function ProjectionChart({ projections }: { projections: FiProjections }) {
+  const colors = useThemeColors();
   const W = 320;
   const H = 90;
   const pad = 8;
@@ -77,7 +78,7 @@ function ProjectionChart({ projections }: { projections: FiProjections }) {
       <Line x1={0} y1={targetY} x2={W} y2={targetY} stroke="rgba(255,255,255,0.25)" strokeWidth={1} strokeDasharray="3 3" />
       <Polyline points={line("conservative")} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={2} strokeDasharray="4 3" strokeLinejoin="round" />
       <Polyline points={line("base")} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={2} strokeDasharray="4 3" strokeLinejoin="round" />
-      <Polyline points={line("growth")} fill="none" stroke="#f5310f" strokeWidth={2.5} strokeLinejoin="round" />
+      <Polyline points={line("growth")} fill="none" stroke={colors.accent} strokeWidth={2.5} strokeLinejoin="round" />
     </Svg>
   );
 }
@@ -133,6 +134,7 @@ function ProgressBar({ pct }: { pct: number }) {
 /** Conic-style progress ring (mockup's FI Score badge): a thin accent arc that
  * fills to `score`%, with the integer score centered in the hole. */
 function ScoreRing({ score }: { score: number }) {
+  const colors = useThemeColors();
   const size = 48;
   const sw = 6;
   const r = (size - sw) / 2;
@@ -146,7 +148,7 @@ function ScoreRing({ score }: { score: number }) {
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke="#f5310f"
+          stroke={colors.accent}
           strokeWidth={sw}
           fill="none"
           strokeDasharray={`${c * pct} ${c}`}
@@ -454,7 +456,7 @@ export default function FinancialIndependenceScreen() {
               <ProjectionChart projections={projections.data} />
               <View className="mt-2.5 flex-row items-center gap-3">
                 {[
-                  { c: "#f5310f", l: "Growth" },
+                  { c: colors.accent, l: "Growth" },
                   { c: "rgba(255,255,255,0.4)", l: "Base" },
                   { c: "rgba(255,255,255,0.2)", l: "Conservative" },
                 ].map((x) => (

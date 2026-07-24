@@ -159,7 +159,7 @@ export function AppSidebar() {
         type="button"
         onClick={togglePanel}
         title={expanded ? undefined : "Ask Salli AI"}
-        className="flex items-center gap-3 h-10 rounded-md px-2.5 mt-4 bg-[#0A2540] text-white text-sm font-medium hover:brightness-110 transition-all overflow-hidden"
+        className="flex items-center gap-3 h-10 rounded-md px-2.5 mt-4 bg-primary text-white text-sm font-medium hover:brightness-110 transition-all overflow-hidden"
       >
         <Sparkles className="size-[18px] shrink-0" />
         <span className={cn("whitespace-nowrap transition-opacity", expanded ? "opacity-100" : "opacity-0")}>

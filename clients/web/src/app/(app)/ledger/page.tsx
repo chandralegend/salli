@@ -470,7 +470,7 @@ export default function LedgerPage() {
               );
             })}
           </div>
-          <div className="rounded-lg bg-[#0A2540] text-white px-5 py-4 flex items-center justify-between">
+          <div className="rounded-lg bg-primary text-white px-5 py-4 flex items-center justify-between">
             <p className="eyebrow text-white/60">Net Income</p>
             <p className="money text-[24px] font-semibold text-[var(--status-success-text)]">
               LKR {formatMoney(stmt?.net_income)}

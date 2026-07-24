@@ -127,7 +127,7 @@ export function AccountDetailSheet({
           ) : (
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {/* balance hero */}
-              <div className="rounded-lg bg-[#0A2540] text-white p-5">
+              <div className="rounded-lg bg-primary text-white p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="mb-2 flex items-center gap-2">

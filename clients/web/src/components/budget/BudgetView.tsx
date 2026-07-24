@@ -20,7 +20,7 @@ export function BudgetView({ summary, monthLabel }: { summary: BudgetSummaryFull
   return (
     <div className="space-y-6">
       {/* Hero — spend vs limit */}
-      <div className="rounded-lg bg-[#0A2540] text-white p-6">
+      <div className="rounded-lg bg-primary text-white p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="eyebrow text-white/60">Monthly budget</p>

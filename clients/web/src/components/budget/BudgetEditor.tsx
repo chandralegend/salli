@@ -76,7 +76,7 @@ export function BudgetEditor({
   return (
     <div className="space-y-6">
       {/* Hero — total allocation */}
-      <div className="rounded-lg bg-[#0A2540] text-white p-6">
+      <div className="rounded-lg bg-primary text-white p-6">
         <p className="eyebrow text-white/60">Monthly limit</p>
         <div className="flex items-end justify-between gap-4 mt-2">
           <p className="money text-[36px] leading-none font-semibold">LKR {formatMoney(String(allocated), 0)}</p>

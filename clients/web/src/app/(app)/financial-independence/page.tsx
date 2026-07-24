@@ -407,7 +407,7 @@ export default function FinancialIndependencePage() {
             )}
           </div>
 
-          <div className="rounded-lg bg-[#0A2540] text-white p-5">
+          <div className="rounded-lg bg-primary text-white p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[15px] font-semibold">FI Mentor</h2>
               <button

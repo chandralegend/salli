@@ -420,7 +420,7 @@ export default function DebtPage() {
 
           {/* ── Schedule ── */}
           <TabsContent value="schedule" className="mt-4 space-y-4">
-            <div className="rounded-lg bg-[#0A2540] px-5 py-4 text-white">
+            <div className="rounded-lg bg-primary px-5 py-4 text-white">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="eyebrow text-white/60">Debt-Free Date</p>

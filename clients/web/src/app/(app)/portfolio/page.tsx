@@ -146,7 +146,7 @@ export default function PortfolioPage() {
       ) : (
         <>
           {/* Value hero */}
-          <div className="rounded-lg bg-[#0A2540] text-white px-6 py-5">
+          <div className="rounded-lg bg-primary text-white px-6 py-5">
             <p className="eyebrow text-white/60">Total portfolio value</p>
             <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
               <p className="money text-[40px] leading-none font-semibold">

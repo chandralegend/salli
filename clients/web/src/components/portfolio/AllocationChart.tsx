@@ -4,17 +4,18 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { formatCompact } from "@/lib/format";
 import type { AllocationSlice } from "@/hooks/usePortfolio";
 
-/** Distinct-but-on-brand blues for allocation slices — shared by the donut,
+/** Distinct-but-on-brand neutrals for allocation slices — shared by the donut,
  * legend, per-asset-class cards and holding accent bars so everything reads as
- * one system. Assigned by the summary's allocation order. */
+ * one system. Kept off the red-orange primary/accent so data slices never look
+ * like CTAs. Assigned by the summary's allocation order. */
 export const SLICE_COLORS = [
-  "#2563EB",
-  "#60A5FA",
-  "#1E40AF",
-  "#93C5FD",
-  "#3B82F6",
-  "#1D4ED8",
-  "#BFDBFE",
+  "#16130f",
+  "#b7b1a5",
+  "#4b463d",
+  "#e4e0d6",
+  "#6b6459",
+  "#2c2822",
+  "#8c877c",
 ];
 
 export function colorForClass(allocation: AllocationSlice[]): Record<string, string> {

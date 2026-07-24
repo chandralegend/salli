@@ -298,7 +298,7 @@ export default function DashboardPage() {
       </div>
 
       {/* AI strip */}
-      <div className="rounded-lg bg-[#0A2540] text-white p-5 flex flex-wrap items-center gap-4">
+      <div className="rounded-lg bg-primary text-white p-5 flex flex-wrap items-center gap-4">
         <div className="size-9 rounded-md bg-white/10 flex items-center justify-center shrink-0">
           <Sparkles className="size-4.5" />
         </div>
@@ -322,7 +322,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => openPanel()}
-            className="rounded-full bg-white text-[#0A2540] px-4 py-1.5 text-[13px] font-semibold inline-flex items-center gap-1 hover:bg-white/90 transition-colors"
+            className="rounded-full bg-white text-primary px-4 py-1.5 text-[13px] font-semibold inline-flex items-center gap-1 hover:bg-white/90 transition-colors"
           >
             Start conversation <ArrowRight className="size-3.5" />
           </button>

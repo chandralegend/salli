@@ -315,9 +315,17 @@ class BillingPort(ABC):
 
     @abstractmethod
     async def create_checkout(
-        self, user_id: str, email: str | None, plan_key: str, customer_id: str | None
+        self,
+        user_id: str,
+        email: str | None,
+        plan_key: str,
+        cycle: str,
+        customer_id: str | None,
     ) -> dict[str, Any]:
-        """Return data the client needs to open checkout (price id, customer, txn)."""
+        """Return data the client needs to open checkout (price id, customer, txn).
+
+        `cycle` is "month" or "year" and selects which price to charge.
+        """
         ...
 
     @abstractmethod

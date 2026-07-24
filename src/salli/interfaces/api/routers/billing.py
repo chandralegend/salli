@@ -29,6 +29,7 @@ async def get_plans(svc: AppServices):
 
 class CheckoutRequest(BaseModel):
     plan: str  # "plus" | "pro"
+    cycle: str = "month"  # "month" | "year"
 
 
 @router.post("/checkout")
@@ -37,7 +38,7 @@ async def create_checkout(
 ):
     """Return the data the client passes to Paddle.js to open checkout."""
     try:
-        return await svc.billing.create_checkout(user_id, email, body.plan)
+        return await svc.billing.create_checkout(user_id, email, body.plan, body.cycle)
     except RuntimeError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
 

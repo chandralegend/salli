@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +13,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { StatusChip } from "@/components/shared/StatusChip";
-import { usePlans, useCheckout, metricLabel, type Plan } from "@/hooks/useBilling";
+import {
+  usePlans,
+  useCheckout,
+  metricLabel,
+  type Plan,
+  type BillingCycle,
+} from "@/hooks/useBilling";
 import { openPaddleCheckout } from "@/lib/paddle";
 
 function planSummary(p: Plan): string {
@@ -32,15 +40,28 @@ export function UpgradeDialog({
 }) {
   const plans = usePlans();
   const checkout = useCheckout();
+  const queryClient = useQueryClient();
+  const [cycle, setCycle] = useState<BillingCycle>("month");
 
   async function upgrade(planKey: string) {
     try {
-      const data = await checkout.mutateAsync(planKey);
-      await openPaddleCheckout(data as Parameters<typeof openPaddleCheckout>[0]);
+      const data = await checkout.mutateAsync({ plan: planKey, cycle });
+      await openPaddleCheckout(data as Parameters<typeof openPaddleCheckout>[0], () => {
+        // Checkout finished — refresh plan + usage so Settings reflects it immediately.
+        queryClient.invalidateQueries({ queryKey: ["billing"] });
+        toast.success("Subscription updated");
+      });
       onOpenChange(false);
     } catch {
       toast.error("Billing is temporarily unavailable — try again shortly.");
     }
+  }
+
+  function priceLabel(p: Plan): string {
+    if (!p.paid) return "";
+    return cycle === "year"
+      ? `— $${p.yearly_price_usd} / year`
+      : `— $${p.monthly_price_usd} / month`;
   }
 
   return (
@@ -50,6 +71,28 @@ export function UpgradeDialog({
           <DialogTitle>Change plan</DialogTitle>
           <DialogDescription>Prorated via Paddle. Cancel anytime.</DialogDescription>
         </DialogHeader>
+        <div className="flex justify-center">
+          <div className="inline-flex rounded-lg border p-0.5 text-[13px]">
+            <button
+              type="button"
+              onClick={() => setCycle("month")}
+              className={`rounded-md px-3 py-1 font-medium transition ${
+                cycle === "month" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              onClick={() => setCycle("year")}
+              className={`rounded-md px-3 py-1 font-medium transition ${
+                cycle === "year" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+              }`}
+            >
+              Annual
+            </button>
+          </div>
+        </div>
         {plans.isLoading ? (
           <div className="py-8 flex justify-center">
             <Loader2 className="size-5 animate-spin text-muted-foreground" />
@@ -65,7 +108,7 @@ export function UpgradeDialog({
                       {p.name}
                       <span className="text-[13px] font-normal text-muted-foreground">
                         {" "}
-                        — ${p.monthly_price_usd} {p.paid ? "/ month" : ""}
+                        {priceLabel(p)}
                       </span>
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5 truncate">{planSummary(p)}</p>

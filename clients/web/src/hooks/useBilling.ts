@@ -25,10 +25,13 @@ export type Plan = {
   name: string;
   description: string;
   monthly_price_usd: number;
+  yearly_price_usd: number;
   limits: Record<string, number>;
   features: string[];
   paid: boolean;
 };
+
+export type BillingCycle = "month" | "year";
 
 export function useSubscription() {
   return useQuery({
@@ -48,8 +51,8 @@ export function usePlans() {
 
 export function useCheckout() {
   return useMutation({
-    mutationFn: (plan: string) =>
-      apiFetch<Record<string, unknown>>("POST", "/billing/checkout", { plan }),
+    mutationFn: ({ plan, cycle = "month" }: { plan: string; cycle?: BillingCycle }) =>
+      apiFetch<Record<string, unknown>>("POST", "/billing/checkout", { plan, cycle }),
   });
 }
 

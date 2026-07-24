@@ -37,6 +37,32 @@ def _period_resets_at(now: datetime.datetime | None = None) -> str:
     return nxt.isoformat()
 
 
+# Statuses that grant the paid plan's entitlements. Anything else (canceled,
+# past_due, paused, …) falls back to Free even though the plan key is still set.
+_ACTIVE_STATUSES = frozenset({"active", "trialing"})
+
+
+def _parse_dt(value: Any) -> datetime.datetime | None:
+    """Parse a Paddle ISO-8601 timestamp to a tz-aware datetime; pass through None/datetime.
+
+    Paddle sends `...Z`; `datetime.fromisoformat` needs an explicit offset before 3.11's
+    relaxations, so normalize the trailing Z. The DB columns are `DateTime(timezone=True)`,
+    so writing the raw string would raise at flush time.
+    """
+    if value is None or isinstance(value, datetime.datetime):
+        return value
+    if isinstance(value, str):
+        return datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return None
+
+
+def _effective_plan(sub: dict[str, Any]):
+    """The plan whose limits actually apply: the stored plan only while active/trialing."""
+    if sub.get("status") in _ACTIVE_STATUSES:
+        return get_plan(sub.get("plan"))
+    return get_plan("free")
+
+
 class BillingService:
     def __init__(self, uow_factory: Any, billing_port: Any = None) -> None:
         self._uow_factory = uow_factory
@@ -60,7 +86,7 @@ class BillingService:
 
     async def get_entitlements(self, user_id: str, email: str | None = None) -> dict[str, Any]:
         sub = await self._ensure_user(user_id, email)
-        plan = get_plan(sub.get("plan"))
+        plan = _effective_plan(sub)
         period = _period()
         async with self._uow_factory() as uow:
             counts = await uow.usage.get_counts(user_id, period)
@@ -92,7 +118,7 @@ class BillingService:
     ) -> None:
         """Raise QuotaExceeded if over the monthly limit, else increment the counter."""
         sub = await self._ensure_user(user_id, email)
-        plan = get_plan(sub.get("plan"))
+        plan = _effective_plan(sub)
         limit = plan.limits.get(metric, 0)
         period = _period()
         async with self._uow_factory() as uow:
@@ -110,6 +136,7 @@ class BillingService:
                     "name": p.name,
                     "description": p.description,
                     "monthly_price_usd": p.monthly_price_usd,
+                    "yearly_price_usd": p.yearly_price_usd,
                     "limits": p.limits,
                     "features": p.features,
                     "paid": p.paid,
@@ -120,15 +147,15 @@ class BillingService:
     # ── Provider (Paddle) ─────────────────────────────────────────────────────
 
     async def create_checkout(
-        self, user_id: str, email: str | None, plan_key: str
+        self, user_id: str, email: str | None, plan_key: str, cycle: str = "month"
     ) -> dict[str, Any]:
         if self._billing is None:
             raise RuntimeError("Billing provider not configured")
-        sub = await self._ensure_user(user_id, email)
+        await self._ensure_user(user_id, email)  # bootstrap free sub/profile on first use
         async with self._uow_factory() as uow:
             profile = await uow.user_profiles.get(user_id)
         customer_id = (profile or {}).get("paddle_customer_id")
-        return await self._billing.create_checkout(user_id, email, plan_key, customer_id)
+        return await self._billing.create_checkout(user_id, email, plan_key, cycle, customer_id)
 
     async def get_portal_url(self, user_id: str, email: str | None = None) -> str:
         if self._billing is None:
@@ -154,19 +181,22 @@ class BillingService:
         user_id = event.get("user_id")
         if not user_id:
             return
-        fields: dict[str, Any] = {}
+        fields: dict[str, Any] = {"provider": "paddle"}
         if "price_id" in event:
             fields["plan"] = self._billing.plan_for_price_id(event["price_id"])
         for key in (
             "status",
             "provider_customer_id",
             "provider_subscription_id",
-            "current_period_start",
-            "current_period_end",
             "cancel_at_period_end",
         ):
             if key in event:
                 fields[key] = event[key]
+        # Period bounds arrive as ISO strings but the DB columns are DateTime; parse
+        # them so the upsert doesn't fail binding a str to a timestamptz column.
+        for key in ("current_period_start", "current_period_end"):
+            if key in event:
+                fields[key] = _parse_dt(event[key])
         async with self._uow_factory() as uow:
             await uow.subscriptions.upsert(user_id, fields)
             if event.get("provider_customer_id"):

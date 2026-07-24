@@ -19,12 +19,14 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import Markdown from "react-native-markdown-display";
 import Svg, { Circle, Line, Path, Polyline } from "react-native-svg";
 
+import { QuotaBanner } from "@/components/shared/QuotaBanner";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
 import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
+import { isQuotaError } from "@/lib/quota";
 import {
   useFiGoalMutations,
   useFiGoals,
@@ -584,6 +586,9 @@ export default function FinancialIndependenceScreen() {
             <PillButton variant="secondary" loading={runAdvisor.isPending} onPress={() => runAdvisor.mutate()}>
               {advisorReport.data ? "Re-run FI Mentor" : "Run FI Mentor"}
             </PillButton>
+            {isQuotaError(runAdvisor.error) ? (
+              <QuotaBanner metric="advisor_runs" className="mt-3" />
+            ) : null}
           </Card>
         </View>
       ) : null}

@@ -1,12 +1,19 @@
+import { useEffect, useState } from "react";
 import { Check } from "lucide-react-native";
-import { useQuery } from "@tanstack/react-query";
-import { ActivityIndicator, Alert, Linking, Pressable, Text, View } from "react-native";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ActivityIndicator, Alert, AppState, Pressable, Text, View } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { getPlansBillingPlansGet } from "@/lib/api/sdk.gen";
-import { useBillingPortal, useCreateCheckout, useEntitlements } from "@/hooks/useSettings";
+import {
+  useBillingPortal,
+  useCreateCheckout,
+  useEntitlements,
+  type BillingCycle,
+} from "@/hooks/useSettings";
 import { cn } from "@/lib/utils";
 
 type Plan = {
@@ -14,6 +21,7 @@ type Plan = {
   name: string;
   description: string;
   monthly_price_usd: number;
+  yearly_price_usd: number;
   features: string[];
   paid: boolean;
 };
@@ -34,15 +42,35 @@ export default function BillingScreen() {
 
   const checkout = useCreateCheckout();
   const portal = useBillingPortal();
+  const queryClient = useQueryClient();
+  const [cycle, setCycle] = useState<BillingCycle>("month");
+
+  // Checkout/portal happen in a web browser (no native Paddle SDK). Re-pull the
+  // subscription + plan state whenever we come back so the plan reflects a change.
+  const refreshBilling = () => {
+    queryClient.invalidateQueries({ queryKey: ["entitlements"] });
+    queryClient.invalidateQueries({ queryKey: ["billing-plans"] });
+  };
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") refreshBilling();
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleUpgrade = async (planKey: string) => {
     if (checkout.isPending) return;
     try {
-      const data = await checkout.mutateAsync(planKey);
+      const data = await checkout.mutateAsync({ plan: planKey, cycle });
       // The Paddle overlay only runs on web, so open the hosted web checkout
       // page (honouring a returned url if the backend provides one).
-      const url = data.url ?? `${siteUrl}/settings?upgrade=${encodeURIComponent(planKey)}`;
-      await Linking.openURL(url);
+      const url =
+        data.url ?? `${siteUrl}/settings?upgrade=${encodeURIComponent(planKey)}&cycle=${cycle}`;
+      // Resolves when the in-app browser tab is dismissed → refresh entitlements.
+      await WebBrowser.openBrowserAsync(url);
+      refreshBilling();
     } catch {
       Alert.alert("Checkout unavailable", "We couldn't start checkout right now. Please try again.");
     }
@@ -52,7 +80,8 @@ export default function BillingScreen() {
     if (portal.isPending) return;
     try {
       const url = await portal.mutateAsync();
-      await Linking.openURL(url);
+      await WebBrowser.openBrowserAsync(url);
+      refreshBilling();
     } catch {
       Alert.alert("Portal unavailable", "We couldn't open the billing portal right now. Please try again.");
     }
@@ -98,6 +127,29 @@ export default function BillingScreen() {
         <Text className="mb-2 mt-4 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
           Plans
         </Text>
+
+        <View className="mb-2.5 flex-row self-center rounded-pill border border-foreground/10 bg-foreground/[0.05] p-0.5">
+          {(["month", "year"] as const).map((c) => (
+            <Pressable
+              key={c}
+              onPress={() => setCycle(c)}
+              className={cn(
+                "rounded-pill px-4 py-1.5",
+                cycle === c && "bg-primary",
+              )}
+            >
+              <Text
+                className={cn(
+                  "text-[12px] font-sans-semibold",
+                  cycle === c ? "text-primary-foreground" : "text-foreground/50",
+                )}
+              >
+                {c === "month" ? "Monthly" : "Annual"}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
         <View className="gap-2.5">
           {(plans.data ?? []).map((plan) => {
             const isCurrent = plan.key === currentPlan;
@@ -106,7 +158,11 @@ export default function BillingScreen() {
                 <View className="mb-1.5 flex-row items-center justify-between">
                   <Text className="font-sans-bold text-[16px] text-foreground">{plan.name}</Text>
                   <Text className="font-sans-bold text-[16px] text-foreground">
-                    {plan.monthly_price_usd === 0 ? "Free" : `$${plan.monthly_price_usd}/mo`}
+                    {!plan.paid
+                      ? "Free"
+                      : cycle === "year"
+                        ? `$${plan.yearly_price_usd}/yr`
+                        : `$${plan.monthly_price_usd}/mo`}
                   </Text>
                 </View>
                 <Text className="mb-2.5 text-[12px] text-foreground/40">{plan.description}</Text>
@@ -142,7 +198,7 @@ export default function BillingScreen() {
                     disabled={checkout.isPending}
                     className="h-[42px] flex-row items-center justify-center rounded-pill bg-primary"
                   >
-                    {checkout.isPending && checkout.variables === plan.key ? (
+                    {checkout.isPending && checkout.variables?.plan === plan.key ? (
                       <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
                       <Text className="text-[13px] font-sans-semibold text-primary-foreground">

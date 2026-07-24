@@ -30,9 +30,11 @@ class Settings(BaseSettings):
     paddle_api_key: str = ""
     paddle_webhook_secret: str = ""
     paddle_environment: str = "sandbox"  # "sandbox" | "production"
-    # Paddle price IDs map a checkout/subscription back to a plan key.
-    paddle_price_plus: str = ""
-    paddle_price_pro: str = ""
+    # Paddle price IDs map a checkout/subscription back to a plan key + billing cycle.
+    paddle_price_plus: str = ""  # Starter monthly
+    paddle_price_pro: str = ""  # Pro monthly
+    paddle_price_plus_yearly: str = ""  # Starter yearly
+    paddle_price_pro_yearly: str = ""  # Pro yearly
 
     # Daily Wealth Advisor scheduling (Supabase pg_cron calls the API)
     cron_secret: str = ""

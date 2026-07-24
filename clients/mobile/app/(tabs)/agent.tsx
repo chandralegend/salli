@@ -32,6 +32,7 @@ import {
   type HistoryPart,
 } from "@/hooks/useAgentSessions";
 import { type AgentEvent, streamAgentChat } from "@/lib/agent-stream";
+import { QuotaBanner } from "@/components/shared/QuotaBanner";
 import { useThemeColors } from "@/lib/theme";
 import { randomId } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -179,6 +180,7 @@ export default function AgentScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  // Holds the quota metric that was exceeded (null = no banner).
   const [quotaBanner, setQuotaBanner] = useState<string | null>(null);
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const closeStreamRef = useRef<(() => void) | null>(null);
@@ -244,27 +246,24 @@ export default function AgentScreen() {
             return next;
           });
           break;
+        case "quota_exceeded":
+          setStreaming(false);
+          setQuotaBanner(event.metric ?? "agent_messages");
+          setMessages((prev) => prev.slice(0, -2)); // remove the attempted user + empty assistant turn
+          break;
         case "error":
           setStreaming(false);
-          if (/quota|limit|upgrade/i.test(event.message)) {
-            setQuotaBanner("You've used all your monthly Scrooge messages — upgrade to keep chatting.");
-            setMessages((prev) => prev.slice(0, -2)); // remove the attempted user + empty assistant turn
-          }
           break;
       }
     },
     [appendToLastAssistant],
   );
 
-  /** Turns a transport/stream error into either the friendly quota banner or a
-   * plain-language notice — never a raw JSON dump in the chat. */
+  /** Turns a transport/stream error into a plain-language notice — never a raw JSON
+   * dump in the chat. (Quota 402s arrive as a structured quota_exceeded event.) */
   const handleStreamError = useCallback((message: string) => {
+    void message;
     setStreaming(false);
-    if (/quota|limit|upgrade/i.test(message)) {
-      setQuotaBanner("You've used all your monthly Scrooge messages — upgrade to keep chatting.");
-      setMessages((prev) => prev.slice(0, -2)); // drop the attempted user + empty assistant turn
-      return;
-    }
     appendToLastAssistant((parts) => [
       ...parts,
       { kind: "text", content: "Something went wrong reaching Scrooge. Please try again." },
@@ -418,11 +417,7 @@ export default function AgentScreen() {
           />
         )}
 
-        {quotaBanner ? (
-          <View className="mx-4 mb-2 rounded-control border border-destructive/25 bg-destructive/10 px-3.5 py-2.5">
-            <Text className="text-[12px] text-destructive">{quotaBanner}</Text>
-          </View>
-        ) : null}
+        {quotaBanner ? <QuotaBanner metric={quotaBanner} className="mx-4 mb-2" /> : null}
 
         <View className="border-t border-foreground/[0.08] px-3.5 pt-2" style={{ paddingBottom: insets.bottom + 64 + 10 }}>
           <View className="flex-row items-center gap-2.5 rounded-[20px] border border-foreground/10 bg-card py-1.5 pl-3.5 pr-1.5">

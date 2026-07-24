@@ -44,10 +44,17 @@ export function useExportData() {
 // future backend ever returns a `url`, we honour it directly.
 export type CheckoutData = { url?: string } & Record<string, unknown>;
 
+export type BillingCycle = "month" | "year";
+
 export function useCreateCheckout() {
   return useMutation({
-    mutationFn: async (plan: string) => {
-      const { data } = await createCheckoutBillingCheckoutPost({ body: { plan }, throwOnError: true });
+    mutationFn: async ({ plan, cycle = "month" }: { plan: string; cycle?: BillingCycle }) => {
+      const { data } = await createCheckoutBillingCheckoutPost({
+        // `cycle` isn't in the generated body type yet (regenerate the SDK to add it);
+        // the backend reads it and the field is sent at runtime.
+        body: { plan, cycle } as { plan: string },
+        throwOnError: true,
+      });
       return data as unknown as CheckoutData;
     },
   });

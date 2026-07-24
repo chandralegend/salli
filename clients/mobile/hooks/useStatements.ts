@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getPendingStatementsStatementIdGet, postApprovedStatementsStatementIdPostPost } from "@/lib/api/sdk.gen";
 import { API_URL } from "@/lib/api-client";
+import { QuotaError } from "@/lib/quota";
 import { useSalliStore } from "@/lib/store";
 
 /** Matches the API's flat `_txn_dict` serialisation (statements router) — the
@@ -89,6 +90,7 @@ export async function uploadStatement(
     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: form,
   });
+  if (res.status === 402) throw new QuotaError("statement_uploads");
   if (!res.ok) throw new Error(`Upload failed (${res.status})`);
   return (await res.json()) as StatementUploadResult;
 }

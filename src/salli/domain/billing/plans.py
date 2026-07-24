@@ -30,6 +30,7 @@ class Plan:
     limits: dict[str, int]    # metric -> monthly allowance
     features: list[str] = field(default_factory=list)
     paid: bool = False
+    yearly_price_usd: float = 0.0  # display only; 0 = no annual price offered
 
 
 PLANS: dict[str, Plan] = {
@@ -49,9 +50,10 @@ PLANS: dict[str, Plan] = {
     ),
     "plus": Plan(
         key="plus",
-        name="Plus",
+        name="Starter",
         description="For individuals actively managing their finances and tax.",
         monthly_price_usd=9.0,
+        yearly_price_usd=100.0,
         limits={METRIC_AGENT_MESSAGES: 500, METRIC_STATEMENT_UPLOADS: 50, METRIC_ADVISOR_RUNS: 45},
         paid=True,
         features=[
@@ -67,6 +69,7 @@ PLANS: dict[str, Plan] = {
         name="Pro",
         description="For power users and professionals with heavy AI use.",
         monthly_price_usd=29.0,
+        yearly_price_usd=200.0,
         limits={METRIC_AGENT_MESSAGES: 5000, METRIC_STATEMENT_UPLOADS: 500, METRIC_ADVISOR_RUNS: 150},
         paid=True,
         features=[

@@ -44,7 +44,7 @@ export default function SettingsScreen() {
   async function handleUpgrade(planKey: string) {
     if (checkout.isPending) return;
     try {
-      const data = await checkout.mutateAsync(planKey);
+      const data = await checkout.mutateAsync({ plan: planKey });
       // The Paddle overlay only runs on web, so open the hosted web checkout page.
       const url = data.url ?? `${siteUrl}/settings?upgrade=${encodeURIComponent(planKey)}`;
       await Linking.openURL(url);

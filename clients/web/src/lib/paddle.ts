@@ -12,6 +12,14 @@ type CheckoutData = {
   custom_data?: Record<string, unknown>;
 };
 
+function prefersDark(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
+}
+
 const PADDLE_SRC = "https://cdn.paddle.com/paddle/v2/paddle.js";
 
 let loading: Promise<void> | null = null;
@@ -31,7 +39,10 @@ function loadScript(): Promise<void> {
   return loading;
 }
 
-export async function openPaddleCheckout(data: CheckoutData): Promise<void> {
+export async function openPaddleCheckout(
+  data: CheckoutData,
+  onCompleted?: () => void,
+): Promise<void> {
   const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
   if (!token) throw new Error("Billing not configured");
   if (!data.price_id) throw new Error("No price for this plan");
@@ -40,7 +51,14 @@ export async function openPaddleCheckout(data: CheckoutData): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const Paddle = (window as any).Paddle;
   Paddle.Environment.set(data.environment === "production" ? "production" : "sandbox");
-  Paddle.Initialize({ token });
+  Paddle.Initialize({
+    token,
+    // Fires when the buyer finishes paying in the overlay — the caller uses this to
+    // refetch subscription state so the UI reflects the new plan without a reload.
+    eventCallback: (event: { name?: string }) => {
+      if (event?.name === "checkout.completed") onCompleted?.();
+    },
+  });
 
   Paddle.Checkout.open({
     items: [{ priceId: data.price_id, quantity: 1 }],
@@ -50,6 +68,6 @@ export async function openPaddleCheckout(data: CheckoutData): Promise<void> {
         ? { email: data.customer_email }
         : undefined,
     customData: data.custom_data,
-    settings: { displayMode: "overlay", theme: "light" },
+    settings: { displayMode: "overlay", theme: prefersDark() ? "dark" : "light" },
   });
 }

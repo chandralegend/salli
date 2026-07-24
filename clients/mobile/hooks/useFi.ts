@@ -12,6 +12,7 @@ import {
   listGoalsFiGoalsGet,
   runAdvisorAdvisorRunPost,
 } from "@/lib/api/sdk.gen";
+import { isQuotaLikeError, QuotaError } from "@/lib/quota";
 import type { FiScore } from "./useDashboard";
 
 export type FiProjectionPoint = { year: number; conservative: string; base: string; growth: string };
@@ -171,8 +172,15 @@ export function useRunAdvisor() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { data } = await runAdvisorAdvisorRunPost({ throwOnError: true });
-      return data as unknown as AdvisorReport;
+      try {
+        const { data } = await runAdvisorAdvisorRunPost({ throwOnError: true });
+        return data as unknown as AdvisorReport;
+      } catch (err) {
+        // Monthly advisor-run quota spent → normalize to a typed error so the
+        // screen shows the QuotaBanner + Upgrade CTA instead of a generic failure.
+        if (isQuotaLikeError(err)) throw new QuotaError("advisor_runs");
+        throw err;
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["advisor-report-latest"] }),
   });

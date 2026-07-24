@@ -33,15 +33,17 @@ export function UpgradeDialog({
   open,
   onOpenChange,
   currentPlan,
+  initialCycle = "month",
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   currentPlan: string;
+  initialCycle?: BillingCycle;
 }) {
   const plans = usePlans();
   const checkout = useCheckout();
   const queryClient = useQueryClient();
-  const [cycle, setCycle] = useState<BillingCycle>("month");
+  const [cycle, setCycle] = useState<BillingCycle>(initialCycle);
 
   async function upgrade(planKey: string) {
     try {

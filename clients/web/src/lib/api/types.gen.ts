@@ -186,6 +186,10 @@ export type CheckoutRequest = {
      * Plan
      */
     plan: string;
+    /**
+     * Cycle
+     */
+    cycle?: string;
 };
 
 /**

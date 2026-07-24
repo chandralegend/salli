@@ -50,9 +50,7 @@ export function useCreateCheckout() {
   return useMutation({
     mutationFn: async ({ plan, cycle = "month" }: { plan: string; cycle?: BillingCycle }) => {
       const { data } = await createCheckoutBillingCheckoutPost({
-        // `cycle` isn't in the generated body type yet (regenerate the SDK to add it);
-        // the backend reads it and the field is sent at runtime.
-        body: { plan, cycle } as { plan: string },
+        body: { plan, cycle },
         throwOnError: true,
       });
       return data as unknown as CheckoutData;

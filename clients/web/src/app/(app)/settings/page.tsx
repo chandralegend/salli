@@ -41,13 +41,16 @@ function SettingsContent() {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const mounted = useMounted();
 
-  // Every 402 upgrade banner in the app lands here with ?upgrade=1.
+  // Every 402 upgrade banner lands here with ?upgrade=1; the mobile app hands off
+  // with ?upgrade=<plan>&cycle=<month|year>. Either opens the dialog.
   useEffect(() => {
-    if (params.get("upgrade") === "1") {
+    if (params.get("upgrade")) {
       const t = setTimeout(() => setUpgradeOpen(true), 0);
       return () => clearTimeout(t);
     }
   }, [params]);
+
+  const initialCycle = params.get("cycle") === "year" ? "year" : "month";
 
   const sub = subscription.data;
 
@@ -200,7 +203,12 @@ function SettingsContent() {
         <span className="block text-xs mt-1.5">Salli · © 2026</span>
       </footer>
 
-      <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} currentPlan={sub?.plan ?? "free"} />
+      <UpgradeDialog
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        currentPlan={sub?.plan ?? "free"}
+        initialCycle={initialCycle}
+      />
     </div>
   );
 }

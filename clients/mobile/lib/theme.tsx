@@ -48,7 +48,8 @@ const COLORS = {
     primary: "#FFFFFF",
     primaryForeground: "#000000",
     border: "rgba(255,255,255,0.1)",
-    accent: "#2563EB",
+    accent: "#f5310f",
+    success: "#1b6b47",
   },
   light: {
     background: "#F5F5F7",
@@ -59,7 +60,8 @@ const COLORS = {
     primary: "#0A0A0A",
     primaryForeground: "#FFFFFF",
     border: "rgba(10,10,10,0.08)",
-    accent: "#2563EB",
+    accent: "#f5310f",
+    success: "#1b6b47",
   },
 } as const;
 

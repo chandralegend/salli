@@ -51,7 +51,7 @@ export default function LoginScreen() {
   return (
     <View className="flex-1 bg-black">
       <LinearGradient
-        colors={["#0B20E0", "#0912B0", "#060A6A", "#020518", "#000000"]}
+        colors={["#f5310f", "#b8280f", "#5c1f13", "#16130f", "#000000"]}
         locations={[0, 0.3, 0.55, 0.8, 1]}
         style={{ position: "absolute", top: 0, left: 0, right: 0, height: 430 }}
       />

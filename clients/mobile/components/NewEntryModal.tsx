@@ -171,7 +171,7 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
                   placeholder="0"
                   placeholderTextColor="rgba(255,255,255,0.25)"
                   className="flex-1 border-0 bg-transparent p-0"
-                  style={{ fontSize: 44, fontFamily: "Inter_800ExtraBold", letterSpacing: -2, color: "#FFFFFF" }}
+                  style={{ fontSize: 44, fontFamily: "JetBrainsMono_700Bold", letterSpacing: -2, color: "#FFFFFF" }}
                 />
                 <Text className="mb-1 font-sans-regular text-[14px] text-white/20">.00</Text>
               </View>
@@ -184,7 +184,7 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
                 <View className="self-start flex-row items-center gap-1.5 rounded-pill border border-salli-accent/40 bg-salli-accent/25 px-3 py-1">
                   {(() => {
                     const Icon = TYPE_META[categoryAccount.type].Icon;
-                    return <Icon size={11} color="#2563EB" strokeWidth={2.5} />;
+                    return <Icon size={11} color="#f5310f" strokeWidth={2.5} />;
                   })()}
                   <Text className="font-sans-semibold text-[12px] text-salli-accent">{categoryAccount.name}</Text>
                 </View>
@@ -290,7 +290,7 @@ function AccountRow({
           filled ? "border border-salli-accent/20 bg-salli-accent/10" : "bg-foreground/[0.06]",
         )}
       >
-        <Icon size={13} color={filled ? "#2563EB" : "rgba(148,163,184,0.6)"} strokeWidth={2.5} />
+        <Icon size={13} color={filled ? "#f5310f" : "rgba(148,163,184,0.6)"} strokeWidth={2.5} />
       </View>
       <View className="flex-1">
         <Text className="mb-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
@@ -362,7 +362,7 @@ function AccountPickerSheet({
                     active ? "border border-salli-accent/20 bg-salli-accent/10" : "bg-foreground/[0.06]",
                   )}
                 >
-                  <Icon size={13} color={active ? "#2563EB" : "rgba(148,163,184,0.7)"} strokeWidth={2.5} />
+                  <Icon size={13} color={active ? "#f5310f" : "rgba(148,163,184,0.7)"} strokeWidth={2.5} />
                 </View>
                 <View className="flex-1">
                   <Text

@@ -113,7 +113,7 @@ export default function BillingScreen() {
                 <View className="mb-3 gap-1.5">
                   {plan.features.map((f, i) => (
                     <View key={i} className="flex-row items-start gap-2">
-                      <Check size={13} color="#2563EB" strokeWidth={2.5} />
+                      <Check size={13} color="#f5310f" strokeWidth={2.5} />
                       <Text className="flex-1 text-[12px] leading-4 text-foreground/60">{f}</Text>
                     </View>
                   ))}
@@ -126,7 +126,7 @@ export default function BillingScreen() {
                       className="h-[42px] flex-row items-center justify-center rounded-pill border border-foreground/10 bg-foreground/[0.06]"
                     >
                       {portal.isPending ? (
-                        <ActivityIndicator size="small" color="#2563EB" />
+                        <ActivityIndicator size="small" color="#f5310f" />
                       ) : (
                         <Text className="text-[13px] font-sans-semibold text-foreground/70">Manage subscription</Text>
                       )}

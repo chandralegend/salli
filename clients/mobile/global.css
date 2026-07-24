@@ -27,6 +27,8 @@
   --color-muted: 237 237 240; /* inset surface, darker than card */
   --color-muted-foreground: 100 100 105;
 
+  /* Kept a true red, deliberately distinct from the red-orange salli-accent
+     (tailwind.config.js), so a destructive action never looks like a CTA. */
   --color-destructive: 220 38 38; /* #DC2626 */
 }
 

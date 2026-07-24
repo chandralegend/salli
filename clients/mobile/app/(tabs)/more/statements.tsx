@@ -183,7 +183,7 @@ export default function StatementsScreen() {
               "h-[52px] flex-row items-center justify-center gap-2 rounded-pill bg-salli-accent",
               (approved.size === 0 || postStatement.isPending) && "opacity-50",
             )}
-            style={{ shadowColor: "#2563EB", shadowOpacity: 0.35, shadowRadius: 20, shadowOffset: { width: 0, height: 4 }, elevation: 6 }}
+            style={{ shadowColor: "#f5310f", shadowOpacity: 0.35, shadowRadius: 20, shadowOffset: { width: 0, height: 4 }, elevation: 6 }}
           >
             {postStatement.isPending ? (
               <ActivityIndicator color="#FFFFFF" />

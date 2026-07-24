@@ -16,8 +16,6 @@ const ROUTE_META: Record<string, { Icon: typeof LayoutGrid; label: string }> = {
   "financial-independence": { Icon: TrendingUp, label: "FI" },
 };
 
-const ACCENT = "#2563EB";
-
 /**
  * Floating rounded dock — theme-aware (a light card in light mode, an elevated
  * dark surface in dark mode) with an active-state accent pill + label and a
@@ -74,13 +72,13 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
         className="flex-1 items-center justify-center gap-0.5"
       >
         <View
-          style={isFocused ? { backgroundColor: isDark ? "rgba(37,99,235,0.18)" : "rgba(37,99,235,0.12)" } : undefined}
+          style={isFocused ? { backgroundColor: isDark ? "rgba(245,49,15,0.18)" : "rgba(245,49,15,0.12)" } : undefined}
           className="items-center justify-center rounded-full px-4 py-1"
         >
-          <Icon size={22} color={isFocused ? ACCENT : colors.mutedForeground} strokeWidth={isFocused ? 2.2 : 1.9} />
+          <Icon size={22} color={isFocused ? colors.accent : colors.mutedForeground} strokeWidth={isFocused ? 2.2 : 1.9} />
         </View>
         <Text
-          style={{ color: isFocused ? ACCENT : colors.mutedForeground, fontSize: 10 }}
+          style={{ color: isFocused ? colors.accent : colors.mutedForeground, fontSize: 10 }}
           className={isFocused ? "font-sans-semibold" : "font-sans-medium"}
         >
           {label}
@@ -115,13 +113,13 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
               width: 48,
               height: 48,
               borderRadius: 24,
-              backgroundColor: ACCENT,
+              backgroundColor: colors.accent,
               alignItems: "center",
               justifyContent: "center",
               ...(Platform.OS === "web"
-                ? { boxShadow: "0 6px 18px rgba(37,99,235,0.45)" }
+                ? { boxShadow: "0 6px 18px rgba(245,49,15,0.45)" }
                 : {
-                    shadowColor: ACCENT,
+                    shadowColor: colors.accent,
                     shadowOpacity: 0.45,
                     shadowRadius: 16,
                     shadowOffset: { width: 0, height: 5 },

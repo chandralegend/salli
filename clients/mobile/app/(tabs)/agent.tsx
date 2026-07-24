@@ -59,8 +59,8 @@ function AssistantMarkdown({ content }: { content: string }) {
   return (
     <Markdown
       style={{
-        body: { color: colors.foreground, fontSize: 13, lineHeight: 20, fontFamily: "Inter_400Regular" },
-        strong: { color: colors.foreground, fontFamily: "Inter_600SemiBold" },
+        body: { color: colors.foreground, fontSize: 13, lineHeight: 20, fontFamily: "Archivo_400Regular" },
+        strong: { color: colors.foreground, fontFamily: "Archivo_600SemiBold" },
         em: { fontStyle: "italic" },
         bullet_list: { marginTop: 2 },
         ordered_list: { marginTop: 2 },
@@ -71,10 +71,10 @@ function AssistantMarkdown({ content }: { content: string }) {
           borderWidth: 0,
           borderRadius: 4,
           paddingHorizontal: 4,
-          fontFamily: "Inter_500Medium",
+          fontFamily: "Archivo_500Medium",
         },
-        heading1: { color: colors.foreground, fontFamily: "Inter_700Bold", fontSize: 15 },
-        heading2: { color: colors.foreground, fontFamily: "Inter_600SemiBold", fontSize: 14 },
+        heading1: { color: colors.foreground, fontFamily: "Archivo_700Bold", fontSize: 15 },
+        heading2: { color: colors.foreground, fontFamily: "Archivo_600SemiBold", fontSize: 14 },
         link: { color: colors.accent },
       }}
     >

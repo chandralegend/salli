@@ -45,7 +45,7 @@ import { cn } from "@/lib/utils";
 const TABS = ["Overview", "Strategy", "Goals", "Mentor"] as const;
 
 /** Distinct-but-on-brand colours for allocation pie segments. */
-const PIE_COLORS = ["#2563EB", "#60A5FA", "#1E40AF", "#93C5FD", "#3B82F6", "#1D4ED8", "#BFDBFE"];
+const PIE_COLORS = ["#16130f", "#b7b1a5", "#4b463d", "#e4e0d6", "#6b6459", "#2c2822", "#8c877c"];
 
 const GOAL_ICON: Record<string, LucideIcon> = {
   emergency_fund: Wallet,
@@ -77,7 +77,7 @@ function ProjectionChart({ projections }: { projections: FiProjections }) {
       <Line x1={0} y1={targetY} x2={W} y2={targetY} stroke="rgba(255,255,255,0.25)" strokeWidth={1} strokeDasharray="3 3" />
       <Polyline points={line("conservative")} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={2} strokeDasharray="4 3" strokeLinejoin="round" />
       <Polyline points={line("base")} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={2} strokeDasharray="4 3" strokeLinejoin="round" />
-      <Polyline points={line("growth")} fill="none" stroke="#2563EB" strokeWidth={2.5} strokeLinejoin="round" />
+      <Polyline points={line("growth")} fill="none" stroke="#f5310f" strokeWidth={2.5} strokeLinejoin="round" />
     </Svg>
   );
 }
@@ -146,7 +146,7 @@ function ScoreRing({ score }: { score: number }) {
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke="#2563EB"
+          stroke="#f5310f"
           strokeWidth={sw}
           fill="none"
           strokeDasharray={`${c * pct} ${c}`}
@@ -454,7 +454,7 @@ export default function FinancialIndependenceScreen() {
               <ProjectionChart projections={projections.data} />
               <View className="mt-2.5 flex-row items-center gap-3">
                 {[
-                  { c: "#2563EB", l: "Growth" },
+                  { c: "#f5310f", l: "Growth" },
                   { c: "rgba(255,255,255,0.4)", l: "Base" },
                   { c: "rgba(255,255,255,0.2)", l: "Conservative" },
                 ].map((x) => (
@@ -522,11 +522,11 @@ export default function FinancialIndependenceScreen() {
                       <View className="mb-2.5 border-t border-foreground/[0.06] pt-2.5">
                         <Markdown
                           style={{
-                            body: { color: "rgba(200,200,200,0.75)", fontSize: 12, lineHeight: 18, fontFamily: "Inter_400Regular" },
-                            heading1: { color: colors.foreground, fontFamily: "Inter_700Bold", fontSize: 13, marginTop: 4, marginBottom: 2 },
-                            heading2: { color: colors.foreground, fontFamily: "Inter_600SemiBold", fontSize: 12, marginTop: 4, marginBottom: 2 },
-                            heading3: { color: colors.foreground, fontFamily: "Inter_600SemiBold", fontSize: 12, marginTop: 3, marginBottom: 1 },
-                            strong: { color: colors.foreground, fontFamily: "Inter_600SemiBold" },
+                            body: { color: "rgba(200,200,200,0.75)", fontSize: 12, lineHeight: 18, fontFamily: "Archivo_400Regular" },
+                            heading1: { color: colors.foreground, fontFamily: "Archivo_700Bold", fontSize: 13, marginTop: 4, marginBottom: 2 },
+                            heading2: { color: colors.foreground, fontFamily: "Archivo_600SemiBold", fontSize: 12, marginTop: 4, marginBottom: 2 },
+                            heading3: { color: colors.foreground, fontFamily: "Archivo_600SemiBold", fontSize: 12, marginTop: 3, marginBottom: 1 },
+                            strong: { color: colors.foreground, fontFamily: "Archivo_600SemiBold" },
                             bullet_list: { marginTop: 2 },
                             list_item: { marginVertical: 1 },
                           }}

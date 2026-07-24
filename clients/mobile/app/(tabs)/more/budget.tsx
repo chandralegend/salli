@@ -337,7 +337,7 @@ export default function BudgetScreen() {
                     >
                       <Icon
                         size={13}
-                        color={isDominant ? "#2563EB" : "rgba(128,128,128,0.7)"}
+                        color={isDominant ? "#f5310f" : "rgba(128,128,128,0.7)"}
                         strokeWidth={2.5}
                       />
                     </View>

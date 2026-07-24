@@ -76,8 +76,8 @@ function TrendChart({ values }: { values: number[] }) {
   const area = `${line} ${W},${H} 0,${H}`;
   return (
     <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
-      <Polygon points={area} fill="rgba(37,99,235,0.12)" stroke="none" />
-      <Polyline points={line} fill="none" stroke="#2563EB" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+      <Polygon points={area} fill="rgba(245,49,15,0.12)" stroke="none" />
+      <Polyline points={line} fill="none" stroke="#f5310f" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
@@ -188,7 +188,7 @@ export default function ReportsScreen() {
                   )}
                 >
                   {nwDelta >= 0 ? (
-                    <ArrowUpRight size={9} color="#2563EB" strokeWidth={2.5} />
+                    <ArrowUpRight size={9} color="#f5310f" strokeWidth={2.5} />
                   ) : (
                     <ArrowDownRight size={9} color="#EF4444" strokeWidth={2.5} />
                   )}

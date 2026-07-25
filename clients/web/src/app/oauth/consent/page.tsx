@@ -6,7 +6,8 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { useMcpConsentInfo, useMcpConsentDecision } from "@/hooks/useMcp";
-import { getStoredToken } from "@/lib/store";
+import { ApiError } from "@/lib/api-fetch";
+import { getStoredToken, setStoredToken } from "@/lib/store";
 
 const SCOPE_LABELS: Record<string, string> = {
   "": "Full access to your Salli account",
@@ -39,6 +40,19 @@ function ConsentContent() {
     window.location.replace(`/login?next=${encodeURIComponent(next)}`);
   }, [rt, hasSession]);
 
+  // A stored token that's actually expired/invalid also surfaces here as a
+  // 401 — that's a stale Salli session, not an invalid MCP link. Clear it
+  // and send the user through login again rather than dead-ending on
+  // "Link expired" for an unrelated problem.
+  const consentError = consentInfo.error;
+  const needsReauth = consentError instanceof ApiError && consentError.status === 401;
+  useEffect(() => {
+    if (!rt || !needsReauth) return;
+    setStoredToken(null);
+    const next = `/oauth/consent?rt=${encodeURIComponent(rt)}`;
+    window.location.replace(`/login?next=${encodeURIComponent(next)}`);
+  }, [rt, needsReauth]);
+
   async function decide(approve: boolean) {
     if (!rt) return;
     setDecided(approve ? "allow" : "deny");
@@ -67,7 +81,7 @@ function ConsentContent() {
     );
   }
 
-  if (hasSession === null || consentInfo.isLoading || redirecting) {
+  if (hasSession === null || consentInfo.isLoading || redirecting || needsReauth) {
     return (
       <AuthCard title="One moment" subtitle="Loading this request&hellip;">
         <div className="flex justify-center py-4">

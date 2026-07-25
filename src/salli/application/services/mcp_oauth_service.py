@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import logging
 import secrets
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -34,8 +35,10 @@ from typing import Any
 from urllib.parse import urlencode, urlparse
 
 from jose import JWTError, jwt
+from jose.exceptions import ExpiredSignatureError
 
 _ART_ISSUER = "salli-mcp-oauth"
+_log = logging.getLogger(__name__)
 
 
 class OAuthError(Exception):
@@ -163,8 +166,14 @@ class McpOAuthService:
     def _decode_art(self, art: str) -> dict[str, Any]:
         try:
             payload = jwt.decode(art, self._signing_secret, algorithms=["HS256"], issuer=_ART_ISSUER)
-        except JWTError as exc:
+        except ExpiredSignatureError as exc:
             raise ConsentError("This authorization request has expired — please try connecting again.") from exc
+        except JWTError as exc:
+            # Logged distinctly from genuine expiry — a signature/issuer
+            # mismatch here means signing_secret changed between mint and
+            # verify (e.g. an env var rotation), not that time ran out.
+            _log.warning("MCP consent: ART failed to decode (%s: %s)", type(exc).__name__, exc)
+            raise ConsentError("This connection link is no longer valid — please try connecting again.") from exc
         return payload
 
     async def get_consent_info(self, art: str) -> dict[str, Any]:

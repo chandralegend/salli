@@ -1,6 +1,14 @@
 import { API_URL } from "./api-client";
 import { getStoredToken } from "./store";
 
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
 export async function apiFetch<T = unknown>(
   method: string,
   path: string,
@@ -17,7 +25,7 @@ export async function apiFetch<T = unknown>(
   });
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
-    throw new Error(text || `HTTP ${res.status}`);
+    throw new ApiError(res.status, text || `HTTP ${res.status}`);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;

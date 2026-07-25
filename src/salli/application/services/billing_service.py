@@ -12,7 +12,7 @@ import datetime
 from typing import Any
 
 from salli.domain.billing import plans as plan_registry
-from salli.domain.billing.plans import METRICS, get_plan
+from salli.domain.billing.plans import METRICS, Plan, get_plan
 
 
 class QuotaExceeded(Exception):
@@ -71,6 +71,12 @@ class BillingService:
     async def get_plan_key(self, user_id: str, email: str | None = None) -> str:
         sub = await self._ensure_user(user_id, email)
         return get_plan(sub.get("plan")).key
+
+    async def get_current_plan(self, user_id: str, email: str | None = None) -> Plan:
+        """Resolve the caller's full Plan object (content-depth entitlements
+        included), so routers doing content-gating don't repeat
+        get_plan(await get_plan_key(...))."""
+        return get_plan(await self.get_plan_key(user_id, email))
 
     async def get_entitlements(self, user_id: str, email: str | None = None) -> dict[str, Any]:
         sub = await self._ensure_user(user_id, email)

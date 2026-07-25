@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -8,6 +9,7 @@ import {
   ChevronDown,
   Landmark,
   Loader2,
+  Lock,
   PiggyBank,
   Plus,
   RefreshCw,
@@ -257,7 +259,11 @@ export default function FinancialIndependencePage() {
             {projections.isLoading ? (
               <Skeleton className="h-72 mt-3" />
             ) : proj && proj.points.length > 0 ? (
-              <ProjectionChart points={proj.points} fiNumber={proj.fi_number} />
+              <ProjectionChart
+                points={proj.points}
+                fiNumber={proj.fi_number}
+                lockedScenarios={proj.scenario_access?.locked}
+              />
             ) : (
               <EmptyState
                 icon={TrendingUp}
@@ -325,11 +331,15 @@ export default function FinancialIndependencePage() {
             >
               <span className="text-sm font-semibold shrink-0">AI Strategy rationale</span>
               <span className="flex flex-wrap gap-1.5">
-                {s.theories_applied.slice(0, 4).map((t) => (
-                  <StatusChip key={t} tone="neutral">
-                    {t}
-                  </StatusChip>
-                ))}
+                {s.theories_applied ? (
+                  s.theories_applied.slice(0, 4).map((t) => (
+                    <StatusChip key={t} tone="neutral">
+                      {t}
+                    </StatusChip>
+                  ))
+                ) : (
+                  <StatusChip tone="neutral">+{s.theories_applied_count ?? 0} theories</StatusChip>
+                )}
               </span>
               <ChevronDown
                 className={cn("size-4 ml-auto shrink-0 text-muted-foreground transition-transform", rationaleOpen && "rotate-180")}
@@ -349,9 +359,24 @@ export default function FinancialIndependencePage() {
                     </div>
                   ))}
                 </div>
-                <div className="prose-sm text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{s.ai_rationale}</ReactMarkdown>
-                </div>
+                {s.rationale_locked ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground leading-relaxed">{s.rationale_preview}</p>
+                    <div className="flex items-center gap-2 rounded-md bg-[var(--status-warning-bg)] px-3 py-2 text-[13px] text-[var(--status-warning-text)]">
+                      <Lock className="size-4 shrink-0" />
+                      <span>
+                        Read the full AI rationale ·{" "}
+                        <Link href="/settings?upgrade=plus" className="font-semibold underline underline-offset-2">
+                          Upgrade to Plus
+                        </Link>
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="prose-sm text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{s.ai_rationale ?? ""}</ReactMarkdown>
+                  </div>
+                )}
               </div>
             </CollapsibleContent>
           </div>
@@ -436,9 +461,18 @@ export default function FinancialIndependencePage() {
                     {report.fire_tier_assessment || report.summary}
                   </p>
                 )}
-                {report.recommendations
-                  .filter((r) => r.status === "pending")
-                  .map((r) => (
+                {report.recommendations.map((r) =>
+                  r.locked ? (
+                    <div key={r.id} className="rounded-md bg-white/[0.04] p-3.5 opacity-70">
+                      <div className="flex items-center gap-1.5">
+                        <Lock className="size-3 text-white/40 shrink-0" />
+                        <p className="text-[13px] font-semibold text-white/70">{r.title}</p>
+                      </div>
+                      <p className="text-[11px] text-white/40 mt-0.5">
+                        Priority {r.priority} · {r.category}
+                      </p>
+                    </div>
+                  ) : r.status === "pending" ? (
                     <div key={r.id} className="rounded-md bg-white/[0.08] p-3.5">
                       <p className="text-[13px] font-semibold">{r.title}</p>
                       <p className="text-[11px] text-white/50 mt-0.5">
@@ -463,8 +497,18 @@ export default function FinancialIndependencePage() {
                         </button>
                       </div>
                     </div>
-                  ))}
-                {report.recommendations.every((r) => r.status !== "pending") && (
+                  ) : null
+                )}
+                {report.recommendations_locked_count > 0 && (
+                  <Link
+                    href="/settings?upgrade=plus"
+                    className="block text-[12px] font-semibold text-white underline underline-offset-2"
+                  >
+                    Unlock {report.recommendations_locked_count} more recommendation
+                    {report.recommendations_locked_count > 1 ? "s" : ""} →
+                  </Link>
+                )}
+                {report.recommendations.filter((r) => !r.locked).every((r) => r.status !== "pending") && (
                   <p className="text-[13px] text-white/60">All recommendations handled. Run again anytime.</p>
                 )}
               </div>

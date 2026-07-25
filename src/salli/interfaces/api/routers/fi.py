@@ -4,10 +4,17 @@ Financial Independence router — FI score, goals, AI FIRE strategy, projections
 
 from __future__ import annotations
 
+import json
+from collections.abc import AsyncGenerator
+from typing import Any
+
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from salli.application.services.billing_service import QuotaExceeded
+from salli.domain.billing.content_gating import truncate_projections, truncate_strategy
+from salli.domain.billing.plans import METRIC_AGENT_MESSAGES, Plan
 from salli.interfaces.api.deps import AppServices, CurrentEmail, CurrentUser
 
 router = APIRouter(prefix="/fi", tags=["financial-independence"])
@@ -16,6 +23,23 @@ _SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 
 
 # ── Score ─────────────────────────────────────────────────────────────────────
+
+
+async def _gate_strategy_stream(
+    upstream: AsyncGenerator[str, None], plan: Plan
+) -> AsyncGenerator[str, None]:
+    """Pass status/error SSE events straight through; truncate only the
+    final `done` event's `strategy` payload for the caller's plan."""
+    async for chunk in upstream:
+        payload = chunk.removeprefix("data: ").rstrip("\n")
+        try:
+            event: dict[str, Any] = json.loads(payload)
+        except json.JSONDecodeError:
+            yield chunk
+            continue
+        if event.get("type") == "done" and "strategy" in event:
+            event["strategy"] = truncate_strategy(event["strategy"], plan)
+        yield f"data: {json.dumps(event, default=str)}\n\n"
 
 
 @router.get("/score")
@@ -85,18 +109,21 @@ async def delete_goal(goal_id: str, user_id: CurrentUser, svc: AppServices):
 
 
 @router.get("/strategy")
-async def get_strategy(user_id: CurrentUser, svc: AppServices):
+async def get_strategy(user_id: CurrentUser, email: CurrentEmail, svc: AppServices):
     """Return the user's active FIRE strategy, or 404 if none exists yet."""
     strategy = await svc.fi.get_strategy(user_id)
     if strategy is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No FIRE strategy found")
-    return strategy
+    plan = await svc.billing.get_current_plan(user_id, email)
+    return truncate_strategy(strategy, plan)
 
 
 @router.get("/strategy/history")
-async def get_strategy_history(user_id: CurrentUser, svc: AppServices):
+async def get_strategy_history(user_id: CurrentUser, email: CurrentEmail, svc: AppServices):
     """List all strategy versions (summary only)."""
-    return {"history": await svc.fi.get_strategy_history(user_id)}
+    history = await svc.fi.get_strategy_history(user_id)
+    plan = await svc.billing.get_current_plan(user_id, email)
+    return {"history": [truncate_strategy(h, plan) for h in history]}
 
 
 @router.post("/strategy/generate")
@@ -108,9 +135,26 @@ async def generate_strategy(user_id: CurrentUser, email: CurrentEmail, svc: AppS
       {"type": "status",  "message": "..."} — progress updates
       {"type": "done",    "strategy": {...}} — final result
       {"type": "error",   "message": "..."}  — failure
+
+    Counts against the same monthly AI-usage quota as /agent/chat — checked
+    before the stream opens, same as chat, rather than mid-stream.
     """
+    try:
+        await svc.billing.check_and_increment(user_id, METRIC_AGENT_MESSAGES, email)
+    except QuotaExceeded as exc:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail={
+                "error": "quota_exceeded",
+                "metric": exc.metric,
+                "limit": exc.limit,
+                "plan": exc.plan_key,
+                "upgrade": True,
+            },
+        ) from exc
+    plan = await svc.billing.get_current_plan(user_id, email)
     return StreamingResponse(
-        svc.fi.generate_strategy(user_id, email),
+        _gate_strategy_stream(svc.fi.generate_strategy(user_id, email), plan),
         media_type="text/event-stream",
         headers=_SSE_HEADERS,
     )
@@ -120,9 +164,11 @@ async def generate_strategy(user_id: CurrentUser, email: CurrentEmail, svc: AppS
 
 
 @router.get("/projections")
-async def get_projections(user_id: CurrentUser, svc: AppServices):
+async def get_projections(user_id: CurrentUser, email: CurrentEmail, svc: AppServices):
     """15-year portfolio projections across conservative/base/growth scenarios."""
-    return await svc.fi.get_projections(user_id)
+    data = await svc.fi.get_projections(user_id)
+    plan = await svc.billing.get_current_plan(user_id, email)
+    return truncate_projections(data, plan)
 
 
 @router.get("/surplus")

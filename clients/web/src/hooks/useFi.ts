@@ -37,13 +37,16 @@ export type Goal = {
 export type Recommendation = {
   id: string;
   title: string;
-  rationale: string;
   category: string;
   priority: number;
-  bucket_key: string | null;
-  action_type: "none" | "reminder";
-  action_params: { label?: string; due_in_days?: number | null };
-  status: "pending" | "applied" | "dismissed";
+  locked: boolean;
+  // Absent on locked stubs — the server drops these fields entirely, it
+  // doesn't just null them.
+  rationale?: string;
+  bucket_key?: string | null;
+  action_type?: "none" | "reminder";
+  action_params?: { label?: string; due_in_days?: number | null };
+  status?: "pending" | "applied" | "dismissed";
 };
 
 export type AdvisoryReport = {
@@ -52,6 +55,7 @@ export type AdvisoryReport = {
   summary: string;
   fire_tier_assessment?: string;
   recommendations: Recommendation[];
+  recommendations_locked_count: number;
   created_at: string;
 };
 
@@ -128,17 +132,27 @@ export type FireStrategy = {
   target_monthly_expenses: number | null;
   target_age: number | null;
   buckets: AllocationBucket[];
-  ai_rationale: string;
-  theories_applied: string[];
+  // Null + a preview/count when rationale_locked is true (Free tier).
+  ai_rationale: string | null;
+  rationale_preview?: string;
+  rationale_locked: boolean;
+  theories_applied: string[] | null;
+  theories_applied_count?: number;
   created_at: string;
   is_initial: boolean;
 };
 
 export type ProjectionPoint = {
   year: number;
-  conservative: string;
+  conservative: string | null;
   base: string;
-  growth: string;
+  growth: string | null;
+};
+
+export type ScenarioAccess = {
+  visible: string[];
+  locked: string[];
+  requires_plan: string | null;
 };
 
 export type ProjectionsData = {
@@ -148,6 +162,7 @@ export type ProjectionsData = {
   fire_year_base: number | null;
   fire_year_growth: number | null;
   current_portfolio: string;
+  scenario_access: ScenarioAccess;
 };
 
 export type SurplusBreakdown = {

@@ -26,6 +26,9 @@ def mock_services():
     svc.tax = AsyncMock()
     svc.tax.list_packs = MagicMock()
     svc.agent = AsyncMock()
+    svc.fi = AsyncMock()
+    svc.billing = AsyncMock()
+    svc.advisor = AsyncMock()
     return svc
 
 

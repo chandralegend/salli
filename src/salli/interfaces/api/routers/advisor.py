@@ -15,6 +15,7 @@ from starlette.responses import JSONResponse
 
 from salli.application.services.billing_service import QuotaExceeded
 from salli.config import Settings, get_settings
+from salli.domain.billing.content_gating import truncate_recommendations
 from salli.interfaces.api.deps import AppServices, CurrentEmail, CurrentUser
 
 router = APIRouter(prefix="/advisor", tags=["advisor"])
@@ -24,7 +25,7 @@ router = APIRouter(prefix="/advisor", tags=["advisor"])
 async def run_advisor(user_id: CurrentUser, email: CurrentEmail, svc: AppServices):
     """Run the Wealth Advisor now (counts against the advisor_runs quota)."""
     try:
-        return await svc.advisor.run_advisor(user_id, email, trigger="manual")
+        report = await svc.advisor.run_advisor(user_id, email, trigger="manual")
     except QuotaExceeded as exc:
         raise HTTPException(
             status_code=status.HTTP_402_PAYMENT_REQUIRED,
@@ -36,16 +37,24 @@ async def run_advisor(user_id: CurrentUser, email: CurrentEmail, svc: AppService
                 "upgrade": True,
             },
         )
+    plan = await svc.billing.get_current_plan(user_id, email)
+    return truncate_recommendations(report, plan)
 
 
 @router.get("/reports")
-async def list_reports(user_id: CurrentUser, svc: AppServices):
-    return {"reports": await svc.advisor.list_reports(user_id)}
+async def list_reports(user_id: CurrentUser, email: CurrentEmail, svc: AppServices):
+    reports = await svc.advisor.list_reports(user_id)
+    plan = await svc.billing.get_current_plan(user_id, email)
+    return {"reports": [truncate_recommendations(r, plan) for r in reports]}
 
 
 @router.get("/reports/latest")
-async def latest_report(user_id: CurrentUser, svc: AppServices):
-    return await svc.advisor.get_latest_report(user_id) or {}
+async def latest_report(user_id: CurrentUser, email: CurrentEmail, svc: AppServices):
+    report = await svc.advisor.get_latest_report(user_id)
+    if not report:
+        return {}
+    plan = await svc.billing.get_current_plan(user_id, email)
+    return truncate_recommendations(report, plan)
 
 
 @router.post("/reports/{report_id}/recommendations/{rec_id}/apply")

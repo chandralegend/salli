@@ -26,36 +26,39 @@ const TIERS: Tier[] = [
     monthlyPrice: 0,
     cta: "Start free",
     href: APP_LOGIN_URL,
-    features: ["Immutable double-entry ledger", "Manual transactions & budgets", "Net-worth overview", "One connected account", "Community support"],
+    features: ["Immutable double-entry ledger", "Full Sri Lanka tax engine", "Debt payoff & FIRE planning", "20 AI messages / month", "Community support"],
   },
   {
     name: "Plus",
-    tagline: "Tax clarity and planning, done for you.",
+    tagline: "More AI, and connect your favorite assistant.",
     monthlyPrice: 9,
     popular: true,
     dark: true,
     cta: "Choose Plus",
     href: `${APP_LOGIN_URL}?next=${encodeURIComponent("/settings?upgrade=plus")}`,
-    features: ["Everything in Free", "2025/26 tax engine & payable", "AI quick-add & explanations", "Debt payoff & FIRE planning", "Unlimited accounts & exports", "Connect Claude, ChatGPT & other MCP clients"],
+    features: ["Everything in Free", "500 AI messages / month", "50 statement uploads / month", "Daily wealth advisor (45 runs / month)", "Connect Claude, ChatGPT & other MCP clients", "Full FIRE scenarios, AI rationale & all advisor recommendations"],
   },
   {
     name: "Pro",
-    tagline: "Full power, guided returns, priority help.",
+    tagline: "Full power, priority help.",
     monthlyPrice: 29,
     cta: "Choose Pro",
     href: `${APP_LOGIN_URL}?next=${encodeURIComponent("/settings?upgrade=pro")}`,
-    features: ["Everything in Plus", "Guided return preparation", "Human-review checkpoint", "Portfolio & insurance tracking", "Priority support"],
+    features: ["Everything in Plus", "5,000 AI messages / month", "500 statement uploads / month", "150 wealth-advisor runs / month", "Priority support"],
   },
 ];
 
 const COMPARE = [
   { label: "Immutable double-entry ledger", free: "✓", plus: "✓", pro: "✓" },
-  { label: "Connected accounts", free: "1", plus: "Unlimited", pro: "Unlimited" },
-  { label: "2025/26 tax engine & payable", free: "✕", plus: "✓", pro: "✓" },
-  { label: "AI quick-add & explanations", free: "✕", plus: "✓", pro: "✓" },
-  { label: "Debt payoff & FIRE planning", free: "✕", plus: "✓", pro: "✓" },
+  { label: "Sri Lanka tax engine & payable", free: "✓", plus: "✓", pro: "✓" },
+  { label: "Debt payoff & FIRE planning", free: "✓", plus: "✓", pro: "✓" },
+  { label: "AI messages / month (chat, quick-add, FIRE strategy)", free: "20", plus: "500", pro: "5,000" },
+  { label: "Statement uploads / month", free: "3", plus: "50", pro: "500" },
+  { label: "Wealth advisor runs / month", free: "3", plus: "45", pro: "150" },
+  { label: "Portfolio growth scenarios", free: "1 (Base)", plus: "3 (Conservative/Base/Growth)", pro: "3 (Conservative/Base/Growth)" },
+  { label: "AI strategy rationale & theories", free: "Preview", plus: "Full", pro: "Full" },
+  { label: "Wealth advisor recommendations", free: "Top 2 / report", plus: "All", pro: "All" },
   { label: "Connect Claude, ChatGPT & other MCP clients", free: "✕", plus: "✓", pro: "✓" },
-  { label: "Guided return + human review", free: "✕", plus: "✕", pro: "✓" },
   { label: "Support", free: "Community", plus: "Email", pro: "Priority" },
 ];
 
@@ -113,14 +116,14 @@ export function PricingTiers() {
                 <p className={clsx("mt-2 min-h-10.5 text-sm leading-[1.5]", t.dark ? "text-cream-60" : "text-ink-50")}>
                   {t.tagline}
                 </p>
-                <div className="mt-5.5 flex items-baseline gap-1.5">
+                <div className="mt-5.5 flex items-baseline justify-center gap-1.5">
                   <span className="font-mono text-base font-semibold opacity-70">$</span>
                   <span className="font-mono font-display text-[52px] font-extrabold tracking-[-0.03em]">
                     {priceFor(t.monthlyPrice, annual)}
                   </span>
                   {t.monthlyPrice > 0 && <span className="font-mono text-sm opacity-60">/mo</span>}
                 </div>
-                <div className={clsx("mt-1.5 min-h-4.5 font-mono text-xs", t.dark ? "text-cream-60" : "text-ink-50")}>
+                <div className={clsx("mt-1.5 min-h-4.5 text-center font-mono text-xs", t.dark ? "text-cream-60" : "text-ink-50")}>
                   {t.monthlyPrice === 0
                     ? "No card required"
                     : annual

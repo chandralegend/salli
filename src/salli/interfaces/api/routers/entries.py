@@ -6,7 +6,9 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
-from salli.interfaces.api.deps import AppServices, CurrentUser
+from salli.application.services.billing_service import QuotaExceeded
+from salli.domain.billing.plans import METRIC_AGENT_MESSAGES
+from salli.interfaces.api.deps import AppServices, CurrentEmail, CurrentUser
 
 router = APIRouter(prefix="/entries", tags=["entries"])
 
@@ -43,17 +45,33 @@ class ParsedEntryDraft(BaseModel):
 
 
 @router.post("/parse")
-async def parse_entry(body: ParseEntryRequest, user_id: CurrentUser, svc: AppServices) -> ParsedEntryDraft:
+async def parse_entry(
+    body: ParseEntryRequest, user_id: CurrentUser, email: CurrentEmail, svc: AppServices
+) -> ParsedEntryDraft:
     """AI-parse a free-text / dictated note into a DRAFT entry (never posted).
 
     The LLM extracts the stated amount and maps the note to existing account ids;
     the client pre-fills the New Entry form for the user to review and post via
-    the deterministic, balance-checked POST /entries/.
+    the deterministic, balance-checked POST /entries/. Counts against the same
+    monthly AI-usage quota as /agent/chat — it's an AI feature like any other.
     """
     if svc.entry_parse is None:
         raise HTTPException(status_code=503, detail="AI parsing is not configured")
     if not body.text.strip():
         raise HTTPException(status_code=400, detail="text is required")
+    try:
+        await svc.billing.check_and_increment(user_id, METRIC_AGENT_MESSAGES, email)
+    except QuotaExceeded as exc:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail={
+                "error": "quota_exceeded",
+                "metric": exc.metric,
+                "limit": exc.limit,
+                "plan": exc.plan_key,
+                "upgrade": True,
+            },
+        ) from exc
     draft = await svc.entry_parse.parse_draft(user_id, body.text)
     return ParsedEntryDraft(**draft)
 

@@ -6,18 +6,19 @@ import { Highlight } from "@/components/Highlight";
 import { WordUp } from "@/components/WordUp";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { PricingTiers } from "@/components/PricingTiers";
+import { APP_LOGIN_URL } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: "Start free forever. Upgrade when you want the tax engine, planning and AI guidance working at full power.",
+  description: "Start free forever, full tax engine and planning included. Upgrade for higher AI usage limits and to connect Claude, ChatGPT, and other AI assistants.",
   alternates: { canonical: "/pricing" },
 };
 
 const FAQS = [
-  { q: "Is the Free plan really free forever?", a: "Yes. The immutable ledger, manual transactions and your net-worth overview stay free with no card required. You only pay if you want the tax engine, planning and AI guidance." },
+  { q: "Is the Free plan really free forever?", a: "Yes. The immutable ledger, the full Sri Lanka tax engine, and debt payoff & FIRE planning stay free forever, no card required. You only pay for higher AI usage limits, the daily wealth advisor, and connecting an external AI assistant like Claude or ChatGPT." },
   { q: "How does annual billing work?", a: "Choose Annual to save 20% versus monthly. You're billed once a year, and you can switch back to monthly or cancel anytime." },
   { q: "Can I change or cancel my plan?", a: "Anytime, from your account. Upgrades apply immediately and downgrades take effect at the end of your current billing period." },
-  { q: "Do prices include taxes?", a: "Prices are shown in Sri Lankan Rupees and include applicable taxes. Your receipt itemises everything for your records." },
+  { q: "Do prices include taxes?", a: "Prices are shown in USD and billed via Paddle, our merchant of record, who applies any VAT, GST, or other local taxes at checkout based on your location." },
 ];
 
 const FAQ_JSON_LD = {
@@ -48,8 +49,8 @@ export default function PricingPage() {
           <WordUp delay={0.32}><Highlight>fair price.</Highlight></WordUp>
         </h1>
         <p className="mx-auto mt-6.5 max-w-[520px] text-[clamp(17px,1.5vw,20px)] leading-[1.5] text-ink-60">
-          Start free forever. Upgrade when you want the tax engine, planning and AI guidance
-          working at full power.
+          Start free forever, full tax engine and planning included. Upgrade for higher AI usage
+          limits and to connect Claude, ChatGPT and other AI assistants.
         </p>
         <PricingTiers />
       </section>
@@ -70,7 +71,7 @@ export default function PricingPage() {
             No card required. Upgrade only when Salli is saving you real money.
           </p>
           <div className="mt-9 flex flex-wrap justify-center gap-3.5">
-            <MagneticButton href="#" className="rounded-full bg-cream px-8.5 py-4.5 text-[17px] font-bold text-ink">
+            <MagneticButton href={APP_LOGIN_URL} className="rounded-full bg-cream px-8.5 py-4.5 text-[17px] font-bold text-ink">
               Get started free
             </MagneticButton>
             <MagneticButton href="/features" className="rounded-full border-2 border-cream/60 px-8 py-4 text-[17px] font-bold hover:bg-cream/14">

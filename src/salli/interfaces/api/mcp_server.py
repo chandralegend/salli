@@ -106,6 +106,12 @@ def build_mcp_server(services: Any, issuer_url: str) -> FastMCP:
         # Default streamable_http_path ("/mcp") — main.py mounts this app at
         # root "/", so the served path is exactly /mcp, matching the resource
         # URL we advertise (no trailing slash, no redirect on a bare request).
+        # Stateless: none of our tools need server-initiated notifications, and
+        # a single-instance Render deploy restarts on every push — a stateful
+        # session tied to in-memory server state would silently die under a
+        # connected client on the very next deploy (each request gets its own
+        # transport instead, so nothing is pinned to server-process memory).
+        stateless_http=True,
     )
 
     @mcp.tool()

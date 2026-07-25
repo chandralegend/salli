@@ -21,6 +21,7 @@ from salli.application.services.entry_parse_service import EntryParseService
 from salli.application.services.fi_service import FiService
 from salli.application.services.insurance_service import InsuranceService
 from salli.application.services.ledger_service import LedgerService
+from salli.application.services.mcp_oauth_service import McpOAuthService
 from salli.application.services.parsing_service import ParsingService
 from salli.application.services.portfolio_service import PortfolioService
 from salli.application.services.reminder_service import ReminderService
@@ -53,6 +54,7 @@ class Services:
     insurance: InsuranceService
     reports: ReportService
     data_portability: DataPortabilityService
+    mcp_oauth: McpOAuthService
     entry_parse: EntryParseService | None
 
 
@@ -115,6 +117,15 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
 
     reminders = ReminderService(uow_factory, budget, subscription, insurance)
     reports = ReportService(ledger, fi)
+    mcp_oauth = McpOAuthService(
+        uow_factory,
+        signing_secret=settings.mcp_signing_secret or settings.supabase_jwt_secret or "dev-insecure-secret",
+        mcp_resource_url=f"{settings.mcp_public_base_url.rstrip('/')}/mcp",
+        app_base_url=settings.app_base_url,
+        auth_code_ttl_seconds=settings.mcp_auth_code_ttl_seconds,
+        access_token_ttl_seconds=settings.mcp_access_token_ttl_seconds,
+        refresh_token_ttl_seconds=settings.mcp_refresh_token_ttl_seconds,
+    )
     data_portability = DataPortabilityService(
         uow_factory,
         profile,
@@ -151,6 +162,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         insurance=insurance,
         reports=reports,
         data_portability=data_portability,
+        mcp_oauth=mcp_oauth,
         entry_parse=entry_parse,
     )
 

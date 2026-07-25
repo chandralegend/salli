@@ -187,6 +187,10 @@ const apiEnv: Record<string, pulumi.Input<string>> = {
   SUPABASE_SERVICE_ROLE_KEY: supabaseServiceKey,
   ALLOWED_ORIGINS: allowedOrigins,
   ADVISOR_API_BASE_URL: apiUrl,
+  // MCP: mcp_public_base_url is this API's own public URL (the MCP resource
+  // and OAuth issuer), app_base_url is where the consent screen lives.
+  MCP_PUBLIC_BASE_URL: apiUrl,
+  APP_BASE_URL: appUrl,
   PADDLE_ENVIRONMENT: paddleEnvironment,
 };
 if (supabaseJwtSecret) apiEnv.SUPABASE_JWT_SECRET = pulumi.secret(supabaseJwtSecret);

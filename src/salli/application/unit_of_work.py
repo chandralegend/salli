@@ -22,6 +22,8 @@ from salli.adapters.db.repositories import (
     SQLGoalRepository,
     SQLInsuranceTargetRepository,
     SQLLedgerRepository,
+    SQLOAuthClientRepository,
+    SQLOAuthTokenRepository,
     SQLPolicyRepository,
     SQLPortfolioRepository,
     SQLRecurringSubscriptionRepository,
@@ -45,6 +47,8 @@ from salli.application.ports import (
     GoalRepository,
     InsuranceTargetRepository,
     LedgerRepository,
+    OAuthClientRepository,
+    OAuthTokenRepository,
     PolicyRepository,
     PortfolioRepository,
     RecurringSubscriptionRepository,
@@ -82,6 +86,8 @@ class UnitOfWork:
     insurance_targets: InsuranceTargetRepository
     audit_log: AuditLogRepository
     data_portability: DataPortabilityRepository
+    oauth_clients: OAuthClientRepository
+    oauth_tokens: OAuthTokenRepository
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._factory = session_factory
@@ -110,6 +116,8 @@ class UnitOfWork:
         self.insurance_targets = SQLInsuranceTargetRepository(self._session)
         self.audit_log = SQLAuditLogRepository(self._session)
         self.data_portability = SQLDataPortabilityRepository(self._session)
+        self.oauth_clients = SQLOAuthClientRepository(self._session)
+        self.oauth_tokens = SQLOAuthTokenRepository(self._session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

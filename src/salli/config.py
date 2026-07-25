@@ -38,6 +38,18 @@ class Settings(BaseSettings):
     cron_secret: str = ""
     advisor_api_base_url: str = "http://localhost:8000"
 
+    # MCP server — lets external AI clients (Claude, ChatGPT, etc.) connect to a
+    # user's Salli account via OAuth 2.1 + Dynamic Client Registration.
+    mcp_public_base_url: str = "http://localhost:8000"  # this API, as seen by MCP clients
+    app_base_url: str = "http://localhost:3000"  # the Next.js web app (consent screen lives here)
+    # Signs the short-lived "pending authorization" token handed to the web app's
+    # consent screen. Falls back to the Supabase JWT secret in dev so a fresh
+    # checkout works without extra config — set a real random value in production.
+    mcp_signing_secret: str = ""
+    mcp_auth_code_ttl_seconds: int = 120
+    mcp_access_token_ttl_seconds: int = 3600
+    mcp_refresh_token_ttl_seconds: int = 60 * 60 * 24 * 30
+
     # CORS — comma-separated list of allowed origins in production.
     # Defaults cover app + marketing site (both the leafmonkey.org subdomains and
     # the legacy salli.lk domain); override via ALLOWED_ORIGINS env var.

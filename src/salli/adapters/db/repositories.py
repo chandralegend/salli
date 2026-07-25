@@ -31,6 +31,10 @@ from salli.adapters.db.models import (
     HoldingORM,
     InsuranceTargetORM,
     JournalEntryORM,
+    OAuthAccessTokenORM,
+    OAuthAuthorizationCodeORM,
+    OAuthClientORM,
+    OAuthRefreshTokenORM,
     ParsedTransactionORM,
     PolicyORM,
     PostingORM,
@@ -55,6 +59,8 @@ from salli.application.ports import (
     GoalRepository,
     InsuranceTargetRepository,
     LedgerRepository,
+    OAuthClientRepository,
+    OAuthTokenRepository,
     PolicyRepository,
     PortfolioRepository,
     RecurringSubscriptionRepository,
@@ -886,6 +892,7 @@ class SQLUserProfileRepository(UserProfileRepository):
             "risk_score": row.risk_score,
             "risk_category": row.risk_category,
             "life_stage": row.life_stage,
+            "mcp_enabled": row.mcp_enabled,
         }
 
     async def upsert(self, user_id: str, fields: dict[str, Any]) -> None:
@@ -1780,9 +1787,227 @@ class SQLDataPortabilityRepository(DataPortabilityRepository):
         await _delete(InsuranceTargetORM, InsuranceTargetORM.user_id)
         await _delete(TaxComputationORM, TaxComputationORM.user_id)
         await _delete(AuditLogORM, AuditLogORM.user_id)
+        await _delete(OAuthRefreshTokenORM, OAuthRefreshTokenORM.user_id)
+        await _delete(OAuthAccessTokenORM, OAuthAccessTokenORM.user_id)
+        await _delete(OAuthAuthorizationCodeORM, OAuthAuthorizationCodeORM.user_id)
 
         # UserProfileORM's primary key IS the user id — no separate user_id
         # column — and nothing else has an FK pointing at it, so it's safe last.
         await _delete(UserProfileORM, UserProfileORM.id)
 
         return counts
+
+
+# ── MCP OAuth ────────────────────────────────────────────────────────────────
+
+
+class SQLOAuthClientRepository(OAuthClientRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def register(self, client_name: str | None, redirect_uris: list[str]) -> dict[str, Any]:
+        client_id = str(uuid.uuid4())
+        row = OAuthClientORM(client_id=client_id, client_name=client_name, redirect_uris=redirect_uris)
+        self._s.add(row)
+        await self._s.flush()
+        return {
+            "client_id": row.client_id,
+            "client_name": row.client_name,
+            "redirect_uris": row.redirect_uris,
+        }
+
+    async def get(self, client_id: str) -> dict[str, Any] | None:
+        row = (
+            await self._s.execute(select(OAuthClientORM).where(OAuthClientORM.client_id == client_id))
+        ).scalar_one_or_none()
+        if row is None:
+            return None
+        return {
+            "client_id": row.client_id,
+            "client_name": row.client_name,
+            "redirect_uris": row.redirect_uris,
+        }
+
+
+class SQLOAuthTokenRepository(OAuthTokenRepository):
+    """Access/refresh tokens are looked up by hash — callers never store or
+    pass the plaintext token after issuance."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def save_authorization_code(
+        self,
+        code: str,
+        client_id: str,
+        user_id: str,
+        redirect_uri: str,
+        code_challenge: str,
+        scope: str,
+        resource: str | None,
+        expires_at: datetime,
+    ) -> None:
+        self._s.add(
+            OAuthAuthorizationCodeORM(
+                code=code,
+                client_id=client_id,
+                user_id=user_id,
+                redirect_uri=redirect_uri,
+                code_challenge=code_challenge,
+                resource=resource,
+                scope=scope,
+                expires_at=expires_at,
+            )
+        )
+        await self._s.flush()
+
+    async def get_authorization_code(self, code: str) -> dict[str, Any] | None:
+        row = (
+            await self._s.execute(
+                select(OAuthAuthorizationCodeORM).where(OAuthAuthorizationCodeORM.code == code)
+            )
+        ).scalar_one_or_none()
+        if row is None or row.expires_at < datetime.now(UTC):
+            return None
+        return {
+            "client_id": row.client_id,
+            "user_id": row.user_id,
+            "redirect_uri": row.redirect_uri,
+            "code_challenge": row.code_challenge,
+            "resource": row.resource,
+            "scope": row.scope,
+            "expires_at": row.expires_at,
+        }
+
+    async def delete_authorization_code(self, code: str) -> None:
+        await self._s.execute(delete(OAuthAuthorizationCodeORM).where(OAuthAuthorizationCodeORM.code == code))
+        await self._s.flush()
+
+    async def save_access_token(
+        self,
+        token_hash: str,
+        client_id: str,
+        user_id: str,
+        scope: str,
+        resource: str | None,
+        expires_at: datetime,
+    ) -> str:
+        token_id = str(uuid.uuid4())
+        self._s.add(
+            OAuthAccessTokenORM(
+                id=token_id,
+                token_hash=token_hash,
+                client_id=client_id,
+                user_id=user_id,
+                scope=scope,
+                resource=resource,
+                expires_at=expires_at,
+            )
+        )
+        await self._s.flush()
+        return token_id
+
+    async def save_refresh_token(
+        self,
+        token_hash: str,
+        access_token_id: str,
+        client_id: str,
+        user_id: str,
+        scope: str,
+        resource: str | None,
+        expires_at: datetime,
+    ) -> None:
+        self._s.add(
+            OAuthRefreshTokenORM(
+                token_hash=token_hash,
+                access_token_id=access_token_id,
+                client_id=client_id,
+                user_id=user_id,
+                scope=scope,
+                resource=resource,
+                expires_at=expires_at,
+            )
+        )
+        await self._s.flush()
+
+    async def get_access_token(self, token_hash: str) -> dict[str, Any] | None:
+        row = (
+            await self._s.execute(
+                select(OAuthAccessTokenORM).where(OAuthAccessTokenORM.token_hash == token_hash)
+            )
+        ).scalar_one_or_none()
+        if row is None or row.revoked_at is not None or row.expires_at < datetime.now(UTC):
+            return None
+        return {
+            "id": row.id,
+            "client_id": row.client_id,
+            "user_id": row.user_id,
+            "scope": row.scope,
+            "resource": row.resource,
+            "expires_at": row.expires_at,
+        }
+
+    async def get_refresh_token(self, token_hash: str) -> dict[str, Any] | None:
+        row = (
+            await self._s.execute(
+                select(OAuthRefreshTokenORM).where(OAuthRefreshTokenORM.token_hash == token_hash)
+            )
+        ).scalar_one_or_none()
+        if row is None or row.revoked_at is not None or row.expires_at < datetime.now(UTC):
+            return None
+        return {
+            "id": row.id,
+            "access_token_id": row.access_token_id,
+            "client_id": row.client_id,
+            "user_id": row.user_id,
+            "scope": row.scope,
+            "resource": row.resource,
+            "expires_at": row.expires_at,
+        }
+
+    async def revoke_access_token(self, token_id: str, user_id: str) -> bool:
+        row = (
+            await self._s.execute(
+                select(OAuthAccessTokenORM).where(
+                    OAuthAccessTokenORM.id == token_id, OAuthAccessTokenORM.user_id == user_id
+                )
+            )
+        ).scalar_one_or_none()
+        if row is None or row.revoked_at is not None:
+            return False
+        row.revoked_at = datetime.now(UTC)
+        await self._s.flush()
+        return True
+
+    async def revoke_refresh_token(self, token_hash: str) -> None:
+        row = (
+            await self._s.execute(
+                select(OAuthRefreshTokenORM).where(OAuthRefreshTokenORM.token_hash == token_hash)
+            )
+        ).scalar_one_or_none()
+        if row is not None and row.revoked_at is None:
+            row.revoked_at = datetime.now(UTC)
+            await self._s.flush()
+
+    async def list_active_connections(self, user_id: str) -> list[dict[str, Any]]:
+        stmt = (
+            select(OAuthAccessTokenORM, OAuthClientORM)
+            .join(OAuthClientORM, OAuthClientORM.client_id == OAuthAccessTokenORM.client_id)
+            .where(
+                OAuthAccessTokenORM.user_id == user_id,
+                OAuthAccessTokenORM.revoked_at.is_(None),
+                OAuthAccessTokenORM.expires_at > datetime.now(UTC),
+            )
+            .order_by(OAuthAccessTokenORM.created_at.desc())
+        )
+        rows = (await self._s.execute(stmt)).all()
+        return [
+            {
+                "token_id": token.id,
+                "client_id": client.client_id,
+                "client_name": client.client_name or "Unnamed app",
+                "scope": token.scope,
+                "connected_at": token.created_at,
+            }
+            for token, client in rows
+        ]

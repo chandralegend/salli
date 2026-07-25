@@ -322,6 +322,11 @@ class UserProfileORM(Base):
     risk_category: Mapped[str | None] = mapped_column(String(16), nullable=True)
     life_stage: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
+    # Gates the MCP OAuth /authorize endpoint (see oauth_* tables below) — off by
+    # default. Checked live at token-verification time too, so disabling this
+    # immediately kills already-issued MCP tokens, not just future grants.
+    mcp_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
     )
@@ -643,6 +648,91 @@ class AuditLogORM(Base):
     action: Mapped[str] = mapped_column(String(50), nullable=False)
     params: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     decision: Mapped[str] = mapped_column(String(20), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+
+
+# ── MCP OAuth (lets external AI clients — Claude, ChatGPT, etc. — connect to a
+# user's read-only financial data via a Model Context Protocol server) ─────────
+
+
+class OAuthClientORM(Base):
+    """A dynamically-registered MCP client (RFC 7591). Public clients only —
+    no client_secret, since these are PKCE-only per OAuth 2.1."""
+
+    __tablename__ = "oauth_clients"
+
+    client_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    client_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    redirect_uris: Mapped[list] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+
+
+class OAuthAuthorizationCodeORM(Base):
+    """Short-lived, single-use authorization code. Consumed (deleted) on
+    exchange; a background sweep can also drop expired rows."""
+
+    __tablename__ = "oauth_authorization_codes"
+
+    code: Mapped[str] = mapped_column(String(128), primary_key=True)
+    client_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("oauth_clients.client_id"), nullable=False
+    )
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    redirect_uri: Mapped[str] = mapped_column(String(500), nullable=False)
+    code_challenge: Mapped[str] = mapped_column(String(128), nullable=False)
+    resource: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    scope: Mapped[str] = mapped_column(String(200), nullable=False, default="")
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+
+
+class OAuthAccessTokenORM(Base):
+    """Stored as a SHA-256 hash — the plaintext token is only ever seen once,
+    at issuance. `resource` binds the token to this server (RFC 8707) so a
+    token minted here can't be replayed against a different resource server."""
+
+    __tablename__ = "oauth_access_tokens"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    client_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("oauth_clients.client_id"), nullable=False
+    )
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    scope: Mapped[str] = mapped_column(String(200), nullable=False, default="")
+    resource: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+
+
+class OAuthRefreshTokenORM(Base):
+    """Also stored hashed. Rotated on use — each refresh mints a new refresh
+    token and revokes this one, so a stolen-then-replayed refresh token is
+    detectable (both the old and new token being used is a signal to revoke
+    the whole chain, though v1 only implements the rotation half)."""
+
+    __tablename__ = "oauth_refresh_tokens"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    access_token_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("oauth_access_tokens.id"), nullable=False
+    )
+    client_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    scope: Mapped[str] = mapped_column(String(200), nullable=False, default="")
+    resource: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
     )

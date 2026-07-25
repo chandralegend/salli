@@ -1,0 +1,59 @@
+---
+title: "Connect Claude, ChatGPT, or any MCP client to your Salli account"
+excerpt: >-
+  Your favorite AI assistant can now read and manage your Salli account
+  directly, the same access Scrooge has in-app. Here's what it can do and
+  how to turn it on.
+category: Product
+publishedDate: 2026-07-25
+readTime: 6 min read
+coverStyle: ink-gradient
+coverImage: "https://images.unsplash.com/photo-1644088379091-d574269d422f?q=80&w=1600&auto=format&fit=crop"
+coverImageAlt: "An abstract network of glowing blue lines and nodes, evoking a data connection"
+author: The Salli team
+---
+Scrooge, Salli's in-app AI assistant, already knows your ledger, your budget, your debt payoff plan, and your tax position. Starting today, you can give that same access to whichever AI you actually spend your day in, Claude, ChatGPT, or any other client that speaks MCP, without copying a single number out of Salli by hand.
+
+![An abstract network of glowing blue lines and nodes, evoking a data connection](https://images.unsplash.com/photo-1644088379091-d574269d422f?q=80&w=1600&auto=format&fit=crop)
+
+## What MCP actually is
+
+MCP (Model Context Protocol) is an open standard Anthropic introduced in November 2024 for connecting AI applications to external data and tools, the same way USB-C gave every device one plug instead of a drawer full of proprietary cables. Instead of Salli building a separate one-off integration for every AI product, we build one MCP server, and any MCP-capable client (Claude, ChatGPT, and a growing list of developer tools) can connect to it the same way.
+
+That's the part that matters for you: this isn't a Salli-specific chat feature bolted onto one app. It's a standard door, and you get to decide who walks through it.
+
+## What Claude or ChatGPT can actually do once connected
+
+Once you connect, the assistant gets the same account access Scrooge has in-app:
+
+- **Read your full financial picture**: net worth, budgets, debt payoff plans, portfolio allocation, subscriptions, insurance coverage, and tax computations.
+- **Read your saved documents and memories**: anything you've asked Scrooge to remember or file away.
+- **Write to your account**: create a new ledger account, add a reminder, or post a journal entry, the same three actions Scrooge itself can take.
+
+In practice, that means you can ask Claude "am I under-insured on anything?" or have ChatGPT check whether a subscription's price went up, without opening Salli first, then ask it to log the receipt you just described as an actual journal entry, in the same conversation.
+
+## The same rules that govern Scrooge apply here
+
+The numbers a connected assistant shows you were never computed by the model itself. Your tax liability, your net worth, your FIRE progress, all of it still comes from Salli's deterministic engine, the same one that backs every figure Scrooge shows you in-app. The AI's job, whether it's Scrooge or Claude sitting on the other end of this connection, is to read, explain, and draft; the engine's job is to compute. That boundary doesn't move just because a different assistant is asking.
+
+The one thing that's genuinely different from chatting with Scrooge: in-app, a write action pauses for your explicit approval before it happens. An external MCP client can't pause mid-conversation like that, so the approval happens once, up front, when you grant the connection through Salli's own OAuth consent screen (the same sign-in flow you already use for Salli itself). After that, every write it makes, an account created, a reminder set, an entry posted, is recorded to your audit log, exactly like Scrooge's actions are.
+
+## How to connect
+
+1. **Turn on MCP access.** Open [Settings](https://app.salli.leafmonkey.org/settings) in the Salli web app and flip on "Connect an AI assistant."
+2. **Copy your MCP server URL.** Settings shows a copyable URL specific to Salli's MCP endpoint.
+3. **Add it as a custom connector.** In Claude or ChatGPT, look for "add custom connector" (both call it roughly that) in their connector or plugin settings, and paste the URL in.
+4. **Sign in and approve.** You'll land on Salli's own consent screen, listing exactly what's being requested. Approve it, and you're connected.
+
+There's no separate password or API key to manage. It's the same account, the same sign-in, just a second front door into it.
+
+## Staying in control
+
+Turning MCP off in Settings revokes every connected app's access immediately, not on their next request, right away. You can also revoke a single connection without touching the others, from the same "Connected apps" list. Every write any connected assistant makes still lands in your audit log, so if something looks off, you can see exactly what happened and undo it the same way you would a mistake Scrooge made.
+
+## Sources
+
+- [What is the Model Context Protocol (MCP)? (Model Context Protocol documentation)](https://modelcontextprotocol.io)
+- [Introducing the Model Context Protocol (Anthropic, 25 Nov 2024)](https://www.anthropic.com/news/model-context-protocol)
+- [Building custom connectors via remote MCP servers (Claude documentation)](https://claude.com/docs/connectors/building)
+- [MCP in the OpenAI platform (OpenAI developer documentation)](https://developers.openai.com/api/docs/mcp/)

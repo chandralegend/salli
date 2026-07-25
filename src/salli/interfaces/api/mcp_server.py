@@ -31,6 +31,7 @@ from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.provider import AccessToken, TokenVerifier
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from pydantic import AnyHttpUrl
 
 from salli.application.services.mcp_oauth_service import McpOAuthService
@@ -112,6 +113,17 @@ def build_mcp_server(services: Any, issuer_url: str) -> FastMCP:
         # connected client on the very next deploy (each request gets its own
         # transport instead, so nothing is pinned to server-process memory).
         stateless_http=True,
+        # FastMCP auto-enables an allowlist check on the Host header ("DNS
+        # rebinding protection") whenever host defaults to 127.0.0.1 — which
+        # it does here, since we never set host (we're mounted under our own
+        # FastAPI app, not run standalone). That allowlist only ever contains
+        # loopback patterns, so every real request — Host: salli-api.onrender.com
+        # — fails it with a 421, regardless of a valid bearer token. This
+        # protection targets locally-exposed MCP servers trusted by same-host
+        # browsers; it's meaningless for a public server that already requires
+        # a valid OAuth bearer token on every request, so it's disabled here
+        # rather than trying to keep a Host allowlist in sync with prod/dev.
+        transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
     )
 
     @mcp.tool()

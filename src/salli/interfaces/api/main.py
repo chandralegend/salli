@@ -77,7 +77,16 @@ async def lifespan(app: FastAPI):
     from salli.interfaces.api.mcp_server import build_mcp_server
 
     mcp_server = build_mcp_server(svc, issuer_url=settings.mcp_public_base_url.rstrip("/"))
-    app.mount("/mcp", mcp_server.streamable_http_app())
+    # Mounted at root, not "/mcp": FastMCP's own streamable_http_path default
+    # ("/mcp") already puts the real route at exactly /mcp with no trailing
+    # slash, matching the resource URL we advertise everywhere. Mounting at
+    # "/mcp" too would put the route at /mcp/ instead, and a bare /mcp request
+    # (what every real client sends) would 307-redirect there instead of being
+    # served directly — several MCP/OAuth clients don't follow that redirect
+    # on a POST, surfacing as an opaque "couldn't refresh actions" failure.
+    # This mount is added last, after every other router, so it only ever
+    # catches requests no other route matched.
+    app.mount("/", mcp_server.streamable_http_app())
 
     async with mcp_server.session_manager.run():
         yield

@@ -103,9 +103,9 @@ def build_mcp_server(services: Any, issuer_url: str) -> FastMCP:
         auth=AuthSettings(
             issuer_url=AnyHttpUrl(issuer_url), resource_server_url=None, required_scopes=None
         ),
-        # Mounted at /mcp by main.py; the sub-app's own route lives at "/" so the
-        # combined external path is exactly /mcp, not /mcp/mcp.
-        streamable_http_path="/",
+        # Default streamable_http_path ("/mcp") — main.py mounts this app at
+        # root "/", so the served path is exactly /mcp, matching the resource
+        # URL we advertise (no trailing slash, no redirect on a bare request).
     )
 
     @mcp.tool()

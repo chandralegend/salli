@@ -77,11 +77,6 @@ export default function HomePage() {
       <section id="top" className="relative z-2">
         <HeroCanvas />
         <div className="relative z-1 mx-auto max-w-[1320px] px-6 pt-16 pb-10 sm:px-10">
-          <div className="absolute right-5 top-10 z-5 hidden sm:block md:right-[280px]">
-            <div className="rounded-full bg-red px-4 py-2.5 font-mono text-xs font-semibold uppercase tracking-[.08em] text-cream shadow-[0_12px_26px_-12px_rgba(245,49,15,.7)]" style={{ transform: "rotate(-7deg)" }}>
-              ★ Made for Sri Lanka
-            </div>
-          </div>
           <div className="grid items-center gap-10 lg:grid-cols-[1.12fr_0.88fr]">
             <div>
               <div className="font-mono text-xs font-semibold uppercase tracking-[.14em] text-red">
@@ -125,6 +120,11 @@ export default function HomePage() {
               <div className="absolute -left-7.5 -top-6.5 z-6 hidden sm:block">
                 <div className="rounded-full bg-ink px-3.5 py-2.25 font-mono text-[11px] font-semibold uppercase tracking-[.08em] text-cream shadow-[0_12px_24px_-12px_rgba(22,19,15,.6)]" style={{ transform: "rotate(6deg)" }}>
                   No guessing ✓
+                </div>
+              </div>
+              <div className="absolute -right-5.5 -bottom-6.5 z-6 hidden sm:block">
+                <div className="rounded-full bg-red px-4 py-2.5 font-mono text-xs font-semibold uppercase tracking-[.08em] text-cream shadow-[0_12px_26px_-12px_rgba(245,49,15,.7)]" style={{ transform: "rotate(-7deg)" }}>
+                  ★ Made for Sri Lanka
                 </div>
               </div>
               <TiltCard className="rounded-[32px] bg-white p-6.5 shadow-[0_40px_80px_-30px_rgba(22,19,15,.5),0_0_0_1px_rgba(22,19,15,.05)]">

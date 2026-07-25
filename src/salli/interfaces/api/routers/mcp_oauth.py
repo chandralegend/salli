@@ -23,6 +23,7 @@ from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel
 
+from salli.application.services.billing_service import PlanRequiredError
 from salli.application.services.mcp_oauth_service import ConsentError, OAuthError
 from salli.config import get_settings
 from salli.interfaces.api.deps import AppServices, CurrentUser
@@ -118,7 +119,7 @@ async def authorize(
 @router.get("/mcp/oauth/consent-info")
 async def consent_info(rt: str, user_id: CurrentUser, svc: AppServices):
     try:
-        return await svc.mcp_oauth.get_consent_info(rt)
+        return await svc.mcp_oauth.get_consent_info(rt, user_id)
     except ConsentError as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
@@ -209,7 +210,18 @@ class McpEnabledRequest(BaseModel):
 
 @connections_router.put("/enabled", status_code=204)
 async def set_mcp_enabled(body: McpEnabledRequest, user_id: CurrentUser, svc: AppServices):
-    await svc.mcp_oauth.set_mcp_enabled(user_id, body.enabled)
+    try:
+        await svc.mcp_oauth.set_mcp_enabled(user_id, body.enabled)
+    except PlanRequiredError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail={
+                "error": "plan_required",
+                "feature": exc.feature,
+                "plan": exc.plan_key,
+                "upgrade": True,
+            },
+        ) from exc
 
 
 @connections_router.get("/enabled")

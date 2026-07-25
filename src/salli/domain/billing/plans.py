@@ -60,6 +60,7 @@ PLANS: dict[str, Plan] = {
             "50 statement uploads / month",
             "Web search & document management",
             "Daily wealth advisor (FI score + recommendations)",
+            "Connect Claude, ChatGPT, and other MCP clients",
         ],
     ),
     "pro": Plan(
@@ -75,6 +76,7 @@ PLANS: dict[str, Plan] = {
             "500 statement uploads / month",
             "Priority model access",
             "Daily wealth advisor + more runs",
+            "Connect Claude, ChatGPT, and other MCP clients",
         ],
     ),
 }

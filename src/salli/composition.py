@@ -126,6 +126,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         auth_code_ttl_seconds=settings.mcp_auth_code_ttl_seconds,
         access_token_ttl_seconds=settings.mcp_access_token_ttl_seconds,
         refresh_token_ttl_seconds=settings.mcp_refresh_token_ttl_seconds,
+        billing_service=billing,
     )
     data_portability = DataPortabilityService(
         uow_factory,

@@ -37,6 +37,9 @@ from urllib.parse import urlencode, urlparse
 from jose import JWTError, jwt
 from jose.exceptions import ExpiredSignatureError
 
+from salli.application.services.billing_service import PlanRequiredError
+from salli.domain.billing.plans import get_plan
+
 _ART_ISSUER = "salli-mcp-oauth"
 _log = logging.getLogger(__name__)
 
@@ -74,9 +77,11 @@ class McpOAuthService:
         auth_code_ttl_seconds: int,
         access_token_ttl_seconds: int,
         refresh_token_ttl_seconds: int,
+        billing_service: Any,
         art_ttl_seconds: int = 1800,
     ) -> None:
         self._uow_factory = uow_factory
+        self._billing = billing_service
         self._signing_secret = signing_secret
         self._resource = mcp_resource_url
         self._app_base_url = app_base_url.rstrip("/")
@@ -91,11 +96,21 @@ class McpOAuthService:
     # ── Per-user enable/disable ─────────────────────────────────────────────
 
     async def is_mcp_enabled(self, user_id: str) -> bool:
+        """Checked live everywhere a token is minted or verified — a plan
+        downgrade takes effect on the very next check, the same way manually
+        toggling the switch off does, with no separate revocation step."""
         async with self._uow_factory() as uow:
             profile: dict[str, Any] | None = await uow.user_profiles.get(user_id)
-        return bool(profile and profile.get("mcp_enabled"))
+        if not (profile and profile.get("mcp_enabled")):
+            return False
+        plan_key = await self._billing.get_plan_key(user_id)
+        return get_plan(plan_key).paid
 
     async def set_mcp_enabled(self, user_id: str, enabled: bool) -> None:
+        if enabled:
+            plan_key = await self._billing.get_plan_key(user_id)
+            if not get_plan(plan_key).paid:
+                raise PlanRequiredError(feature="mcp", plan_key=plan_key)
         async with self._uow_factory() as uow:
             await uow.user_profiles.upsert(user_id, {"mcp_enabled": enabled})
 
@@ -176,14 +191,19 @@ class McpOAuthService:
             raise ConsentError("This connection link is no longer valid — please try connecting again.") from exc
         return payload
 
-    async def get_consent_info(self, art: str) -> dict[str, Any]:
+    async def get_consent_info(self, art: str, user_id: str) -> dict[str, Any]:
         payload = self._decode_art(art)
         async with self._uow_factory() as uow:
             client: dict[str, Any] | None = await uow.oauth_clients.get(payload["client_id"])
+        plan_key = await self._billing.get_plan_key(user_id)
         return {
             "client_name": (client or {}).get("client_name") or "An application",
             "scope": payload.get("scope") or "",
             "resource": payload.get("resource"),
+            # Lets the consent screen show an upgrade prompt before the user
+            # clicks Allow, instead of after — complete_consent enforces the
+            # same check regardless, this is purely a fail-fast UX signal.
+            "plan_ok": get_plan(plan_key).paid,
         }
 
     async def complete_consent(self, art: str, user_id: str, approve: bool) -> str:
@@ -197,7 +217,7 @@ class McpOAuthService:
             return _append_query(redirect_uri, {"error": "access_denied", **({"state": state} if state else {})})
 
         if not await self.is_mcp_enabled(user_id):
-            raise ConsentError("Enable MCP access in Settings before connecting an AI assistant.")
+            raise ConsentError("MCP access isn't available for this account — check Settings.")
 
         code = secrets.token_urlsafe(32)
         async with self._uow_factory() as uow:

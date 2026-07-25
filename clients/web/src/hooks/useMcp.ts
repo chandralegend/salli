@@ -15,6 +15,7 @@ export type McpConsentInfo = {
   client_name: string;
   scope: string;
   resource: string | null;
+  plan_ok: boolean;
 };
 
 export function useMcpEnabled() {

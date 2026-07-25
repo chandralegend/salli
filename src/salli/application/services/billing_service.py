@@ -25,6 +25,16 @@ class QuotaExceeded(Exception):
         super().__init__(f"Quota exceeded for {metric} (limit {limit} on {plan_key})")
 
 
+class PlanRequiredError(Exception):
+    """Raised when a feature (not a metered counter) requires a paid plan the
+    user isn't on — e.g. MCP access on the free plan."""
+
+    def __init__(self, feature: str, plan_key: str) -> None:
+        self.feature = feature
+        self.plan_key = plan_key
+        super().__init__(f"'{feature}' requires a paid plan (currently on {plan_key})")
+
+
 def _period(now: datetime.datetime | None = None) -> str:
     now = now or datetime.datetime.now(datetime.UTC)
     return now.strftime("%Y-%m")
@@ -58,6 +68,10 @@ class BillingService:
 
     # ── Entitlements / usage ──────────────────────────────────────────────────
 
+    async def get_plan_key(self, user_id: str, email: str | None = None) -> str:
+        sub = await self._ensure_user(user_id, email)
+        return get_plan(sub.get("plan")).key
+
     async def get_entitlements(self, user_id: str, email: str | None = None) -> dict[str, Any]:
         sub = await self._ensure_user(user_id, email)
         plan = get_plan(sub.get("plan"))
@@ -81,6 +95,7 @@ class BillingService:
         return {
             "plan": plan.key,
             "plan_name": plan.name,
+            "paid": plan.paid,
             "status": sub.get("status", "active"),
             "current_period_end": sub.get("current_period_end"),
             "cancel_at_period_end": sub.get("cancel_at_period_end", False),

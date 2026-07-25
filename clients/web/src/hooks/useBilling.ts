@@ -14,6 +14,7 @@ export type UsageMetric = {
 export type Subscription = {
   plan: string;
   plan_name: string;
+  paid: boolean;
   status: string;
   current_period_end: string | null;
   cancel_at_period_end: boolean;

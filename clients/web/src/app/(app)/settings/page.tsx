@@ -42,13 +42,17 @@ function SettingsContent() {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const mounted = useMounted();
 
-  // Every 402 upgrade banner in the app lands here with ?upgrade=1.
+  // Every 402 upgrade banner in the app lands here with ?upgrade=1. A plan
+  // key (?upgrade=plus / ?upgrade=pro) also opens the dialog, additionally
+  // highlighting that plan — used by plan-gated features (e.g. MCP) and the
+  // marketing site's pricing CTAs.
+  const upgradeParam = params.get("upgrade");
   useEffect(() => {
-    if (params.get("upgrade") === "1") {
+    if (upgradeParam) {
       const t = setTimeout(() => setUpgradeOpen(true), 0);
       return () => clearTimeout(t);
     }
-  }, [params]);
+  }, [upgradeParam]);
 
   const sub = subscription.data;
 
@@ -204,7 +208,12 @@ function SettingsContent() {
         <span className="block text-xs mt-1.5">Salli · © 2026</span>
       </footer>
 
-      <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} currentPlan={sub?.plan ?? "free"} />
+      <UpgradeDialog
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        currentPlan={sub?.plan ?? "free"}
+        highlightPlan={upgradeParam && upgradeParam !== "1" ? upgradeParam : undefined}
+      />
     </div>
   );
 }

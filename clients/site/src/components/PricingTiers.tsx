@@ -4,6 +4,7 @@ import { useState } from "react";
 import { clsx } from "clsx";
 import { MagneticButton } from "@/components/MagneticButton";
 import { Reveal } from "@/components/Reveal";
+import { APP_LOGIN_URL } from "@/lib/config";
 
 type Tier = {
   name: string;
@@ -12,31 +13,37 @@ type Tier = {
   popular?: boolean;
   dark?: boolean;
   cta: string;
+  href: string;
   features: string[];
 };
 
+// Prices must be kept in sync with src/salli/domain/billing/plans.py (the
+// backend, via Paddle, is the source of truth for what's actually charged).
 const TIERS: Tier[] = [
   {
     name: "Free",
     tagline: "The honest ledger, forever free.",
     monthlyPrice: 0,
     cta: "Start free",
+    href: APP_LOGIN_URL,
     features: ["Immutable double-entry ledger", "Manual transactions & budgets", "Net-worth overview", "One connected account", "Community support"],
   },
   {
     name: "Plus",
     tagline: "Tax clarity and planning, done for you.",
-    monthlyPrice: 990,
+    monthlyPrice: 9,
     popular: true,
     dark: true,
     cta: "Choose Plus",
-    features: ["Everything in Free", "2025/26 tax engine & payable", "AI quick-add & explanations", "Debt payoff & FIRE planning", "Unlimited accounts & exports"],
+    href: `${APP_LOGIN_URL}?next=${encodeURIComponent("/settings?upgrade=plus")}`,
+    features: ["Everything in Free", "2025/26 tax engine & payable", "AI quick-add & explanations", "Debt payoff & FIRE planning", "Unlimited accounts & exports", "Connect Claude, ChatGPT & other MCP clients"],
   },
   {
     name: "Pro",
     tagline: "Full power, guided returns, priority help.",
-    monthlyPrice: 2490,
+    monthlyPrice: 29,
     cta: "Choose Pro",
+    href: `${APP_LOGIN_URL}?next=${encodeURIComponent("/settings?upgrade=pro")}`,
     features: ["Everything in Plus", "Guided return preparation", "Human-review checkpoint", "Portfolio & insurance tracking", "Priority support"],
   },
 ];
@@ -47,6 +54,7 @@ const COMPARE = [
   { label: "2025/26 tax engine & payable", free: "✕", plus: "✓", pro: "✓" },
   { label: "AI quick-add & explanations", free: "✕", plus: "✓", pro: "✓" },
   { label: "Debt payoff & FIRE planning", free: "✕", plus: "✓", pro: "✓" },
+  { label: "Connect Claude, ChatGPT & other MCP clients", free: "✕", plus: "✓", pro: "✓" },
   { label: "Guided return + human review", free: "✕", plus: "✕", pro: "✓" },
   { label: "Support", free: "Community", plus: "Email", pro: "Priority" },
 ];
@@ -106,7 +114,7 @@ export function PricingTiers() {
                   {t.tagline}
                 </p>
                 <div className="mt-5.5 flex items-baseline gap-1.5">
-                  <span className="font-mono text-base font-semibold opacity-70">LKR</span>
+                  <span className="font-mono text-base font-semibold opacity-70">$</span>
                   <span className="font-mono font-display text-[52px] font-extrabold tracking-[-0.03em]">
                     {priceFor(t.monthlyPrice, annual)}
                   </span>
@@ -116,11 +124,11 @@ export function PricingTiers() {
                   {t.monthlyPrice === 0
                     ? "No card required"
                     : annual
-                      ? `LKR ${(Math.round(t.monthlyPrice * 0.8) * 12).toLocaleString("en-US")} billed annually`
+                      ? `$${(Math.round(t.monthlyPrice * 0.8) * 12).toLocaleString("en-US")} billed annually`
                       : "Billed monthly"}
                 </div>
                 <MagneticButton
-                  href="#"
+                  href={t.href}
                   className={clsx(
                     "mt-6.5 rounded-full py-3.75 text-center text-[15px] font-bold",
                     t.dark ? "bg-red text-cream" : "bg-ink text-cream",
@@ -143,7 +151,8 @@ export function PricingTiers() {
         </div>
         <p className="mt-6.5 text-center font-mono text-xs text-ink-40">
           All plans include the immutable ledger and the 2025/26 CA-reviewed tax pack. Prices in
-          Sri Lankan Rupees, incl. taxes.
+          USD, billed via Paddle. Your bank or Paddle applies the exchange rate and any local
+          taxes at checkout.
         </p>
       </section>
 

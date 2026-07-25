@@ -122,6 +122,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         signing_secret=settings.mcp_signing_secret or settings.supabase_jwt_secret or "dev-insecure-secret",
         mcp_resource_url=f"{settings.mcp_public_base_url.rstrip('/')}/mcp",
         app_base_url=settings.app_base_url,
+        art_ttl_seconds=settings.mcp_art_ttl_seconds,
         auth_code_ttl_seconds=settings.mcp_auth_code_ttl_seconds,
         access_token_ttl_seconds=settings.mcp_access_token_ttl_seconds,
         refresh_token_ttl_seconds=settings.mcp_refresh_token_ttl_seconds,

@@ -22,18 +22,22 @@ function ConsentContent() {
   const [decided, setDecided] = useState<"allow" | "deny" | null>(null);
   const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Computed once at mount, before any render — keeps us from firing an
+  // unauthenticated consent-info request (and flashing "Link expired") in
+  // the instant before the login redirect below kicks in.
+  const [hasSession] = useState<boolean | null>(() =>
+    typeof window === "undefined" ? null : !!getStoredToken()
+  );
 
-  const consentInfo = useMcpConsentInfo(rt);
+  const consentInfo = useMcpConsentInfo(hasSession ? rt : null);
   const decision = useMcpConsentDecision();
 
   // No active session — send the user to log in, then straight back here.
   useEffect(() => {
-    if (!rt) return;
-    if (!getStoredToken()) {
-      const next = `/oauth/consent?rt=${encodeURIComponent(rt)}`;
-      window.location.replace(`/login?next=${encodeURIComponent(next)}`);
-    }
-  }, [rt]);
+    if (!rt || hasSession !== false) return;
+    const next = `/oauth/consent?rt=${encodeURIComponent(rt)}`;
+    window.location.replace(`/login?next=${encodeURIComponent(next)}`);
+  }, [rt, hasSession]);
 
   async function decide(approve: boolean) {
     if (!rt) return;
@@ -63,7 +67,7 @@ function ConsentContent() {
     );
   }
 
-  if (consentInfo.isLoading || redirecting) {
+  if (hasSession === null || consentInfo.isLoading || redirecting) {
     return (
       <AuthCard title="One moment" subtitle="Loading this request&hellip;">
         <div className="flex justify-center py-4">

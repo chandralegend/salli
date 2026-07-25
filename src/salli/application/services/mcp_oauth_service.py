@@ -71,6 +71,7 @@ class McpOAuthService:
         auth_code_ttl_seconds: int,
         access_token_ttl_seconds: int,
         refresh_token_ttl_seconds: int,
+        art_ttl_seconds: int = 1800,
     ) -> None:
         self._uow_factory = uow_factory
         self._signing_secret = signing_secret
@@ -79,6 +80,10 @@ class McpOAuthService:
         self._auth_code_ttl = auth_code_ttl_seconds
         self._access_ttl = access_token_ttl_seconds
         self._refresh_ttl = refresh_token_ttl_seconds
+        # Generous by design: the consent screen usually sits behind a login
+        # redirect (or a first-time signup), which can easily eat several
+        # minutes on its own before the user ever gets back here.
+        self._art_ttl = art_ttl_seconds
 
     # ── Per-user enable/disable ─────────────────────────────────────────────
 
@@ -148,7 +153,7 @@ class McpOAuthService:
                 "scope": scope,
                 "resource": resource,
                 "state": state,
-                "exp": datetime.now(UTC) + timedelta(minutes=5),
+                "exp": datetime.now(UTC) + timedelta(seconds=self._art_ttl),
             },
             self._signing_secret,
             algorithm="HS256",

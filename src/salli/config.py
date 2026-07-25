@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     # consent screen. Falls back to the Supabase JWT secret in dev so a fresh
     # checkout works without extra config — set a real random value in production.
     mcp_signing_secret: str = ""
+    # Pending-authorization token TTL — generous because the consent screen
+    # usually sits behind a login (or first-time signup) redirect.
+    mcp_art_ttl_seconds: int = 1800
     mcp_auth_code_ttl_seconds: int = 120
     mcp_access_token_ttl_seconds: int = 3600
     mcp_refresh_token_ttl_seconds: int = 60 * 60 * 24 * 30

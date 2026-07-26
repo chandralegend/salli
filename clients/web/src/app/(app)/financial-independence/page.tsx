@@ -54,7 +54,7 @@ import {
   useRecomputeScore,
   useRunAdvisor,
 } from "@/hooks/useFi";
-import { formatCompact, formatMoney } from "@/lib/format";
+import { formatCompact, formatMoney, formatPct, pctValue } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 function AddGoalDialog({
@@ -194,14 +194,21 @@ export default function FinancialIndependencePage() {
   }
 
   const fireStyle = s.fire_style[0].toUpperCase() + s.fire_style.slice(1);
-  const yearsToFire =
-    proj?.fire_year_base != null ? String(proj.fire_year_base) : fi?.projected_fi_date ?? "—";
+  // Years only — never fall back to `projected_fi_date`, which is an ISO date
+  // string and rendered as "2039-07-26" inside a 36px numeral slot labelled
+  // "Years to Freedom". Unreachable within the horizon shows as "—".
+  const yearsToFire = proj?.fire_year_base != null ? String(proj.fire_year_base) : "—";
+  // The rate the Freedom Number was actually derived from, so the caption can
+  // never contradict the value again (the card used to pair a 4%-derived figure
+  // with a 3.5% caption).
+  const swrUsed = fi?.swr ?? String(s.swr);
+  const realBaseReturn = proj?.real_returns?.base;
 
   return (
     <div className="space-y-8">
       <PageHeader
         title="Freedom"
-        subtitle={`${fireStyle} FIRE · Strategy v${s.version} · SWR ${(s.swr * 100).toFixed(1)}%`}
+        subtitle={`${fireStyle} FIRE · Strategy v${s.version} · SWR ${formatPct(swrUsed)}`}
         actions={
           <>
             <Button variant="outline" onClick={() => recompute.mutate()} disabled={recompute.isPending}>
@@ -221,31 +228,39 @@ export default function FinancialIndependencePage() {
             icon={Target}
             loading={score.isLoading}
             value={`LKR ${formatCompact(fi?.fi_number)}`}
-            caption={`${(s.swr * 100).toFixed(1)}% safe withdrawal rate`}
+            caption={`${formatPct(swrUsed)} safe withdrawal rate`}
           />
           <StatCard
-            label="Net Worth"
+            label="Investable Assets"
             icon={Landmark}
             loading={score.isLoading}
-            value={`LKR ${formatCompact(fi?.net_worth)}`}
-            caption={fi ? `${Number(fi.progress_to_fi).toFixed(1)}% of Freedom number` : undefined}
+            value={`LKR ${formatCompact(fi?.fi_asset_base)}`}
+            caption={
+              fi ? `${formatPct(fi.progress_to_fi)} of Freedom number` : undefined
+            }
           />
           <StatCard label="Years to Freedom" emphasis loading={projections.isLoading} icon={CalendarClock}>
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="money text-[36px] font-semibold leading-none">{yearsToFire}</p>
-                <p className="text-xs text-white/60 mt-1.5">base · {(s.return_base * 100).toFixed(0)}% return</p>
+                <p className="text-xs text-white/60 mt-1.5">
+                  base · {formatPct(realBaseReturn ?? s.return_base, 1)} real return
+                </p>
               </div>
-              {fi && <RadialProgress value={Number(fi.progress_to_fi)} size={52} ringWidth={6} />}
+              {fi && (
+                <RadialProgress value={pctValue(fi.progress_to_fi)} size={52} ringWidth={6} />
+              )}
             </div>
           </StatCard>
           <StatCard
             label="Savings Rate"
             icon={PiggyBank}
             loading={score.isLoading}
-            value={fi ? `${Number(fi.savings_rate).toFixed(1)}%` : "—"}
+            value={formatPct(fi?.savings_rate)}
             badge={
-              fi && Number(fi.savings_rate) >= 40 ? <StatusChip tone="success">above 40% target</StatusChip> : undefined
+              fi && Number(fi.savings_rate) >= 0.4 ? (
+                <StatusChip tone="success">above 40% target</StatusChip>
+              ) : undefined
             }
             caption="monthly surplus ratio"
           />
@@ -338,16 +353,28 @@ export default function FinancialIndependencePage() {
               <div className="px-4 pb-4 space-y-4">
                 <div className="grid grid-cols-3 rounded-md border bg-muted/60 divide-x">
                   {[
-                    { label: "Conservative", v: s.return_conservative },
-                    { label: "Base", v: s.return_base },
-                    { label: "Growth", v: s.return_growth },
+                    { label: "Conservative", nominal: s.return_conservative, real: proj?.real_returns?.conservative },
+                    { label: "Base", nominal: s.return_base, real: proj?.real_returns?.base },
+                    { label: "Growth", nominal: s.return_growth, real: proj?.real_returns?.growth },
                   ].map((r) => (
                     <div key={r.label} className="p-3 text-center">
-                      <p className="money text-lg font-semibold">{(r.v * 100).toFixed(0)}%</p>
-                      <p className="text-xs text-muted-foreground">{r.label} return</p>
+                      <p className="money text-lg font-semibold">{formatPct(r.real ?? r.nominal, 1)}</p>
+                      <p className="text-xs text-muted-foreground">{r.label} real</p>
+                      {/* Show the nominal assumption too — the projection uses the
+                          real rate, and conflating them is what made years-to-FI
+                          look shorter than it is. */}
+                      <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+                        {formatPct(r.nominal, 0)} nominal
+                      </p>
                     </div>
                   ))}
                 </div>
+                {proj?.expected_inflation && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Projections run in today&apos;s rupees, assuming{" "}
+                    {formatPct(proj.expected_inflation, 1)} long-run inflation.
+                  </p>
+                )}
                 {s.rationale_locked ? (
                   <div className="space-y-3">
                     <p className="text-sm text-muted-foreground leading-relaxed">{s.rationale_preview}</p>

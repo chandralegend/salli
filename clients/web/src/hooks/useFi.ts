@@ -5,19 +5,30 @@ import { apiFetch } from "@/lib/api-fetch";
 
 export type FiComponent = { key: string; label: string; score: string; weight: string; detail: string };
 
+/**
+ * UNITS — the API mixes two scales on this one object, so read carefully:
+ *   • `overall_score` and `components[].score` are 0..100.
+ *   • every other ratio (`savings_rate`, `progress_to_fi`, `debt_to_asset`,
+ *     `swr`) is a 0..1 FRACTION.
+ * Render fractions with `formatPct()` / `pctValue()` from `@/lib/format` — never
+ * with a bare `%` suffix, which is what once displayed a 50% savings rate as
+ * "0.5%".
+ */
 export type FiScore = {
-  overall_score: string;
+  overall_score: string; // 0..100
   grade: string;
   monthly_income: string;
   monthly_expenses: string;
   monthly_surplus: string;
-  savings_rate: string;
+  savings_rate: string; // 0..1
+  swr: string; // 0..1 — the rate fi_number was derived from
   annual_expenses: string;
   fi_number: string;
-  net_worth: string;
-  progress_to_fi: string;
+  net_worth: string; // all assets − liabilities
+  fi_asset_base: string; // investable assets net of debt — what progress measures
+  progress_to_fi: string; // 0..1, unclamped (can exceed 1)
   emergency_fund_months: string;
-  debt_to_asset: string;
+  debt_to_asset: string; // 0..1
   projected_fi_date: string | null;
   currency: string;
   components: FiComponent[];
@@ -157,11 +168,16 @@ export type ScenarioAccess = {
 
 export type ProjectionsData = {
   points: ProjectionPoint[];
-  fi_number: string;
+  fi_number: string; // identical to FiScore.fi_number — one formula, one figure
+  swr: string; // 0..1
+  /** Years from now (not calendar years); null = unreachable within the horizon. */
   fire_year_conservative: number | null;
   fire_year_base: number | null;
   fire_year_growth: number | null;
-  current_portfolio: string;
+  current_portfolio: string; // the FI asset base the projection starts from
+  /** REAL (inflation-adjusted) rates actually projected, as 0..1 fractions. */
+  real_returns?: { conservative: string; base: string; growth: string };
+  expected_inflation?: string; // 0..1
   scenario_access: ScenarioAccess;
 };
 

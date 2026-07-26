@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 FIRE_SYSTEM_PROMPT = """You are Salli's FIRE Strategy Architect — a deep-thinking financial independence advisor
 specialising in Sri Lanka, with expertise in international FIRE literature.
@@ -63,7 +63,11 @@ Rules:
 class BucketSchema(BaseModel):
     key: str = Field(description="Unique key, snake_case, e.g. 'emergency_moat'")
     name: str = Field(description="Display name, e.g. 'Emergency Moat'")
-    target_pct: float = Field(description="0.0-1.0, fraction of monthly surplus to route here")
+    target_pct: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="A FRACTION between 0.0 and 1.0 (e.g. 0.25 for 25%) — never a percentage",
+    )
     description: str = Field(
         description="1-2 sentences explaining this bucket and what to invest in"
     )
@@ -71,20 +75,39 @@ class BucketSchema(BaseModel):
 
 
 class FireStrategySchema(BaseModel):
+    """
+    Bounds are load-bearing, not cosmetic. These rates divide and compound the
+    user's money downstream, so a model that answers `3.5` where `0.035` is
+    meant would silently shrink the Freedom Number ~100x and report FI as
+    already reached. Reject such a response rather than serve a wrong number
+    (CLAUDE.md: "LLM never computes money or tax").
+    """
+
     fire_style: Literal["lean", "standard", "fat", "coast"] = Field(
         description="FIRE tier classification"
     )
-    swr: float = Field(description="Safe withdrawal rate, e.g. 0.04 for 4%")
-    return_conservative: float = Field(
-        description="Conservative annual return assumption, e.g. 0.06"
+    swr: float = Field(
+        ge=0.02,
+        le=0.06,
+        description="Safe withdrawal rate as a FRACTION, e.g. 0.04 for 4% — never 4",
     )
-    return_base: float = Field(description="Base annual return assumption, e.g. 0.10")
-    return_growth: float = Field(description="Growth annual return assumption, e.g. 0.14")
+    return_conservative: float = Field(
+        ge=-0.5, le=0.5, description="Conservative annual NOMINAL return as a FRACTION, e.g. 0.06"
+    )
+    return_base: float = Field(
+        ge=-0.5, le=0.5, description="Base annual NOMINAL return as a FRACTION, e.g. 0.10"
+    )
+    return_growth: float = Field(
+        ge=-0.5, le=0.5, description="Growth annual NOMINAL return as a FRACTION, e.g. 0.14"
+    )
     target_monthly_expenses: float | None = Field(
         default=None,
+        ge=0.0,
         description="Target monthly expenses at retirement; null = use current actuals",
     )
-    target_age: int | None = Field(default=None, description="Target retirement age, or null")
+    target_age: int | None = Field(
+        default=None, ge=18, le=100, description="Target retirement age, or null"
+    )
     buckets: list[BucketSchema] = Field(
         description="AI-generated allocation buckets; target_pct must sum to 1.0"
     )
@@ -94,6 +117,36 @@ class FireStrategySchema(BaseModel):
     theories_applied: list[str] = Field(
         description="List of theory names applied, e.g. ['Trinity Study', 'Barbell']"
     )
+
+    @model_validator(mode="after")
+    def _normalise_buckets(self) -> FireStrategySchema:
+        """
+        Rescale bucket weights to sum to exactly 1.0.
+
+        Unlike the rates above, a bucket sum that is merely close (0.99, 1.02)
+        is recoverable and not worth failing a whole generation over — the
+        allocation's *relative* split is what the model was reasoning about.
+        A sum of 0 carries no information, so it is rejected.
+        """
+        if not self.buckets:
+            return self
+        total = sum(b.target_pct for b in self.buckets)
+        if total <= 0:
+            raise ValueError("bucket target_pct values must sum to a positive number")
+        if abs(total - 1.0) > 1e-9:
+            for b in self.buckets:
+                b.target_pct = b.target_pct / total
+        return self
+
+    @model_validator(mode="after")
+    def _returns_ordered(self) -> FireStrategySchema:
+        """Conservative <= base <= growth, or the three scenarios are meaningless."""
+        if not (self.return_conservative <= self.return_base <= self.return_growth):
+            raise ValueError(
+                "returns must be ordered conservative <= base <= growth, got "
+                f"{self.return_conservative}, {self.return_base}, {self.return_growth}"
+            )
+        return self
 
 
 async def generate_strategy(context: dict[str, Any]) -> FireStrategySchema:

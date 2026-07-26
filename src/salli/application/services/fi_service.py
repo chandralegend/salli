@@ -6,53 +6,100 @@ generate_strategy() to create the AI-generated FireStrategy.
 
 from __future__ import annotations
 
+import calendar
 import datetime
 import hashlib
 import json
+import re
 from collections.abc import AsyncGenerator, Callable
 from dataclasses import asdict
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from salli.domain.accounting import ledger as ledger_ops
 from salli.domain.accounting.models import Account, Direction, StoredJournalEntry
 from salli.domain.fi import engine
-from salli.domain.fi.models import FinancialSnapshot, FiScore
+from salli.domain.fi.models import AllocationBucket, FinancialSnapshot, FireStrategy, FiScore
 from salli.domain.fi.packs import registry
+from salli.domain.money import to_minor
 
-# Asset-name keywords that mark an account as an *investment* (vs liquid savings).
-_INVESTMENT_KEYWORDS = (
-    "fixed deposit",
-    "fd",
-    "investment",
-    "invest",
-    "stock",
-    "share",
-    "mutual",
-    "unit trust",
-    "bond",
-    "treasury",
-    "t-bill",
-    "tbill",
-    "crypto",
-    "etf",
-    "pension",
-    "epf",
-    "etf",
-    "portfolio",
+# Account-name patterns that mark an asset account as an *investment* rather than
+# emergency-fund-eligible liquid savings.
+#
+# Anchored on word boundaries deliberately: an earlier unanchored substring list
+# matched "fd" inside "Refund" and "share" inside "Sharepoint", quietly moving
+# cash out of liquid savings and corrupting the emergency-fund component (15% of
+# the score). Stems that need to match plurals/derivatives spell that out.
+_INVESTMENT_PATTERN = re.compile(
+    r"\b(?:"
+    r"fixed deposits?"
+    r"|fd"
+    r"|invest\w*"
+    r"|stocks?"
+    r"|shares?"
+    r"|mutual"
+    r"|unit trusts?"
+    r"|bonds?"
+    r"|treasury"
+    r"|t-?bills?"
+    r"|crypto\w*"
+    r"|etfs?"
+    r"|pensions?"
+    r"|epf"
+    r"|etf"
+    r"|portfolios?"
+    r")\b"
 )
 
 
 def _is_investment(acc: Account) -> bool:
-    n = acc.name.lower()
-    return any(k in n for k in _INVESTMENT_KEYWORDS)
+    return bool(_INVESTMENT_PATTERN.search(acc.name.lower()))
 
 
 def _months_ago_iso(months: int) -> str:
+    """
+    First day of the trailing window, on calendar months.
+
+    Previously approximated as 30-day steps, which made a "12 month" window 360
+    days while still dividing the total by 12 — understating monthly income and
+    expenses by ~1.4%.
+    """
     today = datetime.date.today()
-    # approximate months as 30-day steps is fine for a trailing window
-    d = today - datetime.timedelta(days=months * 30)
-    return d.isoformat()
+    month_index = today.month - 1 - months
+    year = today.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(today.day, calendar.monthrange(year, month)[1])
+    return datetime.date(year, month, day).isoformat()
+
+
+def _months_observed(entries: list[StoredJournalEntry], cap: int = 12) -> Decimal:
+    """
+    Months of history the trailing window actually covers, clamped to 1..cap.
+
+    Measured as the span from the earliest entry to today, so a steady earner with
+    only four months of records is averaged over four months rather than twelve.
+    """
+    if not entries:
+        return Decimal(cap)
+    earliest = min(str(e.entry_date)[:10] for e in entries)
+    try:
+        start = datetime.date.fromisoformat(earliest)
+    except ValueError:
+        return Decimal(cap)
+    today = datetime.date.today()
+    months = (today.year - start.year) * 12 + (today.month - start.month)
+    # A partial current month still counts as one month of observation.
+    months += 1
+    return Decimal(max(1, min(cap, months)))
+
+
+def _plus_years_iso(years: int) -> str:
+    """Calendar-correct year arithmetic (365-day years drift on leap years)."""
+    today = datetime.date.today()
+    try:
+        return today.replace(year=today.year + years).isoformat()
+    except ValueError:  # 29 Feb → 28 Feb in a non-leap target year
+        return today.replace(year=today.year + years, day=28).isoformat()
 
 
 def _dec(v: Decimal) -> str:
@@ -94,16 +141,30 @@ class FiService:
         total_liabilities = Decimal(0)
         liquid = Decimal(0)
         investments = Decimal(0)
+        # Classify per account on its actual sign, rather than summing signed
+        # balances and clamping the aggregate at zero. Clamping let an overdrawn
+        # current account net silently against other assets (inflating net worth)
+        # instead of being recognised as the borrowing it is.
         for a in accounts:
             bal = balances.get(a.id, Decimal(0))
             if a.type == "asset":
-                total_assets += bal
-                if _is_investment(a):
-                    investments += bal
+                if bal >= 0:
+                    total_assets += bal
+                    if _is_investment(a):
+                        investments += bal
+                    else:
+                        liquid += bal
                 else:
-                    liquid += bal
+                    # Credit balance on an asset = an overdraft: economically debt.
+                    total_liabilities += -bal
             elif a.type == "liability":
-                total_liabilities += -bal  # liabilities are credit-normal (negative)
+                magnitude = -bal  # liabilities are credit-normal (stored negative)
+                if magnitude >= 0:
+                    total_liabilities += magnitude
+                else:
+                    # Debit balance on a liability = overpaid: a receivable.
+                    total_assets += -magnitude
+                    liquid += -magnitude
 
         # Trailing-12-month income & expenses (separately)
         income = Decimal(0)
@@ -117,8 +178,13 @@ class FiService:
                     income += abs(p.base_signed)
                 elif acc.type == "expense" and p.direction == Direction.DEBIT:
                     expenses += abs(p.base_signed)
-        monthly_income = income / Decimal(12)
-        monthly_expenses = expenses / Decimal(12)
+        # Annualise over the period actually observed, not a blind 12 months.
+        # Dividing a new user's 3 months of income by 12 understates their monthly
+        # figure ~4x, which then propagates into savings_rate, the FI number and
+        # every projection built on them.
+        months_observed = _months_observed(recent)
+        monthly_income = income / months_observed
+        monthly_expenses = expenses / months_observed
 
         # Weighted goal progress (current/target), active goals with a target
         goal_progress: Decimal | None = None
@@ -130,32 +196,117 @@ class FiService:
         if prog:
             goal_progress = sum(prog, Decimal(0)) / Decimal(len(prog))
 
+        # No aggregate clamping needed — every branch above contributes a
+        # non-negative amount to the bucket it actually belongs in.
         return FinancialSnapshot(
             monthly_income=monthly_income,
             monthly_expenses=monthly_expenses,
-            liquid_savings=max(Decimal(0), liquid),
-            investments=max(Decimal(0), investments),
-            total_assets=max(Decimal(0), total_assets),
-            total_liabilities=max(Decimal(0), total_liabilities),
+            liquid_savings=liquid,
+            investments=investments,
+            total_assets=total_assets,
+            total_liabilities=total_liabilities,
             goal_progress=goal_progress,
         )
+
+    # ── Resolved strategy ──────────────────────────────────────────────────────
+
+    @staticmethod
+    def _resolve_strategy(strategy_data: dict[str, Any] | None) -> FireStrategy:
+        """
+        The single place raw strategy JSON becomes a typed, Decimal FireStrategy.
+
+        The LLM emits these as floats; they are converted once, here, so nothing
+        downstream does float arithmetic on a rate that divides money. When the
+        user has no strategy the pack's defaults stand in, so callers always get a
+        usable strategy and never have to branch.
+        """
+        pack = registry.get_pack()
+        if strategy_data is None:
+            return FireStrategy(
+                version=0,
+                fire_style="standard",
+                swr=pack.safe_withdrawal_rate,
+                return_conservative=Decimal("0.06"),
+                return_base=Decimal("0.10"),
+                return_growth=Decimal("0.14"),
+                target_monthly_expenses=None,
+                target_age=None,
+                buckets=[],
+                ai_rationale="",
+                theories_applied=[],
+                created_at="",
+                is_initial=True,
+            )
+        return FireStrategy(
+            version=strategy_data.get("version", 1),
+            fire_style=strategy_data.get("fire_style", "standard"),
+            swr=Decimal(str(strategy_data.get("swr", pack.safe_withdrawal_rate))),
+            return_conservative=Decimal(str(strategy_data.get("return_conservative", "0.06"))),
+            return_base=Decimal(str(strategy_data.get("return_base", "0.10"))),
+            return_growth=Decimal(str(strategy_data.get("return_growth", "0.14"))),
+            target_monthly_expenses=(
+                Decimal(str(strategy_data["target_monthly_expenses"]))
+                if strategy_data.get("target_monthly_expenses")
+                else None
+            ),
+            target_age=strategy_data.get("target_age"),
+            buckets=[
+                AllocationBucket(
+                    key=b["key"],
+                    name=b["name"],
+                    target_pct=Decimal(str(b["target_pct"])),
+                    description=b["description"],
+                    color=b["color"],
+                )
+                for b in strategy_data.get("buckets", [])
+            ],
+            ai_rationale=strategy_data.get("ai_rationale", ""),
+            theories_applied=strategy_data.get("theories_applied", []),
+            created_at=strategy_data.get("created_at", ""),
+            is_initial=strategy_data.get("is_initial", True),
+        )
+
+    @staticmethod
+    def _inputs_hash(snapshot: FinancialSnapshot, strategy: FireStrategy) -> str:
+        """
+        Fingerprint of everything the score depends on.
+
+        Includes the strategy, not just the ledger snapshot: regenerating a
+        strategy with a different SWR changes the FI number, so a score computed
+        under the old one is stale even when the ledger has not moved.
+        """
+        payload = {
+            "snapshot": asdict(snapshot),
+            "swr": str(strategy.swr),
+            "target_monthly_expenses": str(strategy.target_monthly_expenses),
+            "return_base": str(strategy.return_base),
+            "pack": registry.get_pack().version,
+        }
+        return hashlib.sha256(json.dumps(payload, default=str, sort_keys=True).encode()).hexdigest()
 
     # ── Score ─────────────────────────────────────────────────────────────────
 
     async def compute_score(self, user_id: str) -> dict[str, Any]:
         snapshot = await self.build_snapshot(user_id)
-        score = engine.compute(snapshot, registry.get_pack())
+        strategy = self._resolve_strategy(await self.get_strategy(user_id))
+        pack = registry.get_pack()
+
+        # Same swr / target / real return the projection uses, so the Freedom
+        # Number on the card and the target on the chart are one number.
+        score = engine.compute(
+            snapshot,
+            pack,
+            swr=strategy.swr,
+            target_monthly_expenses=strategy.target_monthly_expenses,
+            annual_real_return=engine.scenario_real_returns(strategy, pack)["base"],
+        )
 
         projected_date = None
         if score.projected_fi_years is not None:
-            yrs = int(score.projected_fi_years)
-            target = datetime.date.today() + datetime.timedelta(days=yrs * 365)
-            projected_date = target.isoformat()
+            projected_date = _plus_years_iso(int(score.projected_fi_years))
 
         result = _score_to_dict(score, projected_date)
-        result["inputs_hash"] = hashlib.sha256(
-            json.dumps(asdict(snapshot), default=str, sort_keys=True).encode()
-        ).hexdigest()
+        result["inputs_hash"] = self._inputs_hash(snapshot, strategy)
 
         async with self._uow_factory() as uow:
             await uow.fi_scores.save(user_id, result)
@@ -166,8 +317,22 @@ class FiService:
             return await uow.fi_scores.get_latest(user_id)
 
     async def get_or_compute_score(self, user_id: str) -> dict[str, Any]:
+        """
+        Latest score, recomputed whenever its inputs have moved.
+
+        `inputs_hash` was previously written and never read, so the score card
+        served the first-ever snapshot indefinitely while the projection chart was
+        computed live — the two drifted apart with every posted entry.
+        """
         latest = await self.get_latest_score(user_id)
-        return latest if latest else await self.compute_score(user_id)
+        if latest is None:
+            return await self.compute_score(user_id)
+
+        snapshot = await self.build_snapshot(user_id)
+        strategy = self._resolve_strategy(await self.get_strategy(user_id))
+        if latest.get("inputs_hash") != self._inputs_hash(snapshot, strategy):
+            return await self.compute_score(user_id)
+        return latest
 
     async def get_score_history(self, user_id: str) -> list[dict[str, Any]]:
         async with self._uow_factory() as uow:
@@ -178,7 +343,13 @@ class FiService:
     @staticmethod
     def _goal_view(g: dict[str, Any]) -> dict[str, Any]:
         target = g.get("target_amount_minor", 0)
-        progress = (g["current_amount_minor"] / target) if target > 0 else 0.0
+        # Computed in Decimal (the score path already did); float only at the
+        # JSON boundary, where this is a display ratio and not money.
+        progress = (
+            min(Decimal(1), Decimal(g["current_amount_minor"]) / Decimal(target))
+            if target > 0
+            else Decimal(0)
+        )
         return {
             "id": g["id"],
             "name": g["name"],
@@ -187,7 +358,7 @@ class FiService:
             "current_amount": str(Decimal(g["current_amount_minor"]) / 100),
             "target_date": g.get("target_date"),
             "priority": g["priority"],
-            "progress": round(min(1.0, progress), 4),
+            "progress": float(progress.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)),
             "created_at": g.get("created_at"),
         }
 
@@ -200,8 +371,8 @@ class FiService:
         goal = {
             "name": data["name"],
             "kind": data.get("kind", "custom"),
-            "target_amount_minor": int(Decimal(str(data.get("target_amount", 0))) * 100),
-            "current_amount_minor": int(Decimal(str(data.get("current_amount", 0))) * 100),
+            "target_amount_minor": to_minor(Decimal(str(data.get("target_amount", 0)))),
+            "current_amount_minor": to_minor(Decimal(str(data.get("current_amount", 0)))),
             "target_date": data.get("target_date"),
             "priority": int(data.get("priority", 2)),
         }
@@ -214,9 +385,9 @@ class FiService:
             if k in data:
                 updates[k] = data[k]
         if "target_amount" in data:
-            updates["target_amount_minor"] = int(Decimal(str(data["target_amount"])) * 100)
+            updates["target_amount_minor"] = to_minor(Decimal(str(data["target_amount"])))
         if "current_amount" in data:
-            updates["current_amount_minor"] = int(Decimal(str(data["current_amount"])) * 100)
+            updates["current_amount_minor"] = to_minor(Decimal(str(data["current_amount"])))
         async with self._uow_factory() as uow:
             await uow.goals.update(user_id, goal_id, updates)
 
@@ -310,72 +481,36 @@ class FiService:
     # ── Projections ──────────────────────────────────────────────────────────────
 
     async def get_projections(self, user_id: str) -> dict[str, Any]:
-        strategy_data = await self.get_strategy(user_id)
         snapshot = await self.build_snapshot(user_id)
-
-        if strategy_data is None:
-            # Fallback: use pack defaults
-            pack = registry.get_pack()
-            from salli.domain.fi.models import AllocationBucket, FireStrategy
-
-            strategy = FireStrategy(
-                version=0,
-                fire_style="standard",
-                swr=pack.safe_withdrawal_rate,
-                return_conservative=Decimal("0.06"),
-                return_base=Decimal("0.10"),
-                return_growth=Decimal("0.14"),
-                target_monthly_expenses=None,
-                target_age=None,
-                buckets=[],
-                ai_rationale="",
-                theories_applied=[],
-                created_at="",
-                is_initial=True,
-            )
-        else:
-            from salli.domain.fi.models import AllocationBucket, FireStrategy
-
-            strategy = FireStrategy(
-                version=strategy_data.get("version", 1),
-                fire_style=strategy_data.get("fire_style", "standard"),
-                swr=Decimal(str(strategy_data.get("swr", "0.04"))),
-                return_conservative=Decimal(str(strategy_data.get("return_conservative", "0.06"))),
-                return_base=Decimal(str(strategy_data.get("return_base", "0.10"))),
-                return_growth=Decimal(str(strategy_data.get("return_growth", "0.14"))),
-                target_monthly_expenses=(
-                    Decimal(str(strategy_data["target_monthly_expenses"]))
-                    if strategy_data.get("target_monthly_expenses")
-                    else None
-                ),
-                target_age=strategy_data.get("target_age"),
-                buckets=[
-                    AllocationBucket(
-                        key=b["key"],
-                        name=b["name"],
-                        target_pct=Decimal(str(b["target_pct"])),
-                        description=b["description"],
-                        color=b["color"],
-                    )
-                    for b in strategy_data.get("buckets", [])
-                ],
-                ai_rationale=strategy_data.get("ai_rationale", ""),
-                theories_applied=strategy_data.get("theories_applied", []),
-                created_at=strategy_data.get("created_at", ""),
-                is_initial=strategy_data.get("is_initial", True),
-            )
-
-        points = engine.project_portfolio(snapshot, strategy)
+        strategy = self._resolve_strategy(await self.get_strategy(user_id))
         pack = registry.get_pack()
-        expenses = strategy.target_monthly_expenses or snapshot.monthly_expenses
-        fi_number = (expenses * 12 / strategy.swr) if strategy.swr > 0 else Decimal(0)
 
-        def _fire_year(scenario_key: str) -> int | None:
-            for p in points:
-                val = getattr(p, scenario_key)
-                if val >= fi_number:
-                    return p.year
-            return None
+        # The score's own FI number, from the same swr/target — not a second
+        # formula. These two used to disagree whenever the strategy SWR was not 4%.
+        score = engine.compute(
+            snapshot,
+            pack,
+            swr=strategy.swr,
+            target_monthly_expenses=strategy.target_monthly_expenses,
+        )
+        fi_number = score.fi_number
+        rates = engine.scenario_real_returns(strategy, pack)
+        base = engine.fi_asset_base(snapshot)
+        surplus = snapshot.monthly_income - snapshot.monthly_expenses
+
+        # Years come from the shared solver, NOT from scanning the plotted series:
+        # a 15-year chart cannot express an 18-year answer, and scanning one
+        # returned None (which the UI rendered as a fallback ISO date).
+        years = {
+            key: engine.years_to_target(base, surplus, rate, fi_number)
+            for key, rate in rates.items()
+        }
+
+        # Stretch the chart far enough to actually show the crossing when there is
+        # one, so the plotted line and the headline number tell the same story.
+        reachable = [int(v) for v in years.values() if v is not None and v > 0]
+        horizon = min(40, max(15, (max(reachable) + 2) if reachable else 15))
+        points = engine.project_portfolio(snapshot, strategy, pack, horizon_years=horizon)
 
         return {
             "points": [
@@ -388,10 +523,19 @@ class FiService:
                 for p in points
             ],
             "fi_number": str(fi_number),
-            "fire_year_conservative": _fire_year("conservative"),
-            "fire_year_base": _fire_year("base"),
-            "fire_year_growth": _fire_year("growth"),
-            "current_portfolio": str(snapshot.liquid_savings + snapshot.investments),
+            "swr": str(strategy.swr),
+            "fire_year_conservative": (
+                int(years["conservative"]) if years["conservative"] is not None else None
+            ),
+            "fire_year_base": int(years["base"]) if years["base"] is not None else None,
+            "fire_year_growth": int(years["growth"]) if years["growth"] is not None else None,
+            "current_portfolio": str(base),
+            # Real (inflation-adjusted) rates actually used, so the UI can label
+            # the scenarios honestly rather than echoing the nominal assumptions.
+            "real_returns": {
+                k: str(v) for k, v in engine.scenario_real_returns(strategy, pack).items()
+            },
+            "expected_inflation": str(pack.expected_inflation),
         }
 
     # ── Surplus Breakdown ────────────────────────────────────────────────────────

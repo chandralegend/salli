@@ -68,11 +68,17 @@ class FiPack:
     """Versioned FIRE methodology + assumptions (reviewable, like a tax pack)."""
 
     version: str
-    # 4% rule → FI number = annual_expenses / safe_withdrawal_rate (= ×25 at 0.04)
+    # Fallback 4% rule → FI number = annual_expenses / safe_withdrawal_rate (= ×25
+    # at 0.04). Used only when the user has no FIRE strategy of their own; when
+    # they do, the strategy's validated SWR wins so one rate drives every figure.
     safe_withdrawal_rate: Decimal
     emergency_fund_target_months: int
     # Annual real (post-inflation) return assumed for the FI-date projection
     expected_real_return: Decimal
+    # Assumed long-run annual inflation, used to convert the strategy's NOMINAL
+    # return assumptions to real terms. Projections run in today's rupees, so the
+    # FI target stays flat and comparable to the projected balances.
+    expected_inflation: Decimal
     # Savings rate that earns a full component score (e.g. 0.50 = 50%)
     savings_rate_for_full_score: Decimal
     # Component weights — must sum to 1. Keys: savings_rate, emergency_fund,
@@ -114,14 +120,18 @@ class FiScore:
     monthly_income: Decimal
     monthly_expenses: Decimal
     monthly_surplus: Decimal
-    savings_rate: Decimal  # 0..1
-    annual_expenses: Decimal
-    fi_number: Decimal  # annual_expenses / SWR
-    net_worth: Decimal
-    progress_to_fi: Decimal  # 0..1 (clamped)
+    savings_rate: Decimal  # 0..1 — a FRACTION, not a percentage
+    swr: Decimal  # 0..1 — the rate this fi_number was actually derived from
+    annual_expenses: Decimal  # target annual expenses (the FI basis)
+    fi_number: Decimal  # annual_expenses / swr
+    net_worth: Decimal  # total assets − liabilities (all assets, incl. property)
+    # Assets that can actually fund withdrawals: investable assets net of debt.
+    # This — not net_worth — is what progress_to_fi and the projection measure.
+    fi_asset_base: Decimal
+    progress_to_fi: Decimal  # 0..1+ — UNCLAMPED, so ≥100% is visible
     emergency_fund_months: Decimal
-    debt_to_asset: Decimal  # 0..1
-    projected_fi_years: Decimal | None  # None = not reachable within horizon
+    debt_to_asset: Decimal  # 0..1 — a FRACTION, not a percentage
+    projected_fi_years: Decimal | None  # None = not reachable / not yet knowable
     currency: str
 
     components: list[FiComponent] = field(default_factory=list)

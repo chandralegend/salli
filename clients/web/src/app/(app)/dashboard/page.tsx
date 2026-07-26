@@ -28,7 +28,14 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { useTax } from "@/hooks/useTax";
 import { useFiScore } from "@/hooks/useFi";
 import { useSalliStore, useScroogePanel } from "@/lib/store";
-import { assessmentYearRange, daysUntil, deadlineLabel, formatCompact, formatDate } from "@/lib/format";
+import {
+  assessmentYearRange,
+  daysUntil,
+  deadlineLabel,
+  formatCompact,
+  formatDate,
+  formatPct,
+} from "@/lib/format";
 
 const AI_QUESTIONS = [
   "What's my tax payable?",
@@ -112,9 +119,11 @@ export default function DashboardPage() {
           label="Savings Rate"
           icon={PiggyBank}
           loading={fiScore.isLoading}
-          value={savingsRate != null ? `${savingsRate.toFixed(1)}%` : "—"}
+          value={formatPct(fi?.savings_rate)}
           badge={
-            savingsRate != null && savingsRate >= 40 ? (
+            // savings_rate is a 0..1 fraction: the old `>= 40` test needed a
+            // 4000% savings rate and so could never fire.
+            savingsRate != null && savingsRate >= 0.4 ? (
               <StatusChip tone="success">above target</StatusChip>
             ) : undefined
           }

@@ -5,13 +5,28 @@ Pure function: compute(snapshot, pack) -> FiScore. No I/O, no LLM, no Date.now �
 the FI-date *years* are computed here; the calendar date is derived by the caller.
 
 Methodology (FIRE composite):
-  • FI number      = annual expenses / safe withdrawal rate (4% rule → ×25)
-  • Progress to FI = net worth / FI number
+  • FI number      = target annual expenses / safe withdrawal rate (4% rule → ×25)
+  • Progress to FI = FI asset base / FI number
   • Savings rate   = (income − expenses) / income
   • Emergency fund = liquid savings / monthly expenses  (target 3–6 months)
   • Debt load      = liabilities / assets  (lower is better)
   • Goal progress  = weighted progress across the user's active goals
 The 0–100 score is a weighted blend of the five component scores.
+
+Units: every ratio returned here is a FRACTION (0..1), never a percentage. Only
+`overall_score` and `FiComponent.score` are on a 0..100 scale. Clients must
+multiply the fractions by 100 themselves.
+
+Two invariants this module exists to hold, both of which were previously broken
+by having parallel implementations:
+  1. ONE withdrawal rate drives the FI number, the progress and the projection.
+     Callers pass `swr`; there is no second rate hiding in a service.
+  2. ONE compounding routine (`_fv_after_months`) backs both the projected series
+     and years-to-FI, so "13 years" always agrees with where the chart crosses.
+
+Projections run in REAL terms (today's rupees): nominal return assumptions are
+converted via the Fisher relation, which keeps the flat FI target line valid and
+stops years-to-FI being flattered by inflation.
 """
 
 from __future__ import annotations
@@ -53,33 +68,121 @@ def _grade(score: Decimal) -> str:
     return "Just starting"
 
 
-def _years_to_fi(
-    net_worth: Decimal, fi_number: Decimal, annual_contribution: Decimal, real_return: Decimal
+def real_return(nominal: Decimal, inflation: Decimal) -> Decimal:
+    """Fisher relation: strip inflation out of a nominal annual return."""
+    if inflation <= Decimal(-1):
+        return nominal
+    return (Decimal(1) + nominal) / (Decimal(1) + inflation) - Decimal(1)
+
+
+def _fv_after_months(
+    pv: Decimal, monthly_contribution: Decimal, annual_rate: Decimal, months: int
+) -> Decimal:
+    """
+    Future value of a lump sum plus an ordinary monthly annuity.
+
+    The single compounding routine in this module — `project_portfolio` and
+    `years_to_target` both call it, which is what guarantees the chart and the
+    years-to-FI figure can never disagree. `annual_rate` is a nominal annual rate
+    compounded monthly, so a stated 10% realises 10.47% effective; that is the
+    convention, applied consistently.
+    """
+    r = annual_rate / Decimal(12)
+    if r == 0:
+        return pv + monthly_contribution * months
+    growth = (Decimal(1) + r) ** months
+    return pv * growth + monthly_contribution * (growth - Decimal(1)) / r
+
+
+def fi_asset_base(snapshot: FinancialSnapshot) -> Decimal:
+    """
+    The assets that can actually fund a safe-withdrawal-rate drawdown: investable
+    assets, net of debt.
+
+    A primary residence does not fund a 4%-rule withdrawal, so total net worth
+    overstates FI progress. This deliberately differs from `net_worth`, and is the
+    base used by BOTH progress-to-FI and the projection so the two agree.
+    """
+    return snapshot.liquid_savings + snapshot.investments - snapshot.total_liabilities
+
+
+def years_to_target(
+    starting: Decimal,
+    monthly_contribution: Decimal,
+    annual_rate: Decimal,
+    target: Decimal,
+    max_years: int = _MAX_PROJECTION_YEARS,
 ) -> Decimal | None:
-    """Years for net worth + yearly contributions (compounded at real_return) to reach FI."""
-    if fi_number <= 0 or net_worth >= fi_number:
-        return Decimal(0)
-    if annual_contribution <= 0 and real_return <= 0:
+    """
+    Years until `starting` plus monthly contributions reaches `target`.
+
+    Returns None when the answer is unknowable rather than pretending it is zero:
+    a user with no recorded expenses has no FI target yet, and answering "0 years"
+    (as an earlier version did) told brand-new users they were already retired.
+    """
+    if target <= 0:
         return None
-    nw = net_worth
-    for year in range(1, _MAX_PROJECTION_YEARS + 1):
-        nw = nw * (Decimal(1) + real_return) + annual_contribution
-        if nw >= fi_number:
+    if starting >= target:
+        return Decimal(0)
+    if monthly_contribution <= 0 and annual_rate <= 0:
+        return None
+    # Quantised to cents each year, exactly as `project_portfolio` does, so the
+    # two walk identical values. Comparing full precision here against a
+    # cents-rounded series made a balance of 299.996 cross in the chart (rounds to
+    # 300.00) but not in the solver — a knife-edge one-year disagreement.
+    value = _q2(starting)
+    for year in range(1, max_years + 1):
+        value = _q2(_fv_after_months(value, monthly_contribution, annual_rate, 12))
+        if value >= target:
             return Decimal(year)
     return None
 
 
-def compute(snapshot: FinancialSnapshot, pack: FiPack) -> FiScore:
+def compute(
+    snapshot: FinancialSnapshot,
+    pack: FiPack,
+    *,
+    swr: Decimal | None = None,
+    target_monthly_expenses: Decimal | None = None,
+    annual_real_return: Decimal | None = None,
+) -> FiScore:
+    """
+    Score a snapshot.
+
+    `swr`, `target_monthly_expenses` and `annual_real_return` come from the user's
+    FIRE strategy when they have one; each falls back to the pack. They are
+    parameters rather than pack lookups precisely so the projection path cannot
+    diverge from this one — pass the same values to `project_portfolio` and every
+    figure on the page reconciles.
+
+    Note `target_monthly_expenses` moves the FI *target* only. Contributions stay
+    at the actual surplus, because aspiring to spend less in retirement does not
+    by itself free up cash to invest today.
+    """
     income = snapshot.monthly_income
     expenses = snapshot.monthly_expenses
     surplus = income - expenses
     savings_rate = (surplus / income) if income > 0 else Decimal(0)
 
-    annual_expenses = expenses * 12
-    fi_number = (annual_expenses / pack.safe_withdrawal_rate) if annual_expenses > 0 else Decimal(0)
+    swr_eff = swr if (swr is not None and swr > 0) else pack.safe_withdrawal_rate
+    target_expenses = (
+        target_monthly_expenses
+        if (target_monthly_expenses is not None and target_monthly_expenses > 0)
+        else expenses
+    )
+    annual_expenses = target_expenses * 12
+    fi_number = (annual_expenses / swr_eff) if annual_expenses > 0 and swr_eff > 0 else Decimal(0)
+
     net_worth = snapshot.total_assets - snapshot.total_liabilities
-    progress = (net_worth / fi_number) if fi_number > 0 else Decimal(0)
-    progress_clamped = max(Decimal(0), min(Decimal(1), progress))
+    asset_base = fi_asset_base(snapshot)
+    # Floored at 0 but NOT capped at 1: someone whose debts exceed their
+    # investable assets has made no progress (rather than negative progress —
+    # meaningless in a "% of target" reading, and unrenderable in a ring), while
+    # someone past their number should still see >100%. `fi_asset_base` itself is
+    # reported unfloored, so the underwater position stays visible.
+    raw_progress = (asset_base / fi_number) if fi_number > 0 else Decimal(0)
+    progress = max(Decimal(0), raw_progress)
+    progress_clamped = min(Decimal(1), progress)
     ef_months = (snapshot.liquid_savings / expenses) if expenses > 0 else Decimal(0)
     debt_ratio = (
         snapshot.total_liabilities / snapshot.total_assets
@@ -129,7 +232,8 @@ def compute(snapshot: FinancialSnapshot, pack: FiPack) -> FiScore:
         )
 
     overall = _q2(_clamp(overall))
-    projected_years = _years_to_fi(net_worth, fi_number, surplus * 12, pack.expected_real_return)
+    rr = annual_real_return if annual_real_return is not None else pack.expected_real_return
+    projected_years = years_to_target(asset_base, surplus, rr, fi_number)
 
     return FiScore(
         pack_version=pack.version,
@@ -139,10 +243,12 @@ def compute(snapshot: FinancialSnapshot, pack: FiPack) -> FiScore:
         monthly_expenses=expenses,
         monthly_surplus=surplus,
         savings_rate=savings_rate,
+        swr=swr_eff,
         annual_expenses=annual_expenses,
         fi_number=fi_number,
         net_worth=net_worth,
-        progress_to_fi=progress_clamped,
+        fi_asset_base=asset_base,
+        progress_to_fi=progress,
         emergency_fund_months=ef_months,
         debt_to_asset=debt_ratio,
         projected_fi_years=projected_years,
@@ -151,44 +257,56 @@ def compute(snapshot: FinancialSnapshot, pack: FiPack) -> FiScore:
     )
 
 
+def scenario_real_returns(strategy: FireStrategy, pack: FiPack) -> dict[str, Decimal]:
+    """The strategy's three nominal assumptions, converted to real terms once."""
+    return {
+        "conservative": real_return(strategy.return_conservative, pack.expected_inflation),
+        "base": real_return(strategy.return_base, pack.expected_inflation),
+        "growth": real_return(strategy.return_growth, pack.expected_inflation),
+    }
+
+
 def project_portfolio(
     snapshot: FinancialSnapshot,
     strategy: FireStrategy,
+    pack: FiPack,
     horizon_years: int = 15,
-) -> list[ProjectionPoint]:  # noqa: E501
-    """FV formula projections for three return scenarios."""
-    starting = snapshot.liquid_savings + snapshot.investments
+) -> list[ProjectionPoint]:
+    """
+    Project the FI asset base forward under three REAL return scenarios.
+
+    Real, not nominal: the FI target is expressed in today's rupees, so growing the
+    portfolio at nominal rates against it would cross years too early. Starts from
+    `fi_asset_base` — the same base `compute()` measures progress against.
+    """
+    starting = fi_asset_base(snapshot)
     monthly_contribution = snapshot.monthly_income - snapshot.monthly_expenses
+    rates = scenario_real_returns(strategy, pack)
 
-    scenarios = [
-        ("conservative", strategy.return_conservative),
-        ("base", strategy.return_base),
-        ("growth", strategy.return_growth),
-    ]
-
+    start = _q2(starting)
     points: list[ProjectionPoint] = [
-        ProjectionPoint(year=0, conservative=starting, base=starting, growth=starting)
+        ProjectionPoint(year=0, conservative=start, base=start, growth=start)
     ]
 
-    values = {name: starting for name, _ in scenarios}
+    # Values are carried forward already quantised to cents — the same walk
+    # `years_to_target` performs, which is what keeps the crossing year and the
+    # headline figure identical.
+    #
+    # Deliberately NOT floored at zero: flooring made a net-debt starting position
+    # climb faster here than in the solver. A line that dips below zero is the
+    # honest picture for someone whose debts exceed their investments.
+    values = {name: start for name in rates}
     for year in range(1, horizon_years + 1):
-        yearly = {}
-        for name, annual_rate in scenarios:
-            r = annual_rate / Decimal(12)
-            pv = values[name]
-            # Compound for 12 months with monthly contributions
-            if r == 0:
-                fv = pv + monthly_contribution * 12
-            else:
-                fv = pv * (1 + r) ** 12 + monthly_contribution * ((1 + r) ** 12 - 1) / r
-            yearly[name] = max(Decimal(0), fv)
-        values = yearly
+        values = {
+            name: _q2(_fv_after_months(values[name], monthly_contribution, rate, 12))
+            for name, rate in rates.items()
+        }
         points.append(
             ProjectionPoint(
                 year=year,
-                conservative=_q2(values["conservative"]),
-                base=_q2(values["base"]),
-                growth=_q2(values["growth"]),
+                conservative=values["conservative"],
+                base=values["base"],
+                growth=values["growth"],
             )
         )
 

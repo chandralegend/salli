@@ -34,6 +34,28 @@ export function formatCompact(value: string | number | null | undefined): string
   return fmt(n);
 }
 
+/**
+ * Fraction → percentage string: 0.5 → "50.0%".
+ *
+ * The API returns every ratio (`savings_rate`, `progress_to_fi`, `debt_to_asset`,
+ * `swr`, `target_pct`, goal `progress`) as a 0..1 FRACTION. Rendering one with a
+ * bare `%` suffix — as this app did — reported a 50% savings rate as "0.5%".
+ * Route ratios through here; the only 0..100 values are `overall_score` and
+ * `FiComponent.score`.
+ */
+export function formatPct(value: string | number | null | undefined, decimals = 1): string {
+  if (value == null || value === "") return "—";
+  const n = typeof value === "number" ? value : Number(value);
+  if (!isFinite(n)) return "—";
+  return `${(n * 100).toFixed(decimals)}%`;
+}
+
+/** Fraction → 0..100 number, for gauges like RadialProgress that expect a percent. */
+export function pctValue(value: string | number | null | undefined): number {
+  const n = typeof value === "number" ? value : Number(value);
+  return isFinite(n) ? n * 100 : 0;
+}
+
 /** "2026-04-05" → "Apr 5, 2026" */
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";

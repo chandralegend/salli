@@ -12,6 +12,7 @@ from collections.abc import Callable
 from decimal import Decimal
 from typing import Any
 
+from salli.domain.money import to_minor
 from salli.domain.subscription import engine
 from salli.domain.subscription.models import Subscription
 
@@ -73,7 +74,7 @@ class SubscriptionService:
     async def add_subscription(self, user_id: str, data: dict[str, Any]) -> str:
         subscription = {
             "name": data["name"],
-            "amount_minor": int(Decimal(str(data["amount"])) * 100),
+            "amount_minor": to_minor(Decimal(str(data["amount"]))),
             "frequency": data["frequency"],
             "next_due_date": data["next_due_date"],
             "account_id": data.get("account_id"),
@@ -102,7 +103,7 @@ class SubscriptionService:
         if "name" in data:
             updates["name"] = data["name"]
         if "amount" in data:
-            updates["amount_minor"] = int(Decimal(str(data["amount"])) * 100)
+            updates["amount_minor"] = to_minor(Decimal(str(data["amount"])))
         if "frequency" in data:
             updates["frequency"] = data["frequency"]
         if "next_due_date" in data:

@@ -4,6 +4,21 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Self
 
 
+def to_minor(amount: Decimal, minor_factor: int = 100) -> int:
+    """
+    Decimal amount → integer minor units, rounded HALF-UP.
+
+    Use this instead of `int(amount * 100)`, which *truncates*: `int(Decimal("1234.565")
+    * 100)` silently loses a cent. The single rounding rule for the money path.
+    """
+    return int((amount * Decimal(minor_factor)).to_integral_value(ROUND_HALF_UP))
+
+
+def from_minor(minor_units: int, minor_factor: int = 100) -> Decimal:
+    """Integer minor units → Decimal amount."""
+    return Decimal(minor_units) / Decimal(minor_factor)
+
+
 class Money:
     """
     Immutable value object: integer minor units + ISO-4217 currency code.
@@ -23,8 +38,7 @@ class Money:
     @classmethod
     def of(cls, amount: Decimal, currency: str, minor_factor: int = 100) -> Self:
         """Convert a Decimal amount to minor units using pack-defined rounding."""
-        minor = int((amount * Decimal(minor_factor)).to_integral_value(ROUND_HALF_UP))
-        return cls(minor, currency)
+        return cls(to_minor(amount, minor_factor), currency)
 
     @classmethod
     def zero(cls, currency: str) -> Self:

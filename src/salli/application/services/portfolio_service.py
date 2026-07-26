@@ -11,6 +11,7 @@ from collections.abc import Callable
 from decimal import Decimal
 from typing import Any
 
+from salli.domain.money import to_minor
 from salli.domain.portfolio import engine
 from salli.domain.portfolio.models import Holding
 
@@ -38,8 +39,8 @@ class PortfolioService:
             "symbol": data["symbol"],
             "name": data["name"],
             "asset_class": data["asset_class"],
-            "cost_basis_minor": int(Decimal(str(data["cost_basis"])) * 100),
-            "current_value_minor": int(Decimal(str(data["current_value"])) * 100),
+            "cost_basis_minor": to_minor(Decimal(str(data["cost_basis"]))),
+            "current_value_minor": to_minor(Decimal(str(data["current_value"]))),
         }
         async with self._uow_factory() as uow:
             return await uow.holdings.save(user_id, holding)
@@ -63,9 +64,9 @@ class PortfolioService:
         if "asset_class" in data:
             updates["asset_class"] = data["asset_class"]
         if "cost_basis" in data:
-            updates["cost_basis_minor"] = int(Decimal(str(data["cost_basis"])) * 100)
+            updates["cost_basis_minor"] = to_minor(Decimal(str(data["cost_basis"])))
         if "current_value" in data:
-            updates["current_value_minor"] = int(Decimal(str(data["current_value"])) * 100)
+            updates["current_value_minor"] = to_minor(Decimal(str(data["current_value"])))
         if "is_active" in data:
             updates["is_active"] = data["is_active"]
         async with self._uow_factory() as uow:

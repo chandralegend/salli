@@ -13,13 +13,14 @@ from typing import Any
 
 from salli.domain.budget import engine
 from salli.domain.budget.models import BudgetLineDef
+from salli.domain.money import to_minor
 
 
 def _lines_to_minor(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [
         {
             "account_id": line["account_id"],
-            "limit_minor": int(Decimal(str(line["limit_amount"])) * 100),
+            "limit_minor": to_minor(Decimal(str(line["limit_amount"]))),
         }
         for line in lines
     ]

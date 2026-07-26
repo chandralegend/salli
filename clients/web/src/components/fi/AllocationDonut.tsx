@@ -37,9 +37,15 @@ function BucketTooltip({
 export function AllocationDonut({ buckets }: { buckets: AllocationBucket[] }) {
   const [active, setActive] = useState<number | null>(null);
 
+  // `target_pct` arrives as a 0..1 fraction; scale once here so every label
+  // (tooltip, donut hole, legend) reads a real percentage. Recharts derives
+  // slice angles from the *sum* of `value`, so scaling leaves geometry
+  // untouched — which is why the mislabelled version looked fine and shipped.
   const data = buckets.map((b, i) => ({
     name: b.name,
-    value: b.target_pct,
+    // Rounded to 1dp at the source so labels don't show float artefacts like
+    // "10.000000000000002%"; proportions are preserved.
+    value: Math.round(Number(b.target_pct) * 1000) / 10,
     description: b.description,
     color: BUCKET_COLORS[i % BUCKET_COLORS.length],
   }));

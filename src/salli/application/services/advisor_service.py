@@ -64,7 +64,11 @@ class AdvisorService:
                 "monthly_surplus": score.get("monthly_surplus"),
                 "emergency_fund_months": score.get("emergency_fund_months"),
                 "fi_number": score.get("fi_number"),
+                "swr_used": score.get("swr"),
                 "net_worth": score.get("net_worth"),
+                # The base progress is actually measured against (investable assets
+                # net of debt) — net_worth alone would overstate FI readiness.
+                "fi_asset_base": score.get("fi_asset_base"),
                 "progress_to_fi": score.get("progress_to_fi"),
                 "debt_to_asset": score.get("debt_to_asset"),
                 "projected_fi_date": score.get("projected_fi_date"),
@@ -86,11 +90,17 @@ class AdvisorService:
             if fire_strategy
             else None,
             "fire_projections": {
-                "fi_number": fire_projections.get("fi_number"),
+                # fi_number deliberately omitted — it is the same figure as
+                # fi_score.fi_number above. Sending it twice previously let the two
+                # paths disagree and asked the model to reason about two targets.
                 "current_portfolio": fire_projections.get("current_portfolio"),
                 "fire_year_conservative": fire_projections.get("fire_year_conservative"),
                 "fire_year_base": fire_projections.get("fire_year_base"),
                 "fire_year_growth": fire_projections.get("fire_year_growth"),
+                # Returns here are REAL (inflation-adjusted), unlike the nominal
+                # assumptions in fire_strategy — say so, or the model will conflate them.
+                "real_returns_used": fire_projections.get("real_returns"),
+                "expected_inflation": fire_projections.get("expected_inflation"),
             },
             "surplus_breakdown": {
                 "income_by_source": surplus.get("income_by_source", {}),

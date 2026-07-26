@@ -78,6 +78,7 @@ from salli.domain.accounting.models import (
     Posting,
     StoredJournalEntry,
 )
+from salli.domain.money import to_minor
 from salli.domain.tax.models import TaxComputation
 
 # ── Mappers ───────────────────────────────────────────────────────────────────
@@ -93,11 +94,15 @@ def _posting_to_orm(p: Posting, entry_id: str) -> PostingORM:
         entry_id=entry_id,
         account_id=p.account_id,
         direction=p.direction.value,
-        amount_minor=int(p.amount * _MINOR_FACTOR),
+        # to_minor rounds HALF-UP; int() truncated, silently dropping a cent on
+        # amounts like 1234.565. This is the ledger write path, so that loss was
+        # permanent and would surface later as a trial balance that would not tie.
+        amount_minor=to_minor(p.amount, _MINOR_FACTOR),
         currency=p.currency,
-        fx_rate=float(p.fx_rate),
+        # Decimal straight into the Numeric(20,8) column — no float round-trip.
+        fx_rate=p.fx_rate,
         fx_rate_source=p.fx_rate_source,
-        base_amount_minor=int(p.amount * p.fx_rate * _MINOR_FACTOR),
+        base_amount_minor=to_minor(p.amount * p.fx_rate, _MINOR_FACTOR),
     )
 
 

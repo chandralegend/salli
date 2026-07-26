@@ -32,17 +32,24 @@ export type JournalEntry = {
   postings: { account_id: string; direction: 1 | -1; amount: string; currency: string }[];
 };
 
+/**
+ * UNITS: `overall_score` and `components[].score` are 0..100; every other ratio
+ * (`savings_rate`, `progress_to_fi`, `debt_to_asset`, `swr`) is a 0..1 FRACTION.
+ * Render fractions via `formatPct()` in `lib/format.ts`.
+ */
 export type FiScore = {
-  overall_score: string;
+  overall_score: string; // 0..100
   grade: string;
   monthly_income: string;
   monthly_expenses: string;
   monthly_surplus: string;
-  savings_rate: string;
+  savings_rate: string; // 0..1
+  swr: string; // 0..1 — the rate fi_number was derived from
   fi_number: string;
-  net_worth: string;
-  progress_to_fi: string;
-  debt_to_asset: string;
+  net_worth: string; // all assets − liabilities
+  fi_asset_base: string; // investable assets net of debt — what progress measures
+  progress_to_fi: string; // 0..1, unclamped
+  debt_to_asset: string; // 0..1
   emergency_fund_months: string;
   components: { label: string; score: string; weight: string; detail: string }[];
 };

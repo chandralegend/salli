@@ -39,7 +39,10 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {PRIMARY_NAV.map((item) => (
-                <SidebarMenuItem key={item.href}>
+                <SidebarMenuItem
+                  key={item.href}
+                  id={item.href === "/dashboard" ? "tour-nav-dashboard" : undefined}
+                >
                   <SidebarMenuButton
                     render={<Link href={item.href} />}
                     isActive={pathname.startsWith(item.href)}

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
+import { TourProvider } from "@/components/tour/TourProvider";
 import { getStoredToken, getOnboardingComplete } from "@/lib/store";
 import { API_URL } from "@/lib/api-client";
 
@@ -36,5 +37,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       });
   }, [router]);
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <TourProvider>
+      <AppShell>{children}</AppShell>
+    </TourProvider>
+  );
 }

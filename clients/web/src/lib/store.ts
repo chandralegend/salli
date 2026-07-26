@@ -144,3 +144,13 @@ export function setOnboardingComplete(): void {
   if (typeof window === "undefined") return;
   localStorage.setItem("salli_onboarding_complete", "true");
 }
+
+export function getTourComplete(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("salli_tour_complete") === "true";
+}
+
+export function setTourComplete(): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("salli_tour_complete", "true");
+}

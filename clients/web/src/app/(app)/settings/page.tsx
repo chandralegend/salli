@@ -151,9 +151,14 @@ function SettingsContent() {
             advisor&apos;s guidance. Rerun setup if your situation changes — existing accounts and
             entries are never deleted.
           </p>
-          <Button variant="outline" className="mt-4" onClick={redoProfile}>
-            Redo profile setup
-          </Button>
+          <div className="flex gap-2 mt-4">
+            <Button variant="outline" onClick={redoProfile}>
+              Redo profile setup
+            </Button>
+            <Button variant="outline" onClick={() => router.push("/dashboard?tour=1")}>
+              Take a tour
+            </Button>
+          </div>
         </div>
 
         {/* Session */}

@@ -239,7 +239,7 @@ export default function LedgerPage() {
       />
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
+        <TabsList id="tour-ledger-tabs">
           <TabsTrigger value="accounts">Chart of Accounts</TabsTrigger>
           <TabsTrigger value="entries">Journal Entries</TabsTrigger>
           <TabsTrigger value="income">Income Statement</TabsTrigger>

@@ -13,6 +13,7 @@ export function AskSalliFab() {
 
   return (
     <button
+      id="tour-ask-salli-fab"
       type="button"
       onClick={toggle}
       aria-label="Ask Salli AI"

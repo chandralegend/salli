@@ -71,6 +71,7 @@ export default function DashboardPage() {
               Upload statement
             </Button>
             <Button
+              id="tour-new-entry"
               onClick={() => {
                 requestQuickAdd();
                 router.push("/ledger");
@@ -122,7 +123,7 @@ export default function DashboardPage() {
 
       {/* Feature cards: Tax payable + FI score */}
       <div className="grid lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-3 rounded-lg border bg-card p-5 flex flex-col">
+        <div id="tour-dash-tax-card" className="lg:col-span-3 rounded-lg border bg-card p-5 flex flex-col">
           <div className="flex items-start justify-between">
             <p className="eyebrow">Tax Payable · YA {tax?.year ?? "2025/26"}</p>
             {tax && <StatusChip tone="warning">due Jul 31</StatusChip>}
@@ -184,7 +185,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <StatCard label="FI Score" emphasis loading={fiScore.isLoading} className="lg:col-span-2">
+        <StatCard id="tour-dash-fi-card" label="FI Score" emphasis loading={fiScore.isLoading} className="lg:col-span-2">
           {fi && (
             <>
               <div className="flex items-center gap-3.5">

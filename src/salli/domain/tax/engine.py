@@ -98,6 +98,7 @@ def compute(ledger: LedgerView, pack: TaxPack) -> TaxComputation:
         foreign_service_income=fsi,
         regular_income=regular_income,
         personal_relief_applied=relief_applied,
+        qp_deduction=qp_deduction,
         taxable_income=taxable,
         band_workings=workings,
         fsi_tax=fsi_tax,

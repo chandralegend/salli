@@ -47,7 +47,7 @@ export default function SignupScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View className="items-center px-6 pb-9">
-            <Logo size={80} />
+            <Logo size={44} className="text-white" />
             <Text className="mt-[22px] font-sans-bold text-[26px] tracking-tight text-white">
               Create account
             </Text>

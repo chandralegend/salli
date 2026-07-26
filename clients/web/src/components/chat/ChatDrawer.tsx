@@ -462,7 +462,7 @@ export function ChatDrawer() {
     <div
       suppressHydrationWarning
       className={cn(
-        "fixed z-50 flex flex-col overflow-hidden bg-primary text-white border-l border-white/10",
+        "fixed z-50 flex flex-col overflow-hidden bg-[var(--emphasis)] text-white border-l border-white/10",
         "transition-transform duration-200 ease-in-out",
         isOpen ? "translate-x-0" : "translate-x-full",
         isFullPage ? "inset-0 md:pl-16" : "inset-y-0 right-0"

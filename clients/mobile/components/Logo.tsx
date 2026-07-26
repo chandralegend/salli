@@ -1,38 +1,27 @@
-import { Text, View } from "react-native";
+import { Text } from "react-native";
+import { cn } from "@/lib/utils";
 
 type LogoProps = {
   size?: number;
-  radius?: number;
-  bg?: string;
-  fg?: string;
   className?: string;
 };
 
-/** White rounded-square badge with the Sinhala "රු" wordmark — theme-invariant
- * (always white bg / orange glyph), per the mockup's Login/Onboarding hero. */
-export function Logo({ size = 80, radius, bg = "#FFFFFF", fg = "#F97316", className }: LogoProps) {
-  const r = radius ?? Math.round(size * 0.3);
+/** "Salli." wordmark — the same logotype used on the marketing site
+ * (Bricolage Grotesque, extra-bold, with an accent-colored trailing period),
+ * ported here so the brand mark reads consistently across web, mobile, and
+ * the marketing site instead of three different treatments. */
+export function Logo({ size = 40, className }: LogoProps) {
   return (
-    <View
-      className={className}
+    <Text
+      className={cn(className)}
       style={{
-        width: size,
-        height: size,
-        borderRadius: r,
-        backgroundColor: bg,
-        alignItems: "center",
-        justifyContent: "center",
+        fontFamily: "BricolageGrotesque_800ExtraBold",
+        fontSize: size,
+        letterSpacing: size * -0.04,
       }}
     >
-      <Text
-        style={{
-          fontFamily: "BricolageGrotesque_700Bold",
-          fontSize: Math.round(size * 0.42),
-          color: fg,
-        }}
-      >
-        රු
-      </Text>
-    </View>
+      Salli
+      <Text className="text-salli-accent">.</Text>
+    </Text>
   );
 }

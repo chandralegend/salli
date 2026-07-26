@@ -61,11 +61,8 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View className="items-center px-6 pb-9">
-            <Logo size={80} />
-            <Text className="mt-[22px] font-sans-extrabold text-[38px] tracking-tighter text-white">
-              Salli
-            </Text>
-            <Text className="mt-2.5 text-center text-[14px] leading-5 text-white/45">
+            <Logo size={52} className="text-white" />
+            <Text className="mt-4 text-center text-[14px] leading-5 text-white/45">
               AI-powered personal finance{"\n"}Built for Sri Lanka
             </Text>
           </View>

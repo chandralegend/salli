@@ -35,6 +35,7 @@ import {
 import { TargetDialog } from "@/components/insurance/TargetDialog";
 import { useInsurance, type Policy, type Target as CoverageTarget } from "@/hooks/useInsurance";
 import { formatMoney, formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
@@ -316,16 +317,27 @@ export default function InsurancePage() {
                               </StatusChip>
                             )}
                           </div>
-                          <div className="mb-1.5 h-2 overflow-hidden rounded-full bg-muted">
-                            <div
-                              className={`h-full rounded-full ${covered ? "bg-[var(--status-success-text)]" : "bg-[var(--status-danger-text)]"}`}
-                              style={{ width: `${pct}%` }}
-                            />
+                          <div className="grid grid-cols-3 rounded-md border bg-muted/60 divide-x">
+                            <div className="p-2.5 text-center">
+                              <p className="money text-sm font-semibold">LKR {formatMoney(String(actual), 0)}</p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">Covered</p>
+                            </div>
+                            <div className="p-2.5 text-center">
+                              <p className="money text-sm font-semibold">LKR {formatMoney(String(target), 0)}</p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">Target</p>
+                            </div>
+                            <div className="p-2.5 text-center">
+                              <p
+                                className={cn(
+                                  "money text-sm font-semibold",
+                                  covered ? "text-[var(--status-success-text)]" : "text-[var(--status-danger-text)]"
+                                )}
+                              >
+                                {pct.toFixed(0)}%
+                              </p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">Funded</p>
+                            </div>
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            LKR {formatMoney(String(actual), 0)} of LKR{" "}
-                            {formatMoney(String(target), 0)} target
-                          </p>
                         </div>
                       );
                     })}

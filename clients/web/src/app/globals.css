@@ -64,9 +64,19 @@
   --popover: #ffffff;
   --popover-foreground: #16130f;
 
-  /* Primary — red-orange: emphasis surfaces + primary buttons */
+  /* Primary — red-orange: buttons, badges, small CTAs only. Never a large
+     background behind body text — at this luminance, white text at reduced
+     opacity (the level used for captions/secondary copy) drops well below
+     WCAG contrast. Large "hero"/panel surfaces use --emphasis instead. */
   --primary: #f5310f;
   --primary-foreground: #ffffff;
+
+  /* Emphasis — dark navy hero-panel surface (AI/mentor panels, hero stats).
+     Theme-invariant on purpose: it reads correctly in both light and dark
+     mode without a separate override, and its low luminance gives white
+     text/opacity variants far more contrast headroom than --primary does. */
+  --emphasis: #0a2540;
+  --emphasis-foreground: #ffffff;
 
   /* Secondary / muted / accent — warm ink-tinted neutrals */
   --secondary: #f5f2ea;

@@ -193,6 +193,11 @@ function OverviewTab({ tax, pack }: { tax: TaxResult; pack: TaxPack | undefined 
         </div>
       )}
 
+      <p className="text-xs text-muted-foreground text-center">
+        Computed under the {tax.pack_country} pack · YA {tax.year} · rounded to the{" "}
+        {tax.rounding === "truncate_rupee" ? "nearest rupee (truncated)" : "nearest rupee"}
+      </p>
+
       <TaxDisclaimer />
     </div>
   );

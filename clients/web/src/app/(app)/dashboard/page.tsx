@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
+import { RadialProgress } from "@/components/shared/RadialProgress";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StatusChip } from "@/components/shared/StatusChip";
 import { useState } from "react";
@@ -149,10 +150,33 @@ export default function DashboardPage() {
               <p className="text-xs text-muted-foreground mt-2">
                 Computed by the deterministic engine · after reliefs &amp; credits
               </p>
-              <div className="flex flex-wrap gap-x-6 gap-y-1 mt-4 pt-4 border-t text-xs text-muted-foreground money">
-                <span>Gross {tax.gross_income}</span>
-                <span>Relief ({tax.personal_relief})</span>
-                <span>Credits ({tax.credits.apit === "0.00" && tax.credits.ait === "0.00" ? "—" : `${tax.credits.apit} APIT`})</span>
+              <div className="mt-4 pt-4 border-t space-y-1.5">
+                <div className="flex justify-between text-xs money">
+                  <span className="text-muted-foreground">Gross income</span>
+                  <span>{tax.gross_income}</span>
+                </div>
+                <div className="flex justify-between text-xs money">
+                  <span className="text-muted-foreground">Personal relief</span>
+                  <span>({tax.personal_relief})</span>
+                </div>
+                {tax.credits.apit !== "0.00" && (
+                  <div className="flex justify-between text-xs money">
+                    <span className="text-muted-foreground">APIT credit</span>
+                    <span>({tax.credits.apit})</span>
+                  </div>
+                )}
+                {tax.credits.ait !== "0.00" && (
+                  <div className="flex justify-between text-xs money">
+                    <span className="text-muted-foreground">AIT credit</span>
+                    <span>({tax.credits.ait})</span>
+                  </div>
+                )}
+                {tax.credits.ftc !== "0.00" && (
+                  <div className="flex justify-between text-xs money">
+                    <span className="text-muted-foreground">Foreign tax credit</span>
+                    <span>({tax.credits.ftc})</span>
+                  </div>
+                )}
               </div>
               <Link
                 href="/tax"
@@ -178,24 +202,18 @@ export default function DashboardPage() {
         <StatCard label="FI Score" emphasis loading={fiScore.isLoading} className="lg:col-span-2">
           {fi && (
             <>
-              <p className="money leading-none">
-                <span className="text-[44px] font-semibold">{Number(fi.overall_score).toFixed(0)}</span>
-                <span className="text-white/50 text-base">/100</span>
-              </p>
-              <p className="text-[13px] text-white/70">{fi.grade}</p>
-              <div className="space-y-2.5 mt-2">
+              <div className="flex items-center gap-3.5">
+                <RadialProgress value={Number(fi.overall_score)} size={56} ringWidth={6} />
+                <div>
+                  <p className="money text-[18px] font-semibold leading-none">{fi.grade}</p>
+                  <p className="text-xs text-white/60 mt-1">{Number(fi.overall_score).toFixed(0)} / 100</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 mt-4">
                 {fi.components.slice(0, 4).map((c) => (
                   <div key={c.key}>
-                    <div className="flex justify-between text-xs text-white/60 mb-1">
-                      <span>{c.label}</span>
-                      <span className="money">{Number(c.score).toFixed(0)}</span>
-                    </div>
-                    <div className="h-1 rounded-full bg-white/15 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-white"
-                        style={{ width: `${Math.min(100, Number(c.score))}%` }}
-                      />
-                    </div>
+                    <p className="text-[11px] text-white/50">{c.label}</p>
+                    <p className="money text-sm font-semibold mt-0.5">{Number(c.score).toFixed(0)}</p>
                   </div>
                 ))}
               </div>
@@ -298,7 +316,7 @@ export default function DashboardPage() {
       </div>
 
       {/* AI strip */}
-      <div className="rounded-lg bg-primary text-white p-5 flex flex-wrap items-center gap-4">
+      <div className="rounded-lg bg-[var(--emphasis)] text-white p-5 flex flex-wrap items-center gap-4">
         <div className="size-9 rounded-md bg-white/10 flex items-center justify-center shrink-0">
           <Sparkles className="size-4.5" />
         </div>

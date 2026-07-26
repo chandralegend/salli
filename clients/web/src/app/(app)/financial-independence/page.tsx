@@ -33,11 +33,13 @@ import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
+import { RadialProgress } from "@/components/shared/RadialProgress";
 import { SectionLabel } from "@/components/shared/SectionLabel";
 import { StatusChip } from "@/components/shared/StatusChip";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { QuotaBanner } from "@/components/shared/QuotaBanner";
 import { ProjectionChart } from "@/components/fi/ProjectionChart";
+import { AllocationDonut } from "@/components/fi/AllocationDonut";
 import { StrategySetup } from "@/components/fi/StrategySetup";
 import {
   useApplyRecommendation,
@@ -54,8 +56,6 @@ import {
 } from "@/hooks/useFi";
 import { formatCompact, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
-
-const BUCKET_RULES = ["bg-[var(--chart-3)]", "bg-[var(--chart-2)]", "bg-[var(--chart-1)]", "bg-[var(--chart-4)]", "bg-[var(--chart-5)]"];
 
 function AddGoalDialog({
   open,
@@ -231,8 +231,13 @@ export default function FinancialIndependencePage() {
             caption={fi ? `${Number(fi.progress_to_fi).toFixed(1)}% of FI number` : undefined}
           />
           <StatCard label="Years to FIRE" emphasis loading={projections.isLoading} icon={CalendarClock}>
-            <p className="money text-[44px] font-semibold leading-none">{yearsToFire}</p>
-            <p className="text-xs text-white/60 mt-1.5">base scenario · {(s.return_base * 100).toFixed(0)}% return</p>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="money text-[36px] font-semibold leading-none">{yearsToFire}</p>
+                <p className="text-xs text-white/60 mt-1.5">base · {(s.return_base * 100).toFixed(0)}% return</p>
+              </div>
+              {fi && <RadialProgress value={Number(fi.progress_to_fi)} size={52} ringWidth={6} />}
+            </div>
           </StatCard>
           <StatCard
             label="Savings Rate"
@@ -250,7 +255,7 @@ export default function FinancialIndependencePage() {
       {/* ── Portfolio projection ── */}
       <section>
         <SectionLabel className="mb-3">Portfolio Projection</SectionLabel>
-        <div className="grid lg:grid-cols-3 gap-4 items-start">
+        <div className="grid lg:grid-cols-3 gap-4 items-stretch">
           <div className="lg:col-span-2 rounded-lg border bg-card p-5">
             <div className="mb-1">
               <h2 className="text-[15px] font-semibold">Portfolio Projection</h2>
@@ -273,31 +278,26 @@ export default function FinancialIndependencePage() {
             )}
           </div>
 
-          <StatCard label="FI Score" emphasis loading={score.isLoading} icon={Sparkles}>
+          <StatCard label="FI Score" emphasis loading={score.isLoading} icon={Sparkles} className="h-full">
             {fi && (
-              <>
-                <p className="money leading-none">
-                  <span className="text-[44px] font-semibold">{Number(fi.overall_score).toFixed(0)}</span>
-                  <span className="text-white/50 text-base">/100</span>
-                </p>
-                <p className="text-[13px] text-white/70">{fi.grade}</p>
-                <div className="space-y-2.5 mt-2">
+              <div className="flex h-full flex-col">
+                <div className="flex items-center gap-3.5">
+                  <RadialProgress value={Number(fi.overall_score)} size={64} ringWidth={7} />
+                  <div>
+                    <p className="money text-[22px] font-semibold leading-none">{fi.grade}</p>
+                    <p className="text-xs text-white/60 mt-1">{Number(fi.overall_score).toFixed(0)} / 100</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-5 pt-4 border-t border-white/10">
                   {fi.components.map((c) => (
                     <div key={c.key}>
-                      <div className="flex justify-between text-xs text-white/60 mb-1">
-                        <span>{c.label}</span>
-                        <span className="money">{Number(c.score).toFixed(0)}</span>
-                      </div>
-                      <div className="h-1 rounded-full bg-white/15 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-white"
-                          style={{ width: `${Math.min(100, Number(c.score))}%` }}
-                        />
-                      </div>
+                      <p className="text-[11px] text-white/50">{c.label}</p>
+                      <p className="money text-[15px] font-semibold mt-0.5">{Number(c.score).toFixed(0)}</p>
                     </div>
                   ))}
                 </div>
-              </>
+                <p className="text-[11px] text-white/40 mt-auto pt-4">Based on your last 12 months</p>
+              </div>
             )}
           </StatCard>
         </div>
@@ -306,18 +306,7 @@ export default function FinancialIndependencePage() {
       {/* ── Allocation buckets + rationale ── */}
       <section>
         <SectionLabel className="mb-3">Allocation Buckets</SectionLabel>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {s.buckets.map((b, i) => (
-            <div key={b.key} className="rounded-lg border bg-card overflow-hidden">
-              <div className={cn("h-1", BUCKET_RULES[i % BUCKET_RULES.length])} />
-              <div className="p-4">
-                <p className="text-sm font-semibold">{b.name}</p>
-                <p className="money text-xl font-semibold mt-1">{b.target_pct}%</p>
-                <p className="text-xs text-muted-foreground mt-1.5 leading-snug">{b.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <AllocationDonut buckets={s.buckets} />
 
         <Collapsible open={rationaleOpen} onOpenChange={setRationaleOpen} className="mt-4">
           <div className="rounded-lg border bg-card">
@@ -347,13 +336,13 @@ export default function FinancialIndependencePage() {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="px-4 pb-4 space-y-4">
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 rounded-md border bg-muted/60 divide-x">
                   {[
                     { label: "Conservative", v: s.return_conservative },
                     { label: "Base", v: s.return_base },
                     { label: "Growth", v: s.return_growth },
                   ].map((r) => (
-                    <div key={r.label} className="rounded-md bg-muted/60 border p-3 text-center">
+                    <div key={r.label} className="p-3 text-center">
                       <p className="money text-lg font-semibold">{(r.v * 100).toFixed(0)}%</p>
                       <p className="text-xs text-muted-foreground">{r.label} return</p>
                     </div>
@@ -386,7 +375,7 @@ export default function FinancialIndependencePage() {
       {/* ── Goals & mentoring ── */}
       <section>
         <SectionLabel className="mb-3">Goals &amp; Mentoring</SectionLabel>
-        <div className="grid lg:grid-cols-2 gap-4 items-start">
+        <div className="grid lg:grid-cols-2 gap-4 items-stretch">
           <div className="rounded-lg border bg-card p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[15px] font-semibold">Goals</h2>
@@ -432,7 +421,7 @@ export default function FinancialIndependencePage() {
             )}
           </div>
 
-          <div className="rounded-lg bg-primary text-white p-5">
+          <div className="rounded-lg bg-[var(--emphasis)] text-white p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[15px] font-semibold">FI Mentor</h2>
               <button

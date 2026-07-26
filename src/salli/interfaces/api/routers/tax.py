@@ -56,12 +56,14 @@ def _fmt_computation(result) -> dict:  # type: ignore[no-untyped-def]
             for bw in bws
         ]
         return {
+            "pack_country": result.pack_country,
             "pack_year": result.pack_year,
             "pack_version": result.pack_version,
             "gross_income": str(result.gross_income),
             "foreign_service_income": str(result.foreign_service_income),
             "regular_income": str(result.regular_income),
             "personal_relief_applied": str(result.personal_relief_applied),
+            "qp_deduction": str(result.qp_deduction),
             "taxable_income": str(result.taxable_income),
             "fsi_tax": str(result.fsi_tax),
             "tax_before_credits": str(result.tax_before_credits),
@@ -70,6 +72,7 @@ def _fmt_computation(result) -> dict:  # type: ignore[no-untyped-def]
             "foreign_tax_credit": str(result.foreign_tax_credit),
             "total_credits": str(result.total_credits),
             "tax_payable": str(result.tax_payable),
+            "rounding": result.rounding,
             "band_workings": band_workings,
         }
     else:
@@ -86,23 +89,27 @@ def _fmt_computation(result) -> dict:  # type: ignore[no-untyped-def]
                 else f"LKR {fr:,} – balance"
             )
             rate_raw = Decimal(str(bw.get("rate", "0")))
-            band_workings.append({
-                "band": label,
-                "rate": f"{rate_raw * 100:.0f}%",
-                "taxable_in_band": str(bw.get("taxable_in_band", "0")),
-                "tax": str(bw.get("tax", "0")),
-            })
+            band_workings.append(
+                {
+                    "band": label,
+                    "rate": f"{rate_raw * 100:.0f}%",
+                    "taxable_in_band": str(bw.get("taxable_in_band", "0")),
+                    "tax": str(bw.get("tax", "0")),
+                }
+            )
 
         def _s(key: str, default: str = "0") -> str:
             return str(raw.get(key, default))
 
         return {
+            "pack_country": _s("pack_country", "LK"),
             "pack_year": _s("pack_year", ""),
             "pack_version": _s("pack_version", ""),
             "gross_income": _s("gross_income"),
             "foreign_service_income": _s("foreign_service_income"),
             "regular_income": _s("regular_income"),
             "personal_relief_applied": _s("personal_relief_applied"),
+            "qp_deduction": _s("qp_deduction"),
             "taxable_income": _s("taxable_income"),
             "fsi_tax": _s("fsi_tax"),
             "tax_before_credits": _s("tax_before_credits"),
@@ -111,6 +118,7 @@ def _fmt_computation(result) -> dict:  # type: ignore[no-untyped-def]
             "foreign_tax_credit": _s("foreign_tax_credit"),
             "total_credits": _s("total_credits"),
             "tax_payable": _s("tax_payable"),
+            "rounding": _s("rounding", "nearest_rupee"),
             "band_workings": band_workings,
         }
 

@@ -305,7 +305,7 @@ export default function OnboardingScreen() {
       <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <View className="flex-1 px-6 pt-4" style={{ paddingBottom: insets.bottom + 16 }}>
           <View className="mb-5 items-center">
-            <Logo size={56} radius={18} />
+            <Logo size={36} className="text-foreground" />
             <Text className="mb-1.5 mt-3 text-center font-sans-bold text-[26px] tracking-tight text-foreground">
               Welcome to Salli
             </Text>

@@ -33,7 +33,7 @@ export function StatCard({
       className={cn(
         "rounded-lg border p-5 flex flex-col gap-3",
         emphasis
-          ? "bg-[#0A2540] text-white border-[#0A2540]"
+          ? "bg-[var(--emphasis)] text-white border-[var(--emphasis)]"
           : "bg-card text-card-foreground",
         className
       )}

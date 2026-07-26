@@ -10,7 +10,7 @@ const CREDIT_INFO: { key: "apit" | "ait" | "ftc"; label: string; explainer: stri
 /** Navy emphasis panel — plain-language credit explanations, unused credits dimmed. */
 export function CreditsPanel({ tax }: { tax: TaxResult }) {
   return (
-    <div className="rounded-lg bg-primary text-white p-5 flex flex-col">
+    <div className="rounded-lg bg-[var(--emphasis)] text-white p-5 flex flex-col">
       <h3 className="text-[15px] font-semibold mb-3">Credits Applied</h3>
       <div className="space-y-2.5 flex-1">
         {CREDIT_INFO.map(({ key, label, explainer }) => {

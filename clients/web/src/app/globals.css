@@ -71,13 +71,18 @@
   --primary: #f5310f;
   --primary-foreground: #ffffff;
 
-  /* Emphasis — deep oxblood hero-panel surface (AI/mentor panels, hero
-     stats): a near-black, dark shade of the same red-orange family as
-     --primary, not an unrelated hue, so the whole app reads as one accent.
-     Theme-invariant on purpose: it reads correctly in both light and dark
-     mode without a separate override, and its low luminance gives white
-     text/opacity variants far more contrast headroom than --primary does. */
-  --emphasis: #2a0a05;
+  /* Emphasis — warm charcoal hero-panel surface (AI/mentor panels, hero
+     stats). A neutral dark ink rather than a dark tint of --primary: pushing
+     red-orange dark enough for contrast heavily desaturates it, which read
+     as "brown" against the rest of the palette rather than "on-brand red."
+     A near-black neutral keeps these panels feeling premium without
+     competing with --primary, which stays the app's only red-orange accent
+     (icons/buttons/links inside the panel still use --primary, so the accent
+     still shows through — just not as the fill). Theme-invariant on purpose:
+     it reads correctly in both light and dark mode without a separate
+     override, and its low luminance gives white text/opacity variants far
+     more contrast headroom than --primary does. */
+  --emphasis: #1c1917;
   --emphasis-foreground: #ffffff;
 
   /* Secondary / muted / accent — warm ink-tinted neutrals */

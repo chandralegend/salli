@@ -40,6 +40,7 @@ import { formatMoney, formatCompact } from "@/lib/format";
 const FILTERS = ["All", "Active", "Paid Off"] as const;
 type Filter = (typeof FILTERS)[number];
 const EXTRA_PRESETS = [0, 5000, 10000, 25000, 50000];
+const TAB_LABELS: Record<string, string> = { overview: "Overview", strategy: "Strategy", schedule: "Schedule" };
 
 /** APR is a fraction (0.24); show it as a percent. */
 function pct(fraction: string | number, dp = 1): string {
@@ -151,6 +152,7 @@ export default function DebtPage() {
       <PageHeader
         title="Debt"
         subtitle="Track loans and plan a payoff · avalanche or snowball"
+        breadcrumbTab={!empty ? TAB_LABELS[tab] : undefined}
         actions={
           <Button onClick={openAdd}>
             <Plus className="size-4" /> Add debt

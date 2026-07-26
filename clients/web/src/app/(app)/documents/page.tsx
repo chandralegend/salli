@@ -51,6 +51,8 @@ function useDebounced(value: string, ms = 300) {
 const isText = (d: AgentDocument) =>
   d.content != null || d.mime_type.startsWith("text/") || d.mime_type.includes("markdown");
 
+const TAB_LABELS: Record<"documents" | "memories", string> = { documents: "Documents", memories: "Memories" };
+
 export default function DocumentsPage() {
   const [tab, setTab] = useState<"documents" | "memories">("documents");
   const [search, setSearch] = useState("");
@@ -66,7 +68,11 @@ export default function DocumentsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Documents" subtitle="What Salli has read and remembered" />
+      <PageHeader
+        title="Documents"
+        subtitle="What Salli has read and remembered"
+        breadcrumbTab={TAB_LABELS[tab]}
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>

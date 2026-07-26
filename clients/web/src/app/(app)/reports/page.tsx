@@ -26,6 +26,12 @@ import { assessmentYearRange } from "@/lib/format";
 
 type TabKey = "balance-sheet" | "income" | "net-worth";
 
+const TAB_LABELS: Record<TabKey, string> = {
+  "balance-sheet": "Balance Sheet",
+  income: "Income Stmt",
+  "net-worth": "Net Worth",
+};
+
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
 type Period = { value: string; label: string; from: string; to: string };
@@ -86,6 +92,7 @@ export default function ReportsPage() {
       <PageHeader
         title="Reports"
         subtitle="Balance sheet, income statement, and net-worth trend — straight from your ledger"
+        breadcrumbTab={TAB_LABELS[tab]}
         actions={
           <Button
             variant="outline"

@@ -36,6 +36,8 @@ import { cn } from "@/lib/utils";
 
 const titleCase = (s: string) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
+const TAB_LABELS: Record<string, string> = { holdings: "Holdings", allocation: "Allocation" };
+
 export default function PortfolioPage() {
   const { holdings, summary, addHolding, updateHolding, deleteHolding } = usePortfolio();
 
@@ -119,6 +121,7 @@ export default function PortfolioPage() {
       <PageHeader
         title="Portfolio"
         subtitle="Manually-declared holdings · no live market feed"
+        breadcrumbTab={!empty ? TAB_LABELS[tab] : undefined}
         actions={
           !empty ? (
             <Button onClick={openAdd}>

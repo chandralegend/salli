@@ -1,19 +1,30 @@
+"use client";
+
+import * as React from "react";
+import { usePageHeader } from "@/lib/store";
+
 export function PageHeader({
   title,
   subtitle,
   actions,
+  breadcrumbTab,
+  breadcrumbTabHref,
 }: {
   title: string;
   subtitle?: React.ReactNode;
   actions?: React.ReactNode;
+  breadcrumbTab?: string;
+  breadcrumbTabHref?: string;
 }) {
-  return (
-    <div className="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-        {subtitle && <p className="text-[13px] text-muted-foreground mt-1">{subtitle}</p>}
-      </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
-    </div>
-  );
+  const setHeader = usePageHeader((s) => s.setHeader);
+
+  // No dependency array: registers into the shell's sticky header on every
+  // render, so the store always mirrors this render's props with no risk of
+  // a stale closure from an incomplete deps list. `setHeader` is a stable
+  // zustand action, so this can't loop.
+  React.useEffect(() => {
+    setHeader({ title, subtitle, actions, breadcrumbTab: breadcrumbTab ?? null, breadcrumbTabHref: breadcrumbTabHref ?? null });
+  });
+
+  return null;
 }

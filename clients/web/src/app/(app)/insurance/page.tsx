@@ -56,6 +56,8 @@ const FREQ_ABBREV: Record<string, string> = {
 };
 const freqAbbrev = (f: string) => FREQ_ABBREV[f] ?? f;
 
+const TAB_LABELS: Record<string, string> = { policies: "Policies", targets: "Targets", report: "Coverage Report" };
+
 export default function InsurancePage() {
   const ins = useInsurance();
 
@@ -97,6 +99,7 @@ export default function InsurancePage() {
       <PageHeader
         title="Insurance"
         subtitle="Policies, coverage targets, and where you're exposed"
+        breadcrumbTab={TAB_LABELS[tab]}
         actions={
           <>
             <Button

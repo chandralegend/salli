@@ -80,6 +80,12 @@ const ACCT_ICON: Record<string, LucideIcon> = {
 const ACCT_FILTERS = ["All", "Asset", "Liability", "Income", "Expense"] as const;
 const ENTRY_FILTERS = ["All", "Income", "Expense", "Manual", "Statement"] as const;
 
+const TAB_LABELS: Record<string, string> = {
+  accounts: "Chart of Accounts",
+  entries: "Journal Entries",
+  income: "Income Statement",
+};
+
 /** "Today — 15 Jul 2026" / "Yesterday — …" / "12 Jul 2026" for a date group. */
 function dateGroupLabel(iso: string): string {
   const d = new Date(iso);
@@ -205,6 +211,7 @@ export default function LedgerPage() {
       <PageHeader
         title="Ledger"
         subtitle={`Double-entry accounting · YA ${ay.label}`}
+        breadcrumbTab={TAB_LABELS[tab]}
         actions={
           <>
             <Button

@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import type { ReactNode } from "react";
 
 interface SalliStore {
   token: string | null;
@@ -84,6 +85,41 @@ export const useScroogePanel = create<ScroogePanelStore>((set) => ({
 }));
 
 export { PANEL_MIN_WIDTH };
+
+// ── Page header ───────────────────────────────────────────────────────────────
+
+interface PageHeaderStore {
+  title: string;
+  subtitle: ReactNode;
+  actions: ReactNode;
+  breadcrumbTab: string | null;
+  breadcrumbTabHref: string | null;
+  setHeader: (header: {
+    title: string;
+    subtitle?: ReactNode;
+    actions?: ReactNode;
+    breadcrumbTab?: string | null;
+    breadcrumbTabHref?: string | null;
+  }) => void;
+  clear: () => void;
+}
+
+export const usePageHeader = create<PageHeaderStore>((set) => ({
+  title: "",
+  subtitle: null,
+  actions: null,
+  breadcrumbTab: null,
+  breadcrumbTabHref: null,
+  setHeader: (header) =>
+    set({
+      title: header.title,
+      subtitle: header.subtitle ?? null,
+      actions: header.actions ?? null,
+      breadcrumbTab: header.breadcrumbTab ?? null,
+      breadcrumbTabHref: header.breadcrumbTabHref ?? null,
+    }),
+  clear: () => set({ title: "", subtitle: null, actions: null, breadcrumbTab: null, breadcrumbTabHref: null }),
+}));
 
 export function getStoredToken(): string | null {
   if (typeof window === "undefined") return null;

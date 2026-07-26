@@ -3,23 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BarChart3,
-  Bell,
-  BookOpen,
-  CreditCard,
-  FileText,
-  History,
-  LayoutGrid,
-  Percent,
-  PieChart,
-  Receipt,
-  Repeat,
-  Shield,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -33,26 +16,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { NavUser } from "./NavUser";
-
-const PRIMARY_NAV: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { href: "/ledger", label: "Ledger", icon: BookOpen },
-  { href: "/tax", label: "Tax", icon: Percent },
-  { href: "/financial-independence", label: "Financial Independence", icon: TrendingUp },
-];
-
-const SECONDARY_NAV: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/budget", label: "Budget", icon: Wallet },
-  { href: "/debt", label: "Debt", icon: CreditCard },
-  { href: "/portfolio", label: "Portfolio", icon: PieChart },
-  { href: "/subscriptions", label: "Subscriptions", icon: Repeat },
-  { href: "/insurance", label: "Insurance", icon: Shield },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
-  { href: "/statements", label: "Statements", icon: Receipt },
-  { href: "/documents", label: "Documents", icon: FileText },
-  { href: "/reminders", label: "Reminders", icon: Bell },
-  { href: "/audit-log", label: "Audit Log", icon: History },
-];
+import { PRIMARY_NAV, SECONDARY_NAV } from "@/lib/nav";
 
 export function AppSidebar() {
   const pathname = usePathname();

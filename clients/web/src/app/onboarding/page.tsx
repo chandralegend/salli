@@ -189,7 +189,9 @@ export default function OnboardingPage() {
 
   return (
     <main className="min-h-screen bg-background px-4 pb-16">
-      <p className="text-xl font-bold tracking-tight pt-8 pl-4 sm:pl-8">Salli</p>
+      <p className="font-heading text-2xl font-extrabold tracking-tight pt-8 pl-4 sm:pl-8">
+        Salli<span className="text-primary">.</span>
+      </p>
 
       <div className="max-w-[560px] mx-auto mt-6">
         {/* Step indicator */}

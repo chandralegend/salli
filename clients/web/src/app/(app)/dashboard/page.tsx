@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
 import { RadialProgress } from "@/components/shared/RadialProgress";
@@ -67,33 +66,19 @@ export default function DashboardPage() {
         subtitle={`${today} · Assessment Year ${ay.label} · Sri Lanka · LKR`}
         actions={
           <>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button variant="outline" size="icon" onClick={() => setUploadOpen(true)}>
-                    <Upload className="size-4" />
-                  </Button>
-                }
-              />
-              <TooltipContent>Upload statement</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      requestQuickAdd();
-                      router.push("/ledger");
-                    }}
-                  >
-                    <Plus className="size-4" />
-                  </Button>
-                }
-              />
-              <TooltipContent>New entry</TooltipContent>
-            </Tooltip>
+            <Button variant="outline" onClick={() => setUploadOpen(true)}>
+              <Upload className="size-4" />
+              Upload statement
+            </Button>
+            <Button
+              onClick={() => {
+                requestQuickAdd();
+                router.push("/ledger");
+              }}
+            >
+              <Plus className="size-4" />
+              New entry
+            </Button>
           </>
         }
       />

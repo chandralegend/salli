@@ -518,7 +518,7 @@ export function ChatDrawer() {
           ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center gap-3 pb-10">
               <div className="size-14 rounded-lg bg-white/10 flex items-center justify-center">
-                <Sparkles className="size-6 text-[var(--status-success-text)]" />
+                <Sparkles className="size-6 text-primary" />
               </div>
               <p className="text-base font-semibold">Ask about your money</p>
               <p className="text-[13px] text-white/60 max-w-60">
@@ -626,7 +626,7 @@ export function ChatDrawer() {
               aria-label="Send"
               onClick={send}
               disabled={!input.trim() || streaming || uploadingFiles}
-              className="size-8 shrink-0 rounded-md bg-[var(--status-success-text)] text-primary flex items-center justify-center disabled:opacity-40 transition-opacity"
+              className="size-8 shrink-0 rounded-md bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 transition-opacity"
             >
               {streaming || uploadingFiles ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
             </button>

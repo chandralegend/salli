@@ -60,11 +60,11 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <Link href="/dashboard" className="flex h-10 items-center gap-2 px-2">
-          <span className="font-heading text-[13px] font-extrabold text-primary-foreground bg-primary size-7 shrink-0 rounded-md flex items-center justify-center group-data-[collapsible=icon]:mx-auto">
+        <Link href="/dashboard" className="flex h-8 min-w-0 items-center gap-2">
+          <span className="font-heading text-[13px] font-extrabold text-primary-foreground bg-primary size-7 shrink-0 rounded-md flex items-center justify-center">
             S
           </span>
-          <span className="font-heading text-[19px] font-extrabold tracking-tight group-data-[collapsible=icon]:hidden">
+          <span className="font-heading text-[17px] font-extrabold tracking-tight truncate group-data-[collapsible=icon]:hidden">
             Salli<span className="text-primary">.</span>
           </span>
         </Link>

@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
+import { Card3D } from "@/components/shared/Card3D";
 import { RadialProgress } from "@/components/shared/RadialProgress";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StatusChip } from "@/components/shared/StatusChip";
@@ -185,33 +186,44 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <StatCard id="tour-dash-fi-card" label="Freedom Score" emphasis loading={fiScore.isLoading} className="lg:col-span-2">
-          {fi && (
-            <>
-              <div className="flex items-center gap-3.5">
-                <RadialProgress value={Number(fi.overall_score)} size={56} ringWidth={6} />
-                <div>
-                  <p className="money text-[18px] font-semibold leading-none">{fi.grade}</p>
-                  <p className="text-xs text-white/60 mt-1">{Number(fi.overall_score).toFixed(0)} / 100</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 mt-4">
-                {fi.components.slice(0, 4).map((c) => (
-                  <div key={c.key}>
-                    <p className="text-[11px] text-white/50">{c.label}</p>
-                    <p className="money text-sm font-semibold mt-0.5">{Number(c.score).toFixed(0)}</p>
+        <Card3D id="tour-dash-fi-card" className="lg:col-span-2" contentClassName="flex h-full flex-col p-5">
+          <div className="flex items-start justify-between">
+            <p className="eyebrow text-white/60">Freedom Score</p>
+            <Sparkles className="size-4 text-white/50" />
+          </div>
+          {fiScore.isLoading ? (
+            <div className="mt-3 space-y-3">
+              <Skeleton className="h-8 w-28 bg-white/15" />
+              <Skeleton className="h-3.5 w-20 bg-white/15" />
+            </div>
+          ) : (
+            fi && (
+              <>
+                <div className="flex items-center gap-3.5 mt-3">
+                  <RadialProgress value={Number(fi.overall_score)} size={56} ringWidth={6} />
+                  <div>
+                    <p className="money text-[18px] font-semibold leading-none">{fi.grade}</p>
+                    <p className="text-xs text-white/60 mt-1">{Number(fi.overall_score).toFixed(0)} / 100</p>
                   </div>
-                ))}
-              </div>
-              <Link
-                href="/financial-independence"
-                className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--status-success-text)] mt-3 hover:underline"
-              >
-                View Freedom strategy <ArrowRight className="size-3.5" />
-              </Link>
-            </>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 mt-4">
+                  {fi.components.slice(0, 4).map((c) => (
+                    <div key={c.key}>
+                      <p className="text-[11px] text-white/50">{c.label}</p>
+                      <p className="money text-sm font-semibold mt-0.5">{Number(c.score).toFixed(0)}</p>
+                    </div>
+                  ))}
+                </div>
+                <Link
+                  href="/financial-independence"
+                  className="inline-flex items-center gap-1 text-[13px] font-medium text-white mt-auto pt-3 hover:underline"
+                >
+                  View Freedom strategy <ArrowRight className="size-3.5" />
+                </Link>
+              </>
+            )
           )}
-        </StatCard>
+        </Card3D>
       </div>
 
       {/* Recent entries + deadlines */}

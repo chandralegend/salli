@@ -29,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { StatusChip, type ChipTone } from "@/components/shared/StatusChip";
 import { MoneyText } from "@/components/shared/MoneyText";
+import { Card3D } from "@/components/shared/Card3D";
 import { useAccountOverview, type Account, type AccountTransaction } from "@/hooks/useLedger";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/format";
@@ -126,8 +127,8 @@ export function AccountDetailSheet({
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* balance hero */}
-              <div className="rounded-lg bg-[var(--emphasis)] text-white p-5">
+              {/* balance hero — 3D credit-card surface */}
+              <Card3D contentClassName="p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="mb-2 flex items-center gap-2">
@@ -167,7 +168,7 @@ export function AccountDetailSheet({
                     <MoneyText value={String(moneyOut)} decimals={0} className="text-[14px] font-semibold text-white/60" />
                   </div>
                 </div>
-              </div>
+              </Card3D>
 
               {/* period select */}
               <div className="flex items-center justify-between gap-3">

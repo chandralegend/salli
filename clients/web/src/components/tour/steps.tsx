@@ -28,9 +28,9 @@ export const TOUR_STEPS: Tour[] = [
         side: "top",
       },
       {
-        title: "Your path to financial independence",
+        title: "Your path to Freedom",
         content:
-          "Your FI Score tracks how close you are to your number, built from the same ledger data as everything else. Let's look at the ledger next.",
+          "Your Freedom Score tracks how close you are to your number, built from the same ledger data as everything else. Let's look at the ledger next.",
         selector: "#tour-dash-fi-card",
         side: "top",
         nextRoute: "/ledger",
@@ -54,7 +54,7 @@ export const TOUR_STEPS: Tour[] = [
         prevRoute: "/ledger",
       },
       {
-        title: "Plan your FIRE strategy",
+        title: "Plan your Freedom strategy",
         content:
           "Set a savings and allocation strategy, track projections, and get AI-mentored recommendations — grounded in your actual numbers.",
         selector: "#tour-page-title",

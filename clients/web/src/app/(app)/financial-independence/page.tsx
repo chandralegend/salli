@@ -174,7 +174,7 @@ export default function FinancialIndependencePage() {
   if (strategy.isLoading) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Financial Independence" subtitle="Loading…" />
+        <PageHeader title="Freedom" subtitle="Loading…" />
         <Skeleton className="h-96" />
       </div>
     );
@@ -185,7 +185,7 @@ export default function FinancialIndependencePage() {
     return (
       <div className="space-y-6">
         <PageHeader
-          title="Financial Independence"
+          title="Freedom"
           subtitle="Design a FIRE strategy from your real numbers"
         />
         <StrategySetup />
@@ -200,7 +200,7 @@ export default function FinancialIndependencePage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Financial Independence"
+        title="Freedom"
         subtitle={`${fireStyle} FIRE · Strategy v${s.version} · SWR ${(s.swr * 100).toFixed(1)}%`}
         actions={
           <>
@@ -217,7 +217,7 @@ export default function FinancialIndependencePage() {
         <SectionLabel className="mb-3">Overview</SectionLabel>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            label="FI Number"
+            label="Freedom Number"
             icon={Target}
             loading={score.isLoading}
             value={`LKR ${formatCompact(fi?.fi_number)}`}
@@ -228,9 +228,9 @@ export default function FinancialIndependencePage() {
             icon={Landmark}
             loading={score.isLoading}
             value={`LKR ${formatCompact(fi?.net_worth)}`}
-            caption={fi ? `${Number(fi.progress_to_fi).toFixed(1)}% of FI number` : undefined}
+            caption={fi ? `${Number(fi.progress_to_fi).toFixed(1)}% of Freedom number` : undefined}
           />
-          <StatCard label="Years to FIRE" emphasis loading={projections.isLoading} icon={CalendarClock}>
+          <StatCard label="Years to Freedom" emphasis loading={projections.isLoading} icon={CalendarClock}>
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="money text-[36px] font-semibold leading-none">{yearsToFire}</p>
@@ -278,7 +278,7 @@ export default function FinancialIndependencePage() {
             )}
           </div>
 
-          <StatCard label="FI Score" emphasis loading={score.isLoading} icon={Sparkles} className="h-full">
+          <StatCard label="Freedom Score" emphasis loading={score.isLoading} icon={Sparkles} className="h-full">
             {fi && (
               <div className="flex h-full flex-col">
                 <div className="flex items-center gap-3.5">
@@ -423,7 +423,7 @@ export default function FinancialIndependencePage() {
 
           <div className="rounded-lg bg-[var(--emphasis)] text-white p-5">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[15px] font-semibold">FI Mentor</h2>
+              <h2 className="text-[15px] font-semibold">Freedom Mentor</h2>
               <button
                 type="button"
                 onClick={() => runAdvisor.mutate()}

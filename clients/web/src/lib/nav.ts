@@ -26,7 +26,7 @@ export const PRIMARY_NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
   { href: "/ledger", label: "Ledger", icon: BookOpen },
   { href: "/tax", label: "Tax", icon: Percent },
-  { href: "/financial-independence", label: "Financial Independence", icon: TrendingUp },
+  { href: "/financial-independence", label: "Freedom", icon: TrendingUp },
 ];
 
 export const SECONDARY_NAV: NavItem[] = [

@@ -13,7 +13,7 @@ const ROUTE_META: Record<string, { Icon: typeof LayoutGrid; label: string }> = {
   index: { Icon: LayoutGrid, label: "Home" },
   ledger: { Icon: Table, label: "Ledger" },
   agent: { Icon: PiggyBank, label: "Scrooge" },
-  "financial-independence": { Icon: TrendingUp, label: "FI" },
+  "financial-independence": { Icon: TrendingUp, label: "Freedom" },
 };
 
 /**

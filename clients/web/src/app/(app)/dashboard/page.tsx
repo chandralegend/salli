@@ -185,7 +185,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <StatCard id="tour-dash-fi-card" label="FI Score" emphasis loading={fiScore.isLoading} className="lg:col-span-2">
+        <StatCard id="tour-dash-fi-card" label="Freedom Score" emphasis loading={fiScore.isLoading} className="lg:col-span-2">
           {fi && (
             <>
               <div className="flex items-center gap-3.5">
@@ -207,7 +207,7 @@ export default function DashboardPage() {
                 href="/financial-independence"
                 className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--status-success-text)] mt-3 hover:underline"
               >
-                View FIRE strategy <ArrowRight className="size-3.5" />
+                View Freedom strategy <ArrowRight className="size-3.5" />
               </Link>
             </>
           )}

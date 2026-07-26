@@ -226,7 +226,7 @@ export default function OnboardingPage() {
                 accounts tailored to how you earn. You can change all of this later.
               </p>
               <ul className="space-y-2.5">
-                {["Your ledger, ready to post", "Sri Lanka tax, configured for YA 2025/26", "A Financial Independence baseline"].map(
+                {["Your ledger, ready to post", "Sri Lanka tax, configured for YA 2025/26", "A Freedom baseline"].map(
                   (t) => (
                     <li key={t} className="flex items-center gap-2 text-sm">
                       <Check className="size-4 text-[var(--status-success-text)]" /> {t}

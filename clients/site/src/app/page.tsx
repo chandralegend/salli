@@ -27,7 +27,7 @@ const PILLARS = [
   { n: "01", title: "A real ledger", tag: "Double-entry", body: "Proper double-entry accounting under the hood. Immutable, auditable. Every rupee accounted for." },
   { n: "02", title: "A Sri Lankan tax engine", tag: "Deterministic", body: "Relief, rate bands, the 15% foreign-service final tax, and credits, all applied against versioned, CA-reviewed packs." },
   { n: "03", title: "An AI advisor", tag: "Grounded", body: "Reads your statements, explains your tax, and drafts guidance, powered by the ledger and engine, never guesswork." },
-  { n: "04", title: "A full money toolkit", tag: "Budgets · FIRE", body: "Budgets, debt payoff, portfolio, insurance, reports and FI projections, all on the same ledger." },
+  { n: "04", title: "A full money toolkit", tag: "Budgets · Freedom", body: "Budgets, debt payoff, portfolio, insurance, reports and FI projections, all on the same ledger." },
 ];
 
 const STEPS = [
@@ -376,7 +376,7 @@ export default function HomePage() {
         />
 
         <FeatureDeepDive
-          eyebrow="Debt · FIRE · Reports"
+          eyebrow="Debt · Freedom · Reports"
           title={<>Plan the next<br />ten years.</>}
           body="Avalanche vs. snowball, years-to-FI, and exportable reports, all on the same trustworthy ledger."
           extra={
@@ -424,7 +424,7 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div>
-                  <div className="font-mono text-[11px] uppercase tracking-[.06em] text-ink-40">FIRE progress</div>
+                  <div className="font-mono text-[11px] uppercase tracking-[.06em] text-ink-40">Freedom progress</div>
                   <div className="font-display text-[15px] font-bold">14.2 years to go</div>
                 </div>
               </div>
@@ -535,7 +535,7 @@ export default function HomePage() {
         </div>
         <div className="flex items-start justify-center gap-5.5">
           <PhoneFrame src="/screens/mobile-home-real.png" alt="Salli mobile app home screen showing net worth, income, expenses, and accounts" width={210} />
-          <PhoneFrame src="/screens/mobile-fi-real.png" alt="Salli mobile app Financial Independence screen showing freedom number and years to FI" width={210} className="mt-9" />
+          <PhoneFrame src="/screens/mobile-fi-real.png" alt="Salli mobile app Freedom screen showing freedom number and years to freedom" width={210} className="mt-9" />
         </div>
       </section>
 

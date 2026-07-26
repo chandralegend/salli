@@ -78,7 +78,7 @@ const EXPERIENCE_OPTIONS = [
 ] as const;
 
 const GOAL_KINDS = [
-  { value: "financial_independence", label: "Financial Independence" },
+  { value: "financial_independence", label: "Freedom" },
   { value: "retirement", label: "Retirement" },
   { value: "home", label: "Buy a home" },
   { value: "emergency_fund", label: "Emergency fund" },

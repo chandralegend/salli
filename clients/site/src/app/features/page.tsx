@@ -39,10 +39,10 @@ const PILLARS = [
   },
   {
     n: "04",
-    tag: "Budgets · FIRE",
+    tag: "Budgets · Freedom",
     title: "A full money toolkit",
     body: "Budgets, debt payoff, portfolio, insurance, reports and FI projections, all on the same trustworthy ledger.",
-    points: ["Debt payoff & goal planning", "Net worth & FIRE projections", "Exportable reports"],
+    points: ["Debt payoff & goal planning", "Net worth & Freedom projections", "Exportable reports"],
   },
 ];
 
@@ -183,7 +183,7 @@ export default function FeaturesPage() {
           }
         />
         <FeatureDeepDive
-          eyebrow="Debt · FIRE · Reports"
+          eyebrow="Debt · Freedom · Reports"
           title="Plan the next ten years."
           body="Avalanche vs. snowball payoff, years-to-FI, and exportable reports, all on the same trustworthy ledger."
           extra={
@@ -231,7 +231,7 @@ export default function FeaturesPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="font-mono text-[11px] uppercase tracking-[.06em] text-ink-40">FIRE progress</div>
+                  <div className="font-mono text-[11px] uppercase tracking-[.06em] text-ink-40">Freedom progress</div>
                   <div className="font-display text-[15px] font-bold">14.2 years to go</div>
                 </div>
               </div>

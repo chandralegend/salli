@@ -119,7 +119,7 @@ export function ProjectionChart({
               stroke="var(--chart-3)"
               strokeDasharray="6 4"
               label={{
-                value: `FIRE target LKR ${formatCompact(target)}`,
+                value: `Freedom target LKR ${formatCompact(target)}`,
                 position: "insideBottomRight",
                 fontSize: 11,
                 fill: "var(--muted-foreground)",

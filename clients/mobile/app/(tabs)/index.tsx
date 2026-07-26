@@ -141,7 +141,7 @@ export default function DashboardScreen() {
             />
             <StatTile
               onDark={isDark}
-              label="FI Score"
+              label="Freedom Score"
               value={
                 fiScore ? (
                   <Text className="font-sans-bold text-[24px] tracking-tight text-foreground">

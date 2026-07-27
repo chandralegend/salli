@@ -1,15 +1,16 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { ChevronsUpDown, LogOut, Moon, Settings, Sun } from "lucide-react";
+import { Bug, ChevronsUpDown, LogOut, Moon, Settings, Sun } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useProfile } from "@/hooks/useAccountData";
 import { useAuth } from "@/lib/auth";
+import { useBugReport } from "@/lib/store";
 
 /** True after hydration — gates the theme-dependent icon/label. */
 function useMounted() {
@@ -34,6 +35,11 @@ export function NavUser() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const mounted = useMounted();
+  // Controlled, because Base UI's Popover does not dismiss on an inside click (the
+  // theme toggle demonstrates that) — an item that opens a dialog would otherwise
+  // leave the popover sitting behind the backdrop.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const openBugReport = useBugReport((s) => s.open);
 
   const displayName = profile?.display_name || profile?.email || "Account";
   const email = profile?.display_name ? profile?.email : null;
@@ -47,7 +53,7 @@ export function NavUser() {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <Popover>
+        <Popover open={menuOpen} onOpenChange={setMenuOpen}>
           <PopoverTrigger
             render={
               <SidebarMenuButton
@@ -88,6 +94,17 @@ export function NavUser() {
               <Settings className="size-4" />
               Settings
             </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                openBugReport();
+              }}
+              className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+            >
+              <Bug className="size-4" />
+              Report a problem
+            </button>
             <div className="my-1.5 h-px bg-border" />
             <button
               type="button"

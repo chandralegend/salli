@@ -13,6 +13,7 @@ import { UsageMeter } from "@/components/billing/UsageMeter";
 import { UpgradeDialog } from "@/components/billing/UpgradeDialog";
 import { DangerZone } from "@/components/settings/DangerZone";
 import { McpConnectionsCard } from "@/components/settings/McpConnectionsCard";
+import { HelpFeedbackCard } from "@/components/support/HelpFeedbackCard";
 import { useSubscription, useBillingPortal } from "@/hooks/useBilling";
 import { useAuth } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
@@ -191,6 +192,8 @@ function SettingsContent() {
 
         {/* MCP: connect an AI assistant */}
         <McpConnectionsCard />
+
+        <HelpFeedbackCard />
 
         {/* Danger zone */}
         <DangerZone

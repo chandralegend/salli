@@ -1,5 +1,6 @@
 "use client";
 
+import type { ClientErrorInfo } from "./diagnostics";
 import { create } from "zustand";
 import type { ReactNode } from "react";
 
@@ -119,6 +120,41 @@ export const usePageHeader = create<PageHeaderStore>((set) => ({
       breadcrumbTabHref: header.breadcrumbTabHref ?? null,
     }),
   clear: () => set({ title: "", subtitle: null, actions: null, breadcrumbTab: null, breadcrumbTabHref: null }),
+}));
+
+// ── Bug report ────────────────────────────────────────────────────────────────
+
+export type BugSeverity = "low" | "medium" | "high" | "blocking";
+
+export type BugReportPrefill = {
+  title?: string;
+  description?: string;
+  severity?: BugSeverity;
+  area?: string;
+  /** Set by an error boundary so the crash detail rides along with the report. */
+  clientError?: ClientErrorInfo | null;
+};
+
+interface BugReportStore {
+  isOpen: boolean;
+  prefill: BugReportPrefill | null;
+  open: (prefill?: BugReportPrefill) => void;
+  close: () => void;
+}
+
+/**
+ * Zustand rather than context so `useBugReport.getState().open({...})` works from
+ * a class component's componentDidCatch and from a Next error.tsx that has no
+ * provider in scope.
+ *
+ * NOTE: the React Query mutation hook is exported as `useSubmitBugReport` from
+ * hooks/useBugReport.ts — this name is taken by the dialog's open/close state.
+ */
+export const useBugReport = create<BugReportStore>((set) => ({
+  isOpen: false,
+  prefill: null,
+  open: (prefill) => set({ isOpen: true, prefill: prefill ?? null }),
+  close: () => set({ isOpen: false, prefill: null }),
 }));
 
 export function getStoredToken(): string | null {

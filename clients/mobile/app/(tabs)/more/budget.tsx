@@ -23,6 +23,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { getScoreFiScoreGet } from "@/lib/api/sdk.gen";
 import { useBudgetSummaryFull, useBudgets, useCreateBudget, useUpdateBudget } from "@/hooks/useBudget";
 import { useAccounts } from "@/hooks/useLedger";
+import { useThemeColors } from "@/lib/theme";
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +60,7 @@ function currentMonthLabel() {
 }
 
 export default function BudgetScreen() {
+  const colors = useThemeColors();
   const budgets = useBudgets();
   const accounts = useAccounts();
   const createBudget = useCreateBudget();
@@ -337,7 +339,7 @@ export default function BudgetScreen() {
                     >
                       <Icon
                         size={13}
-                        color={isDominant ? "#2563EB" : "rgba(128,128,128,0.7)"}
+                        color={isDominant ? colors.accent : "rgba(128,128,128,0.7)"}
                         strokeWidth={2.5}
                       />
                     </View>

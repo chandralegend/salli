@@ -6,6 +6,7 @@ Adapters (in salli/adapters/) implement these; the domain never imports adapters
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
@@ -536,6 +537,58 @@ class AuditLogRepository(ABC):
     async def list(self, user_id: str, limit: int = 100) -> list[dict[str, Any]]: ...
 
 
+# ── Bug reports ────────────────────────────────────────────────────────────────
+
+
+class BugReportRepository(ABC):
+    @abstractmethod
+    async def save(self, user_id: str, report: dict[str, Any]) -> str: ...
+
+    @abstractmethod
+    async def get(self, user_id: str, report_id: str) -> dict[str, Any] | None: ...
+
+    @abstractmethod
+    async def list(self, user_id: str, limit: int = 50) -> list[dict[str, Any]]: ...
+
+    @abstractmethod
+    async def update(self, user_id: str, report_id: str, updates: dict[str, Any]) -> None: ...
+
+    @abstractmethod
+    async def delete(self, user_id: str, report_id: str) -> None: ...
+
+    @abstractmethod
+    async def count_since(self, user_id: str, since: datetime) -> int:
+        """Reports this user filed at or after `since` — the rate-limit window."""
+        ...
+
+
+class IssueTrackerPort(ABC):
+    """
+    An external issue tracker a bug report is best-effort mirrored into.
+
+    Every method may raise. BugReportService treats failure as non-fatal: the
+    report is already durably stored in Salli's own database before any of this
+    is called, so a tracker outage must never cost us a user's report.
+    """
+
+    @abstractmethod
+    async def create_issue(
+        self,
+        *,
+        summary: str,
+        description_adf: dict[str, Any],
+        labels: list[str],
+        priority_name: str | None,
+    ) -> dict[str, Any]:
+        """Create an issue. Returns {"key": "SAL-123", "url": "https://…/SAL-123"}."""
+        ...
+
+    @abstractmethod
+    async def attach_file(
+        self, issue_key: str, filename: str, content: bytes, mime_type: str
+    ) -> None: ...
+
+
 # ── Data portability ───────────────────────────────────────────────────────────
 
 
@@ -544,4 +597,93 @@ class DataPortabilityRepository(ABC):
     async def delete_all(self, user_id: str) -> dict[str, int]:
         """Permanently delete every row belonging to this user across every
         user-scoped table. Returns {table_name: rows_deleted}. Irreversible."""
+        ...
+
+
+# ── MCP OAuth ────────────────────────────────────────────────────────────────
+
+
+class OAuthClientRepository(ABC):
+    @abstractmethod
+    async def register(self, client_name: str | None, redirect_uris: list[str]) -> dict[str, Any]:
+        """Dynamic Client Registration (RFC 7591). Returns the new client's record."""
+        ...
+
+    @abstractmethod
+    async def get(self, client_id: str) -> dict[str, Any] | None: ...
+
+
+class OAuthTokenRepository(ABC):
+    @abstractmethod
+    async def save_authorization_code(
+        self,
+        code: str,
+        client_id: str,
+        user_id: str,
+        redirect_uri: str,
+        code_challenge: str,
+        scope: str,
+        resource: str | None,
+        expires_at: datetime,
+    ) -> None: ...
+
+    @abstractmethod
+    async def get_authorization_code(self, code: str) -> dict[str, Any] | None:
+        """Look up without consuming. None if missing/expired. Callers must
+        call delete_authorization_code() only after validation succeeds, so a
+        failed PKCE/client check doesn't burn a code a legitimate retry needs."""
+        ...
+
+    @abstractmethod
+    async def delete_authorization_code(self, code: str) -> None:
+        """Marks a code used — call only once the exchange has succeeded."""
+        ...
+
+    @abstractmethod
+    async def save_access_token(
+        self,
+        token_hash: str,
+        client_id: str,
+        user_id: str,
+        scope: str,
+        resource: str | None,
+        expires_at: datetime,
+    ) -> str:
+        """Returns the new access token row's id (FK target for its refresh token)."""
+        ...
+
+    @abstractmethod
+    async def save_refresh_token(
+        self,
+        token_hash: str,
+        access_token_id: str,
+        client_id: str,
+        user_id: str,
+        scope: str,
+        resource: str | None,
+        expires_at: datetime,
+    ) -> None: ...
+
+    @abstractmethod
+    async def get_access_token(self, token_hash: str) -> dict[str, Any] | None:
+        """None if missing, expired, or revoked."""
+        ...
+
+    @abstractmethod
+    async def get_refresh_token(self, token_hash: str) -> dict[str, Any] | None:
+        """None if missing, expired, or revoked."""
+        ...
+
+    @abstractmethod
+    async def revoke_access_token(self, token_id: str, user_id: str) -> bool:
+        """Revokes only if the token belongs to user_id. Returns whether it revoked anything."""
+        ...
+
+    @abstractmethod
+    async def revoke_refresh_token(self, token_hash: str) -> None: ...
+
+    @abstractmethod
+    async def list_active_connections(self, user_id: str) -> list[dict[str, Any]]:
+        """Active (non-revoked, non-expired) client connections for a user,
+        one row per access token, joined with the client's display name."""
         ...

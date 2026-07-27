@@ -14,6 +14,7 @@ from typing import Any
 
 from salli.domain.insurance import engine
 from salli.domain.insurance.models import CoverageTarget, Policy
+from salli.domain.money import to_minor
 
 
 def _policy_view(p: dict[str, Any]) -> dict[str, Any]:
@@ -68,8 +69,8 @@ class InsuranceService:
             "name": data["name"],
             "policy_type": data["policy_type"],
             "provider": data["provider"],
-            "coverage_amount_minor": int(Decimal(str(data["coverage_amount"])) * 100),
-            "premium_amount_minor": int(Decimal(str(data["premium_amount"])) * 100),
+            "coverage_amount_minor": to_minor(Decimal(str(data["coverage_amount"]))),
+            "premium_amount_minor": to_minor(Decimal(str(data["premium_amount"]))),
             "premium_frequency": data["premium_frequency"],
             "expiry_date": data["expiry_date"],
         }
@@ -95,9 +96,9 @@ class InsuranceService:
         if "provider" in data:
             updates["provider"] = data["provider"]
         if "coverage_amount" in data:
-            updates["coverage_amount_minor"] = int(Decimal(str(data["coverage_amount"])) * 100)
+            updates["coverage_amount_minor"] = to_minor(Decimal(str(data["coverage_amount"])))
         if "premium_amount" in data:
-            updates["premium_amount_minor"] = int(Decimal(str(data["premium_amount"])) * 100)
+            updates["premium_amount_minor"] = to_minor(Decimal(str(data["premium_amount"])))
         if "premium_frequency" in data:
             updates["premium_frequency"] = data["premium_frequency"]
         if "expiry_date" in data:
@@ -113,9 +114,7 @@ class InsuranceService:
 
     async def set_target(self, user_id: str, policy_type: str, target_amount: Decimal) -> str:
         async with self._uow_factory() as uow:
-            return await uow.insurance_targets.upsert(
-                user_id, policy_type, int(target_amount * 100)
-            )
+            return await uow.insurance_targets.upsert(user_id, policy_type, to_minor(target_amount))
 
     async def list_targets(self, user_id: str) -> list[dict[str, Any]]:
         async with self._uow_factory() as uow:

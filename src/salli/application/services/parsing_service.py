@@ -27,6 +27,7 @@ from salli.domain.dedup.matcher import (
     batch_check,
     compute_dedup_key,
 )
+from salli.domain.money import to_minor
 from salli.domain.parsing.models import ParsedTransaction, ParseResult, RawRow
 
 
@@ -68,7 +69,7 @@ class ParsingService:
                 id=str(i),
                 account_id="unknown",  # account not classified yet
                 entry_date=r.date,
-                amount_minor=int(r.amount * 100),
+                amount_minor=to_minor(r.amount),
                 currency=r.currency,
                 description=r.description,
                 source="statement",
@@ -118,7 +119,7 @@ class ParsingService:
                 id="0",
                 account_id=txn.debit_account_id or "unknown",
                 entry_date=txn.raw.date,
-                amount_minor=int(txn.raw.amount * 100),
+                amount_minor=to_minor(txn.raw.amount),
                 currency=txn.raw.currency,
                 description=txn.raw.description,
                 source="statement",

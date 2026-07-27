@@ -21,6 +21,8 @@ import { useTax, useTaxPacks, type TaxPack, type TaxResult } from "@/hooks/useTa
 import { createReminderRemindersPost } from "@/lib/api/sdk.gen";
 import { formatDate } from "@/lib/format";
 
+const TAB_LABELS: Record<string, string> = { overview: "Overview", deductions: "Deductions", history: "History" };
+
 /** Display-only effective rate — never feeds back into any figure. */
 function effectiveRate(payable: string, gross: string): string | null {
   const p = Number(payable.replace(/,/g, ""));
@@ -43,6 +45,7 @@ export default function TaxPage() {
       <PageHeader
         title="Tax"
         subtitle="Sri Lanka individual income tax · Assessment Year 2025/26 · IRD"
+        breadcrumbTab={tax ? TAB_LABELS[tab] : undefined}
         actions={
           tax ? (
             <Button variant="outline" onClick={recompute} disabled={compute.isPending}>
@@ -192,6 +195,11 @@ function OverviewTab({ tax, pack }: { tax: TaxResult; pack: TaxPack | undefined 
           </div>
         </div>
       )}
+
+      <p className="text-xs text-muted-foreground text-center">
+        Computed under the {tax.pack_country} pack · YA {tax.year} · rounded to the{" "}
+        {tax.rounding === "truncate_rupee" ? "nearest rupee (truncated)" : "nearest rupee"}
+      </p>
 
       <TaxDisclaimer />
     </div>

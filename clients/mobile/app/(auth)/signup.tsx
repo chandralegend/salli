@@ -37,7 +37,7 @@ export default function SignupScreen() {
   return (
     <View className="flex-1 bg-black">
       <LinearGradient
-        colors={["#0B20E0", "#0912B0", "#060A6A", "#020518", "#000000"]}
+        colors={["#F97316", "#c85a0f", "#6b3212", "#16130f", "#000000"]}
         locations={[0, 0.3, 0.55, 0.8, 1]}
         style={{ position: "absolute", top: 0, left: 0, right: 0, height: 430 }}
       />
@@ -47,7 +47,7 @@ export default function SignupScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View className="items-center px-6 pb-9">
-            <Logo size={80} />
+            <Logo size={44} className="text-white" />
             <Text className="mt-[22px] font-sans-bold text-[26px] tracking-tight text-white">
               Create account
             </Text>
@@ -59,7 +59,7 @@ export default function SignupScreen() {
           {sent ? (
             <View className="items-center gap-3 px-6">
               <View className="h-14 w-14 items-center justify-center rounded-full bg-salli-accent/20">
-                <Mail size={22} color="#2563EB" strokeWidth={2} />
+                <Mail size={22} color="#F97316" strokeWidth={2} />
               </View>
               <Text className="text-center font-sans-semibold text-[16px] text-white">
                 Check your inbox

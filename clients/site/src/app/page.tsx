@@ -13,28 +13,31 @@ import { WordUp } from "@/components/WordUp";
 import { CountUp } from "@/components/CountUp";
 import { FeatureDeepDive } from "@/components/FeatureDeepDive";
 import { FaqAccordion } from "@/components/FaqAccordion";
+import { PhoneFrame } from "@/components/PhoneFrame";
+import { AppleLogo, GooglePlayLogo } from "@/components/StoreIcons";
+import { APP_URL } from "@/lib/config";
 
 const PROBLEMS = [
-  { n: "01", bad: "Scattered money", badsub: "Accounts, cards, loans, investments — spreadsheets go stale.", good: "One truthful picture" },
+  { n: "01", bad: "Scattered money", badsub: "Accounts, cards, loans, investments: spreadsheets go stale.", good: "One truthful picture" },
   { n: "02", bad: "Confusing tax", badsub: "2025/26 rules changed. Most people overpay or guess.", good: "A figure you can defend" },
   { n: "03", bad: "Untrustworthy AI", badsub: "Chatbots hallucinate the numbers that matter most.", good: "AI that never guesses" },
 ];
 
 const PILLARS = [
-  { n: "01", title: "A real ledger", tag: "Double-entry", body: "Proper double-entry accounting under the hood. Immutable, auditable — every rupee accounted for." },
-  { n: "02", title: "A Sri Lankan tax engine", tag: "Deterministic", body: "Relief, rate bands, the 15% foreign-service final tax, and credits — against versioned, CA-reviewed packs." },
-  { n: "03", title: "An AI advisor", tag: "Grounded", body: "Reads your statements, explains your tax, drafts guidance — powered by the ledger and engine, never guesswork." },
-  { n: "04", title: "A full money toolkit", tag: "Budgets · FIRE", body: "Budgets, debt payoff, portfolio, insurance, reports and FI projections — all on the same ledger." },
+  { n: "01", title: "A real ledger", tag: "Double-entry", body: "Proper double-entry accounting under the hood. Immutable, auditable. Every rupee accounted for." },
+  { n: "02", title: "A Sri Lankan tax engine", tag: "Deterministic", body: "Relief, rate bands, the 15% foreign-service final tax, and credits, all applied against versioned, CA-reviewed packs." },
+  { n: "03", title: "An AI advisor", tag: "Grounded", body: "Reads your statements, explains your tax, and drafts guidance, powered by the ledger and engine, never guesswork." },
+  { n: "04", title: "A full money toolkit", tag: "Budgets · Freedom", body: "Budgets, debt payoff, portfolio, insurance, reports and FI projections, all on the same ledger." },
 ];
 
 const STEPS = [
   { n: "01", title: "Enter your money", body: "Type, speak, or upload statements. Salli drafts; you approve." },
   { n: "02", title: "See your true picture", body: "A live ledger, net worth, and a defensible tax figure." },
-  { n: "03", title: "Act with AI guidance", body: "Plan payoffs and goals, and prep your return — grounded in your numbers." },
+  { n: "03", title: "Act with AI guidance", body: "Plan payoffs and goals, and prep your return, grounded in your numbers." },
 ];
 
 const TRUST = [
-  { title: "Deterministic math", body: "Every figure computed by the engine — never AI-generated." },
+  { title: "Deterministic math", body: "Every figure computed by the engine, never AI-generated." },
   { title: "Immutable ledger", body: "Double-entry, auditable, append-only. Nothing quietly changes." },
   { title: "CA-reviewed packs", body: "Versioned tax packs reviewed by a chartered accountant." },
   { title: "Reproducible returns", body: "Recompute a past return years later, even after rates change." },
@@ -43,9 +46,9 @@ const TRUST = [
 ];
 
 const FAQS = [
-  { q: "Is Salli's tax figure accurate?", a: "Every figure is produced by a deterministic engine running versioned, chartered-accountant-reviewed tax packs — not by AI. It applies relief, rate bands, foreign-income rules and credits, and records exactly which rules produced the number." },
+  { q: "Is Salli's tax figure accurate?", a: "Every figure is produced by a deterministic engine running versioned, chartered-accountant-reviewed tax packs, not by AI. It applies relief, rate bands, foreign-income rules and credits, and records exactly which rules produced the number." },
   { q: "Does the AI calculate my tax?", a: "No. The AI reads documents, explains results, and drafts guidance, but it never computes your money or your tax. The math stays auditable and reproducible in the engine." },
-  { q: "Is this financial or investment advice?", a: "No. Salli is not a licensed financial or investment advisor. It gives you tools, clarity, and tax computation — never personalized investment advice or promised returns." },
+  { q: "Is this financial or investment advice?", a: "No. Salli is not a licensed financial or investment advisor. It gives you tools, clarity, and tax computation, but never personalized investment advice or promised returns." },
   { q: "Which tax year and country does it cover?", a: "Salli launches with the Sri Lanka 2025/26 tax pack, aligned to Inland Revenue rules. Packs are versioned, so past returns stay reproducible even after rates change." },
   { q: "Is my data safe?", a: "Your ledger is immutable and auditable, and everything Salli reads is kept for you, under your control. A human-review checkpoint sits before any return is finalized." },
 ];
@@ -74,11 +77,6 @@ export default function HomePage() {
       <section id="top" className="relative z-2">
         <HeroCanvas />
         <div className="relative z-1 mx-auto max-w-[1320px] px-6 pt-16 pb-10 sm:px-10">
-          <div className="absolute right-5 top-10 z-5 hidden sm:block md:right-[280px]">
-            <div className="rounded-full bg-red px-4 py-2.5 font-mono text-xs font-semibold uppercase tracking-[.08em] text-cream shadow-[0_12px_26px_-12px_rgba(245,49,15,.7)]" style={{ transform: "rotate(-7deg)" }}>
-              ★ Made for Sri Lanka
-            </div>
-          </div>
           <div className="grid items-center gap-10 lg:grid-cols-[1.12fr_0.88fr]">
             <div>
               <div className="font-mono text-xs font-semibold uppercase tracking-[.14em] text-red">
@@ -91,13 +89,17 @@ export default function HomePage() {
               </h1>
               <p className="mt-7.5 max-w-[460px] text-[clamp(17px,1.5vw,21px)] leading-[1.5] text-ink-60">
                 A real ledger, a deterministic Sri Lankan tax engine, and an AI advisor that works
-                only from your actual numbers — never guesswork.
+                only from your actual numbers, never guesswork.
               </p>
               <div className="mt-9.5 flex flex-wrap gap-3.5">
                 <MagneticButton href="#cta" className="rounded-full bg-red px-8 py-4.5 text-[17px] font-bold text-cream shadow-[0_16px_34px_-14px_rgba(245,49,15,.8)]">
                   Get started free
                 </MagneticButton>
-                <MagneticButton href="#download" className="rounded-full border-2 border-ink px-7.5 py-4 text-[17px] font-bold hover:bg-ink hover:text-cream">
+                <MagneticButton href="#download" className="flex items-center gap-2.5 rounded-full border-2 border-ink px-7.5 py-4 text-[17px] font-bold hover:bg-ink hover:text-cream">
+                  <span className="flex items-center gap-1.5">
+                    <AppleLogo className="size-4" />
+                    <GooglePlayLogo className="size-3.5" />
+                  </span>
                   Download the app
                 </MagneticButton>
               </div>
@@ -108,6 +110,8 @@ export default function HomePage() {
                 <span className="opacity-40">/</span>
                 <span>LKR-native</span>
                 <span className="opacity-40">/</span>
+                <span>Available on iOS &amp; Android</span>
+                <span className="opacity-40">/</span>
                 <span>No hallucinated numbers</span>
               </div>
             </div>
@@ -116,6 +120,11 @@ export default function HomePage() {
               <div className="absolute -left-7.5 -top-6.5 z-6 hidden sm:block">
                 <div className="rounded-full bg-ink px-3.5 py-2.25 font-mono text-[11px] font-semibold uppercase tracking-[.08em] text-cream shadow-[0_12px_24px_-12px_rgba(22,19,15,.6)]" style={{ transform: "rotate(6deg)" }}>
                   No guessing ✓
+                </div>
+              </div>
+              <div className="absolute -right-5.5 -bottom-6.5 z-6 hidden sm:block">
+                <div className="rounded-full bg-red px-4 py-2.5 font-mono text-xs font-semibold uppercase tracking-[.08em] text-cream shadow-[0_12px_26px_-12px_rgba(245,49,15,.7)]" style={{ transform: "rotate(-7deg)" }}>
+                  ★ Made for Sri Lanka
                 </div>
               </div>
               <TiltCard className="rounded-[32px] bg-white p-6.5 shadow-[0_40px_80px_-30px_rgba(22,19,15,.5),0_0_0_1px_rgba(22,19,15,.05)]">
@@ -150,7 +159,7 @@ export default function HomePage() {
                   <div className="mt-3.5 flex items-center gap-2.25 border-t border-cream/16 pt-3.5">
                     <span className="flex size-5.5 items-center justify-center rounded-[7px] bg-red font-display text-xs font-extrabold text-cream">S</span>
                     <span className="text-[12.5px] text-cream-60">
-                      Explained by AI — <span className="font-mono font-semibold text-cream">never invented</span>
+                      Explained by AI (<span className="font-mono font-semibold text-cream">never invented</span>)
                     </span>
                   </div>
                 </div>
@@ -222,7 +231,7 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <div className="mt-4 text-[13px] text-cream-60">Parsed by AI — approved by you.</div>
+              <div className="mt-4 text-[13px] text-cream-60">Parsed by AI. Approved by you.</div>
             </div>
             <TiltCard className="rounded-3xl bg-cream p-8 text-ink shadow-[0_40px_80px_-24px_rgba(0,0,0,.6)]">
               <div className="font-mono text-[11px] uppercase tracking-[.1em] text-red">02 · Deterministic engine</div>
@@ -255,7 +264,7 @@ export default function HomePage() {
                 </div>
               </div>
               <div className="mt-4 text-[13px] text-cream-60">
-                A number you can defend — every rule recorded, reproducible years later.
+                A number you can defend: every rule recorded, reproducible years later.
               </div>
             </div>
           </div>
@@ -270,7 +279,7 @@ export default function HomePage() {
             <br />
             trustworthy ledger.
           </h2>
-          <div className="font-mono text-xs uppercase tracking-[.1em] text-ink-40">Index 01—04</div>
+          <div className="font-mono text-xs uppercase tracking-[.1em] text-ink-40">Index 01 → 04</div>
         </div>
         <div className="mt-13">
           {PILLARS.map((p) => (
@@ -290,7 +299,7 @@ export default function HomePage() {
         <FeatureDeepDive
           eyebrow="AI quick-add"
           title={<>Say it.<br />Salli books it.</>}
-          body="Type or speak a transaction — Salli drafts the correct double-entry for you to approve. No accounting degree required."
+          body="Type or speak a transaction, and Salli drafts the correct double-entry for you to approve. No accounting degree required."
           visual={
             <TiltCard className="rounded-3xl bg-white p-6 shadow-[0_34px_70px_-30px_rgba(22,19,15,.4),0_0_0_1px_rgba(22,19,15,.05)]">
               <div className="flex justify-end">
@@ -326,18 +335,50 @@ export default function HomePage() {
           reverse
           eyebrow="Tax overview &amp; return prep"
           title={<>See exactly<br />what you owe.</>}
-          body="Payable, deductions, bands and credits — then a guided return with a human-review checkpoint before you file."
+          body="Payable, deductions, bands and credits, then a guided return with a human-review checkpoint before you file."
           visual={
-            <div className="relative aspect-4/3 overflow-hidden rounded-3xl shadow-[0_34px_70px_-30px_rgba(245,49,15,.6)]">
-              <Image src="/screens/web-tax.webp" alt="Salli tax overview screen" fill className="object-cover" />
-            </div>
+            <TiltCard className="rounded-3xl bg-white p-7 shadow-[0_34px_70px_-30px_rgba(245,49,15,.35),0_0_0_1px_rgba(22,19,15,.05)]">
+              <div className="flex items-center justify-between">
+                <div className="font-mono text-[11px] uppercase tracking-[.08em] text-ink-40">Payable · YA 2025/26</div>
+                <span className="rounded-full bg-green/12 px-2.5 py-1 font-mono text-[10.5px] font-semibold text-green">
+                  On track
+                </span>
+              </div>
+              <div className="mt-1.5 font-mono font-display text-[38px] font-extrabold tracking-[-0.02em]">
+                LKR 186,420
+              </div>
+              <div className="mt-5.5 flex flex-col gap-2.75">
+                {[
+                  { label: "First 1,000,000", rate: "6%", pct: 34 },
+                  { label: "Next 500,000", rate: "18%", pct: 68 },
+                  { label: "Next 500,000", rate: "24%", pct: 100 },
+                ].map((b) => (
+                  <div key={b.rate}>
+                    <div className="flex justify-between font-mono text-[11.5px] text-ink-50">
+                      <span>{b.label}</span>
+                      <span className="font-semibold text-ink">{b.rate}</span>
+                    </div>
+                    <div className="mt-1 h-2 overflow-hidden rounded-full bg-cream-soft">
+                      <div className="h-full rounded-full bg-red" style={{ width: `${b.pct}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5.5 flex items-center justify-between border-t border-dashed border-ink/14 pt-4">
+                <div className="font-mono text-[12px] text-ink-50">APIT + AIT credits</div>
+                <div className="font-mono text-[13.5px] font-semibold text-green">− LKR 160,500</div>
+              </div>
+              <div className="mt-4 flex h-11.5 items-center justify-center rounded-full bg-ink text-[13.5px] font-bold text-cream">
+                Start guided return →
+              </div>
+            </TiltCard>
           }
         />
 
         <FeatureDeepDive
-          eyebrow="Debt · FIRE · Reports"
+          eyebrow="Debt · Freedom · Reports"
           title={<>Plan the next<br />ten years.</>}
-          body="Avalanche vs. snowball, years-to-FI, and exportable reports — all on the same trustworthy ledger."
+          body="Avalanche vs. snowball, years-to-FI, and exportable reports, all on the same trustworthy ledger."
           extra={
             <div className="mt-7.5 flex gap-9">
               <div>
@@ -354,9 +395,40 @@ export default function HomePage() {
             </div>
           }
           visual={
-            <div className="relative aspect-4/3 overflow-hidden rounded-3xl shadow-[0_34px_70px_-30px_rgba(22,19,15,.5)]">
-              <Image src="/screens/web-fi.webp" alt="Salli financial independence screen" fill className="object-cover" />
-            </div>
+            <TiltCard className="rounded-3xl bg-white p-7 shadow-[0_34px_70px_-30px_rgba(22,19,15,.4),0_0_0_1px_rgba(22,19,15,.05)]">
+              <div className="font-mono text-[11px] uppercase tracking-[.08em] text-ink-40">Payoff plan · Avalanche</div>
+              <div className="mt-4.5 flex flex-col gap-3.5">
+                {[
+                  { label: "Credit card", pct: 72, tone: "bg-red" },
+                  { label: "Personal loan", pct: 41, tone: "bg-ink" },
+                  { label: "Store instalment", pct: 100, tone: "bg-green" },
+                ].map((d) => (
+                  <div key={d.label}>
+                    <div className="flex justify-between font-mono text-[12px] text-ink-50">
+                      <span>{d.label}</span>
+                      <span className="font-semibold text-ink">{d.pct}% paid</span>
+                    </div>
+                    <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-cream-soft">
+                      <div className={`h-full rounded-full ${d.tone}`} style={{ width: `${d.pct}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 flex items-center gap-4 rounded-2xl bg-cream-soft p-4">
+                <div
+                  className="relative flex size-15.5 flex-none items-center justify-center rounded-full"
+                  style={{ background: "conic-gradient(var(--color-green) 223deg, var(--color-cream-80) 0deg)" }}
+                >
+                  <div className="flex size-11.5 items-center justify-center rounded-full bg-white font-mono text-[12px] font-bold">
+                    62%
+                  </div>
+                </div>
+                <div>
+                  <div className="font-mono text-[11px] uppercase tracking-[.06em] text-ink-40">Freedom progress</div>
+                  <div className="font-display text-[15px] font-bold">14.2 years to go</div>
+                </div>
+              </div>
+            </TiltCard>
           }
         />
       </section>
@@ -372,7 +444,7 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-linear-to-b from-ink/72 via-ink/82 to-ink/94" />
         <div className="relative mx-auto max-w-[1320px] px-6 py-30 sm:px-10">
           <div className="font-mono text-xs uppercase tracking-[.14em] text-red">
-            Made for Sri Lanka — not bent to fit
+            Made for Sri Lanka, not bent to fit
           </div>
           <h2 className="mt-4.5 max-w-[680px] font-display text-[clamp(40px,5.6vw,74px)] font-extrabold leading-[0.94] tracking-[-0.045em]">
             Local by design.
@@ -380,7 +452,7 @@ export default function HomePage() {
             From Colombo out.
           </h2>
           <p className="mt-4.5 max-w-[480px] text-[17px] leading-[1.55] text-cream-80">
-            Built around IRD rules for 2025/26 — LKR-native, aligned to local banks, reviewed by a
+            Built around IRD rules for 2025/26. LKR-native, aligned to local banks, and reviewed by a
             chartered accountant.
           </p>
           <div className="mt-14 grid grid-cols-2 gap-5.5 md:grid-cols-4">
@@ -419,7 +491,7 @@ export default function HomePage() {
       <section id="security" className="relative z-2 mx-auto max-w-[1320px] px-6 pt-27.5 pb-10 sm:px-10">
         <div className="rounded-[32px] bg-ink px-6 py-18 text-cream sm:px-15">
           <h2 className="max-w-[680px] font-display text-[clamp(34px,4.6vw,60px)] font-extrabold leading-[1.0] tracking-[-0.04em]">
-            Numbers you can defend —
+            Numbers you can defend,
             <br />
             <span className="text-red">years later.</span>
           </h2>
@@ -444,48 +516,26 @@ export default function HomePage() {
             In your pocket.
           </h2>
           <p className="mt-4.5 max-w-[400px] text-[17px] leading-[1.55] text-ink-60">
-            Full-power web app for desktop, and a dedicated dark mobile app for iOS &amp; Android —
+            Full-power web app for desktop, and a dedicated dark mobile app for iOS &amp; Android,
             always in sync.
           </p>
           <div className="mt-7.5 flex flex-wrap gap-3">
-            <MagneticButton href="#cta" className="rounded-full bg-ink px-6 py-3.5 text-[15px] font-bold text-cream hover:bg-red">
+            <MagneticButton href="#cta" className="flex items-center gap-2.5 rounded-full bg-ink px-6 py-3.5 text-[15px] font-bold text-cream hover:bg-red">
+              <AppleLogo className="size-4.5" />
               App Store
             </MagneticButton>
-            <MagneticButton href="#cta" className="rounded-full bg-ink px-6 py-3.5 text-[15px] font-bold text-cream hover:bg-red">
+            <MagneticButton href="#cta" className="flex items-center gap-2.5 rounded-full bg-ink px-6 py-3.5 text-[15px] font-bold text-cream hover:bg-red">
+              <GooglePlayLogo className="size-4" />
               Google Play
             </MagneticButton>
-            <MagneticButton href="#cta" className="rounded-full border-2 border-ink px-5.5 py-3 text-[15px] font-bold hover:bg-ink hover:text-cream">
+            <MagneticButton href={APP_URL} className="rounded-full border-2 border-ink px-5.5 py-3 text-[15px] font-bold hover:bg-ink hover:text-cream">
               Open web app
             </MagneticButton>
           </div>
         </div>
-        <div className="flex justify-center gap-5.5">
-          <div className="w-[200px] flex-none rounded-[38px] bg-ink p-2.5 shadow-[0_40px_80px_-30px_rgba(22,19,15,.5)]">
-            <div className="flex h-full flex-col rounded-[30px] bg-ink-soft px-4 py-5.5">
-              <div className="font-mono text-[10.5px] uppercase tracking-[.08em] text-ink-40">Net worth</div>
-              <div className="mt-0.5 font-mono font-display text-2xl font-extrabold text-cream">LKR 8.4M</div>
-              <div className="mt-5 flex flex-col gap-2.25">
-                <div className="h-10.5 rounded-xl bg-cream/6" />
-                <div className="h-10.5 rounded-xl bg-cream/6" />
-                <div className="h-10.5 rounded-xl bg-cream/6" />
-              </div>
-              <div className="mt-auto flex h-12 items-center justify-center rounded-full bg-red text-[13px] font-bold text-cream">
-                Ask Salli
-              </div>
-            </div>
-          </div>
-          <div className="relative h-[330px] w-[256px] overflow-hidden rounded-3xl shadow-[0_36px_70px_-30px_rgba(22,19,15,.5)]">
-            <Image
-              src="https://images.unsplash.com/photo-1681825984459-47ee999da245?q=80&w=900&auto=format&fit=crop"
-              alt="Managing money on a phone"
-              fill
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-linear-to-b from-transparent to-ink/62" />
-            <div className="absolute bottom-3.75 left-3.75 font-mono text-[11px] tracking-[.06em] text-cream">
-              Banking in hand
-            </div>
-          </div>
+        <div className="flex items-start justify-center gap-5.5">
+          <PhoneFrame src="/screens/mobile-home-real.png" alt="Salli mobile app home screen showing net worth, income, expenses, and accounts" width={210} />
+          <PhoneFrame src="/screens/mobile-fi-real.png" alt="Salli mobile app Freedom screen showing freedom number and years to freedom" width={210} className="mt-9" />
         </div>
       </section>
 
@@ -499,7 +549,7 @@ export default function HomePage() {
         <FaqAccordion faqs={FAQS} />
         <p className="mt-7 font-mono text-[11.5px] leading-[1.7] tracking-[.02em] text-ink-40">
           Salli is not a licensed financial or investment advisor. Tools, clarity, and tax
-          computation — not personalized investment advice or promised returns.
+          computation: not personalized investment advice or promised returns.
         </p>
       </section>
 

@@ -80,6 +80,12 @@ const ACCT_ICON: Record<string, LucideIcon> = {
 const ACCT_FILTERS = ["All", "Asset", "Liability", "Income", "Expense"] as const;
 const ENTRY_FILTERS = ["All", "Income", "Expense", "Manual", "Statement"] as const;
 
+const TAB_LABELS: Record<string, string> = {
+  accounts: "Chart of Accounts",
+  entries: "Journal Entries",
+  income: "Income Statement",
+};
+
 /** "Today — 15 Jul 2026" / "Yesterday — …" / "12 Jul 2026" for a date group. */
 function dateGroupLabel(iso: string): string {
   const d = new Date(iso);
@@ -205,6 +211,7 @@ export default function LedgerPage() {
       <PageHeader
         title="Ledger"
         subtitle={`Double-entry accounting · YA ${ay.label}`}
+        breadcrumbTab={TAB_LABELS[tab]}
         actions={
           <>
             <Button
@@ -232,7 +239,7 @@ export default function LedgerPage() {
       />
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
+        <TabsList id="tour-ledger-tabs">
           <TabsTrigger value="accounts">Chart of Accounts</TabsTrigger>
           <TabsTrigger value="entries">Journal Entries</TabsTrigger>
           <TabsTrigger value="income">Income Statement</TabsTrigger>
@@ -470,7 +477,7 @@ export default function LedgerPage() {
               );
             })}
           </div>
-          <div className="rounded-lg bg-[#0A2540] text-white px-5 py-4 flex items-center justify-between">
+          <div className="rounded-lg bg-[var(--emphasis)] text-white px-5 py-4 flex items-center justify-between">
             <p className="eyebrow text-white/60">Net Income</p>
             <p className="money text-[24px] font-semibold text-[var(--status-success-text)]">
               LKR {formatMoney(stmt?.net_income)}

@@ -2,46 +2,36 @@ import Link from "next/link";
 import { metricLabel, type UsageMetric } from "@/hooks/useBilling";
 import { cn } from "@/lib/utils";
 
-/** One metered quota row: label, count, thin bar; amber >80%, red at limit. */
+/** One metered quota row: label, count, and a percentage-used pill —
+ * neutral by default, amber >80%, red at limit. */
 export function UsageMeter({ metric }: { metric: UsageMetric }) {
   const pct = metric.limit > 0 ? Math.min(100, (metric.used / metric.limit) * 100) : 0;
   const atLimit = metric.limit > 0 && metric.used >= metric.limit;
   const nearLimit = !atLimit && pct >= 80;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
+    <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/60 px-3 py-2.5">
+      <div>
         <span className="text-[13px] font-medium">{metricLabel(metric.metric)}</span>
-        <span className="money text-[13px] text-muted-foreground">
+        <p className="money text-xs text-muted-foreground mt-0.5">
           {metric.used} / {metric.limit}
-          {atLimit && (
-            <span className="ml-2 rounded-full bg-[var(--status-danger-bg)] text-[var(--status-danger-text)] px-2 py-0.5 text-[11px] font-semibold">
-              limit reached
-            </span>
-          )}
-          {nearLimit && (
-            <span className="ml-2 rounded-full bg-[var(--status-warning-bg)] text-[var(--status-warning-text)] px-2 py-0.5 text-[11px] font-semibold">
-              {Math.round(pct)}%
-            </span>
-          )}
-        </span>
+        </p>
       </div>
-      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-        <div
-          className={cn(
-            "h-full rounded-full transition-[width]",
-            atLimit
-              ? "bg-[var(--status-danger-text)]"
-              : nearLimit
-                ? "bg-[var(--status-warning-text)]"
-                : "bg-foreground"
-          )}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
+      <span
+        className={cn(
+          "rounded-full px-2.5 py-1 text-[11px] font-semibold shrink-0",
+          atLimit
+            ? "bg-[var(--status-danger-bg)] text-[var(--status-danger-text)]"
+            : nearLimit
+              ? "bg-[var(--status-warning-bg)] text-[var(--status-warning-text)]"
+              : "bg-muted text-muted-foreground"
+        )}
+      >
+        {atLimit ? "Limit reached" : `${Math.round(pct)}%`}
+      </span>
       {atLimit && (
-        <Link href="/settings?upgrade=1" className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 mt-1 inline-block">
-          Upgrade for more →
+        <Link href="/settings?upgrade=1" className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 shrink-0">
+          Upgrade →
         </Link>
       )}
     </div>

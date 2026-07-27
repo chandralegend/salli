@@ -1,6 +1,8 @@
 "use client";
 
+import type { ClientErrorInfo } from "./diagnostics";
 import { create } from "zustand";
+import type { ReactNode } from "react";
 
 interface SalliStore {
   token: string | null;
@@ -85,6 +87,76 @@ export const useScroogePanel = create<ScroogePanelStore>((set) => ({
 
 export { PANEL_MIN_WIDTH };
 
+// ── Page header ───────────────────────────────────────────────────────────────
+
+interface PageHeaderStore {
+  title: string;
+  subtitle: ReactNode;
+  actions: ReactNode;
+  breadcrumbTab: string | null;
+  breadcrumbTabHref: string | null;
+  setHeader: (header: {
+    title: string;
+    subtitle?: ReactNode;
+    actions?: ReactNode;
+    breadcrumbTab?: string | null;
+    breadcrumbTabHref?: string | null;
+  }) => void;
+  clear: () => void;
+}
+
+export const usePageHeader = create<PageHeaderStore>((set) => ({
+  title: "",
+  subtitle: null,
+  actions: null,
+  breadcrumbTab: null,
+  breadcrumbTabHref: null,
+  setHeader: (header) =>
+    set({
+      title: header.title,
+      subtitle: header.subtitle ?? null,
+      actions: header.actions ?? null,
+      breadcrumbTab: header.breadcrumbTab ?? null,
+      breadcrumbTabHref: header.breadcrumbTabHref ?? null,
+    }),
+  clear: () => set({ title: "", subtitle: null, actions: null, breadcrumbTab: null, breadcrumbTabHref: null }),
+}));
+
+// ── Bug report ────────────────────────────────────────────────────────────────
+
+export type BugSeverity = "low" | "medium" | "high" | "blocking";
+
+export type BugReportPrefill = {
+  title?: string;
+  description?: string;
+  severity?: BugSeverity;
+  area?: string;
+  /** Set by an error boundary so the crash detail rides along with the report. */
+  clientError?: ClientErrorInfo | null;
+};
+
+interface BugReportStore {
+  isOpen: boolean;
+  prefill: BugReportPrefill | null;
+  open: (prefill?: BugReportPrefill) => void;
+  close: () => void;
+}
+
+/**
+ * Zustand rather than context so `useBugReport.getState().open({...})` works from
+ * a class component's componentDidCatch and from a Next error.tsx that has no
+ * provider in scope.
+ *
+ * NOTE: the React Query mutation hook is exported as `useSubmitBugReport` from
+ * hooks/useBugReport.ts — this name is taken by the dialog's open/close state.
+ */
+export const useBugReport = create<BugReportStore>((set) => ({
+  isOpen: false,
+  prefill: null,
+  open: (prefill) => set({ isOpen: true, prefill: prefill ?? null }),
+  close: () => set({ isOpen: false, prefill: null }),
+}));
+
 export function getStoredToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("salli_token");
@@ -107,4 +179,14 @@ export function getOnboardingComplete(): boolean {
 export function setOnboardingComplete(): void {
   if (typeof window === "undefined") return;
   localStorage.setItem("salli_onboarding_complete", "true");
+}
+
+export function getTourComplete(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("salli_tour_complete") === "true";
+}
+
+export function setTourComplete(): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("salli_tour_complete", "true");
 }

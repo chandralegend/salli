@@ -21,12 +21,15 @@ export type TaxResult = {
   regular_income: string;
   taxable_income: string;
   personal_relief: string;
+  qp_deduction: string;
   fsi_tax: string;
   total_tax: string;
   credits: { apit: string; ait: string; ftc: string };
   tax_payable: string;
   bands: TaxBand[];
   currency: string;
+  pack_country: string;
+  rounding: string;
 };
 
 /** A versioned tax pack `(country, year, version)`. `return_due` is "MM-DD". */
@@ -69,6 +72,7 @@ function normalize(raw: Record<string, any>): TaxResult {
     regular_income: fmt(raw.regular_income),
     taxable_income: fmt(raw.taxable_income),
     personal_relief: fmt(raw.personal_relief_applied),
+    qp_deduction: fmt(raw.qp_deduction),
     fsi_tax: fmt(raw.fsi_tax),
     total_tax: fmt(raw.tax_before_credits),
     credits: {
@@ -79,6 +83,8 @@ function normalize(raw: Record<string, any>): TaxResult {
     tax_payable: fmt(raw.tax_payable),
     bands,
     currency: "LKR",
+    pack_country: raw.pack_country ?? "LK",
+    rounding: raw.rounding ?? "nearest_rupee",
   };
 }
 

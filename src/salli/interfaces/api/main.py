@@ -8,6 +8,7 @@ routing, CORS, error handling, and the lifespan startup/shutdown.
 
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
@@ -16,6 +17,7 @@ from fastapi.responses import JSONResponse
 
 from salli.config import get_settings
 from salli.interfaces.api.deps import get_services
+from salli.interfaces.api.request_context import RequestContextMiddleware
 from salli.interfaces.api.routers import (
     accounts,
     advisor,
@@ -23,12 +25,14 @@ from salli.interfaces.api.routers import (
     auth,
     billing,
     budget,
+    bug_reports,
     debt,
     documents,
     entries,
     fi,
     insurance,
     ledger,
+    mcp_oauth,
     onboarding,
     portfolio,
     reminders,
@@ -41,8 +45,6 @@ from salli.interfaces.api.routers import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    import logging
-
     log = logging.getLogger(__name__)
     settings = get_settings()
 
@@ -66,9 +68,29 @@ async def lifespan(app: FastAPI):
 
     # ── Warm the DB connection pool ───────────────────────────────────────────
     svc = get_services()
-    _ = svc
 
-    yield
+    # ── MCP server ─────────────────────────────────────────────────────────────
+    # FastMCP's session_manager owns its own task group tied to its lifespan —
+    # it must be entered here, in the app's own lifespan, rather than relying on
+    # the Starlette app streamable_http_app() builds internally (mounting alone
+    # does not forward lifespan events to a mounted sub-application), or every
+    # request throws "Task group is not initialized".
+    from salli.interfaces.api.mcp_server import build_mcp_server
+
+    mcp_server = build_mcp_server(svc, issuer_url=settings.mcp_public_base_url.rstrip("/"))
+    # Mounted at root, not "/mcp": FastMCP's own streamable_http_path default
+    # ("/mcp") already puts the real route at exactly /mcp with no trailing
+    # slash, matching the resource URL we advertise everywhere. Mounting at
+    # "/mcp" too would put the route at /mcp/ instead, and a bare /mcp request
+    # (what every real client sends) would 307-redirect there instead of being
+    # served directly — several MCP/OAuth clients don't follow that redirect
+    # on a POST, surfacing as an opaque "couldn't refresh actions" failure.
+    # This mount is added last, after every other router, so it only ever
+    # catches requests no other route matched.
+    app.mount("/", mcp_server.streamable_http_app())
+
+    async with mcp_server.session_manager.run():
+        yield
 
     # ── Teardown ──────────────────────────────────────────────────────────────
     if checkpointer_ctx is not None:
@@ -81,6 +103,14 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     settings = get_settings()
 
+    # The first and only place logging is configured. Guarded because every API
+    # test builds a fresh app, and re-running basicConfig would stack handlers.
+    if not logging.getLogger().handlers:
+        logging.basicConfig(
+            level=getattr(logging, settings.log_level.upper(), logging.INFO),
+            format="%(asctime)s %(levelname)s %(name)s %(message)s",
+        )
+
     app = FastAPI(
         title="Salli API",
         description="Privacy-first personal finance & tax for Sri Lanka",
@@ -90,6 +120,13 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # ── Request correlation ───────────────────────────────────────────────────
+    # Registered BEFORE CORS so that CORS ends up outermost: add_middleware
+    # inserts at index 0, so the last-added middleware wraps the earlier ones.
+    # The 500 JSON body this produces has to pass back out through CORS, or the
+    # browser cannot read it and the request id never reaches the user.
+    app.add_middleware(RequestContextMiddleware)
+
     # ── CORS ──────────────────────────────────────────────────────────────────
     origins = ["*"] if settings.environment == "development" else settings.allowed_origins
     app.add_middleware(
@@ -98,6 +135,9 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        # allow_headers already permits the client to *send* this; expose_headers
+        # is what lets browser JS *read* it off the response.
+        expose_headers=["X-Request-Id"],
     )
 
     # ── Routers ───────────────────────────────────────────────────────────────
@@ -115,11 +155,14 @@ def create_app() -> FastAPI:
     app.include_router(fi.router)
     app.include_router(advisor.router)
     app.include_router(budget.router)
+    app.include_router(bug_reports.router)
     app.include_router(debt.router)
     app.include_router(portfolio.router)
     app.include_router(subscriptions.router)
     app.include_router(insurance.router)
     app.include_router(reports.router)
+    app.include_router(mcp_oauth.router)
+    app.include_router(mcp_oauth.connections_router)
 
     # ── Exception handlers ────────────────────────────────────────────────────
     @app.exception_handler(ValueError)

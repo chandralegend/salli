@@ -57,7 +57,7 @@ export default function DashboardScreen() {
           light canvas (no gradient) and its text uses theme tokens instead. */}
       {isDark ? (
         <LinearGradient
-          colors={["#0B20E0", "#0912B0", "#060A6A", "#020518", "#000000"]}
+          colors={["#F97316", "#c85a0f", "#6b3212", "#16130f", "#000000"]}
           locations={[0, 0.28, 0.52, 0.78, 1]}
           style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400 }}
         />
@@ -141,7 +141,7 @@ export default function DashboardScreen() {
             />
             <StatTile
               onDark={isDark}
-              label="FI Score"
+              label="Freedom Score"
               value={
                 fiScore ? (
                   <Text className="font-sans-bold text-[24px] tracking-tight text-foreground">

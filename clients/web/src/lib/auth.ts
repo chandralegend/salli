@@ -1,5 +1,6 @@
 "use client";
 
+import { recordFailure } from "./diagnostics";
 import { useEffect } from "react";
 import { useSalliStore, getStoredToken, setStoredToken, getOnboardingComplete, setOnboardingComplete } from "./store";
 import { getSupabase, isSupabaseConfigured } from "./supabase";
@@ -113,6 +114,15 @@ export async function resolvePostLoginRoute(token: string): Promise<string> {
     }
     return "/onboarding";
   } catch {
+    // Recorded rather than silently swallowed: a failure here silently changes
+    // where the user lands after login, which is otherwise invisible in a report.
+    recordFailure({
+      via: "fetch",
+      method: "GET",
+      status: 0,
+      path_template: "/onboarding/status",
+      request_id: null,
+    });
     return "/dashboard"; // network error — don't block the app
   }
 }

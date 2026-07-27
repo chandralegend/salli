@@ -1,30 +1,43 @@
 "use client";
 
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
+import { AppHeader } from "./AppHeader";
+import { AskSalliFab } from "@/components/chat/AskSalliFab";
 import { ChatDrawer } from "@/components/chat/ChatDrawer";
+import { BugReportDialog } from "@/components/support/BugReportDialog";
 import { useScroogePanel } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { APP_CONTAINER_CLASS } from "./appContainer";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { isOpen, isFullPage, width } = useScroogePanel();
+  const { isOpen, isFullPage, close } = useScroogePanel();
   const drawerVisible = isOpen && !isFullPage;
 
   return (
-    <div className="min-h-screen bg-background">
+    <SidebarProvider>
       <AppSidebar />
-      <div
-        className={cn("md:pl-16 transition-[padding] duration-200")}
-        style={drawerVisible ? { paddingRight: width } : undefined}
-      >
-        <div className="relative max-w-[1200px] mx-auto px-5 sm:px-8 py-8 pb-28 md:pb-12">
-          {/* Subtle dim while the drawer is open — content stays visible */}
-          {drawerVisible && (
-            <div className="absolute inset-0 z-30 bg-black/10 dark:bg-black/30 rounded-lg pointer-events-none" />
-          )}
-          {children}
-        </div>
-      </div>
+      <SidebarInset>
+        <AppHeader />
+        {/* No client error boundary here: Next's own boundary from
+            (app)/error.tsx wraps the page, which makes it nested *inside*
+            anything mounted at this level, so it always catches a page crash
+            first. It also handles server-render errors, which a client class
+            boundary cannot see at all. */}
+        <div className={cn(APP_CONTAINER_CLASS, "relative py-6 pb-24")}>{children}</div>
+      </SidebarInset>
+
+      {/* Full-viewport scrim while the docked chat panel is open — click to dismiss */}
+      {drawerVisible && (
+        <div
+          onClick={close}
+          aria-hidden
+          className="fixed inset-0 z-40 bg-black/40 dark:bg-black/60 transition-opacity"
+        />
+      )}
       <ChatDrawer />
-    </div>
+      <AskSalliFab />
+      <BugReportDialog />
+    </SidebarProvider>
   );
 }

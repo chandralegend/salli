@@ -47,7 +47,7 @@ import { cn } from "@/lib/utils";
 const TABS = ["Overview", "Strategy", "Goals", "Mentor"] as const;
 
 /** Distinct-but-on-brand colours for allocation pie segments. */
-const PIE_COLORS = ["#2563EB", "#60A5FA", "#1E40AF", "#93C5FD", "#3B82F6", "#1D4ED8", "#BFDBFE"];
+const PIE_COLORS = ["#16130f", "#b7b1a5", "#4b463d", "#e4e0d6", "#6b6459", "#2c2822", "#8c877c"];
 
 const GOAL_ICON: Record<string, LucideIcon> = {
   emergency_fund: Wallet,
@@ -62,6 +62,7 @@ const GOAL_ICON: Record<string, LucideIcon> = {
 /** Portfolio-projection line chart (mockup's Strategy hero): three engine
  * series (growth/base/conservative) plus a dashed FIRE-target line. */
 function ProjectionChart({ projections }: { projections: FiProjections }) {
+  const colors = useThemeColors();
   const W = 320;
   const H = 90;
   const pad = 8;
@@ -79,7 +80,7 @@ function ProjectionChart({ projections }: { projections: FiProjections }) {
       <Line x1={0} y1={targetY} x2={W} y2={targetY} stroke="rgba(255,255,255,0.25)" strokeWidth={1} strokeDasharray="3 3" />
       <Polyline points={line("conservative")} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={2} strokeDasharray="4 3" strokeLinejoin="round" />
       <Polyline points={line("base")} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={2} strokeDasharray="4 3" strokeLinejoin="round" />
-      <Polyline points={line("growth")} fill="none" stroke="#2563EB" strokeWidth={2.5} strokeLinejoin="round" />
+      <Polyline points={line("growth")} fill="none" stroke={colors.accent} strokeWidth={2.5} strokeLinejoin="round" />
     </Svg>
   );
 }
@@ -135,6 +136,7 @@ function ProgressBar({ pct }: { pct: number }) {
 /** Conic-style progress ring (mockup's FI Score badge): a thin accent arc that
  * fills to `score`%, with the integer score centered in the hole. */
 function ScoreRing({ score }: { score: number }) {
+  const colors = useThemeColors();
   const size = 48;
   const sw = 6;
   const r = (size - sw) / 2;
@@ -148,7 +150,7 @@ function ScoreRing({ score }: { score: number }) {
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke="#2563EB"
+          stroke={colors.accent}
           strokeWidth={sw}
           fill="none"
           strokeDasharray={`${c * pct} ${c}`}
@@ -299,7 +301,7 @@ export default function FinancialIndependenceScreen() {
   return (
     <PageShell>
       <View className="flex-row items-center px-5 pb-1 pt-2.5">
-        <Text className="flex-1 font-sans-bold text-[20px] text-foreground">Financial Independence</Text>
+        <Text className="flex-1 font-sans-bold text-[20px] text-foreground">Freedom</Text>
         <Info size={18} color={colors.mutedForeground} strokeWidth={2} />
       </View>
 
@@ -367,7 +369,7 @@ export default function FinancialIndependenceScreen() {
           <View className="flex-row gap-2">
             <Card className="flex-1 p-3.5">
               <View className="mb-1.5 flex-row items-center gap-1.5">
-                <Text className="text-[11px] font-sans-medium text-foreground/40">Years to FI</Text>
+                <Text className="text-[11px] font-sans-medium text-foreground/40">Years to Freedom</Text>
                 <Info size={11} color="rgba(255,255,255,0.2)" strokeWidth={2} />
               </View>
               <Text className="mb-1 font-sans-extrabold text-[28px] leading-[28px] tracking-tight text-foreground">
@@ -407,7 +409,7 @@ export default function FinancialIndependenceScreen() {
             <View className="mb-3 flex-row items-center justify-between">
               <View>
                 <View className="flex-row items-center gap-1.5">
-                  <Text className="font-sans-semibold text-[14px] text-foreground">FI Score</Text>
+                  <Text className="font-sans-semibold text-[14px] text-foreground">Freedom Score</Text>
                   <Info size={12} color="rgba(255,255,255,0.25)" strokeWidth={2} />
                 </View>
                 {fiScore.data?.grade ? (
@@ -456,7 +458,7 @@ export default function FinancialIndependenceScreen() {
               <ProjectionChart projections={projections.data} />
               <View className="mt-2.5 flex-row items-center gap-3">
                 {[
-                  { c: "#2563EB", l: "Growth" },
+                  { c: colors.accent, l: "Growth" },
                   { c: "rgba(255,255,255,0.4)", l: "Base" },
                   { c: "rgba(255,255,255,0.2)", l: "Conservative" },
                 ].map((x) => (
@@ -465,7 +467,7 @@ export default function FinancialIndependenceScreen() {
                     <Text className="text-[10px] text-white/50">{x.l}</Text>
                   </View>
                 ))}
-                <Text className="flex-1 text-right text-[10px] text-white/30">- - FIRE target</Text>
+                <Text className="flex-1 text-right text-[10px] text-white/30">- - Freedom target</Text>
               </View>
             </View>
           ) : null}
@@ -524,11 +526,11 @@ export default function FinancialIndependenceScreen() {
                       <View className="mb-2.5 border-t border-foreground/[0.06] pt-2.5">
                         <Markdown
                           style={{
-                            body: { color: "rgba(200,200,200,0.75)", fontSize: 12, lineHeight: 18, fontFamily: "Inter_400Regular" },
-                            heading1: { color: colors.foreground, fontFamily: "Inter_700Bold", fontSize: 13, marginTop: 4, marginBottom: 2 },
-                            heading2: { color: colors.foreground, fontFamily: "Inter_600SemiBold", fontSize: 12, marginTop: 4, marginBottom: 2 },
-                            heading3: { color: colors.foreground, fontFamily: "Inter_600SemiBold", fontSize: 12, marginTop: 3, marginBottom: 1 },
-                            strong: { color: colors.foreground, fontFamily: "Inter_600SemiBold" },
+                            body: { color: "rgba(200,200,200,0.75)", fontSize: 12, lineHeight: 18, fontFamily: "Archivo_400Regular" },
+                            heading1: { color: colors.foreground, fontFamily: "Archivo_700Bold", fontSize: 13, marginTop: 4, marginBottom: 2 },
+                            heading2: { color: colors.foreground, fontFamily: "Archivo_600SemiBold", fontSize: 12, marginTop: 4, marginBottom: 2 },
+                            heading3: { color: colors.foreground, fontFamily: "Archivo_600SemiBold", fontSize: 12, marginTop: 3, marginBottom: 1 },
+                            strong: { color: colors.foreground, fontFamily: "Archivo_600SemiBold" },
                             bullet_list: { marginTop: 2 },
                             list_item: { marginVertical: 1 },
                           }}
@@ -560,7 +562,7 @@ export default function FinancialIndependenceScreen() {
         <View className="gap-3 px-4 pt-3.5">
           <Card className="p-4">
             <View className="mb-2 flex-row items-center justify-between">
-              <Text className="font-sans-semibold text-[14px] text-foreground">FI Mentor</Text>
+              <Text className="font-sans-semibold text-[14px] text-foreground">Freedom Mentor</Text>
               {runAdvisor.isPending ? <ActivityIndicator color={colors.accent} /> : null}
             </View>
             {advisorReport.data ? (
@@ -584,7 +586,7 @@ export default function FinancialIndependenceScreen() {
               </Text>
             )}
             <PillButton variant="secondary" loading={runAdvisor.isPending} onPress={() => runAdvisor.mutate()}>
-              {advisorReport.data ? "Re-run FI Mentor" : "Run FI Mentor"}
+              {advisorReport.data ? "Re-run Freedom Mentor" : "Run Freedom Mentor"}
             </PillButton>
             {isQuotaError(runAdvisor.error) ? (
               <QuotaBanner metric="advisor_runs" className="mt-3" />

@@ -255,6 +255,7 @@ type CreditRow = {
 };
 
 function DeductionsTab({ data }: { data: TaxComputationFull }) {
+  const colors = useThemeColors();
   const relief = Number(data.personal_relief_applied);
   const apit = Number(data.apit_credit);
   const ait = Number(data.ait_credit);
@@ -321,7 +322,7 @@ function DeductionsTab({ data }: { data: TaxComputationFull }) {
         <Card className="flex-row items-center gap-2.5 p-3.5">
           <View className="h-10 w-[3px] rounded-pill bg-salli-accent" />
           <View className="h-9 w-9 items-center justify-center rounded-[10px] border border-salli-accent/15 bg-salli-accent/10">
-            <User size={15} color="#2563EB" strokeWidth={2} />
+            <User size={15} color={colors.accent} strokeWidth={2} />
           </View>
           <View className="flex-1">
             <Text className="font-sans-semibold text-[13px] text-foreground">Statutory Personal Relief</Text>
@@ -351,7 +352,7 @@ function DeductionsTab({ data }: { data: TaxComputationFull }) {
                   active ? "border border-salli-accent/15 bg-salli-accent/10" : "bg-foreground/[0.05]",
                 )}
               >
-                <c.Icon size={15} color={active ? "#2563EB" : "rgba(148,163,184,0.7)"} strokeWidth={2} />
+                <c.Icon size={15} color={active ? colors.accent : "rgba(148,163,184,0.7)"} strokeWidth={2} />
               </View>
               <View className="flex-1">
                 <Text className={cn("font-sans-semibold text-[13px]", active ? "text-foreground" : "text-foreground/50")}>

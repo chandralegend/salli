@@ -27,9 +27,17 @@ class Plan:
     name: str
     description: str
     monthly_price_usd: float  # display only; Paddle is source of truth for charging
-    limits: dict[str, int]    # metric -> monthly allowance
+    limits: dict[str, int]  # metric -> monthly allowance
     features: list[str] = field(default_factory=list)
     paid: bool = False
+    # Content-depth entitlements — distinct from `limits` above. `limits` are
+    # usage counters that reset monthly; these govern how much of a single
+    # response's payload is visible, enforced by domain/billing/content_gating.py
+    # from the interface layer. Defaults match Free, so a future plan added
+    # without specifying these degrades to "most restricted," not "unlocked."
+    fi_scenario_limit: int = 1
+    advisor_recommendation_limit: int | None = 2
+    fire_rationale_visible: bool = False
     yearly_price_usd: float = 0.0  # display only; 0 = no annual price offered
 
 
@@ -47,6 +55,9 @@ PLANS: dict[str, Plan] = {
             "3 statement uploads / month",
             "3 wealth-advisor runs / month (manual)",
         ],
+        fi_scenario_limit=1,
+        advisor_recommendation_limit=2,
+        fire_rationale_visible=False,
     ),
     "plus": Plan(
         key="plus",
@@ -62,7 +73,12 @@ PLANS: dict[str, Plan] = {
             "50 statement uploads / month",
             "Web search & document management",
             "Daily wealth advisor (FI score + recommendations)",
+            "Connect Claude, ChatGPT, and other MCP clients",
+            "Full FIRE scenarios, AI rationale & all advisor recommendations",
         ],
+        fi_scenario_limit=3,
+        advisor_recommendation_limit=None,
+        fire_rationale_visible=True,
     ),
     "pro": Plan(
         key="pro",
@@ -70,7 +86,11 @@ PLANS: dict[str, Plan] = {
         description="For power users and professionals with heavy AI use.",
         monthly_price_usd=29.0,
         yearly_price_usd=200.0,
-        limits={METRIC_AGENT_MESSAGES: 5000, METRIC_STATEMENT_UPLOADS: 500, METRIC_ADVISOR_RUNS: 150},
+        limits={
+            METRIC_AGENT_MESSAGES: 5000,
+            METRIC_STATEMENT_UPLOADS: 500,
+            METRIC_ADVISOR_RUNS: 150,
+        },
         paid=True,
         features=[
             "Everything in Plus",
@@ -78,7 +98,11 @@ PLANS: dict[str, Plan] = {
             "500 statement uploads / month",
             "Priority model access",
             "Daily wealth advisor + more runs",
+            "Connect Claude, ChatGPT, and other MCP clients",
         ],
+        fi_scenario_limit=3,
+        advisor_recommendation_limit=None,
+        fire_rationale_visible=True,
     ),
 }
 

@@ -76,7 +76,7 @@ export function BudgetEditor({
   return (
     <div className="space-y-6">
       {/* Hero — total allocation */}
-      <div className="rounded-lg bg-[#0A2540] text-white p-6">
+      <div className="rounded-lg bg-[var(--emphasis)] text-white p-6">
         <p className="eyebrow text-white/60">Monthly limit</p>
         <div className="flex items-end justify-between gap-4 mt-2">
           <p className="money text-[36px] leading-none font-semibold">LKR {formatMoney(String(allocated), 0)}</p>
@@ -143,9 +143,13 @@ export function BudgetEditor({
                     <Icon className="size-4 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium truncate block">{a.name}</span>
-                    <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${share}%` }} />
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium truncate">{a.name}</span>
+                      {value > 0 && (
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground shrink-0">
+                          {Math.round(share)}%
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">

@@ -40,6 +40,7 @@ import { formatMoney, formatCompact } from "@/lib/format";
 const FILTERS = ["All", "Active", "Paid Off"] as const;
 type Filter = (typeof FILTERS)[number];
 const EXTRA_PRESETS = [0, 5000, 10000, 25000, 50000];
+const TAB_LABELS: Record<string, string> = { overview: "Overview", strategy: "Strategy", schedule: "Schedule" };
 
 /** APR is a fraction (0.24); show it as a percent. */
 function pct(fraction: string | number, dp = 1): string {
@@ -151,6 +152,7 @@ export default function DebtPage() {
       <PageHeader
         title="Debt"
         subtitle="Track loans and plan a payoff · avalanche or snowball"
+        breadcrumbTab={!empty ? TAB_LABELS[tab] : undefined}
         actions={
           <Button onClick={openAdd}>
             <Plus className="size-4" /> Add debt
@@ -420,7 +422,7 @@ export default function DebtPage() {
 
           {/* ── Schedule ── */}
           <TabsContent value="schedule" className="mt-4 space-y-4">
-            <div className="rounded-lg bg-[#0A2540] px-5 py-4 text-white">
+            <div className="rounded-lg bg-[var(--emphasis)] px-5 py-4 text-white">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="eyebrow text-white/60">Debt-Free Date</p>

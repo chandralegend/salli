@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { TriangleAlert } from "lucide-react";
 import {
   CartesianGrid,
   Line,
@@ -46,13 +48,24 @@ function ChartTooltip({
   );
 }
 
-/** 15-year portfolio projection: 3 scenario lines + dashed FIRE-target rule. */
-export function ProjectionChart({ points, fiNumber }: { points: ProjectionPoint[]; fiNumber: string }) {
+/** 15-year portfolio projection: up to 3 scenario lines + dashed FIRE-target rule.
+ * Scenarios in `lockedScenarios` are nulled server-side (never sent), so they're
+ * simply left out of the chart/legend rather than blurred client-side. */
+export function ProjectionChart({
+  points,
+  fiNumber,
+  lockedScenarios = [],
+}: {
+  points: ProjectionPoint[];
+  fiNumber: string;
+  lockedScenarios?: string[];
+}) {
+  const visibleSeries = SERIES.filter((s) => !lockedScenarios.includes(s.key));
   const data = points.map((p) => ({
     year: p.year,
-    conservative: Number(p.conservative),
+    conservative: p.conservative != null ? Number(p.conservative) : undefined,
     base: Number(p.base),
-    growth: Number(p.growth),
+    growth: p.growth != null ? Number(p.growth) : undefined,
   }));
   const target = Number(fiNumber);
 
@@ -60,13 +73,27 @@ export function ProjectionChart({ points, fiNumber }: { points: ProjectionPoint[
     <div>
       {/* Legend — identity is never color-alone; labels sit right here */}
       <div className="flex items-center gap-4 justify-end mb-2">
-        {SERIES.map((s) => (
+        {visibleSeries.map((s) => (
           <span key={s.key} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="w-3 h-0.5 rounded-full inline-block" style={{ background: s.color }} />
             {s.label}
           </span>
         ))}
       </div>
+      {lockedScenarios.length > 0 && (
+        <div className="mb-2 flex items-center gap-2 rounded-md bg-[var(--status-warning-bg)] px-3 py-2 text-[13px] text-[var(--status-warning-text)]">
+          <TriangleAlert className="size-4 shrink-0" />
+          <span>
+            {SERIES.filter((s) => lockedScenarios.includes(s.key))
+              .map((s) => s.label)
+              .join(" & ")}{" "}
+            scenario{lockedScenarios.length > 1 ? "s" : ""} locked ·{" "}
+            <Link href="/settings?upgrade=plus" className="font-semibold underline underline-offset-2">
+              Unlock on Plus
+            </Link>
+          </span>
+        </div>
+      )}
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 4 }}>
           <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="0" />
@@ -92,14 +119,14 @@ export function ProjectionChart({ points, fiNumber }: { points: ProjectionPoint[
               stroke="var(--chart-3)"
               strokeDasharray="6 4"
               label={{
-                value: `FIRE target LKR ${formatCompact(target)}`,
+                value: `Freedom target LKR ${formatCompact(target)}`,
                 position: "insideBottomRight",
                 fontSize: 11,
                 fill: "var(--muted-foreground)",
               }}
             />
           )}
-          {SERIES.map((s) => (
+          {visibleSeries.map((s) => (
             <Line
               key={s.key}
               type="monotone"

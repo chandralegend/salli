@@ -116,8 +116,14 @@ class DocumentService:
     ) -> dict[str, Any]:
         """Upload bytes to StoragePort and record metadata as an agent document."""
         doc_id = str(uuid.uuid4())
-        storage_key = f"agent-uploads/{user_id}/{doc_id}/{filename}"
-        await self._storage.upload(user_id, storage_key, file_bytes)
+        # Store the path upload() *returns*, not the key we passed in: both adapters
+        # prefix the key with {user_id}, and download() expects that full returned
+        # path. Building the key by hand here meant every uploaded file was recorded
+        # under a location nothing had written to, so get_file_as_base64 could never
+        # read one back. parsing_service.py does this correctly — match it.
+        storage_key = await self._storage.upload(
+            user_id, f"agent-uploads/{doc_id}/{filename}", file_bytes
+        )
         async with self._uow_factory() as uow:
             uow: UnitOfWork
             await uow.agent_documents.save(

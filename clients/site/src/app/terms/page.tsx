@@ -12,7 +12,7 @@ export default function TermsPage() {
     <LegalLayout title="Terms of Service" updated="9 July 2026">
       <p>
         These Terms of Service (&ldquo;<strong>Terms</strong>&rdquo;) govern your access to and use
-        of Salli — the ledger, tax, and financial-independence product operated by Salli
+        of Salli, the ledger, tax, and financial-independence product operated by Salli
         (&ldquo;<strong>Salli</strong>&rdquo;, &ldquo;<strong>we</strong>&rdquo;, &ldquo;<strong>us</strong>&rdquo;). By creating an account or using the
         service, you agree to these Terms. If you don&apos;t agree, please don&apos;t use Salli.
       </p>
@@ -56,7 +56,7 @@ export default function TermsPage() {
       <p>
         Scrooge is an AI agent built on third-party large language models. It can read and
         summarise your ledger data and answer questions, but it does not perform the arithmetic
-        that produces your tax, net-worth, or FIRE figures — those numbers always come from
+        that produces your tax, net-worth, or FIRE figures: those numbers always come from
         Salli&apos;s deterministic engine. Treat the assistant&apos;s explanations as guidance, not
         instructions to act on without your own judgement. Any action the assistant proposes that
         would write to your ledger requires your explicit approval before it happens.

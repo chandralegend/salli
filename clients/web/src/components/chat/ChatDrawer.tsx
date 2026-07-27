@@ -462,7 +462,7 @@ export function ChatDrawer() {
     <div
       suppressHydrationWarning
       className={cn(
-        "fixed z-50 flex flex-col overflow-hidden bg-[#0A2540] text-white border-l border-white/10",
+        "fixed z-50 flex flex-col overflow-hidden bg-[var(--emphasis)] text-white border-l border-white/10",
         "transition-transform duration-200 ease-in-out",
         isOpen ? "translate-x-0" : "translate-x-full",
         isFullPage ? "inset-0 md:pl-16" : "inset-y-0 right-0"
@@ -518,7 +518,7 @@ export function ChatDrawer() {
           ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center gap-3 pb-10">
               <div className="size-14 rounded-lg bg-white/10 flex items-center justify-center">
-                <Sparkles className="size-6 text-[var(--status-success-text)]" />
+                <Sparkles className="size-6 text-primary" />
               </div>
               <p className="text-base font-semibold">Ask about your money</p>
               <p className="text-[13px] text-white/60 max-w-60">
@@ -557,7 +557,7 @@ export function ChatDrawer() {
         {/* Composer */}
         <div className="border-t border-white/10 p-3 shrink-0 space-y-2">
           {quotaBlocked && (
-            <div className="flex items-center gap-2 rounded-md bg-[#B45309]/25 px-3 py-2 text-[12px] text-[#FCD34D]">
+            <div className="flex items-center gap-2 rounded-md bg-warning/25 px-3 py-2 text-[12px] text-[var(--status-warning-text)]">
               <TriangleAlert className="size-3.5 shrink-0" />
               <span>
                 Monthly AI messages used up ·{" "}
@@ -626,7 +626,7 @@ export function ChatDrawer() {
               aria-label="Send"
               onClick={send}
               disabled={!input.trim() || streaming || uploadingFiles}
-              className="size-8 shrink-0 rounded-md bg-[var(--status-success-text)] text-[#0A2540] flex items-center justify-center disabled:opacity-40 transition-opacity"
+              className="size-8 shrink-0 rounded-md bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 transition-opacity"
             >
               {streaming || uploadingFiles ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
             </button>

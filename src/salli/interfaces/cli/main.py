@@ -44,6 +44,7 @@ insurance_app = typer.Typer(help="Insurance policy inventory and coverage-gap an
 insurance_policy_app = typer.Typer(help="Insurance policies")
 insurance_target_app = typer.Typer(help="Declared coverage targets")
 reports_app = typer.Typer(help="Exportable statements: balance sheet, net worth, goal progress")
+bug_reports_app = typer.Typer(help="User-submitted bug reports and their tracker push status")
 
 app.add_typer(accounts_app, name="accounts")
 app.add_typer(entry_app, name="entry")
@@ -68,6 +69,7 @@ app.add_typer(insurance_app, name="insurance")
 insurance_app.add_typer(insurance_policy_app, name="policy")
 insurance_app.add_typer(insurance_target_app, name="target")
 app.add_typer(reports_app, name="reports")
+app.add_typer(bug_reports_app, name="bug-reports")
 
 
 def _services():
@@ -2613,3 +2615,61 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ── bug reports ────────────────────────────────────────────────────────────────
+
+
+@bug_reports_app.command("list")
+def bug_reports_list(
+    limit: int = typer.Option(50, "--limit", help="Maximum reports to show"),
+):
+    """List bug reports you filed, with their issue-tracker push status."""
+    user_id = _require_user()
+    reports = asyncio.run(_services().bug_reports.list_reports(user_id, limit))
+    if not reports:
+        console.print("[dim]No bug reports filed.[/dim]")
+        return
+    table = Table(title="Bug Reports")
+    table.add_column("ID", style="dim")
+    table.add_column("Created")
+    table.add_column("Sev")
+    table.add_column("Area")
+    table.add_column("Title")
+    table.add_column("Push")
+    table.add_column("Issue")
+    for r in reports:
+        table.add_row(
+            str(r.get("id", ""))[:8],
+            str(r.get("created_at", ""))[:10],
+            r.get("severity", ""),
+            r.get("area") or "-",
+            str(r.get("title", ""))[:40],
+            r.get("push_status", ""),
+            r.get("jira_issue_key") or "-",
+        )
+    console.print(table)
+
+
+@bug_reports_app.command("retry-push")
+def bug_reports_retry_push(
+    report_id: str = typer.Argument(..., help="Report id to re-push"),
+    user: str = typer.Option(None, "--user", help="Owning user id (defaults to SALLI_USER_ID)"),
+):
+    """
+    Re-attempt the issue-tracker push for a stored report.
+
+    Operator path for a report whose push_status is 'failed' or 'skipped' — e.g.
+    filed before Jira credentials were configured. Keyed on (report_id, user_id)
+    so the repository stays user-scoped on every query.
+    """
+    user_id = user or _require_user()
+    report = asyncio.run(_services().bug_reports.retry_push(user_id, report_id))
+    if report is None:
+        console.print(f"[red]No bug report {report_id} for user {user_id}.[/red]")
+        raise typer.Exit(1)
+    status = report.get("push_status")
+    if status == "sent":
+        console.print(f"[green]Pushed:[/green] {report.get('jira_url')}")
+    else:
+        console.print(f"[yellow]push_status={status}[/yellow] {report.get('push_error') or ''}")

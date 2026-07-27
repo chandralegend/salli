@@ -11,6 +11,7 @@ from typing import Any
 
 from salli.domain.debt import engine
 from salli.domain.debt.models import Debt, PayoffStrategy
+from salli.domain.money import to_minor
 
 
 def _debt_view(d: dict[str, Any]) -> dict[str, Any]:
@@ -33,9 +34,9 @@ class DebtService:
     async def add_debt(self, user_id: str, data: dict[str, Any]) -> str:
         debt = {
             "name": data["name"],
-            "principal_minor": int(Decimal(str(data["principal"])) * 100),
+            "principal_minor": to_minor(Decimal(str(data["principal"]))),
             "apr": str(Decimal(str(data["apr"]))),
-            "minimum_payment_minor": int(Decimal(str(data["minimum_payment"])) * 100),
+            "minimum_payment_minor": to_minor(Decimal(str(data["minimum_payment"]))),
         }
         async with self._uow_factory() as uow:
             return await uow.debts.save(user_id, debt)
@@ -55,11 +56,11 @@ class DebtService:
         if "name" in data:
             updates["name"] = data["name"]
         if "principal" in data:
-            updates["principal_minor"] = int(Decimal(str(data["principal"])) * 100)
+            updates["principal_minor"] = to_minor(Decimal(str(data["principal"])))
         if "apr" in data:
             updates["apr"] = str(Decimal(str(data["apr"])))
         if "minimum_payment" in data:
-            updates["minimum_payment_minor"] = int(Decimal(str(data["minimum_payment"])) * 100)
+            updates["minimum_payment_minor"] = to_minor(Decimal(str(data["minimum_payment"])))
         if "is_active" in data:
             updates["is_active"] = data["is_active"]
         async with self._uow_factory() as uow:

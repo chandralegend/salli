@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -8,6 +9,7 @@ import {
   ChevronDown,
   Landmark,
   Loader2,
+  Lock,
   PiggyBank,
   Plus,
   RefreshCw,
@@ -31,11 +33,13 @@ import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
+import { RadialProgress } from "@/components/shared/RadialProgress";
 import { SectionLabel } from "@/components/shared/SectionLabel";
 import { StatusChip } from "@/components/shared/StatusChip";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { QuotaBanner } from "@/components/shared/QuotaBanner";
 import { ProjectionChart } from "@/components/fi/ProjectionChart";
+import { AllocationDonut } from "@/components/fi/AllocationDonut";
 import { StrategySetup } from "@/components/fi/StrategySetup";
 import {
   useApplyRecommendation,
@@ -50,10 +54,8 @@ import {
   useRecomputeScore,
   useRunAdvisor,
 } from "@/hooks/useFi";
-import { formatCompact, formatMoney } from "@/lib/format";
+import { formatCompact, formatMoney, formatPct, pctValue } from "@/lib/format";
 import { cn } from "@/lib/utils";
-
-const BUCKET_RULES = ["bg-[var(--chart-3)]", "bg-[var(--chart-2)]", "bg-[var(--chart-1)]", "bg-[var(--chart-4)]", "bg-[var(--chart-5)]"];
 
 function AddGoalDialog({
   open,
@@ -172,7 +174,7 @@ export default function FinancialIndependencePage() {
   if (strategy.isLoading) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Financial Independence" subtitle="Loading…" />
+        <PageHeader title="Freedom" subtitle="Loading…" />
         <Skeleton className="h-96" />
       </div>
     );
@@ -183,7 +185,7 @@ export default function FinancialIndependencePage() {
     return (
       <div className="space-y-6">
         <PageHeader
-          title="Financial Independence"
+          title="Freedom"
           subtitle="Design a FIRE strategy from your real numbers"
         />
         <StrategySetup />
@@ -192,14 +194,21 @@ export default function FinancialIndependencePage() {
   }
 
   const fireStyle = s.fire_style[0].toUpperCase() + s.fire_style.slice(1);
-  const yearsToFire =
-    proj?.fire_year_base != null ? String(proj.fire_year_base) : fi?.projected_fi_date ?? "—";
+  // Years only — never fall back to `projected_fi_date`, which is an ISO date
+  // string and rendered as "2039-07-26" inside a 36px numeral slot labelled
+  // "Years to Freedom". Unreachable within the horizon shows as "—".
+  const yearsToFire = proj?.fire_year_base != null ? String(proj.fire_year_base) : "—";
+  // The rate the Freedom Number was actually derived from, so the caption can
+  // never contradict the value again (the card used to pair a 4%-derived figure
+  // with a 3.5% caption).
+  const swrUsed = fi?.swr ?? String(s.swr);
+  const realBaseReturn = proj?.real_returns?.base;
 
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Financial Independence"
-        subtitle={`${fireStyle} FIRE · Strategy v${s.version} · SWR ${(s.swr * 100).toFixed(1)}%`}
+        title="Freedom"
+        subtitle={`${fireStyle} FIRE · Strategy v${s.version} · SWR ${formatPct(swrUsed)}`}
         actions={
           <>
             <Button variant="outline" onClick={() => recompute.mutate()} disabled={recompute.isPending}>
@@ -215,30 +224,43 @@ export default function FinancialIndependencePage() {
         <SectionLabel className="mb-3">Overview</SectionLabel>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            label="FI Number"
+            label="Freedom Number"
             icon={Target}
             loading={score.isLoading}
             value={`LKR ${formatCompact(fi?.fi_number)}`}
-            caption={`${(s.swr * 100).toFixed(1)}% safe withdrawal rate`}
+            caption={`${formatPct(swrUsed)} safe withdrawal rate`}
           />
           <StatCard
-            label="Net Worth"
+            label="Investable Assets"
             icon={Landmark}
             loading={score.isLoading}
-            value={`LKR ${formatCompact(fi?.net_worth)}`}
-            caption={fi ? `${Number(fi.progress_to_fi).toFixed(1)}% of FI number` : undefined}
+            value={`LKR ${formatCompact(fi?.fi_asset_base)}`}
+            caption={
+              fi ? `${formatPct(fi.progress_to_fi)} of Freedom number` : undefined
+            }
           />
-          <StatCard label="Years to FIRE" emphasis loading={projections.isLoading} icon={CalendarClock}>
-            <p className="money text-[44px] font-semibold leading-none">{yearsToFire}</p>
-            <p className="text-xs text-white/60 mt-1.5">base scenario · {(s.return_base * 100).toFixed(0)}% return</p>
+          <StatCard label="Years to Freedom" emphasis loading={projections.isLoading} icon={CalendarClock}>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="money text-[36px] font-semibold leading-none">{yearsToFire}</p>
+                <p className="text-xs text-white/60 mt-1.5">
+                  base · {formatPct(realBaseReturn ?? s.return_base, 1)} real return
+                </p>
+              </div>
+              {fi && (
+                <RadialProgress value={pctValue(fi.progress_to_fi)} size={52} ringWidth={6} />
+              )}
+            </div>
           </StatCard>
           <StatCard
             label="Savings Rate"
             icon={PiggyBank}
             loading={score.isLoading}
-            value={fi ? `${Number(fi.savings_rate).toFixed(1)}%` : "—"}
+            value={formatPct(fi?.savings_rate)}
             badge={
-              fi && Number(fi.savings_rate) >= 40 ? <StatusChip tone="success">above 40% target</StatusChip> : undefined
+              fi && Number(fi.savings_rate) >= 0.4 ? (
+                <StatusChip tone="success">above 40% target</StatusChip>
+              ) : undefined
             }
             caption="monthly surplus ratio"
           />
@@ -248,7 +270,7 @@ export default function FinancialIndependencePage() {
       {/* ── Portfolio projection ── */}
       <section>
         <SectionLabel className="mb-3">Portfolio Projection</SectionLabel>
-        <div className="grid lg:grid-cols-3 gap-4 items-start">
+        <div className="grid lg:grid-cols-3 gap-4 items-stretch">
           <div className="lg:col-span-2 rounded-lg border bg-card p-5">
             <div className="mb-1">
               <h2 className="text-[15px] font-semibold">Portfolio Projection</h2>
@@ -257,7 +279,11 @@ export default function FinancialIndependencePage() {
             {projections.isLoading ? (
               <Skeleton className="h-72 mt-3" />
             ) : proj && proj.points.length > 0 ? (
-              <ProjectionChart points={proj.points} fiNumber={proj.fi_number} />
+              <ProjectionChart
+                points={proj.points}
+                fiNumber={proj.fi_number}
+                lockedScenarios={proj.scenario_access?.locked}
+              />
             ) : (
               <EmptyState
                 icon={TrendingUp}
@@ -267,31 +293,26 @@ export default function FinancialIndependencePage() {
             )}
           </div>
 
-          <StatCard label="FI Score" emphasis loading={score.isLoading} icon={Sparkles}>
+          <StatCard label="Freedom Score" emphasis loading={score.isLoading} icon={Sparkles} className="h-full">
             {fi && (
-              <>
-                <p className="money leading-none">
-                  <span className="text-[44px] font-semibold">{Number(fi.overall_score).toFixed(0)}</span>
-                  <span className="text-white/50 text-base">/100</span>
-                </p>
-                <p className="text-[13px] text-white/70">{fi.grade}</p>
-                <div className="space-y-2.5 mt-2">
+              <div className="flex h-full flex-col">
+                <div className="flex items-center gap-3.5">
+                  <RadialProgress value={Number(fi.overall_score)} size={64} ringWidth={7} />
+                  <div>
+                    <p className="money text-[22px] font-semibold leading-none">{fi.grade}</p>
+                    <p className="text-xs text-white/60 mt-1">{Number(fi.overall_score).toFixed(0)} / 100</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-5 pt-4 border-t border-white/10">
                   {fi.components.map((c) => (
                     <div key={c.key}>
-                      <div className="flex justify-between text-xs text-white/60 mb-1">
-                        <span>{c.label}</span>
-                        <span className="money">{Number(c.score).toFixed(0)}</span>
-                      </div>
-                      <div className="h-1 rounded-full bg-white/15 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-white"
-                          style={{ width: `${Math.min(100, Number(c.score))}%` }}
-                        />
-                      </div>
+                      <p className="text-[11px] text-white/50">{c.label}</p>
+                      <p className="money text-[15px] font-semibold mt-0.5">{Number(c.score).toFixed(0)}</p>
                     </div>
                   ))}
                 </div>
-              </>
+                <p className="text-[11px] text-white/40 mt-auto pt-4">Based on your last 12 months</p>
+              </div>
             )}
           </StatCard>
         </div>
@@ -300,18 +321,7 @@ export default function FinancialIndependencePage() {
       {/* ── Allocation buckets + rationale ── */}
       <section>
         <SectionLabel className="mb-3">Allocation Buckets</SectionLabel>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {s.buckets.map((b, i) => (
-            <div key={b.key} className="rounded-lg border bg-card overflow-hidden">
-              <div className={cn("h-1", BUCKET_RULES[i % BUCKET_RULES.length])} />
-              <div className="p-4">
-                <p className="text-sm font-semibold">{b.name}</p>
-                <p className="money text-xl font-semibold mt-1">{b.target_pct}%</p>
-                <p className="text-xs text-muted-foreground mt-1.5 leading-snug">{b.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <AllocationDonut buckets={s.buckets} />
 
         <Collapsible open={rationaleOpen} onOpenChange={setRationaleOpen} className="mt-4">
           <div className="rounded-lg border bg-card">
@@ -325,11 +335,15 @@ export default function FinancialIndependencePage() {
             >
               <span className="text-sm font-semibold shrink-0">AI Strategy rationale</span>
               <span className="flex flex-wrap gap-1.5">
-                {s.theories_applied.slice(0, 4).map((t) => (
-                  <StatusChip key={t} tone="neutral">
-                    {t}
-                  </StatusChip>
-                ))}
+                {s.theories_applied ? (
+                  s.theories_applied.slice(0, 4).map((t) => (
+                    <StatusChip key={t} tone="neutral">
+                      {t}
+                    </StatusChip>
+                  ))
+                ) : (
+                  <StatusChip tone="neutral">+{s.theories_applied_count ?? 0} theories</StatusChip>
+                )}
               </span>
               <ChevronDown
                 className={cn("size-4 ml-auto shrink-0 text-muted-foreground transition-transform", rationaleOpen && "rotate-180")}
@@ -337,21 +351,48 @@ export default function FinancialIndependencePage() {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="px-4 pb-4 space-y-4">
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 rounded-md border bg-muted/60 divide-x">
                   {[
-                    { label: "Conservative", v: s.return_conservative },
-                    { label: "Base", v: s.return_base },
-                    { label: "Growth", v: s.return_growth },
+                    { label: "Conservative", nominal: s.return_conservative, real: proj?.real_returns?.conservative },
+                    { label: "Base", nominal: s.return_base, real: proj?.real_returns?.base },
+                    { label: "Growth", nominal: s.return_growth, real: proj?.real_returns?.growth },
                   ].map((r) => (
-                    <div key={r.label} className="rounded-md bg-muted/60 border p-3 text-center">
-                      <p className="money text-lg font-semibold">{(r.v * 100).toFixed(0)}%</p>
-                      <p className="text-xs text-muted-foreground">{r.label} return</p>
+                    <div key={r.label} className="p-3 text-center">
+                      <p className="money text-lg font-semibold">{formatPct(r.real ?? r.nominal, 1)}</p>
+                      <p className="text-xs text-muted-foreground">{r.label} real</p>
+                      {/* Show the nominal assumption too — the projection uses the
+                          real rate, and conflating them is what made years-to-FI
+                          look shorter than it is. */}
+                      <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+                        {formatPct(r.nominal, 0)} nominal
+                      </p>
                     </div>
                   ))}
                 </div>
-                <div className="prose-sm text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{s.ai_rationale}</ReactMarkdown>
-                </div>
+                {proj?.expected_inflation && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Projections run in today&apos;s rupees, assuming{" "}
+                    {formatPct(proj.expected_inflation, 1)} long-run inflation.
+                  </p>
+                )}
+                {s.rationale_locked ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground leading-relaxed">{s.rationale_preview}</p>
+                    <div className="flex items-center gap-2 rounded-md bg-[var(--status-warning-bg)] px-3 py-2 text-[13px] text-[var(--status-warning-text)]">
+                      <Lock className="size-4 shrink-0" />
+                      <span>
+                        Read the full AI rationale ·{" "}
+                        <Link href="/settings?upgrade=plus" className="font-semibold underline underline-offset-2">
+                          Upgrade to Plus
+                        </Link>
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="prose-sm text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{s.ai_rationale ?? ""}</ReactMarkdown>
+                  </div>
+                )}
               </div>
             </CollapsibleContent>
           </div>
@@ -361,7 +402,7 @@ export default function FinancialIndependencePage() {
       {/* ── Goals & mentoring ── */}
       <section>
         <SectionLabel className="mb-3">Goals &amp; Mentoring</SectionLabel>
-        <div className="grid lg:grid-cols-2 gap-4 items-start">
+        <div className="grid lg:grid-cols-2 gap-4 items-stretch">
           <div className="rounded-lg border bg-card p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[15px] font-semibold">Goals</h2>
@@ -407,9 +448,9 @@ export default function FinancialIndependencePage() {
             )}
           </div>
 
-          <div className="rounded-lg bg-[#0A2540] text-white p-5">
+          <div className="rounded-lg bg-[var(--emphasis)] text-white p-5">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[15px] font-semibold">FI Mentor</h2>
+              <h2 className="text-[15px] font-semibold">Freedom Mentor</h2>
               <button
                 type="button"
                 onClick={() => runAdvisor.mutate()}
@@ -436,9 +477,18 @@ export default function FinancialIndependencePage() {
                     {report.fire_tier_assessment || report.summary}
                   </p>
                 )}
-                {report.recommendations
-                  .filter((r) => r.status === "pending")
-                  .map((r) => (
+                {report.recommendations.map((r) =>
+                  r.locked ? (
+                    <div key={r.id} className="rounded-md bg-white/[0.04] p-3.5 opacity-70">
+                      <div className="flex items-center gap-1.5">
+                        <Lock className="size-3 text-white/40 shrink-0" />
+                        <p className="text-[13px] font-semibold text-white/70">{r.title}</p>
+                      </div>
+                      <p className="text-[11px] text-white/40 mt-0.5">
+                        Priority {r.priority} · {r.category}
+                      </p>
+                    </div>
+                  ) : r.status === "pending" ? (
                     <div key={r.id} className="rounded-md bg-white/[0.08] p-3.5">
                       <p className="text-[13px] font-semibold">{r.title}</p>
                       <p className="text-[11px] text-white/50 mt-0.5">
@@ -463,8 +513,18 @@ export default function FinancialIndependencePage() {
                         </button>
                       </div>
                     </div>
-                  ))}
-                {report.recommendations.every((r) => r.status !== "pending") && (
+                  ) : null
+                )}
+                {report.recommendations_locked_count > 0 && (
+                  <Link
+                    href="/settings?upgrade=plus"
+                    className="block text-[12px] font-semibold text-white underline underline-offset-2"
+                  >
+                    Unlock {report.recommendations_locked_count} more recommendation
+                    {report.recommendations_locked_count > 1 ? "s" : ""} →
+                  </Link>
+                )}
+                {report.recommendations.filter((r) => !r.locked).every((r) => r.status !== "pending") && (
                   <p className="text-[13px] text-white/60">All recommendations handled. Run again anytime.</p>
                 )}
               </div>

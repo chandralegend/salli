@@ -45,6 +45,7 @@ dependencies = [
     "python-jose[cryptography]>=3.3",
     "httpx>=0.27",
     "python-multipart>=0.0.32",
+    "mcp>=1.28.1",
 ]
 
 [dependency-groups]

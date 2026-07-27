@@ -36,7 +36,7 @@ const TABS = ["Holdings", "Allocation"] as const;
 
 /** Distinct-but-on-brand colours for allocation slices (shared by donut, legend,
  * per-holding accent bars, and asset-class cards so everything reads as one). */
-const SLICE_COLORS = ["#2563EB", "#60A5FA", "#1E40AF", "#93C5FD", "#3B82F6", "#1D4ED8", "#BFDBFE"];
+const SLICE_COLORS = ["#16130f", "#b7b1a5", "#4b463d", "#e4e0d6", "#6b6459", "#2c2822", "#8c877c"];
 
 /** Asset classes the backend accepts (free-form string); these mirror the
  * mockup's New Holding chips. Stored lowercase. */
@@ -402,7 +402,7 @@ export default function PortfolioScreen() {
           className="absolute bottom-28 right-5 h-12 w-12 items-center justify-center rounded-full"
           style={{
             backgroundColor: colors.accent,
-            shadowColor: "#2563EB",
+            shadowColor: colors.accent,
             shadowOpacity: 0.4,
             shadowRadius: 16,
             shadowOffset: { width: 0, height: 4 },

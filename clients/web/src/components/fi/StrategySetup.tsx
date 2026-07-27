@@ -79,7 +79,7 @@ export function StrategySetup() {
       <div className="size-14 rounded-lg bg-muted mx-auto flex items-center justify-center">
         <Sparkles className="size-7 text-muted-foreground" />
       </div>
-      <h2 className="text-[22px] font-semibold mt-5">Generate your FIRE strategy</h2>
+      <h2 className="text-[22px] font-semibold mt-5">Generate your Freedom strategy</h2>
       <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
         Salli analyzes your ledger, income mix, and risk appetite to design allocation buckets
         and a projection. Takes about 30 seconds.

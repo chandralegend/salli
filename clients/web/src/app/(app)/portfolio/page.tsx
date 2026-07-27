@@ -36,6 +36,8 @@ import { cn } from "@/lib/utils";
 
 const titleCase = (s: string) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
+const TAB_LABELS: Record<string, string> = { holdings: "Holdings", allocation: "Allocation" };
+
 export default function PortfolioPage() {
   const { holdings, summary, addHolding, updateHolding, deleteHolding } = usePortfolio();
 
@@ -119,6 +121,7 @@ export default function PortfolioPage() {
       <PageHeader
         title="Portfolio"
         subtitle="Manually-declared holdings · no live market feed"
+        breadcrumbTab={!empty ? TAB_LABELS[tab] : undefined}
         actions={
           !empty ? (
             <Button onClick={openAdd}>
@@ -146,7 +149,7 @@ export default function PortfolioPage() {
       ) : (
         <>
           {/* Value hero */}
-          <div className="rounded-lg bg-[#0A2540] text-white px-6 py-5">
+          <div className="rounded-lg bg-[var(--emphasis)] text-white px-6 py-5">
             <p className="eyebrow text-white/60">Total portfolio value</p>
             <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
               <p className="money text-[40px] leading-none font-semibold">
@@ -367,15 +370,6 @@ export default function PortfolioPage() {
                                   {pct.toFixed(1)}%
                                 </p>
                               </div>
-                            </div>
-                            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${Math.min(100, pct)}%`,
-                                  backgroundColor: color,
-                                }}
-                              />
                             </div>
                             <p className="mt-2 text-[12px] text-muted-foreground">
                               Unrealized gain{" "}

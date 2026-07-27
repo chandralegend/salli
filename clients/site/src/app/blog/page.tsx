@@ -8,7 +8,7 @@ import { getAllPosts } from "@/lib/posts";
 
 export const metadata: Metadata = {
   title: "Blog",
-  description: "Straight-talking guides on Sri Lankan tax, everyday money, and building wealth — no jargon, no guesswork.",
+  description: "Straight-talking guides on Sri Lankan tax, everyday money, and building wealth, no jargon, no guesswork.",
   alternates: { canonical: "/blog" },
 };
 
@@ -29,7 +29,7 @@ export default async function BlogPage() {
           <WordUp delay={0.28}>clarity</WordUp> <WordUp delay={0.38}><Highlight>plainly.</Highlight></WordUp>
         </h1>
         <p className="mt-6.5 max-w-[520px] text-[clamp(17px,1.5vw,20px)] leading-[1.5] text-ink-60">
-          Straight-talking guides on Sri Lankan tax, everyday money, and building wealth — no
+          Straight-talking guides on Sri Lankan tax, everyday money, and building wealth, no
           jargon, no guesswork.
         </p>
       </section>
@@ -42,7 +42,7 @@ export default async function BlogPage() {
             Get the ledger, monthly.
           </h2>
           <p className="mx-auto mt-4 max-w-[460px] text-[16.5px] text-cream/90">
-            One clear email a month on Sri Lankan money and tax. No spam, no hype — unsubscribe
+            One clear email a month on Sri Lankan money and tax. No spam, no hype, and unsubscribe
             anytime.
           </p>
           <form className="mt-7.5 flex flex-wrap justify-center gap-2.5">

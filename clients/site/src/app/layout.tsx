@@ -20,10 +20,10 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["400", "500", "600", "700"],
 });
 
-const TITLE = "Salli — Personal Finance, Tax & FIRE Planning for Sri Lanka";
+const TITLE = "Salli: Personal Finance, Tax & FIRE Planning for Sri Lanka";
 const DESCRIPTION =
   "A real double-entry ledger, a Sri Lanka income tax engine (YA 2025/26, IRD-aligned), "
-  + "and an AI wealth advisor that works from your actual numbers — so you always know "
+  + "and an AI wealth advisor that works from your actual numbers, so you always know "
   + "your tax, your net worth, and how close you are to financial independence.";
 
 export const metadata: Metadata = {
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     url: "https://salli.leafmonkey.org",
     siteName: "Salli",
     locale: "en_LK",
-    images: [{ url: "/screens/web-dashboard.webp", width: 1600, height: 1000, alt: "Salli dashboard — net worth, income, tax payable, and FI score" }],
+    images: [{ url: "/screens/web-dashboard.webp", width: 1600, height: 1000, alt: "Salli dashboard showing net worth, income, tax payable, and FI score" }],
   },
   twitter: {
     card: "summary_large_image",

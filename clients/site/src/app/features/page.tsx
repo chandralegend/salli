@@ -7,10 +7,11 @@ import { Highlight } from "@/components/Highlight";
 import { WordUp } from "@/components/WordUp";
 import { FeatureDeepDive } from "@/components/FeatureDeepDive";
 import { CountUp } from "@/components/CountUp";
+import { TiltCard } from "@/components/TiltCard";
 
 export const metadata: Metadata = {
   title: "Features",
-  description: "Everything, on one honest ledger — accounting, tax, and AI guidance that all read from the same source of truth.",
+  description: "Everything, on one honest ledger: accounting, tax, and AI guidance that all read from the same source of truth.",
   alternates: { canonical: "/features" },
 };
 
@@ -19,29 +20,29 @@ const PILLARS = [
     n: "01",
     tag: "Double-entry",
     title: "A real ledger",
-    body: "Proper double-entry accounting under the hood — immutable, auditable, and honest to the rupee.",
+    body: "Proper double-entry accounting under the hood: immutable, auditable, and honest to the rupee.",
     points: ["Every account, card, loan and investment in one place", "Append-only history you can audit", "Balances that always reconcile"],
   },
   {
     n: "02",
     tag: "Deterministic",
     title: "A Sri Lankan tax engine",
-    body: "Relief, rate bands, the 15% foreign-service final tax, and credits — computed against versioned, CA-reviewed packs.",
+    body: "Relief, rate bands, the 15% foreign-service final tax, and credits, all computed against versioned, CA-reviewed packs.",
     points: ["APIT, AIT and foreign tax credits applied", "Versioned 2025/26 IRD tax pack", "Every rule recorded and reproducible"],
   },
   {
     n: "03",
     tag: "Grounded",
     title: "An AI advisor",
-    body: "Reads your statements, explains your tax, and drafts guidance — powered by the ledger and engine, never guesswork.",
+    body: "Reads your statements, explains your tax, and drafts guidance, powered by the ledger and engine, never guesswork.",
     points: ["Explains results in plain language", "Never invents a number", "Cites the rule behind every figure"],
   },
   {
     n: "04",
-    tag: "Budgets · FIRE",
+    tag: "Budgets · Freedom",
     title: "A full money toolkit",
-    body: "Budgets, debt payoff, portfolio, insurance, reports and FI projections — all on the same trustworthy ledger.",
-    points: ["Debt payoff & goal planning", "Net worth & FIRE projections", "Exportable reports"],
+    body: "Budgets, debt payoff, portfolio, insurance, reports and FI projections, all on the same trustworthy ledger.",
+    points: ["Debt payoff & goal planning", "Net worth & Freedom projections", "Exportable reports"],
   },
 ];
 
@@ -111,9 +112,9 @@ export default function FeaturesPage() {
         <FeatureDeepDive
           eyebrow="AI quick-add"
           title="Say it. Salli books it."
-          body="Type or speak a transaction in plain language — Salli drafts the correct double-entry for you to approve. Accounting rigour without the jargon."
+          body="Type or speak a transaction in plain language, and Salli drafts the correct double-entry for you to approve. Accounting rigour without the jargon."
           visual={
-            <div className="rounded-[28px] border border-ink/5 bg-white p-6 shadow-[0_34px_70px_-30px_rgba(22,19,15,.4)]">
+            <TiltCard className="rounded-[28px] border border-ink/5 bg-white p-6 shadow-[0_34px_70px_-30px_rgba(22,19,15,.4)]">
               <div className="flex justify-end">
                 <div className="max-w-[75%] rounded-[16px_16px_4px_16px] bg-ink px-4 py-3 text-[14.5px] text-cream">
                   Spent 4,500 on groceries at Keells
@@ -135,31 +136,56 @@ export default function FeaturesPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </TiltCard>
           }
         />
         <FeatureDeepDive
           reverse
           eyebrow="Tax overview &amp; return prep"
           title="See exactly what you owe."
-          body="Payable, deductions, bands and credits laid out clearly — then a guided return with a human-review checkpoint before you file."
+          body="Payable, deductions, bands and credits laid out clearly, then a guided return with a human-review checkpoint before you file."
           visual={
-            <div className="relative aspect-4/3 overflow-hidden rounded-3xl bg-linear-to-br from-red to-red-deep shadow-[0_34px_70px_-30px_rgba(245,49,15,.6)]">
-              <div className="absolute left-4.5 top-4.5 font-mono text-[11px] uppercase tracking-[.1em] text-cream/70">
-                Tax overview
-              </div>
-              <div className="flex h-full flex-col items-center justify-center gap-3 text-cream">
-                <span className="rounded-full border border-cream/25 bg-cream/16 px-3.5 py-1.75 font-mono text-xs">
-                  Rate bands &amp; credits
+            <TiltCard className="rounded-3xl bg-white p-7 shadow-[0_34px_70px_-30px_rgba(245,49,15,.35),0_0_0_1px_rgba(22,19,15,.05)]">
+              <div className="flex items-center justify-between">
+                <div className="font-mono text-[11px] uppercase tracking-[.08em] text-ink-40">Payable · YA 2025/26</div>
+                <span className="rounded-full bg-green/12 px-2.5 py-1 font-mono text-[10.5px] font-semibold text-green">
+                  On track
                 </span>
               </div>
-            </div>
+              <div className="mt-1.5 font-mono font-display text-[38px] font-extrabold tracking-[-0.02em]">
+                LKR 186,420
+              </div>
+              <div className="mt-5.5 flex flex-col gap-2.75">
+                {[
+                  { label: "First 1,000,000", rate: "6%", pct: 34 },
+                  { label: "Next 500,000", rate: "18%", pct: 68 },
+                  { label: "Next 500,000", rate: "24%", pct: 100 },
+                ].map((b) => (
+                  <div key={b.rate}>
+                    <div className="flex justify-between font-mono text-[11.5px] text-ink-50">
+                      <span>{b.label}</span>
+                      <span className="font-semibold text-ink">{b.rate}</span>
+                    </div>
+                    <div className="mt-1 h-2 overflow-hidden rounded-full bg-cream-soft">
+                      <div className="h-full rounded-full bg-red" style={{ width: `${b.pct}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5.5 flex items-center justify-between border-t border-dashed border-ink/14 pt-4">
+                <div className="font-mono text-[12px] text-ink-50">APIT + AIT credits</div>
+                <div className="font-mono text-[13.5px] font-semibold text-green">− LKR 160,500</div>
+              </div>
+              <div className="mt-4 flex h-11.5 items-center justify-center rounded-full bg-ink text-[13.5px] font-bold text-cream">
+                Start guided return →
+              </div>
+            </TiltCard>
           }
         />
         <FeatureDeepDive
-          eyebrow="Debt · FIRE · Reports"
+          eyebrow="Debt · Freedom · Reports"
           title="Plan the next ten years."
-          body="Avalanche vs. snowball payoff, years-to-FI, and exportable reports — all on the same trustworthy ledger."
+          body="Avalanche vs. snowball payoff, years-to-FI, and exportable reports, all on the same trustworthy ledger."
           extra={
             <div className="mt-7 flex gap-9">
               <div>
@@ -176,16 +202,40 @@ export default function FeaturesPage() {
             </div>
           }
           visual={
-            <div className="relative aspect-4/3 overflow-hidden rounded-3xl bg-ink text-cream shadow-[0_34px_70px_-30px_rgba(22,19,15,.5)]">
-              <div className="absolute left-4.5 top-4.5 font-mono text-[11px] uppercase tracking-[.1em] text-ink-40">
-                Net worth
+            <TiltCard className="rounded-3xl bg-white p-7 shadow-[0_34px_70px_-30px_rgba(22,19,15,.4),0_0_0_1px_rgba(22,19,15,.05)]">
+              <div className="font-mono text-[11px] uppercase tracking-[.08em] text-ink-40">Payoff plan · Avalanche</div>
+              <div className="mt-4.5 flex flex-col gap-3.5">
+                {[
+                  { label: "Credit card", pct: 72, tone: "bg-red" },
+                  { label: "Personal loan", pct: 41, tone: "bg-ink" },
+                  { label: "Store instalment", pct: 100, tone: "bg-green" },
+                ].map((d) => (
+                  <div key={d.label}>
+                    <div className="flex justify-between font-mono text-[12px] text-ink-50">
+                      <span>{d.label}</span>
+                      <span className="font-semibold text-ink">{d.pct}% paid</span>
+                    </div>
+                    <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-cream-soft">
+                      <div className={`h-full rounded-full ${d.tone}`} style={{ width: `${d.pct}%` }} />
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex h-full flex-col items-center justify-center gap-3">
-                <span className="rounded-full border border-cream/18 bg-cream/8 px-3.5 py-1.75 font-mono text-xs text-cream-60">
-                  Net-worth trend &amp; FIRE projection
-                </span>
+              <div className="mt-6 flex items-center gap-4 rounded-2xl bg-cream-soft p-4">
+                <div
+                  className="relative flex size-15.5 flex-none items-center justify-center rounded-full"
+                  style={{ background: "conic-gradient(var(--color-green) 223deg, var(--color-cream-80) 0deg)" }}
+                >
+                  <div className="flex size-11.5 items-center justify-center rounded-full bg-white font-mono text-[12px] font-bold">
+                    62%
+                  </div>
+                </div>
+                <div>
+                  <div className="font-mono text-[11px] uppercase tracking-[.06em] text-ink-40">Freedom progress</div>
+                  <div className="font-display text-[15px] font-bold">14.2 years to go</div>
+                </div>
               </div>
-            </div>
+            </TiltCard>
           }
         />
       </section>

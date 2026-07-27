@@ -28,6 +28,7 @@ class DataPortabilityService:
         advisor_svc: Any,
         documents_svc: Any,
         reminders_svc: Any,
+        bug_report_svc: Any,
     ) -> None:
         self._uow_factory = uow_factory
         self._profile = profile_svc
@@ -42,6 +43,7 @@ class DataPortabilityService:
         self._advisor = advisor_svc
         self._documents = documents_svc
         self._reminders = reminders_svc
+        self._bug_reports = bug_report_svc
 
     async def export_all(self, user_id: str) -> dict[str, Any]:
         """
@@ -110,6 +112,7 @@ class DataPortabilityService:
             "advisor_reports": await self._advisor.list_reports(user_id),
             "reminders_and_alerts": await self._reminders.list_reminders(user_id),
             "documents": await self._documents.list_documents(user_id),
+            "bug_reports": await self._bug_reports.list_reports(user_id),
         }
 
     @staticmethod

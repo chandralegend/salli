@@ -20,6 +20,7 @@ const DARK = {
   "--color-muted": "17 17 17",
   "--color-muted-foreground": "179 179 179",
   "--color-destructive": "239 68 68",
+  "--color-salli-accent": "249 115 22",
 };
 
 const LIGHT = {
@@ -34,10 +35,11 @@ const LIGHT = {
   "--color-muted": "237 237 240",
   "--color-muted-foreground": "100 100 105",
   "--color-destructive": "220 38 38",
+  "--color-salli-accent": "245 49 15",
 };
 
 /** Resolved hex, for inline style={} use (SVG strokes, chart libs, etc. that
- * can't consume Tailwind classes). Accent is fixed across both themes. */
+ * can't consume Tailwind classes). Accent shifts light→dark like salli-accent. */
 const COLORS = {
   dark: {
     background: "#000000",
@@ -48,7 +50,8 @@ const COLORS = {
     primary: "#FFFFFF",
     primaryForeground: "#000000",
     border: "rgba(255,255,255,0.1)",
-    accent: "#2563EB",
+    accent: "#F97316",
+    success: "#1b6b47",
   },
   light: {
     background: "#F5F5F7",
@@ -59,7 +62,8 @@ const COLORS = {
     primary: "#0A0A0A",
     primaryForeground: "#FFFFFF",
     border: "rgba(10,10,10,0.08)",
-    accent: "#2563EB",
+    accent: "#f5310f",
+    success: "#1b6b47",
   },
 } as const;
 

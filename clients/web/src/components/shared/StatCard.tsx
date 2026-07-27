@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  * variant — reserved for the few surfaces that carry it (FI score, years-to-FIRE).
  */
 export function StatCard({
+  id,
   label,
   value,
   caption,
@@ -18,6 +19,7 @@ export function StatCard({
   className,
   children,
 }: {
+  id?: string;
   label: string;
   value?: React.ReactNode;
   caption?: React.ReactNode;
@@ -30,10 +32,11 @@ export function StatCard({
 }) {
   return (
     <div
+      id={id}
       className={cn(
         "rounded-lg border p-5 flex flex-col gap-3",
         emphasis
-          ? "bg-[#0A2540] text-white border-[#0A2540]"
+          ? "bg-[var(--emphasis)] text-white border-[var(--emphasis)]"
           : "bg-card text-card-foreground",
         className
       )}

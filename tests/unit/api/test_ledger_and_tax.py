@@ -113,6 +113,7 @@ async def test_compute_tax(client, mock_services):
         foreign_service_income=Decimal("0"),
         regular_income=Decimal("3000000"),
         personal_relief_applied=Decimal("1800000"),
+        qp_deduction=Decimal("0"),
         taxable_income=Decimal("1200000"),
         band_workings=[],
         fsi_tax=Decimal("0"),

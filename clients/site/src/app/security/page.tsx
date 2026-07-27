@@ -11,15 +11,15 @@ export default function SecurityPage() {
   return (
     <LegalLayout title="Security" updated="9 July 2026">
       <p>
-        Salli handles real financial data, so security isn&apos;t an afterthought — it&apos;s part of how
+        Salli handles real financial data, so security isn&apos;t an afterthought: it&apos;s part of how
         the product is designed. This page describes the main protections in place today.
       </p>
 
       <h2>1. Deterministic money, not AI guesswork</h2>
       <p>
         The single biggest risk in an &ldquo;AI finance app&rdquo; is a language model quietly getting
-        arithmetic wrong. Salli is built so that never happens: every number you see — tax
-        payable, net worth, FIRE score — comes from a deterministic rules engine, never from the
+        arithmetic wrong. Salli is built so that never happens: every number you see (tax
+        payable, net worth, FIRE score) comes from a deterministic rules engine, never from the
         AI. The assistant can read and explain your ledger, but it cannot compute or alter a
         monetary figure. Any action it proposes that would write to your ledger requires your
         explicit approval first.
@@ -28,8 +28,8 @@ export default function SecurityPage() {
       <h2>2. Encryption</h2>
       <p>
         All traffic between your browser, our servers, and our infrastructure providers is
-        encrypted in transit using TLS. Data at rest — your ledger, account details, and uploaded
-        documents — is encrypted at rest by our infrastructure providers.
+        encrypted in transit using TLS. Data at rest, including your ledger, account details, and uploaded
+        documents, is encrypted at rest by our infrastructure providers.
       </p>
 
       <h2>3. Authentication</h2>
@@ -49,7 +49,7 @@ export default function SecurityPage() {
       <h2>5. Infrastructure</h2>
       <p>
         Salli runs on established, managed infrastructure providers for our database,
-        authentication, storage, application hosting, and web hosting — rather than
+        authentication, storage, application hosting, and web hosting, rather than
         self-managed servers. This means security patching, network protection, and physical
         security are handled by providers whose core business is operating that infrastructure
         securely.

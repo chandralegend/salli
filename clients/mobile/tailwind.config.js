@@ -26,32 +26,42 @@ module.exports = {
         muted: "rgb(var(--color-muted) / <alpha-value>)",
         "muted-foreground": "rgb(var(--color-muted-foreground) / <alpha-value>)",
 
+        // Destructive is a deliberately different, darker red from the
+        // red-orange accent below, so "delete" never reads as just another CTA.
         destructive: "rgb(var(--color-destructive) / <alpha-value>)",
+        "salli-success": "#1b6b47",
 
-        // Salli accent — theme-invariant electric blue, the one fixed hue across
-        // light/dark (mockup: #2563EB everywhere — active states, CTAs, icon fills).
-        "salli-accent": "#2563EB",
-        // Hero gradient stops (Login / Dashboard top) — always dark, both themes,
-        // matching the mockup's fixed navy-to-black hero treatment.
-        "salli-hero-1": "#0B20E0",
-        "salli-hero-2": "#0912B0",
-        "salli-hero-3": "#060A6A",
-        "salli-hero-4": "#020518",
-        // Deep-navy card (Tax hero, New Entry amount hero) — theme-invariant.
-        "salli-navy-card": "#0E1A50",
+        // Salli accent — red-orange in light mode, shifts to true orange in
+        // dark mode (see global.css --color-salli-accent) since red-orange
+        // reads muddy against near-black. Active states, CTAs, icon fills.
+        "salli-accent": "rgb(var(--color-salli-accent) / <alpha-value>)",
+        // Hero gradient stops (Login / Dashboard top) — always dark (these
+        // screens don't follow the light/dark toggle), orange fading to ink.
+        "salli-hero-1": "#F97316",
+        "salli-hero-2": "#c85a0f",
+        "salli-hero-3": "#6b3212",
+        "salli-hero-4": "#16130f",
+        // Deep-ink card (Tax hero, New Entry amount hero) — theme-invariant.
+        "salli-navy-card": "#221d17",
         // Tab bar / logo badge — theme-invariant (always dark dock, always white
         // badge), mirrors the old app's "stays dark in both modes" tokens.
         "salli-dock": "rgba(4,4,4,.97)",
         "salli-badge": "#FFFFFF",
-        "salli-badge-foreground": "#0912B0",
+        "salli-badge-foreground": "#F97316",
       },
       fontFamily: {
-        sans: ["Inter_400Regular"],
-        "sans-medium": ["Inter_500Medium"],
-        "sans-semibold": ["Inter_600SemiBold"],
-        "sans-bold": ["Inter_700Bold"],
-        "sans-extrabold": ["Inter_800ExtraBold"],
-        "sans-black": ["Inter_900Black"],
+        sans: ["Archivo_400Regular"],
+        "sans-medium": ["Archivo_500Medium"],
+        "sans-semibold": ["Archivo_600SemiBold"],
+        "sans-bold": ["Archivo_700Bold"],
+        "sans-extrabold": ["Archivo_800ExtraBold"],
+        "sans-black": ["Archivo_900Black"],
+        display: ["BricolageGrotesque_700Bold"],
+        "display-semibold": ["BricolageGrotesque_600SemiBold"],
+        "display-extrabold": ["BricolageGrotesque_800ExtraBold"],
+        mono: ["JetBrainsMono_400Regular"],
+        "mono-medium": ["JetBrainsMono_500Medium"],
+        "mono-bold": ["JetBrainsMono_700Bold"],
       },
       borderRadius: {
         card: "20px",

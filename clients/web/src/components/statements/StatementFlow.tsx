@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { recordFailure, requestIdOf } from "@/lib/diagnostics";
 import { CheckCircle2, FileUp, Loader2, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -107,6 +108,17 @@ export function StatementFlow({ onViewLedger }: { onViewLedger: () => void }) {
         headers: { Authorization: `Bearer ${token}` },
         body: form,
       });
+      if (!res.ok) {
+        // Statement parsing is where users most often get stuck, so this is the
+        // highest-value capture site in the app.
+        recordFailure({
+          via: "fetch",
+          method: "POST",
+          status: res.status,
+          path_template: "/statements/upload",
+          request_id: requestIdOf(res),
+        });
+      }
       if (res.status === 402) {
         setQuotaHit(true);
         return;
@@ -134,6 +146,13 @@ export function StatementFlow({ onViewLedger }: { onViewLedger: () => void }) {
       setApproved(new Set(result.transactions.filter((t) => !isDuplicate(t)).map((t) => t.id)));
       setPhase({ name: "review", result, fileName: file.name });
     } catch {
+      recordFailure({
+        via: "fetch",
+        method: "POST",
+        status: 0,
+        path_template: "/statements/upload",
+        request_id: null,
+      });
       setError("Upload failed. Check your connection and try again.");
     } finally {
       setUploading(false);

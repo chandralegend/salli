@@ -14,6 +14,8 @@ export async function getAllPosts() {
       publishedDate: p.entry.publishedDate ?? "",
       readTime: p.entry.readTime,
       coverStyle: p.entry.coverStyle,
+      coverImage: p.entry.coverImage ?? null,
+      coverImageAlt: p.entry.coverImageAlt || p.entry.title,
       author: p.entry.author,
     }))
     .sort((a, b) => (a.publishedDate < b.publishedDate ? 1 : -1));

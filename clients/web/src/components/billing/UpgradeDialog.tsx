@@ -33,11 +33,13 @@ export function UpgradeDialog({
   open,
   onOpenChange,
   currentPlan,
+  highlightPlan,
   initialCycle = "month",
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   currentPlan: string;
+  highlightPlan?: string;
   initialCycle?: BillingCycle;
 }) {
   const plans = usePlans();
@@ -103,8 +105,15 @@ export function UpgradeDialog({
           <div className="space-y-3">
             {(plans.data ?? []).map((p) => {
               const isCurrent = p.key === currentPlan;
+              const isHighlighted = p.key === highlightPlan;
               return (
-                <div key={p.key} className="flex items-center gap-4 rounded-lg border p-4">
+                <div
+                  key={p.key}
+                  className={
+                    "flex items-center gap-4 rounded-lg border p-4" +
+                    (isHighlighted ? " border-primary ring-1 ring-primary" : "")
+                  }
+                >
                   <div className="flex-1 min-w-0">
                     <p className="text-[15px] font-semibold">
                       {p.name}

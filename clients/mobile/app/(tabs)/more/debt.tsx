@@ -553,7 +553,7 @@ export default function DebtScreen() {
           className="absolute bottom-28 right-5 h-12 w-12 items-center justify-center rounded-full"
           style={{
             backgroundColor: colors.accent,
-            shadowColor: "#2563EB",
+            shadowColor: colors.accent,
             shadowOpacity: 0.4,
             shadowRadius: 16,
             shadowOffset: { width: 0, height: 4 },

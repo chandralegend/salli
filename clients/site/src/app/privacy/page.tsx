@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalLayout title="Privacy Policy" updated="9 July 2026">
+    <LegalLayout title="Privacy Policy" updated="27 July 2026">
       <p>
         This Privacy Policy explains what information Salli collects, why we collect it, and how
         it&apos;s used and protected. Salli handles financial data, so we&apos;ve tried to write this
@@ -17,20 +17,28 @@ export default function PrivacyPage() {
       </p>
 
       <h2>1. Information we collect</h2>
-      <p>We collect information in three ways:</p>
+      <p>We collect information in four ways:</p>
       <ul>
         <li>
-          <strong>Account information</strong> — your name, email address, and authentication
+          <strong>Account information</strong>: your name, email address, and authentication
           details when you sign up (directly, or via Google/Apple sign-in).
         </li>
         <li>
-          <strong>Financial data you provide</strong> — ledger entries, account balances, income
+          <strong>Financial data you provide</strong>: ledger entries, account balances, income
           and expense records, goals, and any bank statements or documents you upload for
           parsing.
         </li>
         <li>
-          <strong>Usage data</strong> — how you interact with the product (pages visited, features
+          <strong>Usage data</strong>: how you interact with the product (pages visited, features
           used, AI messages sent), collected to operate and improve the service.
+        </li>
+        <li>
+          <strong>Bug reports and diagnostics you choose to send us</strong>: when you report a
+          problem, we receive your description of it along with a technical snapshot — the page you
+          were on, your browser, device and locale details, recent failed requests and any error
+          message behind them, and any screenshot you attach. This snapshot deliberately excludes
+          your balances, amounts, account names and entry descriptions, and you can review exactly
+          what it contains before you send it.
         </li>
       </ul>
 
@@ -52,7 +60,7 @@ export default function PrivacyPage() {
       <p>
         When you ask Scrooge a question, relevant parts of your ledger data are sent to our AI
         provider to generate a response. This is used only to answer your query within your
-        session — it is not used to train the underlying model. All monetary figures shown to you
+        session; it is not used to train the underlying model. All monetary figures shown to you
         are computed by Salli&apos;s own deterministic engine beforehand; the AI explains and
         contextualises numbers, it does not calculate them.
       </p>
@@ -69,10 +77,11 @@ export default function PrivacyPage() {
       <h2>5. Sub-processors</h2>
       <p>We rely on a small number of vetted infrastructure and service providers to run Salli:</p>
       <ul>
-        <li><strong>Database, authentication &amp; storage</strong> — for the ledger database, login, and document storage.</li>
-        <li><strong>Application hosting</strong> — for running the API and web application.</li>
-        <li><strong>AI provider</strong> — to power the Scrooge assistant.</li>
-        <li><strong>Payment processor</strong> — to handle paid subscriptions as merchant of record.</li>
+        <li><strong>Database, authentication &amp; storage</strong>: for the ledger database, login, and document storage.</li>
+        <li><strong>Application hosting</strong>: for running the API and web application.</li>
+        <li><strong>AI provider</strong>: to power the Scrooge assistant.</li>
+        <li><strong>Payment processor</strong>: to handle paid subscriptions as merchant of record.</li>
+        <li><strong>Issue tracking</strong>: to record and resolve bugs you report to us.</li>
       </ul>
       <p>
         Each of these providers processes data only as needed to deliver their part of the
@@ -85,6 +94,16 @@ export default function PrivacyPage() {
         delete your personal and financial data within a reasonable period, except where we&apos;re
         legally required to retain certain records (for example, billing records for tax
         purposes).
+      </p>
+      <p>
+        Bug reports are treated differently, and we want to be explicit about it. When you report a
+        problem, we create a corresponding ticket in our issue tracker so the bug can actually get
+        fixed. That ticket is a record about the product rather than about you: it carries a
+        pseudonymous account identifier, never your name or email address. Because other people are
+        usually affected by the same bug, these tickets and their diagnostics are kept for
+        engineering purposes even after an account is closed — while the copy of the report held
+        inside Salli, including your email address if you asked us to follow up, is deleted with the
+        rest of your data.
       </p>
 
       <h2>7. Your rights</h2>

@@ -1,0 +1,71 @@
+name: Sync Render env vars
+
+# Manual, one-off env-var sync for Render services on the free plan.
+#
+# infra/index.ts's Render WebService resource has `ignoreChanges: ["envVars", ...]`
+# because free-tier services reject Pulumi's update payload (it includes a
+# `maintenance_mode` field only accepted on paid plans). That means `pulumi up`
+# never actually pushes env var changes to a free-tier service — they have to be
+# set out-of-band, which is what this workflow does via Render's REST API.
+#
+# Existing vars not named in `env_json` are left untouched (this does a
+# read-merge-write, not a destructive replace) and a fresh deploy is triggered
+# afterward so the running instance picks up the new values.
+
+on:
+  workflow_dispatch:
+    inputs:
+      service_name:
+        description: "Render service name"
+        required: true
+        default: "salli-api"
+      env_json:
+        description: 'JSON object of env vars to upsert, e.g. {"FOO":"bar"}'
+        required: true
+
+jobs:
+  sync-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upsert env vars on Render and redeploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          SERVICE_NAME: ${{ github.event.inputs.service_name }}
+          NEW_VARS: ${{ github.event.inputs.env_json }}
+        run: |
+          set -euo pipefail
+
+          echo "$NEW_VARS" | jq -e 'type == "object"' > /dev/null || {
+            echo "env_json must be a JSON object" >&2
+            exit 1
+          }
+
+          SERVICES=$(curl -sf -H "Authorization: Bearer $RENDER_API_KEY" \
+            "https://api.render.com/v1/services?name=$SERVICE_NAME&limit=1")
+          SERVICE_ID=$(echo "$SERVICES" | jq -r '.[0].service.id // .[0].id // empty')
+          if [ -z "$SERVICE_ID" ]; then
+            echo "Could not find a Render service named '$SERVICE_NAME'" >&2
+            echo "$SERVICES" >&2
+            exit 1
+          fi
+          echo "Service: $SERVICE_NAME ($SERVICE_ID)"
+
+          CURRENT=$(curl -sf -H "Authorization: Bearer $RENDER_API_KEY" \
+            "https://api.render.com/v1/services/$SERVICE_ID/env-vars")
+
+          MERGED=$(echo "$CURRENT" | jq --argjson new "$NEW_VARS" '
+            [.[] | (.envVar // .)] as $existing
+            | ($existing | map({(.key): .value}) | add // {}) as $existingMap
+            | ($existingMap + $new)
+            | to_entries | map({key: .key, value: (.value | tostring)})
+          ')
+
+          echo "Uploading $(echo "$MERGED" | jq length) env vars ($(echo "$NEW_VARS" | jq 'keys | join(", ")') upserted)..."
+          curl -sf -X PUT -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
+            "https://api.render.com/v1/services/$SERVICE_ID/env-vars" \
+            -d "$MERGED" > /dev/null
+
+          echo "Triggering a deploy so the running instance picks up the new env..."
+          DEPLOY=$(curl -sf -X POST -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
+            "https://api.render.com/v1/services/$SERVICE_ID/deploys" -d '{}')
+          echo "$DEPLOY" | jq '{id, status}'

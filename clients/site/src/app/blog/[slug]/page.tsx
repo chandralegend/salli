@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Markdoc from "@markdoc/markdoc";
@@ -34,11 +35,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       publishedTime: post.publishedDate,
       authors: [post.author],
       tags: [post.category],
+      ...(post.coverImage ? { images: [{ url: post.coverImage, alt: post.coverImageAlt || post.title }] } : {}),
     },
     twitter: {
       card: "summary_large_image",
       title: post.title,
       description: post.excerpt,
+      ...(post.coverImage ? { images: [post.coverImage] } : {}),
     },
   };
 }
@@ -67,6 +70,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     "@type": "Article",
     headline: post.title,
     description: post.excerpt,
+    ...(post.coverImage ? { image: [post.coverImage] } : {}),
     datePublished: post.publishedDate,
     dateModified: post.publishedDate,
     author: { "@type": "Organization", name: post.author },
@@ -131,9 +135,22 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             COVER_STYLE_CLASS[post.coverStyle as CoverStyle],
           )}
         >
-          <div className="font-display text-[clamp(120px,20vw,300px)] font-extrabold tracking-[-0.05em] text-cream/16">
-            {post.category}
-          </div>
+          {post.coverImage ? (
+            <>
+              <Image
+                src={post.coverImage}
+                alt={post.coverImageAlt || post.title}
+                fill
+                priority
+                className="object-cover"
+              />
+              <div className={clsx("absolute inset-0 opacity-40", COVER_STYLE_CLASS[post.coverStyle as CoverStyle])} />
+            </>
+          ) : (
+            <div className="font-display text-[clamp(120px,20vw,300px)] font-extrabold tracking-[-0.05em] text-cream/16">
+              {post.category}
+            </div>
+          )}
         </div>
       </section>
 
@@ -171,8 +188,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 href={`/blog/${p.slug}`}
                 className="flex flex-col overflow-hidden rounded-[22px] border border-ink/7 bg-white shadow-[0_20px_50px_-36px_rgba(22,19,15,.35)] transition-transform hover:-translate-y-1.5"
               >
-                <div className={clsx("flex aspect-16/10 items-end p-4.5", COVER_STYLE_CLASS[p.coverStyle as CoverStyle])}>
-                  <span className="rounded-full bg-cream/90 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[.06em] text-ink">
+                <div className={clsx("relative flex aspect-16/10 items-end overflow-hidden p-4.5", COVER_STYLE_CLASS[p.coverStyle as CoverStyle])}>
+                  {p.coverImage && (
+                    <Image src={p.coverImage} alt={p.coverImageAlt || p.title} fill className="object-cover" />
+                  )}
+                  <div className={clsx("absolute inset-0 opacity-55", COVER_STYLE_CLASS[p.coverStyle as CoverStyle])} />
+                  <span className="relative z-10 rounded-full bg-cream/90 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[.06em] text-ink">
                     {p.category}
                   </span>
                 </div>
@@ -196,7 +217,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             Know your number.
           </h2>
           <p className="mx-auto mt-4 max-w-[440px] text-[17px] text-cream/90">
-            Let Salli&apos;s engine compute your 2025/26 tax from your real numbers — and explain
+            Let Salli&apos;s engine compute your 2025/26 tax from your real numbers, and explain
             every rule behind it.
           </p>
           <div className="mt-9 flex flex-wrap justify-center gap-3.5">

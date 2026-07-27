@@ -12,6 +12,8 @@ import { StatusChip } from "@/components/shared/StatusChip";
 import { UsageMeter } from "@/components/billing/UsageMeter";
 import { UpgradeDialog } from "@/components/billing/UpgradeDialog";
 import { DangerZone } from "@/components/settings/DangerZone";
+import { McpConnectionsCard } from "@/components/settings/McpConnectionsCard";
+import { HelpFeedbackCard } from "@/components/support/HelpFeedbackCard";
 import { useSubscription, useBillingPortal } from "@/hooks/useBilling";
 import { useAuth } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
@@ -41,14 +43,17 @@ function SettingsContent() {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const mounted = useMounted();
 
-  // Every 402 upgrade banner lands here with ?upgrade=1; the mobile app hands off
-  // with ?upgrade=<plan>&cycle=<month|year>. Either opens the dialog.
+  // Every 402 upgrade banner in the app lands here with ?upgrade=1. A plan
+  // key (?upgrade=plus / ?upgrade=pro) also opens the dialog, additionally
+  // highlighting that plan — used by plan-gated features (e.g. MCP) and the
+  // marketing site's pricing CTAs.
+  const upgradeParam = params.get("upgrade");
   useEffect(() => {
-    if (params.get("upgrade")) {
+    if (upgradeParam) {
       const t = setTimeout(() => setUpgradeOpen(true), 0);
       return () => clearTimeout(t);
     }
-  }, [params]);
+  }, [upgradeParam]);
 
   const initialCycle = params.get("cycle") === "year" ? "year" : "month";
 
@@ -149,9 +154,14 @@ function SettingsContent() {
             advisor&apos;s guidance. Rerun setup if your situation changes — existing accounts and
             entries are never deleted.
           </p>
-          <Button variant="outline" className="mt-4" onClick={redoProfile}>
-            Redo profile setup
-          </Button>
+          <div className="flex gap-2 mt-4">
+            <Button variant="outline" onClick={redoProfile}>
+              Redo profile setup
+            </Button>
+            <Button variant="outline" onClick={() => router.push("/dashboard?tour=1")}>
+              Take a tour
+            </Button>
+          </div>
         </div>
 
         {/* Session */}
@@ -182,6 +192,11 @@ function SettingsContent() {
           <p className="text-xs text-muted-foreground mt-2">Signs you out on this device only.</p>
         </div>
 
+        {/* MCP: connect an AI assistant */}
+        <McpConnectionsCard />
+
+        <HelpFeedbackCard />
+
         {/* Danger zone */}
         <DangerZone
           onDeleted={async () => {
@@ -207,7 +222,7 @@ function SettingsContent() {
         open={upgradeOpen}
         onOpenChange={setUpgradeOpen}
         currentPlan={sub?.plan ?? "free"}
-        initialCycle={initialCycle}
+        highlightPlan={upgradeParam && upgradeParam !== "1" ? upgradeParam : undefined}
       />
     </div>
   );

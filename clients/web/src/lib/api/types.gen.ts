@@ -67,6 +67,36 @@ export type BalanceSheetRequest = {
 };
 
 /**
+ * Body_token_mcp_oauth_token_post
+ */
+export type BodyTokenMcpOauthTokenPost = {
+    /**
+     * Grant Type
+     */
+    grant_type: string;
+    /**
+     * Code
+     */
+    code?: string | null;
+    /**
+     * Redirect Uri
+     */
+    redirect_uri?: string | null;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Code Verifier
+     */
+    code_verifier?: string | null;
+    /**
+     * Refresh Token
+     */
+    refresh_token?: string | null;
+};
+
+/**
  * Body_upload_file_agent_files_post
  */
 export type BodyUploadFileAgentFilesPost = {
@@ -190,6 +220,20 @@ export type CheckoutRequest = {
      * Cycle
      */
     cycle?: string;
+};
+
+/**
+ * ConsentDecisionRequest
+ */
+export type ConsentDecisionRequest = {
+    /**
+     * Rt
+     */
+    rt: string;
+    /**
+     * Approve
+     */
+    approve: boolean;
 };
 
 /**
@@ -438,6 +482,16 @@ export type IncomeItem = {
      * Deposit Account Name
      */
     deposit_account_name?: string | null;
+};
+
+/**
+ * McpEnabledRequest
+ */
+export type McpEnabledRequest = {
+    /**
+     * Enabled
+     */
+    enabled: boolean;
 };
 
 /**
@@ -751,6 +805,20 @@ export type ProfileIdentityRequest = {
 };
 
 /**
+ * RegisterClientRequest
+ */
+export type RegisterClientRequest = {
+    /**
+     * Client Name
+     */
+    client_name?: string | null;
+    /**
+     * Redirect Uris
+     */
+    redirect_uris: Array<string>;
+};
+
+/**
  * ResumeRequest
  */
 export type ResumeRequest = {
@@ -772,6 +840,16 @@ export type ResumeRequest = {
     edits?: {
         [key: string]: unknown;
     } | null;
+};
+
+/**
+ * RevokeRequest
+ */
+export type RevokeRequest = {
+    /**
+     * Token
+     */
+    token: string;
 };
 
 /**
@@ -3585,6 +3663,299 @@ export type ExportReportCsvReportsReportTypeExportGetResponses = {
      */
     200: unknown;
 };
+
+export type AuthorizationServerMetadataWellKnownOauthAuthorizationServerGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/.well-known/oauth-authorization-server';
+};
+
+export type AuthorizationServerMetadataWellKnownOauthAuthorizationServerGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ProtectedResourceMetadataWellKnownOauthProtectedResourceGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/.well-known/oauth-protected-resource';
+};
+
+export type ProtectedResourceMetadataWellKnownOauthProtectedResourceGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type RegisterClientMcpOauthRegisterPostData = {
+    body: RegisterClientRequest;
+    path?: never;
+    query?: never;
+    url: '/mcp/oauth/register';
+};
+
+export type RegisterClientMcpOauthRegisterPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RegisterClientMcpOauthRegisterPostError = RegisterClientMcpOauthRegisterPostErrors[keyof RegisterClientMcpOauthRegisterPostErrors];
+
+export type RegisterClientMcpOauthRegisterPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: unknown;
+};
+
+export type AuthorizeMcpOauthAuthorizeGetData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Response Type
+         */
+        response_type: string;
+        /**
+         * Client Id
+         */
+        client_id: string;
+        /**
+         * Redirect Uri
+         */
+        redirect_uri: string;
+        /**
+         * Code Challenge
+         */
+        code_challenge: string;
+        /**
+         * Code Challenge Method
+         */
+        code_challenge_method?: string;
+        /**
+         * Scope
+         */
+        scope?: string;
+        /**
+         * Resource
+         */
+        resource?: string | null;
+        /**
+         * State
+         */
+        state?: string | null;
+    };
+    url: '/mcp/oauth/authorize';
+};
+
+export type AuthorizeMcpOauthAuthorizeGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthorizeMcpOauthAuthorizeGetError = AuthorizeMcpOauthAuthorizeGetErrors[keyof AuthorizeMcpOauthAuthorizeGetErrors];
+
+export type AuthorizeMcpOauthAuthorizeGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ConsentInfoMcpOauthConsentInfoGetData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Rt
+         */
+        rt: string;
+    };
+    url: '/mcp/oauth/consent-info';
+};
+
+export type ConsentInfoMcpOauthConsentInfoGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ConsentInfoMcpOauthConsentInfoGetError = ConsentInfoMcpOauthConsentInfoGetErrors[keyof ConsentInfoMcpOauthConsentInfoGetErrors];
+
+export type ConsentInfoMcpOauthConsentInfoGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ConsentMcpOauthConsentPostData = {
+    body: ConsentDecisionRequest;
+    path?: never;
+    query?: never;
+    url: '/mcp/oauth/consent';
+};
+
+export type ConsentMcpOauthConsentPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ConsentMcpOauthConsentPostError = ConsentMcpOauthConsentPostErrors[keyof ConsentMcpOauthConsentPostErrors];
+
+export type ConsentMcpOauthConsentPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type TokenMcpOauthTokenPostData = {
+    body: BodyTokenMcpOauthTokenPost;
+    path?: never;
+    query?: never;
+    url: '/mcp/oauth/token';
+};
+
+export type TokenMcpOauthTokenPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TokenMcpOauthTokenPostError = TokenMcpOauthTokenPostErrors[keyof TokenMcpOauthTokenPostErrors];
+
+export type TokenMcpOauthTokenPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type RevokeMcpOauthRevokePostData = {
+    body: RevokeRequest;
+    path?: never;
+    query?: never;
+    url: '/mcp/oauth/revoke';
+};
+
+export type RevokeMcpOauthRevokePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RevokeMcpOauthRevokePostError = RevokeMcpOauthRevokePostErrors[keyof RevokeMcpOauthRevokePostErrors];
+
+export type RevokeMcpOauthRevokePostResponses = {
+    /**
+     * Response Revoke Mcp Oauth Revoke Post
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type RevokeMcpOauthRevokePostResponse = RevokeMcpOauthRevokePostResponses[keyof RevokeMcpOauthRevokePostResponses];
+
+export type ListConnectionsMcpConnectionsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/mcp/connections/';
+};
+
+export type ListConnectionsMcpConnectionsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type RevokeConnectionMcpConnectionsTokenIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Token Id
+         */
+        token_id: string;
+    };
+    query?: never;
+    url: '/mcp/connections/{token_id}';
+};
+
+export type RevokeConnectionMcpConnectionsTokenIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RevokeConnectionMcpConnectionsTokenIdDeleteError = RevokeConnectionMcpConnectionsTokenIdDeleteErrors[keyof RevokeConnectionMcpConnectionsTokenIdDeleteErrors];
+
+export type RevokeConnectionMcpConnectionsTokenIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type RevokeConnectionMcpConnectionsTokenIdDeleteResponse = RevokeConnectionMcpConnectionsTokenIdDeleteResponses[keyof RevokeConnectionMcpConnectionsTokenIdDeleteResponses];
+
+export type GetMcpEnabledMcpConnectionsEnabledGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/mcp/connections/enabled';
+};
+
+export type GetMcpEnabledMcpConnectionsEnabledGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SetMcpEnabledMcpConnectionsEnabledPutData = {
+    body: McpEnabledRequest;
+    path?: never;
+    query?: never;
+    url: '/mcp/connections/enabled';
+};
+
+export type SetMcpEnabledMcpConnectionsEnabledPutErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SetMcpEnabledMcpConnectionsEnabledPutError = SetMcpEnabledMcpConnectionsEnabledPutErrors[keyof SetMcpEnabledMcpConnectionsEnabledPutErrors];
+
+export type SetMcpEnabledMcpConnectionsEnabledPutResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type SetMcpEnabledMcpConnectionsEnabledPutResponse = SetMcpEnabledMcpConnectionsEnabledPutResponses[keyof SetMcpEnabledMcpConnectionsEnabledPutResponses];
 
 export type HealthHealthzGetData = {
     body?: never;

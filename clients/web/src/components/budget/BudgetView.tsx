@@ -20,7 +20,7 @@ export function BudgetView({ summary, monthLabel }: { summary: BudgetSummaryFull
   return (
     <div className="space-y-6">
       {/* Hero — spend vs limit */}
-      <div className="rounded-lg bg-[#0A2540] text-white p-6">
+      <div className="rounded-lg bg-[var(--emphasis)] text-white p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="eyebrow text-white/60">Monthly budget</p>
@@ -32,14 +32,7 @@ export function BudgetView({ summary, monthLabel }: { summary: BudgetSummaryFull
           <StatusChip tone={over ? "danger" : "success"}>{usedPct}% used</StatusChip>
         </div>
 
-        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-          <div
-            className={cn("h-full rounded-full transition-all", over ? "bg-[var(--status-danger-text)]" : "bg-[var(--status-success-text)]")}
-            style={{ width: `${Math.min(100, usedPct)}%` }}
-          />
-        </div>
-
-        <div className="mt-3 flex items-center justify-between text-[13px] text-white/60">
+        <div className="mt-4 flex items-center justify-between text-[13px] text-white/60">
           <span>{monthLabel}</span>
           <span className={over ? "text-[var(--status-danger-text)]" : "text-[var(--status-success-text)]"}>
             LKR {formatMoney(String(Math.abs(remaining)), 0)} {over ? "over" : "remaining"}
@@ -79,20 +72,19 @@ export function BudgetView({ summary, monthLabel }: { summary: BudgetSummaryFull
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-medium truncate">{line.category}</span>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      <MoneyText value={line.actual_amount} decimals={0} /> /{" "}
-                      <MoneyText value={line.limit_amount} decimals={0} />
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-[11px] font-semibold shrink-0",
+                        lineOver ? "bg-[var(--status-danger-bg)] text-[var(--status-danger-text)]" : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {Math.round(share)}%
                     </span>
                   </div>
-                  <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all",
-                        lineOver ? "bg-[var(--status-danger-text)]" : "bg-primary"
-                      )}
-                      style={{ width: `${share}%` }}
-                    />
-                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <MoneyText value={line.actual_amount} decimals={0} /> of{" "}
+                    <MoneyText value={line.limit_amount} decimals={0} />
+                  </p>
                 </div>
               </div>
             );

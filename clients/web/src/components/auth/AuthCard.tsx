@@ -15,7 +15,9 @@ export function AuthCard({
 }) {
   return (
     <main className="min-h-screen flex flex-col items-center bg-background px-4">
-      <p className="text-xl font-bold tracking-tight mt-12 mb-10">Salli</p>
+      <p className="font-heading text-2xl font-extrabold tracking-tight mt-12 mb-10">
+        Salli<span className="text-primary">.</span>
+      </p>
       <div className="w-full max-w-[400px] rounded-lg border bg-card p-8">
         <h1 className="text-[22px] font-semibold tracking-tight">{title}</h1>
         {subtitle && <p className="text-[13px] text-muted-foreground mt-1">{subtitle}</p>}

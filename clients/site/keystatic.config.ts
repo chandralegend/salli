@@ -45,6 +45,14 @@ export default config({
           options: [...COVER_STYLES],
           defaultValue: "ink",
         }),
+        coverImage: fields.url({
+          label: "Cover image URL",
+          description: "Main article image shown on the post hero and blog cards.",
+        }),
+        coverImageAlt: fields.text({
+          label: "Cover image alt text",
+          defaultValue: "",
+        }),
         author: fields.text({ label: "Author", defaultValue: "The Salli team" }),
         content: fields.markdoc({ label: "Content" }),
       },

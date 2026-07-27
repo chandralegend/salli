@@ -12,6 +12,11 @@ export function BandsTable({ tax }: { tax: TaxResult }) {
       <div className="space-y-2">
         {tax.bands.map((b, i) => {
           const active = b.taxable_in_band !== "0.00";
+          const total = Number(tax.taxable_income.replace(/,/g, "")) || 0;
+          const pct =
+            total > 0
+              ? Math.min(100, (Number(b.taxable_in_band.replace(/,/g, "")) / total) * 100)
+              : 0;
           return (
             <div
               key={i}
@@ -22,7 +27,14 @@ export function BandsTable({ tax }: { tax: TaxResult }) {
             >
               <div className="flex items-center justify-between">
                 <span className="text-[13px] font-medium">{b.band}</span>
-                <span className="money text-sm font-semibold">{b.rate}</span>
+                <div className="flex items-center gap-2">
+                  <span className="money text-sm font-semibold">{b.rate}</span>
+                  {active && (
+                    <span className="rounded-full bg-[var(--status-success-bg)] px-2 py-0.5 text-[11px] font-semibold text-[var(--status-success-text)]">
+                      {pct.toFixed(0)}%
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground money">
                 <span>{active ? `${b.taxable_in_band} in band` : "no income in band"}</span>

@@ -109,7 +109,7 @@ export function QuickAddDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="size-4 text-[#0A2540]" /> Quick add
+            <Sparkles className="size-4 text-primary" /> Quick add
           </DialogTitle>
           <DialogDescription>
             Describe the transaction in plain words{speechSupported ? " — type or dictate" : ""}. Salli drafts the

@@ -51,7 +51,7 @@ export default function LoginScreen() {
   return (
     <View className="flex-1 bg-black">
       <LinearGradient
-        colors={["#0B20E0", "#0912B0", "#060A6A", "#020518", "#000000"]}
+        colors={["#F97316", "#c85a0f", "#6b3212", "#16130f", "#000000"]}
         locations={[0, 0.3, 0.55, 0.8, 1]}
         style={{ position: "absolute", top: 0, left: 0, right: 0, height: 430 }}
       />
@@ -61,11 +61,8 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View className="items-center px-6 pb-9">
-            <Logo size={80} />
-            <Text className="mt-[22px] font-sans-extrabold text-[38px] tracking-tighter text-white">
-              Salli
-            </Text>
-            <Text className="mt-2.5 text-center text-[14px] leading-5 text-white/45">
+            <Logo size={52} className="text-white" />
+            <Text className="mt-4 text-center text-[14px] leading-5 text-white/45">
               AI-powered personal finance{"\n"}Built for Sri Lanka
             </Text>
           </View>

@@ -42,6 +42,9 @@ export function ComputationPanel({ tax }: { tax: TaxResult }) {
         {hasFsi && <Row label="Foreign Service Income" value={tax.foreign_service_income} />}
         <Row label="Gross Income" value={tax.gross_income} bold rule />
         <Row label="Less: Personal Relief" value={`(${tax.personal_relief})`} muted />
+        {tax.qp_deduction !== "0.00" && (
+          <Row label="Less: Qualifying Payments" value={`(${tax.qp_deduction})`} muted />
+        )}
         <Row label="Taxable Income" value={tax.taxable_income} bold />
         <Row label="Tax on progressive bands" value={tax.total_tax} />
         {hasFsi && tax.fsi_tax !== "0.00" && <Row label="FSI tax @ 15%" value={tax.fsi_tax} />}

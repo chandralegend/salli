@@ -16,9 +16,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
+import { Card3D } from "@/components/shared/Card3D";
+import { RadialProgress } from "@/components/shared/RadialProgress";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StatusChip } from "@/components/shared/StatusChip";
 import { useState } from "react";
@@ -27,7 +28,14 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { useTax } from "@/hooks/useTax";
 import { useFiScore } from "@/hooks/useFi";
 import { useSalliStore, useScroogePanel } from "@/lib/store";
-import { assessmentYearRange, daysUntil, deadlineLabel, formatCompact, formatDate } from "@/lib/format";
+import {
+  assessmentYearRange,
+  daysUntil,
+  deadlineLabel,
+  formatCompact,
+  formatDate,
+  formatPct,
+} from "@/lib/format";
 
 const AI_QUESTIONS = [
   "What's my tax payable?",
@@ -66,33 +74,20 @@ export default function DashboardPage() {
         subtitle={`${today} · Assessment Year ${ay.label} · Sri Lanka · LKR`}
         actions={
           <>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button variant="outline" size="icon" onClick={() => setUploadOpen(true)}>
-                    <Upload className="size-4" />
-                  </Button>
-                }
-              />
-              <TooltipContent>Upload statement</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      requestQuickAdd();
-                      router.push("/ledger");
-                    }}
-                  >
-                    <Plus className="size-4" />
-                  </Button>
-                }
-              />
-              <TooltipContent>New entry</TooltipContent>
-            </Tooltip>
+            <Button variant="outline" onClick={() => setUploadOpen(true)}>
+              <Upload className="size-4" />
+              Upload statement
+            </Button>
+            <Button
+              id="tour-new-entry"
+              onClick={() => {
+                requestQuickAdd();
+                router.push("/ledger");
+              }}
+            >
+              <Plus className="size-4" />
+              New entry
+            </Button>
           </>
         }
       />
@@ -124,9 +119,11 @@ export default function DashboardPage() {
           label="Savings Rate"
           icon={PiggyBank}
           loading={fiScore.isLoading}
-          value={savingsRate != null ? `${savingsRate.toFixed(1)}%` : "—"}
+          value={formatPct(fi?.savings_rate)}
           badge={
-            savingsRate != null && savingsRate >= 40 ? (
+            // savings_rate is a 0..1 fraction: the old `>= 40` test needed a
+            // 4000% savings rate and so could never fire.
+            savingsRate != null && savingsRate >= 0.4 ? (
               <StatusChip tone="success">above target</StatusChip>
             ) : undefined
           }
@@ -136,7 +133,7 @@ export default function DashboardPage() {
 
       {/* Feature cards: Tax payable + FI score */}
       <div className="grid lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-3 rounded-lg border bg-card p-5 flex flex-col">
+        <div id="tour-dash-tax-card" className="lg:col-span-3 rounded-lg border bg-card p-5 flex flex-col">
           <div className="flex items-start justify-between">
             <p className="eyebrow">Tax Payable · YA {tax?.year ?? "2025/26"}</p>
             {tax && <StatusChip tone="warning">due Jul 31</StatusChip>}
@@ -149,10 +146,33 @@ export default function DashboardPage() {
               <p className="text-xs text-muted-foreground mt-2">
                 Computed by the deterministic engine · after reliefs &amp; credits
               </p>
-              <div className="flex flex-wrap gap-x-6 gap-y-1 mt-4 pt-4 border-t text-xs text-muted-foreground money">
-                <span>Gross {tax.gross_income}</span>
-                <span>Relief ({tax.personal_relief})</span>
-                <span>Credits ({tax.credits.apit === "0.00" && tax.credits.ait === "0.00" ? "—" : `${tax.credits.apit} APIT`})</span>
+              <div className="mt-4 pt-4 border-t space-y-1.5">
+                <div className="flex justify-between text-xs money">
+                  <span className="text-muted-foreground">Gross income</span>
+                  <span>{tax.gross_income}</span>
+                </div>
+                <div className="flex justify-between text-xs money">
+                  <span className="text-muted-foreground">Personal relief</span>
+                  <span>({tax.personal_relief})</span>
+                </div>
+                {tax.credits.apit !== "0.00" && (
+                  <div className="flex justify-between text-xs money">
+                    <span className="text-muted-foreground">APIT credit</span>
+                    <span>({tax.credits.apit})</span>
+                  </div>
+                )}
+                {tax.credits.ait !== "0.00" && (
+                  <div className="flex justify-between text-xs money">
+                    <span className="text-muted-foreground">AIT credit</span>
+                    <span>({tax.credits.ait})</span>
+                  </div>
+                )}
+                {tax.credits.ftc !== "0.00" && (
+                  <div className="flex justify-between text-xs money">
+                    <span className="text-muted-foreground">Foreign tax credit</span>
+                    <span>({tax.credits.ftc})</span>
+                  </div>
+                )}
               </div>
               <Link
                 href="/tax"
@@ -175,39 +195,44 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <StatCard label="FI Score" emphasis loading={fiScore.isLoading} className="lg:col-span-2">
-          {fi && (
-            <>
-              <p className="money leading-none">
-                <span className="text-[44px] font-semibold">{Number(fi.overall_score).toFixed(0)}</span>
-                <span className="text-white/50 text-base">/100</span>
-              </p>
-              <p className="text-[13px] text-white/70">{fi.grade}</p>
-              <div className="space-y-2.5 mt-2">
-                {fi.components.slice(0, 4).map((c) => (
-                  <div key={c.key}>
-                    <div className="flex justify-between text-xs text-white/60 mb-1">
-                      <span>{c.label}</span>
-                      <span className="money">{Number(c.score).toFixed(0)}</span>
-                    </div>
-                    <div className="h-1 rounded-full bg-white/15 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-white"
-                        style={{ width: `${Math.min(100, Number(c.score))}%` }}
-                      />
-                    </div>
+        <Card3D id="tour-dash-fi-card" className="lg:col-span-2" contentClassName="flex h-full flex-col p-5">
+          <div className="flex items-start justify-between">
+            <p className="eyebrow text-white/60">Freedom Score</p>
+            <Sparkles className="size-4 text-white/50" />
+          </div>
+          {fiScore.isLoading ? (
+            <div className="mt-3 space-y-3">
+              <Skeleton className="h-8 w-28 bg-white/15" />
+              <Skeleton className="h-3.5 w-20 bg-white/15" />
+            </div>
+          ) : (
+            fi && (
+              <>
+                <div className="flex items-center gap-3.5 mt-3">
+                  <RadialProgress value={Number(fi.overall_score)} size={56} ringWidth={6} />
+                  <div>
+                    <p className="money text-[18px] font-semibold leading-none">{fi.grade}</p>
+                    <p className="text-xs text-white/60 mt-1">{Number(fi.overall_score).toFixed(0)} / 100</p>
                   </div>
-                ))}
-              </div>
-              <Link
-                href="/financial-independence"
-                className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--status-success-text)] mt-3 hover:underline"
-              >
-                View FIRE strategy <ArrowRight className="size-3.5" />
-              </Link>
-            </>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 mt-4">
+                  {fi.components.slice(0, 4).map((c) => (
+                    <div key={c.key}>
+                      <p className="text-[11px] text-white/50">{c.label}</p>
+                      <p className="money text-sm font-semibold mt-0.5">{Number(c.score).toFixed(0)}</p>
+                    </div>
+                  ))}
+                </div>
+                <Link
+                  href="/financial-independence"
+                  className="inline-flex items-center gap-1 text-[13px] font-medium text-white mt-auto pt-3 hover:underline"
+                >
+                  View Freedom strategy <ArrowRight className="size-3.5" />
+                </Link>
+              </>
+            )
           )}
-        </StatCard>
+        </Card3D>
       </div>
 
       {/* Recent entries + deadlines */}
@@ -298,7 +323,7 @@ export default function DashboardPage() {
       </div>
 
       {/* AI strip */}
-      <div className="rounded-lg bg-[#0A2540] text-white p-5 flex flex-wrap items-center gap-4">
+      <div className="rounded-lg bg-[var(--emphasis)] text-white p-5 flex flex-wrap items-center gap-4">
         <div className="size-9 rounded-md bg-white/10 flex items-center justify-center shrink-0">
           <Sparkles className="size-4.5" />
         </div>
@@ -322,7 +347,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => openPanel()}
-            className="rounded-full bg-white text-[#0A2540] px-4 py-1.5 text-[13px] font-semibold inline-flex items-center gap-1 hover:bg-white/90 transition-colors"
+            className="rounded-full bg-white text-primary px-4 py-1.5 text-[13px] font-semibold inline-flex items-center gap-1 hover:bg-white/90 transition-colors"
           >
             Start conversation <ArrowRight className="size-3.5" />
           </button>

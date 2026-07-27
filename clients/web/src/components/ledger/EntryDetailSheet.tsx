@@ -104,7 +104,7 @@ export function EntryDetailSheet({
               </div>
 
               {/* amount hero */}
-              <div className="rounded-lg bg-[#0A2540] text-white p-5">
+              <div className="rounded-lg bg-[var(--emphasis)] text-white p-5">
                 <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide text-white/40 truncate">
                   {entry.description}
                 </p>

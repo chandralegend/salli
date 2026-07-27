@@ -1,3 +1,4 @@
+import { recordFailure, requestIdOf } from "./diagnostics";
 import { API_URL } from "./api-client";
 
 export type ApprovalAction = {
@@ -80,6 +81,16 @@ export async function* streamAgent(
     throw err;
   }
 
+  if (!res.ok) {
+    recordFailure({
+      via: "fetch",
+      method: "POST",
+      status: res.status,
+      path_template: "/agent/chat",
+      request_id: requestIdOf(res),
+    });
+  }
+
   if (res.status === 402) {
     let detail: Record<string, unknown> = {};
     try {
@@ -123,7 +134,16 @@ export async function* streamResume(
     throw err;
   }
 
-  if (!res.ok) throw new Error(`Resume error: ${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    recordFailure({
+      via: "fetch",
+      method: "POST",
+      status: res.status,
+      path_template: "/agent/resume",
+      request_id: requestIdOf(res),
+    });
+    throw new Error(`Resume error: ${res.status} ${res.statusText}`);
+  }
   yield* _readSse(res);
 }
 
@@ -138,6 +158,15 @@ export async function uploadAgentFile(
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
   });
-  if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+  if (!res.ok) {
+    recordFailure({
+      via: "fetch",
+      method: "POST",
+      status: res.status,
+      path_template: "/agent/files",
+      request_id: requestIdOf(res),
+    });
+    throw new Error(`Upload failed: ${res.status}`);
+  }
   return res.json();
 }

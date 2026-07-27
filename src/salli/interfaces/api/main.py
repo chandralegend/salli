@@ -8,6 +8,7 @@ routing, CORS, error handling, and the lifespan startup/shutdown.
 
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
@@ -16,6 +17,7 @@ from fastapi.responses import JSONResponse
 
 from salli.config import get_settings
 from salli.interfaces.api.deps import get_services
+from salli.interfaces.api.request_context import RequestContextMiddleware
 from salli.interfaces.api.routers import (
     accounts,
     advisor,
@@ -23,6 +25,7 @@ from salli.interfaces.api.routers import (
     auth,
     billing,
     budget,
+    bug_reports,
     debt,
     documents,
     entries,
@@ -42,8 +45,6 @@ from salli.interfaces.api.routers import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    import logging
-
     log = logging.getLogger(__name__)
     settings = get_settings()
 
@@ -102,6 +103,14 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     settings = get_settings()
 
+    # The first and only place logging is configured. Guarded because every API
+    # test builds a fresh app, and re-running basicConfig would stack handlers.
+    if not logging.getLogger().handlers:
+        logging.basicConfig(
+            level=getattr(logging, settings.log_level.upper(), logging.INFO),
+            format="%(asctime)s %(levelname)s %(name)s %(message)s",
+        )
+
     app = FastAPI(
         title="Salli API",
         description="Privacy-first personal finance & tax for Sri Lanka",
@@ -111,6 +120,13 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # ── Request correlation ───────────────────────────────────────────────────
+    # Registered BEFORE CORS so that CORS ends up outermost: add_middleware
+    # inserts at index 0, so the last-added middleware wraps the earlier ones.
+    # The 500 JSON body this produces has to pass back out through CORS, or the
+    # browser cannot read it and the request id never reaches the user.
+    app.add_middleware(RequestContextMiddleware)
+
     # ── CORS ──────────────────────────────────────────────────────────────────
     origins = ["*"] if settings.environment == "development" else settings.allowed_origins
     app.add_middleware(
@@ -119,6 +135,9 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        # allow_headers already permits the client to *send* this; expose_headers
+        # is what lets browser JS *read* it off the response.
+        expose_headers=["X-Request-Id"],
     )
 
     # ── Routers ───────────────────────────────────────────────────────────────
@@ -136,6 +155,7 @@ def create_app() -> FastAPI:
     app.include_router(fi.router)
     app.include_router(advisor.router)
     app.include_router(budget.router)
+    app.include_router(bug_reports.router)
     app.include_router(debt.router)
     app.include_router(portfolio.router)
     app.include_router(subscriptions.router)

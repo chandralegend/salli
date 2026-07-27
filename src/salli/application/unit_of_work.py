@@ -15,6 +15,7 @@ from salli.adapters.db.repositories import (
     SQLAgentSessionRepository,
     SQLAuditLogRepository,
     SQLBudgetRepository,
+    SQLBugReportRepository,
     SQLDataPortabilityRepository,
     SQLDebtRepository,
     SQLFireStrategyRepository,
@@ -40,6 +41,7 @@ from salli.application.ports import (
     AgentSessionRepository,
     AuditLogRepository,
     BudgetRepository,
+    BugReportRepository,
     DataPortabilityRepository,
     DebtRepository,
     FireStrategyRepository,
@@ -85,6 +87,7 @@ class UnitOfWork:
     policies: PolicyRepository
     insurance_targets: InsuranceTargetRepository
     audit_log: AuditLogRepository
+    bug_reports: BugReportRepository
     data_portability: DataPortabilityRepository
     oauth_clients: OAuthClientRepository
     oauth_tokens: OAuthTokenRepository
@@ -115,6 +118,7 @@ class UnitOfWork:
         self.policies = SQLPolicyRepository(self._session)
         self.insurance_targets = SQLInsuranceTargetRepository(self._session)
         self.audit_log = SQLAuditLogRepository(self._session)
+        self.bug_reports = SQLBugReportRepository(self._session)
         self.data_portability = SQLDataPortabilityRepository(self._session)
         self.oauth_clients = SQLOAuthClientRepository(self._session)
         self.oauth_tokens = SQLOAuthTokenRepository(self._session)

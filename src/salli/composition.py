@@ -14,6 +14,7 @@ from salli.application.services.advisor_service import AdvisorService
 from salli.application.services.agent_service import AgentService
 from salli.application.services.billing_service import BillingService
 from salli.application.services.budget_service import BudgetService
+from salli.application.services.bug_report_service import BugReportService
 from salli.application.services.data_portability_service import DataPortabilityService
 from salli.application.services.debt_service import DebtService
 from salli.application.services.document_service import DocumentService
@@ -53,6 +54,7 @@ class Services:
     subscription: SubscriptionService
     insurance: InsuranceService
     reports: ReportService
+    bug_reports: BugReportService
     data_portability: DataPortabilityService
     mcp_oauth: McpOAuthService
     entry_parse: EntryParseService | None
@@ -116,6 +118,13 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         )
 
     reminders = ReminderService(uow_factory, budget, subscription, insurance)
+    bug_reports = BugReportService(
+        uow_factory,
+        tracker=_build_tracker(settings),
+        documents=documents,
+        api_version="0.1.0",
+        environment=settings.environment,
+    )
     reports = ReportService(ledger, fi)
     mcp_oauth = McpOAuthService(
         uow_factory,
@@ -142,6 +151,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         advisor,
         documents,
         reminders,
+        bug_reports,
     )
 
     return Services(
@@ -163,6 +173,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         subscription=subscription,
         insurance=insurance,
         reports=reports,
+        bug_reports=bug_reports,
         data_portability=data_portability,
         mcp_oauth=mcp_oauth,
         entry_parse=entry_parse,
@@ -183,6 +194,27 @@ def _build_billing(settings: Settings):
             "plus": settings.paddle_price_plus,
             "pro": settings.paddle_price_pro,
         },
+    )
+
+
+def _build_tracker(settings: Settings):
+    """
+    Return a Jira adapter when configured, else None.
+
+    None is a supported state, not a degraded one: BugReportService stores every
+    report either way and records push_status="skipped", so bug reporting works
+    before any tracker credentials exist.
+    """
+    if not (settings.jira_base_url and settings.jira_email and settings.jira_api_token):
+        return None
+    from salli.adapters.tracker.jira import JiraIssueTrackerAdapter
+
+    return JiraIssueTrackerAdapter(
+        base_url=settings.jira_base_url,
+        email=settings.jira_email,
+        api_token=settings.jira_api_token,
+        project_key=settings.jira_project_key,
+        issue_type=settings.jira_issue_type,
     )
 
 

@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import delete, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -23,6 +23,7 @@ from salli.adapters.db.models import (
     AgentSessionORM,
     AuditLogORM,
     BudgetORM,
+    BugReportORM,
     DebtORM,
     DocumentORM,
     FireStrategyORM,
@@ -52,6 +53,7 @@ from salli.application.ports import (
     AgentSessionRepository,
     AuditLogRepository,
     BudgetRepository,
+    BugReportRepository,
     DataPortabilityRepository,
     DebtRepository,
     FireStrategyRepository,
@@ -1732,6 +1734,98 @@ class SQLAuditLogRepository(AuditLogRepository):
         return [_audit_log_to_dict(r) for r in (await self._s.execute(stmt)).scalars().all()]
 
 
+# ── Bug report repository ─────────────────────────────────────────────────────
+
+
+def _bug_report_to_dict(r: BugReportORM) -> dict[str, Any]:
+    return {
+        "id": r.id,
+        "title": r.title,
+        "description": r.description,
+        "severity": r.severity,
+        "area": r.area,
+        "contact_ok": r.contact_ok,
+        "contact_email": r.contact_email,
+        "file_ref": r.file_ref,
+        "context": r.context,
+        "push_status": r.push_status,
+        "push_error": r.push_error,
+        "jira_issue_key": r.jira_issue_key,
+        "jira_url": r.jira_url,
+        "pushed_at": r.pushed_at.isoformat() if r.pushed_at else None,
+        "created_at": r.created_at.isoformat(),
+    }
+
+
+class SQLBugReportRepository(BugReportRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def save(self, user_id: str, report: dict[str, Any]) -> str:
+        report_id = report.get("id") or str(uuid.uuid4())
+        self._s.add(
+            BugReportORM(
+                id=report_id,
+                user_id=user_id,
+                title=report["title"],
+                description=report["description"],
+                severity=report["severity"],
+                area=report.get("area"),
+                contact_ok=bool(report.get("contact_ok", False)),
+                contact_email=report.get("contact_email"),
+                file_ref=report.get("file_ref"),
+                context=report.get("context") or {},
+                push_status=report.get("push_status", "pending"),
+            )
+        )
+        await self._s.flush()
+        return report_id
+
+    async def get(self, user_id: str, report_id: str) -> dict[str, Any] | None:
+        stmt = select(BugReportORM).where(
+            BugReportORM.id == report_id, BugReportORM.user_id == user_id
+        )
+        r = (await self._s.execute(stmt)).scalar_one_or_none()
+        return _bug_report_to_dict(r) if r else None
+
+    async def list(self, user_id: str, limit: int = 50) -> list[dict[str, Any]]:
+        stmt = (
+            select(BugReportORM)
+            .where(BugReportORM.user_id == user_id)
+            .order_by(BugReportORM.created_at.desc())
+            .limit(limit)
+        )
+        return [_bug_report_to_dict(r) for r in (await self._s.execute(stmt)).scalars().all()]
+
+    async def update(self, user_id: str, report_id: str, updates: dict[str, Any]) -> None:
+        stmt = select(BugReportORM).where(
+            BugReportORM.id == report_id, BugReportORM.user_id == user_id
+        )
+        r = (await self._s.execute(stmt)).scalar_one_or_none()
+        if r is None:
+            return
+        for k in ("push_status", "push_error", "jira_issue_key", "jira_url", "pushed_at"):
+            if k in updates:
+                setattr(r, k, updates[k])
+        await self._s.flush()
+
+    async def delete(self, user_id: str, report_id: str) -> None:
+        await self._s.execute(
+            delete(BugReportORM).where(
+                BugReportORM.id == report_id, BugReportORM.user_id == user_id
+            )
+        )
+        await self._s.flush()
+
+    async def count_since(self, user_id: str, since: datetime) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(BugReportORM)
+            .where(BugReportORM.user_id == user_id, BugReportORM.created_at >= since)
+        )
+        return int((await self._s.execute(stmt)).scalar_one() or 0)
+
+
 # ── Data portability repository ───────────────────────────────────────────────
 
 
@@ -1792,6 +1886,7 @@ class SQLDataPortabilityRepository(DataPortabilityRepository):
         await _delete(InsuranceTargetORM, InsuranceTargetORM.user_id)
         await _delete(TaxComputationORM, TaxComputationORM.user_id)
         await _delete(AuditLogORM, AuditLogORM.user_id)
+        await _delete(BugReportORM, BugReportORM.user_id)
         await _delete(OAuthRefreshTokenORM, OAuthRefreshTokenORM.user_id)
         await _delete(OAuthAccessTokenORM, OAuthAccessTokenORM.user_id)
         await _delete(OAuthAuthorizationCodeORM, OAuthAuthorizationCodeORM.user_id)

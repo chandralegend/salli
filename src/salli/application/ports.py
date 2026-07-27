@@ -529,6 +529,58 @@ class AuditLogRepository(ABC):
     async def list(self, user_id: str, limit: int = 100) -> list[dict[str, Any]]: ...
 
 
+# ── Bug reports ────────────────────────────────────────────────────────────────
+
+
+class BugReportRepository(ABC):
+    @abstractmethod
+    async def save(self, user_id: str, report: dict[str, Any]) -> str: ...
+
+    @abstractmethod
+    async def get(self, user_id: str, report_id: str) -> dict[str, Any] | None: ...
+
+    @abstractmethod
+    async def list(self, user_id: str, limit: int = 50) -> list[dict[str, Any]]: ...
+
+    @abstractmethod
+    async def update(self, user_id: str, report_id: str, updates: dict[str, Any]) -> None: ...
+
+    @abstractmethod
+    async def delete(self, user_id: str, report_id: str) -> None: ...
+
+    @abstractmethod
+    async def count_since(self, user_id: str, since: datetime) -> int:
+        """Reports this user filed at or after `since` — the rate-limit window."""
+        ...
+
+
+class IssueTrackerPort(ABC):
+    """
+    An external issue tracker a bug report is best-effort mirrored into.
+
+    Every method may raise. BugReportService treats failure as non-fatal: the
+    report is already durably stored in Salli's own database before any of this
+    is called, so a tracker outage must never cost us a user's report.
+    """
+
+    @abstractmethod
+    async def create_issue(
+        self,
+        *,
+        summary: str,
+        description_adf: dict[str, Any],
+        labels: list[str],
+        priority_name: str | None,
+    ) -> dict[str, Any]:
+        """Create an issue. Returns {"key": "SAL-123", "url": "https://…/SAL-123"}."""
+        ...
+
+    @abstractmethod
+    async def attach_file(
+        self, issue_key: str, filename: str, content: bytes, mime_type: str
+    ) -> None: ...
+
+
 # ── Data portability ───────────────────────────────────────────────────────────
 
 

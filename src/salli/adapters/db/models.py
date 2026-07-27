@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, date, datetime
+from typing import Any
 
 from sqlalchemy import (
     BigInteger,
@@ -652,6 +653,67 @@ class AuditLogORM(Base):
         DateTime(timezone=True), nullable=False, default=_now
     )
 
+    # This index was declared at the bottom of the file until 2026-07-27, where it
+    # landed in OAuthRefreshTokenORM's __table_args__ instead — so the ORM claimed
+    # an index named ix_audit_logs_user_created on oauth_refresh_tokens, while
+    # migration 32951ad2556e had actually created it on audit_logs. Every
+    # autogenerate run emitted a spurious drop-and-recreate-on-the-wrong-table
+    # pair as a result. It belongs here, next to the columns it covers.
+    __table_args__ = (Index("ix_audit_logs_user_created", "user_id", "created_at"),)
+
+
+# ── Bug reports ────────────────────────────────────────────────────────────────
+
+
+class BugReportORM(Base):
+    """
+    A user-submitted bug report plus the client diagnostics that came with it.
+
+    Written before any attempt to mirror it into an external tracker, so a
+    tracker outage cannot lose a report; `push_status` and its siblings record
+    how that mirroring went. `context` is a bounded diagnostics blob (see
+    domain/bugreport/models.py::bound_context) and deliberately holds no
+    financial data.
+    """
+
+    __tablename__ = "bug_reports"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    severity: Mapped[str] = mapped_column(String(20), nullable=False)
+    area: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    contact_ok: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Populated from the JWT only when contact_ok — never from the request body,
+    # and never forwarded to the external tracker.
+    contact_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    file_ref: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Typed, unlike the older Mapped[dict] JSONB columns above: this blob is read
+    # back out into a response and a Jira description, so the element type earns
+    # its keep.
+    context: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    push_status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    push_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    jira_issue_key: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    jira_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    pushed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "severity IN ('low', 'medium', 'high', 'blocking')",
+            name="ck_bug_reports_severity",
+        ),
+        # Serves both the user's own list and the rate-limit count-in-window.
+        Index("ix_bug_reports_user_created", "user_id", "created_at"),
+    )
+
 
 # ── MCP OAuth (lets external AI clients — Claude, ChatGPT, etc. — connect to a
 # user's read-only financial data via a Model Context Protocol server) ─────────
@@ -736,5 +798,3 @@ class OAuthRefreshTokenORM(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
     )
-
-    __table_args__ = (Index("ix_audit_logs_user_created", "user_id", "created_at"),)

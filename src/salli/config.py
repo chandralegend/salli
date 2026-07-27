@@ -34,6 +34,14 @@ class Settings(BaseSettings):
     paddle_price_plus: str = ""
     paddle_price_pro: str = ""
 
+    # Issue tracker — Jira Cloud. User-submitted bug reports are mirrored here.
+    # Leave blank and reports are still stored in Salli, with push_status "skipped".
+    jira_base_url: str = ""  # e.g. "https://leafmonkey.atlassian.net"
+    jira_email: str = ""  # the account the API token belongs to
+    jira_api_token: str = ""
+    jira_project_key: str = ""
+    jira_issue_type: str = "Bug"
+
     # Daily Wealth Advisor scheduling (Supabase pg_cron calls the API)
     cron_secret: str = ""
     advisor_api_base_url: str = "http://localhost:8000"

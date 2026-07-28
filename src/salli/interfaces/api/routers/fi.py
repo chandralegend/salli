@@ -6,11 +6,12 @@ from __future__ import annotations
 
 import json
 from collections.abc import AsyncGenerator
-from typing import Any
+from decimal import Decimal
+from typing import Annotated, Any
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from salli.application.services.billing_service import QuotaExceeded
 from salli.domain.billing.content_gating import truncate_projections, truncate_strategy
@@ -175,3 +176,37 @@ async def get_projections(user_id: CurrentUser, email: CurrentEmail, svc: AppSer
 async def get_surplus_breakdown(user_id: CurrentUser, svc: AppServices):
     """Income-by-source and expense-by-category breakdown from the trailing 12 months."""
     return await svc.fi.get_surplus_breakdown(user_id)
+
+
+# ── "Can I afford this?" ──────────────────────────────────────────────────────
+
+
+class PurchaseRequest(BaseModel):
+    """
+    Money arrives as a STRING and is parsed to Decimal, never float — a float in
+    the money path is a bug (CLAUDE.md). `annual_interest_rate` is a fraction
+    (0.18 = 18%), bounded so a caller passing 18 is rejected rather than
+    silently costing the plan ~100x too dearly.
+    """
+
+    amount: Annotated[Decimal, Field(ge=0, max_digits=18, decimal_places=2)]
+    term_months: Annotated[int | None, Field(default=None, ge=1, le=600)] = None
+    annual_interest_rate: Annotated[Decimal, Field(default=Decimal(0), ge=0, le=1)] = Decimal(0)
+
+
+@router.post("/simulate-purchase")
+async def simulate_purchase(body: PurchaseRequest, user_id: CurrentUser, svc: AppServices):
+    """
+    Cost a prospective purchase in months of freedom, comparing cash against
+    instalments.
+
+    Deliberately NOT metered: it is pure deterministic engine math with no LLM
+    call, and it is the loop the product exists for — throttling it would teach
+    users not to ask.
+    """
+    return await svc.fi.simulate_purchase(
+        user_id,
+        body.amount,
+        term_months=body.term_months,
+        annual_interest_rate=body.annual_interest_rate,
+    )

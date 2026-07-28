@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
 import { Card3D } from "@/components/shared/Card3D";
+import { AffordabilityCard } from "@/components/fi/AffordabilityCard";
 import { RadialProgress } from "@/components/shared/RadialProgress";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StatusChip } from "@/components/shared/StatusChip";
@@ -234,6 +235,11 @@ export default function DashboardPage() {
           )}
         </Card3D>
       </div>
+
+      {/* The pre-purchase question — sits under the Freedom card because it is
+          the actionable half of it: that card says when you're free, this one
+          says what a purchase costs you. */}
+      <AffordabilityCard id="tour-dash-afford-card" />
 
       {/* Recent entries + deadlines */}
       <div className="grid lg:grid-cols-2 gap-4">

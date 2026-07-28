@@ -14,7 +14,7 @@ approve or deny the action before it executes. The agent resumes via Command(res
 from __future__ import annotations
 
 import contextvars
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Annotated, Any
 
 from langchain_core.tools import tool
@@ -162,6 +162,7 @@ def make_manager_tools(
     subscription_svc: Any = None,
     insurance_svc: Any = None,
     advisor_svc: Any = None,
+    fi_svc: Any = None,
 ) -> list[Any]:
     """
     Return the manager-only tools:
@@ -176,6 +177,8 @@ def make_manager_tools(
       - get_coverage_report (insurance coverage gap, missing types, expiring-soon policies)
       - get_latest_advisor_report (most recent Wealth Advisor report, no new LLM call)
       - run_wealth_advisor (generate a fresh Wealth Advisor report now; quota-gated)
+      - get_freedom_snapshot (FI score, Freedom number, progress, years to FI)
+      - can_i_afford (costs a prospective purchase in months of freedom)
       - create_account, create_reminder, post_journal_entry (all need user approval)
     """
 
@@ -355,6 +358,88 @@ def make_manager_tools(
             return {"error": "Profile service unavailable"}
         user_id = _current_user.get()
         return await profile_svc.get_profile(user_id)
+
+    # ── Freedom (FI) tools ────────────────────────────────────────────────────
+
+    @tool
+    async def get_freedom_snapshot() -> dict[str, Any]:
+        """
+        Return the user's Freedom (financial independence) position: overall score
+        and grade, Freedom number, investable asset base net of debt, monthly
+        surplus, savings rate, emergency-fund months, and projected years to FI.
+
+        Use this for "how am I doing?", "when can I retire?", or before discussing
+        any trade-off between spending now and retiring sooner. Figures are
+        engine-computed and authoritative — never recompute or estimate them.
+        """
+        if fi_svc is None:
+            return {"error": "Freedom service unavailable"}
+        user_id = _current_user.get()
+        return await fi_svc.get_or_compute_score(user_id)
+
+    @tool
+    async def can_i_afford(
+        amount: Annotated[str, "Purchase price as a decimal string, e.g. '450000'"],
+        term_months: Annotated[
+            int | None,
+            "If the user is considering paying in instalments, the number of months; "
+            "omit for a straight cash purchase",
+        ] = None,
+        annual_interest_rate: Annotated[
+            str,
+            "Annual interest/finance rate on the instalment plan as a DECIMAL FRACTION "
+            "(0.18 for 18%, never 18). Use '0' for a genuine 0% plan.",
+        ] = "0",
+    ) -> dict[str, Any]:
+        """
+        Cost a prospective purchase in MONTHS OF FREEDOM — the delay it adds to the
+        user's financial-independence date — and compare paying cash against
+        instalments.
+
+        This is Salli's core question. Use it whenever the user asks whether they
+        can afford something, whether to finance it, or which way is cheaper.
+
+        Returns, all engine-computed: the delay in months for each funding option,
+        total cost and interest, the monthly payment, whether that payment exceeds
+        their monthly surplus, whether the price is even coverable from liquid
+        savings, and what paying cash would leave in their emergency fund.
+
+        Reporting rules:
+        - State the months of delay and the emergency-fund effect. A user can
+          usually "afford" something on paper while wrecking their buffer, and that
+          is the part they most need told plainly.
+        - `months_delay: null` means the FI date is not reachable on current
+          figures, NOT that the purchase is free. Say so.
+        - If `is_stale` is true, do NOT give an affordability verdict. Tell the user
+          their ledger's last entry is from `data_as_of` and ask them to bring it up
+          to date first — a confident answer from an old balance sheet is worse than
+          no answer.
+        - Never derive your own figures from these; quote them.
+        """
+        if fi_svc is None:
+            return {"error": "Freedom service unavailable"}
+        user_id = _current_user.get()
+        try:
+            value = Decimal(amount)
+        except (InvalidOperation, ValueError):
+            return {"error": f"Could not read '{amount}' as an amount"}
+        if value < 0:
+            return {"error": "Purchase amount cannot be negative"}
+        try:
+            rate = Decimal(annual_interest_rate)
+        except (InvalidOperation, ValueError):
+            return {"error": f"Could not read '{annual_interest_rate}' as a rate"}
+        # A model that passes 18 for 18% would overstate the finance cost ~100x.
+        if not (Decimal(0) <= rate <= Decimal(1)):
+            return {
+                "error": (
+                    f"annual_interest_rate must be a fraction between 0 and 1, got {rate}. "
+                    "Use 0.18 for 18%."
+                )
+            }
+        return await fi_svc.simulate_purchase(
+            user_id, value, term_months=term_months, annual_interest_rate=rate
+        )
 
     # ── Budget tool ───────────────────────────────────────────────────────────
 
@@ -676,6 +761,8 @@ def make_manager_tools(
         get_memory,
         list_memories,
         get_financial_profile,
+        get_freedom_snapshot,
+        can_i_afford,
         get_budget_summary,
         get_payoff_plan,
         get_portfolio_summary,

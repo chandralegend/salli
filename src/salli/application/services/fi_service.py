@@ -93,6 +93,37 @@ def _months_observed(entries: list[StoredJournalEntry], cap: int = 12) -> Decima
     return Decimal(max(1, min(cap, months)))
 
 
+# A balance sheet older than this is treated as too stale to advise a purchase
+# against. Chosen to be forgiving of a user who books a month late, while still
+# refusing to answer from a quarter-old picture: a confident "yes, you can
+# afford it" derived from stale data is worse than declining to answer, because
+# the user acts on it and cannot un-spend the money.
+STALE_AFTER_DAYS = 45
+
+
+def _latest_entry_date(entries: list[StoredJournalEntry]) -> str | None:
+    """Newest entry date in the ledger, ISO — the age of the picture we advise on."""
+    if not entries:
+        return None
+    return max(str(e.entry_date)[:10] for e in entries)
+
+
+def _is_stale(latest_iso: str | None, *, threshold_days: int = STALE_AFTER_DAYS) -> bool:
+    """
+    True when the ledger is too old to answer a purchase question from.
+
+    An empty ledger counts as stale: there is nothing to advise on, and that is a
+    far more honest response than costing a purchase against a zero balance sheet.
+    """
+    if latest_iso is None:
+        return True
+    try:
+        latest = datetime.date.fromisoformat(latest_iso)
+    except ValueError:
+        return True
+    return (datetime.date.today() - latest).days > threshold_days
+
+
 def _plus_years_iso(years: int) -> str:
     """Calendar-correct year arithmetic (365-day years drift on leap years)."""
     today = datetime.date.today()
@@ -536,6 +567,83 @@ class FiService:
                 k: str(v) for k, v in engine.scenario_real_returns(strategy, pack).items()
             },
             "expected_inflation": str(pack.expected_inflation),
+        }
+
+    # ── Purchase simulation ("can I afford this?") ────────────────────────────────
+
+    async def simulate_purchase(
+        self,
+        user_id: str,
+        amount: Decimal,
+        *,
+        term_months: int | None = None,
+        annual_interest_rate: Decimal = Decimal(0),
+    ) -> dict[str, Any]:
+        """
+        Cost a prospective purchase in months of freedom.
+
+        Uses the SAME swr / target-expenses / real-return values as
+        `get_projections`, so the answer here can never contradict the user's
+        Freedom page. Every figure is engine-computed; the caller (and the agent
+        above it) may present them but must not derive new ones.
+        """
+        snapshot = await self.build_snapshot(user_id)
+        strategy = self._resolve_strategy(await self.get_strategy(user_id))
+        pack = registry.get_pack()
+
+        async with self._uow_factory() as uow:
+            entries = await uow.ledger.get_entries(user_id)
+        as_of = _latest_entry_date(entries)
+        stale = _is_stale(as_of)
+
+        # The base scenario's real return — the same rate `get_projections`
+        # reports as `real_returns.base` and draws the base line with.
+        rates = engine.scenario_real_returns(strategy, pack)
+
+        impact = engine.simulate_purchase(
+            snapshot,
+            pack,
+            amount,
+            swr=strategy.swr,
+            target_monthly_expenses=strategy.target_monthly_expenses,
+            annual_real_return=rates["base"],
+            term_months=term_months,
+            annual_interest_rate=annual_interest_rate,
+            data_as_of=as_of,
+            is_stale=stale,
+        )
+
+        return {
+            "amount": str(impact.amount),
+            "currency": impact.currency,
+            "fi_number": str(impact.fi_number),
+            "fi_asset_base_before": str(impact.fi_asset_base_before),
+            "monthly_surplus": str(impact.monthly_surplus),
+            "baseline_months_to_fi": impact.baseline_months_to_fi,
+            "payable_from_liquid": impact.payable_from_liquid,
+            "emergency_months_before": str(impact.emergency_months_before),
+            "emergency_months_after_cash": str(impact.emergency_months_after_cash),
+            "emergency_fund_target_months": impact.emergency_fund_target_months,
+            "options": [
+                {
+                    "key": o.key,
+                    "label": o.label,
+                    "total_cost": str(o.total_cost),
+                    "interest_cost": str(o.interest_cost),
+                    "monthly_payment": str(o.monthly_payment) if o.monthly_payment else None,
+                    "term_months": o.term_months,
+                    "months_to_fi": o.months_to_fi,
+                    "months_delay": o.months_delay,
+                    "exceeds_monthly_surplus": o.exceeds_monthly_surplus,
+                }
+                for o in impact.options
+            ],
+            "cheapest_option_key": impact.cheapest_option_key,
+            "data_as_of": impact.data_as_of,
+            "is_stale": impact.is_stale,
+            "stale_after_days": STALE_AFTER_DAYS,
+            "real_return_used": str(rates["base"]),
+            "swr": str(strategy.swr),
         }
 
     # ── Surplus Breakdown ────────────────────────────────────────────────────────

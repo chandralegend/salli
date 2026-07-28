@@ -26,7 +26,7 @@ const TIERS: Tier[] = [
     monthlyPrice: 0,
     cta: "Start free",
     href: APP_LOGIN_URL,
-    features: ["Immutable double-entry ledger", "Full Sri Lanka tax engine", "Debt payoff & FIRE planning", "20 AI messages / month", "Community support"],
+    features: ["Immutable double-entry ledger", "Full Sri Lanka tax engine", "Debt payoff & FIRE planning", "Full FIRE scenarios, AI rationale & all advisor recommendations", "150 AI messages / month", "Community support"],
   },
   {
     name: "Plus",
@@ -36,7 +36,7 @@ const TIERS: Tier[] = [
     dark: true,
     cta: "Choose Plus",
     href: `${APP_LOGIN_URL}?next=${encodeURIComponent("/settings?upgrade=plus")}`,
-    features: ["Everything in Free", "500 AI messages / month", "50 statement uploads / month", "Daily wealth advisor (45 runs / month)", "Connect Claude, ChatGPT & other MCP clients", "Full FIRE scenarios, AI rationale & all advisor recommendations"],
+    features: ["Everything in Free", "500 AI messages / month", "50 statement uploads / month", "Daily wealth advisor (45 runs / month)", "Web search & document management", "Connect Claude, ChatGPT & other MCP clients"],
   },
   {
     name: "Pro",
@@ -52,12 +52,13 @@ const COMPARE = [
   { label: "Immutable double-entry ledger", free: "✓", plus: "✓", pro: "✓" },
   { label: "Sri Lanka tax engine & payable", free: "✓", plus: "✓", pro: "✓" },
   { label: "Debt payoff & FIRE planning", free: "✓", plus: "✓", pro: "✓" },
-  { label: "AI messages / month (chat, quick-add, FIRE strategy)", free: "20", plus: "500", pro: "5,000" },
-  { label: "Statement uploads / month", free: "3", plus: "50", pro: "500" },
-  { label: "Wealth advisor runs / month", free: "3", plus: "45", pro: "150" },
-  { label: "Portfolio growth scenarios", free: "1 (Base)", plus: "3 (Conservative/Base/Growth)", pro: "3 (Conservative/Base/Growth)" },
-  { label: "AI strategy rationale & theories", free: "Preview", plus: "Full", pro: "Full" },
-  { label: "Wealth advisor recommendations", free: "Top 2 / report", plus: "All", pro: "All" },
+  { label: "AI messages / month (chat, quick-add, FIRE strategy)", free: "150", plus: "500", pro: "5,000" },
+  { label: "Statement uploads / month", free: "10", plus: "50", pro: "500" },
+  { label: "Wealth advisor runs / month", free: "10", plus: "45", pro: "150" },
+  { label: "Portfolio growth scenarios", free: "3 (Conservative/Base/Growth)", plus: "3 (Conservative/Base/Growth)", pro: "3 (Conservative/Base/Growth)" },
+  { label: "AI strategy rationale & theories", free: "Full", plus: "Full", pro: "Full" },
+  { label: "Wealth advisor recommendations", free: "All", plus: "All", pro: "All" },
+  { label: "Web search & document management", free: "✕", plus: "✓", pro: "✓" },
   { label: "Connect Claude, ChatGPT & other MCP clients", free: "✕", plus: "✓", pro: "✓" },
   { label: "Support", free: "Community", plus: "Email", pro: "Priority" },
 ];
@@ -153,7 +154,7 @@ export function PricingTiers() {
           ))}
         </div>
         <p className="mt-6.5 text-center font-mono text-xs text-ink-40">
-          All plans include the immutable ledger and the 2025/26 CA-reviewed tax pack. Prices in
+          All plans include the immutable ledger and the versioned 2025/26 IRD tax pack. Prices in
           USD, billed via Paddle. Your bank or Paddle applies the exchange rate and any local
           taxes at checkout.
         </p>

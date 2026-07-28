@@ -31,6 +31,7 @@ stops years-to-FI being flattered by inflation.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
@@ -41,6 +42,8 @@ from salli.domain.fi.models import (
     FireStrategy,
     FiScore,
     ProjectionPoint,
+    PurchaseImpact,
+    PurchaseOption,
     SurplusBreakdown,
 )
 
@@ -136,6 +139,187 @@ def years_to_target(
         if value >= target:
             return Decimal(year)
     return None
+
+
+def _months_to_target(
+    starting: Decimal,
+    annual_rate: Decimal,
+    target: Decimal,
+    contribution_for_month: Callable[[int], Decimal],
+    max_years: int = _MAX_PROJECTION_YEARS,
+) -> int | None:
+    """
+    Months until `starting` plus a (possibly varying) monthly contribution reaches
+    `target`. The month-resolution sibling of `years_to_target`.
+
+    Quantisation is deliberately asymmetric: the running value is rounded to cents
+    ONLY at year boundaries, while the target is checked every month. That is what
+    makes this reconcile exactly with `years_to_target` — at month 12k the value is
+    the same one that walk carries, so a crossing here at month m always satisfies
+    `ceil(m / 12) == years_to_target(...)`. Rounding every month instead would
+    accumulate twelve roundings a year against that walk's one and could report a
+    crossing a year apart from the headline figure — the same class of
+    chart-vs-solver disagreement the earlier FI audit had to fix.
+
+    `contribution_for_month` takes a 1-based month index so a funding plan whose
+    payments stop partway through (installments) can be expressed directly.
+    """
+    if target <= 0:
+        return None
+    value = _q2(starting)
+    if value >= target:
+        return 0
+    for month in range(1, max_years * 12 + 1):
+        value = _fv_after_months(value, contribution_for_month(month), annual_rate, 1)
+        if month % 12 == 0:
+            value = _q2(value)
+        if value >= target:
+            return month
+    return None
+
+
+def installment_payment(amount: Decimal, annual_rate: Decimal, term_months: int) -> Decimal:
+    """
+    Level payment on an amortising loan — the standard annuity formula.
+
+    Deterministic engine math, never the LLM: this figure decides whether a user
+    takes on debt, so it is held to the same rule as tax.
+    """
+    if term_months <= 0:
+        return Decimal(0)
+    r = annual_rate / Decimal(12)
+    if r <= 0:
+        return amount / Decimal(term_months)
+    discount = (Decimal(1) + r) ** -term_months
+    return amount * r / (Decimal(1) - discount)
+
+
+def simulate_purchase(
+    snapshot: FinancialSnapshot,
+    pack: FiPack,
+    amount: Decimal,
+    *,
+    swr: Decimal | None = None,
+    target_monthly_expenses: Decimal | None = None,
+    annual_real_return: Decimal | None = None,
+    term_months: int | None = None,
+    annual_interest_rate: Decimal = Decimal(0),
+    data_as_of: str | None = None,
+    is_stale: bool = False,
+) -> PurchaseImpact:
+    """
+    Cost a prospective purchase in months of freedom.
+
+    The two funding options are modelled so that neither double-counts:
+
+    * **Cash** — the asset base drops by the full amount today; the monthly
+      contribution is untouched. Total drag is exactly the purchase price.
+    * **Installments** — the asset base is untouched today (the money is still
+      invested; the debt is owed to the seller) and the monthly contribution
+      falls by the payment for the length of the term. Total drag is
+      `payment × term`, i.e. the price plus interest.
+
+    Booking the liability *and* deducting the repayments would charge the
+    principal twice, so exactly one of the two is applied per option.
+
+    `swr` / `target_monthly_expenses` / `annual_real_return` mirror `compute()`
+    and must be passed the same values, or the FI target this measures against
+    will differ from the one on the user's dashboard.
+    """
+    swr_eff = swr if (swr is not None and swr > 0) else pack.safe_withdrawal_rate
+    expenses = snapshot.monthly_expenses
+    target_expenses = (
+        target_monthly_expenses
+        if (target_monthly_expenses is not None and target_monthly_expenses > 0)
+        else expenses
+    )
+    annual_expenses = target_expenses * 12
+    fi_number = (annual_expenses / swr_eff) if annual_expenses > 0 and swr_eff > 0 else Decimal(0)
+
+    rate = annual_real_return if annual_real_return is not None else pack.expected_real_return
+    base = fi_asset_base(snapshot)
+    surplus = snapshot.monthly_income - expenses
+
+    baseline = _months_to_target(base, rate, fi_number, lambda _m: surplus)
+
+    def _delay(after: int | None) -> int | None:
+        if after is None or baseline is None:
+            return None
+        return after - baseline
+
+    options: list[PurchaseOption] = []
+
+    # ── Option 1: pay cash ────────────────────────────────────────────────────
+    cash_months = _months_to_target(base - amount, rate, fi_number, lambda _m: surplus)
+    options.append(
+        PurchaseOption(
+            key="cash",
+            label="Pay in full",
+            total_cost=_q2(amount),
+            interest_cost=Decimal("0.00"),
+            monthly_payment=None,
+            term_months=None,
+            months_to_fi=cash_months,
+            months_delay=_delay(cash_months),
+            exceeds_monthly_surplus=False,
+        )
+    )
+
+    # ── Option 2: installments ────────────────────────────────────────────────
+    if term_months and term_months > 0:
+        payment = installment_payment(amount, annual_interest_rate, term_months)
+        total = payment * Decimal(term_months)
+        term = term_months
+
+        def _contribution(month: int, _p: Decimal = payment, _t: int = term) -> Decimal:
+            return surplus - _p if month <= _t else surplus
+
+        inst_months = _months_to_target(base, rate, fi_number, _contribution)
+        options.append(
+            PurchaseOption(
+                key="installments",
+                label=f"{term_months} monthly payments",
+                total_cost=_q2(total),
+                # Floored at zero. The annuity payment is an exact (often
+                # repeating) decimal, so at 0% `payment × term` lands a hair
+                # under the price and the raw difference quantises to "-0.00" —
+                # a negative interest cost, which is both meaningless and, on a
+                # product selling trustworthy figures, reads as broken.
+                interest_cost=max(Decimal("0.00"), _q2(total - amount)),
+                monthly_payment=_q2(payment),
+                term_months=term_months,
+                months_to_fi=inst_months,
+                months_delay=_delay(inst_months),
+                exceeds_monthly_surplus=payment > surplus,
+            )
+        )
+
+    comparable = [o for o in options if o.months_delay is not None]
+    cheapest = min(comparable, key=lambda o: o.months_delay or 0).key if comparable else None
+
+    liquid = snapshot.liquid_savings
+    return PurchaseImpact(
+        amount=_q2(amount),
+        currency=snapshot.currency,
+        # NOT quantised, deliberately: `compute()` returns the raw quotient, and
+        # these two must be bit-identical so a purchase can never be costed
+        # against a different Freedom number than the dashboard shows. Rounding
+        # for display is the client's job.
+        fi_number=fi_number,
+        fi_asset_base_before=_q2(base),
+        monthly_surplus=_q2(surplus),
+        baseline_months_to_fi=baseline,
+        payable_from_liquid=liquid >= amount,
+        emergency_months_before=_q2(liquid / expenses) if expenses > 0 else Decimal(0),
+        emergency_months_after_cash=(
+            _q2((liquid - amount) / expenses) if expenses > 0 else Decimal(0)
+        ),
+        emergency_fund_target_months=pack.emergency_fund_target_months,
+        options=options,
+        cheapest_option_key=cheapest,
+        data_as_of=data_as_of,
+        is_stale=is_stale,
+    )
 
 
 def compute(

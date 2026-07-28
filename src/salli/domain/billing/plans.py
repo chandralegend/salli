@@ -41,22 +41,37 @@ class Plan:
 
 
 PLANS: dict[str, Plan] = {
+    # Free is deliberately tuned for LEARNING, not gross margin.
+    #
+    # Salli's core loop is a conversation ("can I afford this?") whose persuasive
+    # power is the *explanation* — the reasoning, and what the purchase costs the
+    # user's Freedom date. Gating that depth makes the product land flat for
+    # exactly the people we most need feedback from, while gating *volume* costs
+    # us nothing pedagogically. So Free gets the full depth of an answer and a
+    # modest allowance of them; paid plans buy throughput, MCP clients, web
+    # search and document management.
+    #
+    # Concretely: the content-depth entitlements below match the paid plans on
+    # purpose. Differentiation is the metered `limits`. This is a reversible
+    # commercial decision (plans live in code, no migration) — revisit once
+    # there is evidence about what people will actually pay for, not before.
     "free": Plan(
         key="free",
         name="Free",
-        description="Try Salli with a small monthly allowance.",
+        description="The full Salli answer, with a monthly allowance.",
         monthly_price_usd=0.0,
-        limits={METRIC_AGENT_MESSAGES: 20, METRIC_STATEMENT_UPLOADS: 3, METRIC_ADVISOR_RUNS: 3},
+        limits={METRIC_AGENT_MESSAGES: 150, METRIC_STATEMENT_UPLOADS: 10, METRIC_ADVISOR_RUNS: 10},
         features=[
             "Ledger & double-entry bookkeeping",
             "Sri Lanka tax engine (unlimited)",
-            "20 AI agent messages / month",
-            "3 statement uploads / month",
-            "3 wealth-advisor runs / month (manual)",
+            "150 AI agent messages / month",
+            "10 statement uploads / month",
+            "10 wealth-advisor runs / month (manual)",
+            "Full FIRE scenarios, AI rationale & all advisor recommendations",
         ],
-        fi_scenario_limit=1,
-        advisor_recommendation_limit=2,
-        fire_rationale_visible=False,
+        fi_scenario_limit=3,
+        advisor_recommendation_limit=None,
+        fire_rationale_visible=True,
     ),
     "plus": Plan(
         key="plus",
@@ -72,7 +87,6 @@ PLANS: dict[str, Plan] = {
             "Web search & document management",
             "Daily wealth advisor (FI score + recommendations)",
             "Connect Claude, ChatGPT, and other MCP clients",
-            "Full FIRE scenarios, AI rationale & all advisor recommendations",
         ],
         fi_scenario_limit=3,
         advisor_recommendation_limit=None,

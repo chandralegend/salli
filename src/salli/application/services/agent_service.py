@@ -82,6 +82,7 @@ class AgentService:
         subscription_svc: Any = None,
         insurance_svc: Any = None,
         advisor_svc: Any = None,
+        fi_svc: Any = None,
         checkpointer: Any = None,
         uow_factory: Any = None,
     ) -> None:
@@ -95,6 +96,7 @@ class AgentService:
         self._subscription_svc = subscription_svc
         self._insurance_svc = insurance_svc
         self._advisor_svc = advisor_svc
+        self._fi_svc = fi_svc
         self._checkpointer = checkpointer
         self._uow_factory = uow_factory
         self._agent: Any = None
@@ -120,6 +122,7 @@ class AgentService:
                 self._subscription_svc,
                 self._insurance_svc,
                 self._advisor_svc,
+                self._fi_svc,
                 checkpointer=self._checkpointer,
             )
             self._agent_date = today

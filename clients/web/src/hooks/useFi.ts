@@ -34,6 +34,44 @@ export type FiScore = {
   components: FiComponent[];
 };
 
+/**
+ * One way of funding a purchase, costed in months of freedom.
+ *
+ * `months_delay: null` means the FI date is not reachable on current figures —
+ * NOT that the purchase is free. Render it as "can't tell yet", never as 0.
+ */
+export type PurchaseOption = {
+  key: "cash" | "installments";
+  label: string;
+  total_cost: string;
+  interest_cost: string;
+  monthly_payment: string | null;
+  term_months: number | null;
+  months_to_fi: number | null;
+  months_delay: number | null;
+  exceeds_monthly_surplus: boolean;
+};
+
+export type PurchaseImpact = {
+  amount: string;
+  currency: string;
+  fi_number: string;
+  fi_asset_base_before: string;
+  monthly_surplus: string;
+  baseline_months_to_fi: number | null;
+  payable_from_liquid: boolean;
+  emergency_months_before: string; // months of expenses covered
+  emergency_months_after_cash: string; // can be negative — do not clamp
+  emergency_fund_target_months: number;
+  options: PurchaseOption[];
+  cheapest_option_key: string | null;
+  data_as_of: string | null; // ISO date of the newest ledger entry
+  is_stale: boolean; // true → show no verdict, ask for an update first
+  stale_after_days: number;
+  real_return_used: string; // 0..1
+  swr: string; // 0..1
+};
+
 export type Goal = {
   id: string;
   name: string;
@@ -225,6 +263,23 @@ export function useFireSurplus() {
     queryKey: ["fi", "surplus"],
     queryFn: () => apiFetch<SurplusBreakdown>("GET", "/fi/surplus"),
     staleTime: 120_000,
+  });
+}
+
+// ── "Can I afford this?" ──────────────────────────────────────────────────────
+
+export type PurchaseQuery = {
+  /** Decimal STRING, never a number — a float in the money path is a bug. */
+  amount: string;
+  term_months?: number | null;
+  /** Fraction, not a percentage: 0.18 for 18%. */
+  annual_interest_rate?: string;
+};
+
+export function useSimulatePurchase() {
+  return useMutation({
+    mutationFn: (body: PurchaseQuery) =>
+      apiFetch<PurchaseImpact>("POST", "/fi/simulate-purchase", body),
   });
 }
 

@@ -25,7 +25,7 @@ const PROBLEMS = [
 
 const PILLARS = [
   { n: "01", title: "A real ledger", tag: "Double-entry", body: "Proper double-entry accounting under the hood. Immutable, auditable. Every rupee accounted for." },
-  { n: "02", title: "A Sri Lankan tax engine", tag: "Deterministic", body: "Relief, rate bands, the 15% foreign-service final tax, and credits, all applied against versioned, CA-reviewed packs." },
+  { n: "02", title: "A Sri Lankan tax engine", tag: "Deterministic", body: "Relief, rate bands, the 15% foreign-service final tax, and credits, all applied against versioned packs, tested against the IRD's published rate bands." },
   { n: "03", title: "An AI advisor", tag: "Grounded", body: "Reads your statements, explains your tax, and drafts guidance, powered by the ledger and engine, never guesswork." },
   { n: "04", title: "A full money toolkit", tag: "Budgets · Freedom", body: "Budgets, debt payoff, portfolio, insurance, reports and FI projections, all on the same ledger." },
 ];
@@ -39,7 +39,7 @@ const STEPS = [
 const TRUST = [
   { title: "Deterministic math", body: "Every figure computed by the engine, never AI-generated." },
   { title: "Immutable ledger", body: "Double-entry, auditable, append-only. Nothing quietly changes." },
-  { title: "CA-reviewed packs", body: "Versioned tax packs reviewed by a chartered accountant." },
+  { title: "Versioned, tested packs", body: "Every rule tested against the IRD's published rate bands and the 2025 Amendment Act." },
   { title: "Reproducible returns", body: "Recompute a past return years later, even after rates change." },
   { title: "Human checkpoint", body: "A human-review step before any return is finalized." },
   { title: "Your data, private", body: "Everything Salli reads is kept for you, under your control." },
@@ -105,7 +105,7 @@ export default function HomePage() {
               </div>
               <div className="mt-7.5 flex flex-wrap items-center gap-4 font-mono text-[12.5px] text-ink-50">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-green" />CA-reviewed engine
+                  <span className="size-2 rounded-full bg-green" />Deterministic engine
                 </span>
                 <span className="opacity-40">/</span>
                 <span>LKR-native</span>
@@ -452,8 +452,8 @@ export default function HomePage() {
             From Colombo out.
           </h2>
           <p className="mt-4.5 max-w-[480px] text-[17px] leading-[1.55] text-cream-80">
-            Built around IRD rules for 2025/26. LKR-native, aligned to local banks, and reviewed by a
-            chartered accountant.
+            Built around IRD rules for 2025/26. LKR-native, aligned to local banks, and tested
+            against the IRD&rsquo;s published rate bands.
           </p>
           <div className="mt-14 grid grid-cols-2 gap-5.5 md:grid-cols-4">
             {[

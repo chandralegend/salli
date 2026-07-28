@@ -3,6 +3,7 @@ import { Archivo, Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { CookieConsent } from "@/components/CookieConsent";
 import { GrainOverlay } from "@/components/GrainOverlay";
+import { SITE_URL } from "@/lib/config";
 
 const archivo = Archivo({
   variable: "--font-archivo",
@@ -27,7 +28,7 @@ const DESCRIPTION =
   + "your tax, your net worth, and how close you are to financial independence.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://salli.leafmonkey.org"),
+  metadataBase: new URL(SITE_URL),
   title: { default: TITLE, template: "%s · Salli" },
   description: DESCRIPTION,
   keywords: [
@@ -46,7 +47,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     type: "website",
-    url: "https://salli.leafmonkey.org",
+    url: SITE_URL,
     siteName: "Salli",
     locale: "en_LK",
     images: [{ url: "/screens/web-dashboard.webp", width: 1600, height: 1000, alt: "Salli dashboard showing net worth, income, tax payable, and FI score" }],
@@ -66,7 +67,7 @@ const JSON_LD = {
   applicationCategory: "FinanceApplication",
   operatingSystem: "Web, iOS, Android",
   description: DESCRIPTION,
-  url: "https://salli.leafmonkey.org",
+  url: SITE_URL,
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
   areaServed: { "@type": "Country", name: "Sri Lanka" },
 };

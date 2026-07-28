@@ -10,11 +10,12 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import time
 
 import httpx
 import pytest
 
-from salli.adapters.billing.paddle import PaddleBillingAdapter
+from salli.adapters.billing.paddle import MAX_WEBHOOK_AGE_SECONDS, PaddleBillingAdapter
 
 SECRET = "whsec_test"
 PRICE_MAP = {
@@ -35,7 +36,10 @@ def adapter():
     )
 
 
-def _sign(raw: bytes, ts: str = "1700000000", secret: str = SECRET) -> str:
+def _sign(raw: bytes, ts: str | None = None, secret: str = SECRET) -> str:
+    """Sign `raw` as Paddle does. Defaults to *now* because verification enforces a
+    freshness window — a fixed timestamp would age out and fail every test."""
+    ts = str(int(time.time())) if ts is None else ts
     signed = f"{ts}:".encode() + raw
     h1 = hmac.new(secret.encode(), signed, hashlib.sha256).hexdigest()
     return f"ts={ts};h1={h1}"
@@ -172,6 +176,38 @@ def test_verify_transaction_completed_captures_customer(adapter):
     raw = json.dumps(payload).encode()
     event = adapter.verify_and_parse_webhook(raw, _sign(raw))
     assert event == {"user_id": "user-1", "provider_customer_id": "ctm_9"}
+
+
+# ── Replay window ────────────────────────────────────────────────────────────
+
+
+def test_verify_accepts_fresh_timestamp(adapter):
+    raw = _subscription_body()
+    # Inside the window but not exactly now — ordinary delivery latency.
+    ts = str(int(time.time()) - (MAX_WEBHOOK_AGE_SECONDS - 30))
+    assert adapter.verify_and_parse_webhook(raw, _sign(raw, ts=ts)) is not None
+
+
+def test_verify_rejects_stale_timestamp(adapter):
+    # A correctly-signed delivery captured and replayed later. The signature is
+    # genuine, so only the freshness check can reject this.
+    raw = _subscription_body()
+    ts = str(int(time.time()) - (MAX_WEBHOOK_AGE_SECONDS + 60))
+    assert adapter.verify_and_parse_webhook(raw, _sign(raw, ts=ts)) is None
+
+
+def test_verify_rejects_future_timestamp(adapter):
+    # Symmetric: a far-future ts means a skewed or forged clock, not a real event.
+    raw = _subscription_body()
+    ts = str(int(time.time()) + (MAX_WEBHOOK_AGE_SECONDS + 60))
+    assert adapter.verify_and_parse_webhook(raw, _sign(raw, ts=ts)) is None
+
+
+def test_verify_rejects_non_numeric_timestamp(adapter):
+    # Must return None, not raise — the ts is attacker-supplied (it is signed, but
+    # only against a secret we may have rotated).
+    raw = _subscription_body()
+    assert adapter.verify_and_parse_webhook(raw, _sign(raw, ts="not-a-number")) is None
 
 
 def test_verify_returns_none_without_secret():

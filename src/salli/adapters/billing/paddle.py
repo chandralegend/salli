@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import time
 from typing import Any
 
 import httpx
@@ -21,6 +22,12 @@ _API_BASE = {
     "sandbox": "https://sandbox-api.paddle.com",
     "production": "https://api.paddle.com",
 }
+
+# How far a webhook's signed timestamp may sit from our clock before we reject it
+# as a replay. Applied symmetrically, so a future-dated `ts` (a skewed or forged
+# clock) is refused too. Wide enough to absorb ordinary drift and Paddle's retry
+# backoff, short enough that a captured delivery stops being useful quickly.
+MAX_WEBHOOK_AGE_SECONDS = 300
 
 
 class PaddleBillingAdapter(BillingPort):
@@ -94,6 +101,18 @@ class PaddleBillingAdapter(BillingPort):
         signed = f"{ts}:".encode() + raw_body
         expected = hmac.new(self._webhook_secret.encode(), signed, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected, h1):
+            return None
+
+        # Only after the signature checks out: a valid HMAC alone stays valid
+        # forever, so a captured delivery could be replayed indefinitely to
+        # re-apply a subscription state. `ts` is inside the signed payload, so it
+        # can't be edited without invalidating h1. Checked second so an
+        # unauthenticated caller can't use the response to probe our clock.
+        try:
+            age = time.time() - int(ts)
+        except ValueError:
+            return None
+        if abs(age) > MAX_WEBHOOK_AGE_SECONDS:
             return None
 
         try:

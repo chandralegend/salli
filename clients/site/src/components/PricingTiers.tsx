@@ -5,48 +5,7 @@ import { clsx } from "clsx";
 import { MagneticButton } from "@/components/MagneticButton";
 import { Reveal } from "@/components/Reveal";
 import { APP_LOGIN_URL } from "@/lib/config";
-
-type Tier = {
-  name: string;
-  tagline: string;
-  monthlyPrice: number;
-  popular?: boolean;
-  dark?: boolean;
-  cta: string;
-  href: string;
-  features: string[];
-};
-
-// Prices must be kept in sync with src/salli/domain/billing/plans.py (the
-// backend, via Paddle, is the source of truth for what's actually charged).
-const TIERS: Tier[] = [
-  {
-    name: "Free",
-    tagline: "The honest ledger, forever free.",
-    monthlyPrice: 0,
-    cta: "Start free",
-    href: APP_LOGIN_URL,
-    features: ["Immutable double-entry ledger", "Full Sri Lanka tax engine", "Debt payoff & FIRE planning", "20 AI messages / month", "Community support"],
-  },
-  {
-    name: "Plus",
-    tagline: "More AI, and connect your favorite assistant.",
-    monthlyPrice: 9,
-    popular: true,
-    dark: true,
-    cta: "Choose Plus",
-    href: `${APP_LOGIN_URL}?next=${encodeURIComponent("/settings?upgrade=plus")}`,
-    features: ["Everything in Free", "500 AI messages / month", "50 statement uploads / month", "Daily wealth advisor (45 runs / month)", "Connect Claude, ChatGPT & other MCP clients", "Full FIRE scenarios, AI rationale & all advisor recommendations"],
-  },
-  {
-    name: "Pro",
-    tagline: "Full power, priority help.",
-    monthlyPrice: 29,
-    cta: "Choose Pro",
-    href: `${APP_LOGIN_URL}?next=${encodeURIComponent("/settings?upgrade=pro")}`,
-    features: ["Everything in Plus", "5,000 AI messages / month", "500 statement uploads / month", "150 wealth-advisor runs / month", "Priority support"],
-  },
-];
+import { MAX_ANNUAL_SAVING, TIERS, type Tier } from "@/lib/plans";
 
 const COMPARE = [
   { label: "Immutable double-entry ledger", free: "✓", plus: "✓", pro: "✓" },
@@ -62,9 +21,23 @@ const COMPARE = [
   { label: "Support", free: "Community", plus: "Email", pro: "Priority" },
 ];
 
-function priceFor(monthly: number, annual: boolean) {
-  if (monthly === 0) return "0";
-  return (annual ? Math.round(monthly * 0.8) : monthly).toLocaleString("en-US");
+// Headline figure is always a per-month number so the two cycles compare directly;
+// the annual row underneath states the amount actually charged.
+function priceFor(t: Tier, annual: boolean) {
+  if (t.monthlyPrice === 0) return "0";
+  const value = annual ? t.annualPrice / 12 : t.monthlyPrice;
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function hrefFor(t: Tier, annual: boolean) {
+  if (!t.planKey) return APP_LOGIN_URL;
+  // The app reads ?upgrade= and ?cycle= off /settings; without the cycle an
+  // annual selection here silently opens monthly checkout there.
+  const next = `/settings?upgrade=${t.planKey}${annual ? "&cycle=year" : ""}`;
+  return `${APP_LOGIN_URL}?next=${encodeURIComponent(next)}`;
 }
 
 export function PricingTiers() {
@@ -91,7 +64,10 @@ export function PricingTiers() {
             annual ? "bg-ink text-cream" : "text-ink-60",
           )}
         >
-          Annual <span className="rounded-full bg-green px-1.75 py-0.5 font-mono text-[11px] text-cream">−20%</span>
+          Annual{" "}
+          <span className="rounded-full bg-green px-1.75 py-0.5 font-mono text-[11px] text-cream">
+            Save up to {MAX_ANNUAL_SAVING}%
+          </span>
         </button>
       </div>
 
@@ -119,7 +95,7 @@ export function PricingTiers() {
                 <div className="mt-5.5 flex items-baseline justify-center gap-1.5">
                   <span className="font-mono text-base font-semibold opacity-70">$</span>
                   <span className="font-mono font-display text-[52px] font-extrabold tracking-[-0.03em]">
-                    {priceFor(t.monthlyPrice, annual)}
+                    {priceFor(t, annual)}
                   </span>
                   {t.monthlyPrice > 0 && <span className="font-mono text-sm opacity-60">/mo</span>}
                 </div>
@@ -127,11 +103,11 @@ export function PricingTiers() {
                   {t.monthlyPrice === 0
                     ? "No card required"
                     : annual
-                      ? `$${(Math.round(t.monthlyPrice * 0.8) * 12).toLocaleString("en-US")} billed annually`
+                      ? `$${t.annualPrice.toLocaleString("en-US")} billed annually`
                       : "Billed monthly"}
                 </div>
                 <MagneticButton
-                  href={t.href}
+                  href={hrefFor(t, annual)}
                   className={clsx(
                     "mt-6.5 rounded-full py-3.75 text-center text-[15px] font-bold",
                     t.dark ? "bg-red text-cream" : "bg-ink text-cream",

@@ -1,9 +1,8 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL as BASE_URL } from "@/lib/config";
 import { getAllSlugs } from "@/lib/posts";
 
 export const dynamic = "force-static";
-
-const BASE_URL = "https://salli.leafmonkey.org";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: Array<{

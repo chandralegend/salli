@@ -7,6 +7,7 @@ import { WordUp } from "@/components/WordUp";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { PricingTiers } from "@/components/PricingTiers";
 import { APP_LOGIN_URL } from "@/lib/config";
+import { tierByName } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 
 const FAQS = [
   { q: "Is the Free plan really free forever?", a: "Yes. The immutable ledger, the full Sri Lanka tax engine, and debt payoff & FIRE planning stay free forever, no card required. You only pay for higher AI usage limits, the daily wealth advisor, and connecting an external AI assistant like Claude or ChatGPT." },
-  { q: "How does annual billing work?", a: "Choose Annual to save 20% versus monthly. You're billed once a year, and you can switch back to monthly or cancel anytime." },
+  { q: "How does annual billing work?", a: `Choose Annual and you're billed once a year instead of monthly — Plus is $${tierByName("Plus").annualPrice} a year and Pro is $${tierByName("Pro").annualPrice} a year. The saving versus paying monthly is larger on Pro. You can switch back to monthly or cancel anytime.` },
   { q: "Can I change or cancel my plan?", a: "Anytime, from your account. Upgrades apply immediately and downgrades take effect at the end of your current billing period." },
   { q: "Do prices include taxes?", a: "Prices are shown in USD and billed via Paddle, our merchant of record, who applies any VAT, GST, or other local taxes at checkout based on your location." },
 ];

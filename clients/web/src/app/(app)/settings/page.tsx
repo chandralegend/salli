@@ -14,7 +14,7 @@ import { UpgradeDialog } from "@/components/billing/UpgradeDialog";
 import { DangerZone } from "@/components/settings/DangerZone";
 import { McpConnectionsCard } from "@/components/settings/McpConnectionsCard";
 import { HelpFeedbackCard } from "@/components/support/HelpFeedbackCard";
-import { useSubscription, useBillingPortal } from "@/hooks/useBilling";
+import { useSubscription, useBillingPortal, type BillingCycle } from "@/hooks/useBilling";
 import { useAuth } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 
@@ -55,7 +55,7 @@ function SettingsContent() {
     }
   }, [upgradeParam]);
 
-  const initialCycle = params.get("cycle") === "year" ? "year" : "month";
+  const initialCycle: BillingCycle = params.get("cycle") === "year" ? "year" : "month";
 
   const sub = subscription.data;
 
@@ -63,8 +63,13 @@ function SettingsContent() {
     try {
       const { url } = await portal.mutateAsync();
       window.location.assign(url);
-    } catch {
-      toast.error("Billing portal unavailable — try again shortly.");
+    } catch (err) {
+      // Same reasoning as UpgradeDialog: the backend's detail is the actionable
+      // text (e.g. "No billing customer for this user yet", which means checkout
+      // has never completed), not a transient-sounding retry prompt.
+      toast.error(
+        err instanceof Error ? err.message : "Billing portal unavailable — try again shortly.",
+      );
     }
   }
 
@@ -223,6 +228,7 @@ function SettingsContent() {
         onOpenChange={setUpgradeOpen}
         currentPlan={sub?.plan ?? "free"}
         highlightPlan={upgradeParam && upgradeParam !== "1" ? upgradeParam : undefined}
+        initialCycle={initialCycle}
       />
     </div>
   );

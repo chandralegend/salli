@@ -34,13 +34,16 @@ export function UpgradeDialog({
   onOpenChange,
   currentPlan,
   highlightPlan,
-  initialCycle = "month",
+  initialCycle,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   currentPlan: string;
   highlightPlan?: string;
-  initialCycle?: BillingCycle;
+  // Required rather than defaulted to "month": a merge once dropped this prop at
+  // the only call site, silently billing annual sign-ups monthly. Required makes
+  // that a compile error instead of a wrong charge.
+  initialCycle: BillingCycle;
 }) {
   const plans = usePlans();
   const checkout = useCheckout();
@@ -56,8 +59,18 @@ export function UpgradeDialog({
         toast.success("Subscription updated");
       });
       onOpenChange(false);
-    } catch {
-      toast.error("Billing is temporarily unavailable — try again shortly.");
+    } catch (err) {
+      // Surface the real reason. apiFetch has already run the response body
+      // through messageFrom, and openPaddleCheckout throws plain Errors with
+      // operator-actionable text ("Billing not configured", "No price for this
+      // plan"), so err.message is the useful line in both cases. The generic
+      // fallback stays for genuinely unknown throws — it previously covered
+      // everything, which told users to retry a failure that could never resolve.
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Billing is temporarily unavailable — try again shortly.",
+      );
     }
   }
 

@@ -13,6 +13,11 @@ def make_engine(settings: Settings):
         pool_pre_ping=True,
         pool_size=5,
         max_overflow=10,
+        # Supabase's transaction-mode pooler (pgbouncer) hands out connections that
+        # may not survive between statements, so asyncpg's server-side prepared
+        # statement cache goes stale. Disabling it trades a little query-plan reuse
+        # for correctness under pooling.
+        connect_args={"statement_cache_size": 0},
     )
 
 

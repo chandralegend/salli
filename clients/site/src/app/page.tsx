@@ -15,7 +15,13 @@ import { FeatureDeepDive } from "@/components/FeatureDeepDive";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { AppleLogo, GooglePlayLogo } from "@/components/StoreIcons";
-import { APP_URL } from "@/lib/config";
+import {
+  APP_LOGIN_URL,
+  APP_STORE_URL,
+  MOBILE_APP_LIVE,
+  PLAY_STORE_URL,
+} from "@/lib/config";
+import { ComingSoonPill } from "@/components/ComingSoonPill";
 
 const PROBLEMS = [
   { n: "01", bad: "Scattered money", badsub: "Accounts, cards, loans, investments: spreadsheets go stale.", good: "One truthful picture" },
@@ -92,16 +98,30 @@ export default function HomePage() {
                 only from your actual numbers, never guesswork.
               </p>
               <div className="mt-9.5 flex flex-wrap gap-3.5">
-                <MagneticButton href="#cta" className="rounded-full bg-red px-8 py-4.5 text-[17px] font-bold text-cream shadow-[0_16px_34px_-14px_rgba(245,49,15,.8)]">
+                <MagneticButton href={APP_LOGIN_URL} className="rounded-full bg-red px-8 py-4.5 text-[17px] font-bold text-cream shadow-[0_16px_34px_-14px_rgba(245,49,15,.8)]">
                   Get started free
                 </MagneticButton>
-                <MagneticButton href="#download" className="flex items-center gap-2.5 rounded-full border-2 border-ink px-7.5 py-4 text-[17px] font-bold hover:bg-ink hover:text-cream">
-                  <span className="flex items-center gap-1.5">
-                    <AppleLogo className="size-4" />
-                    <GooglePlayLogo className="size-3.5" />
-                  </span>
-                  Download the app
-                </MagneticButton>
+                {MOBILE_APP_LIVE ? (
+                  <MagneticButton href="#download" className="flex items-center gap-2.5 rounded-full border-2 border-ink px-7.5 py-4 text-[17px] font-bold hover:bg-ink hover:text-cream">
+                    <span className="flex items-center gap-1.5">
+                      <AppleLogo className="size-4" />
+                      <GooglePlayLogo className="size-3.5" />
+                    </span>
+                    Download the app
+                  </MagneticButton>
+                ) : (
+                  <ComingSoonPill
+                    className="px-7.5 py-4 text-[17px]"
+                    icon={
+                      <span className="flex items-center gap-1.5">
+                        <AppleLogo className="size-4" />
+                        <GooglePlayLogo className="size-3.5" />
+                      </span>
+                    }
+                  >
+                    Mobile app
+                  </ComingSoonPill>
+                )}
               </div>
               <div className="mt-7.5 flex flex-wrap items-center gap-4 font-mono text-[12.5px] text-ink-50">
                 <span className="inline-flex items-center gap-1.5">
@@ -516,19 +536,29 @@ export default function HomePage() {
             In your pocket.
           </h2>
           <p className="mt-4.5 max-w-[400px] text-[17px] leading-[1.55] text-ink-60">
-            Full-power web app for desktop, and a dedicated dark mobile app for iOS &amp; Android,
-            always in sync.
+            {MOBILE_APP_LIVE
+              ? "Full-power web app for desktop, and a dedicated dark mobile app for iOS & Android, always in sync."
+              : "The full-power web app works today on desktop and mobile browsers. Dedicated iOS and Android apps are on the way."}
           </p>
           <div className="mt-7.5 flex flex-wrap gap-3">
-            <MagneticButton href="#cta" className="flex items-center gap-2.5 rounded-full bg-ink px-6 py-3.5 text-[15px] font-bold text-cream hover:bg-red">
-              <AppleLogo className="size-4.5" />
-              App Store
-            </MagneticButton>
-            <MagneticButton href="#cta" className="flex items-center gap-2.5 rounded-full bg-ink px-6 py-3.5 text-[15px] font-bold text-cream hover:bg-red">
-              <GooglePlayLogo className="size-4" />
-              Google Play
-            </MagneticButton>
-            <MagneticButton href={APP_URL} className="rounded-full border-2 border-ink px-5.5 py-3 text-[15px] font-bold hover:bg-ink hover:text-cream">
+            {MOBILE_APP_LIVE ? (
+              <>
+                <MagneticButton href={APP_STORE_URL} className="flex items-center gap-2.5 rounded-full bg-ink px-6 py-3.5 text-[15px] font-bold text-cream hover:bg-red">
+                  <AppleLogo className="size-4.5" />
+                  App Store
+                </MagneticButton>
+                <MagneticButton href={PLAY_STORE_URL} className="flex items-center gap-2.5 rounded-full bg-ink px-6 py-3.5 text-[15px] font-bold text-cream hover:bg-red">
+                  <GooglePlayLogo className="size-4" />
+                  Google Play
+                </MagneticButton>
+              </>
+            ) : (
+              <>
+                <ComingSoonPill icon={<AppleLogo className="size-4.5" />}>App Store</ComingSoonPill>
+                <ComingSoonPill icon={<GooglePlayLogo className="size-4" />}>Google Play</ComingSoonPill>
+              </>
+            )}
+            <MagneticButton href={APP_LOGIN_URL} className="rounded-full border-2 border-ink px-5.5 py-3 text-[15px] font-bold hover:bg-ink hover:text-cream">
               Open web app
             </MagneticButton>
           </div>
@@ -574,12 +604,18 @@ export default function HomePage() {
             Start knowing.
           </h2>
           <div className="relative z-1 mt-11 flex flex-wrap justify-center gap-3.5">
-            <MagneticButton href="#top" className="rounded-full bg-cream px-8.5 py-4.5 text-[17px] font-bold text-ink">
+            <MagneticButton href={APP_LOGIN_URL} className="rounded-full bg-cream px-8.5 py-4.5 text-[17px] font-bold text-ink">
               Get started free
             </MagneticButton>
-            <MagneticButton href="#download" className="rounded-full border-2 border-cream/60 px-8 py-4 text-[17px] font-bold hover:bg-cream/14">
-              Download the app
-            </MagneticButton>
+            {MOBILE_APP_LIVE ? (
+              <MagneticButton href="#download" className="rounded-full border-2 border-cream/60 px-8 py-4 text-[17px] font-bold hover:bg-cream/14">
+                Download the app
+              </MagneticButton>
+            ) : (
+              <ComingSoonPill tone="dark" className="px-8 py-4 text-[17px]">
+                Mobile app
+              </ComingSoonPill>
+            )}
           </div>
         </div>
       </section>

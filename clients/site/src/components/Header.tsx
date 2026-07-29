@@ -60,10 +60,10 @@ export function Header({ active }: { active?: string }) {
             Log in
           </Link>
           <MagneticButton
-            href="/pricing"
+            href={APP_LOGIN_URL}
             className="rounded-full bg-ink px-5.5 py-3 text-[14.5px] font-bold text-cream hover:bg-red"
           >
-            Get the app
+            Get started
           </MagneticButton>
         </div>
         <button
@@ -89,11 +89,11 @@ export function Header({ active }: { active?: string }) {
               Log in
             </Link>
             <Link
-              href="/pricing"
+              href={APP_LOGIN_URL}
               onClick={() => setMenuOpen(false)}
               className="rounded-full bg-ink px-5 py-3 text-center text-[15px] font-bold text-cream"
             >
-              Get the app
+              Get started
             </Link>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { TaxResult } from "@/hooks/useTax";
+import { money } from "./ComputationPanel";
 
 /** Progressive bands — bands that received income get a quiet emerald edge. */
 export function BandsTable({ tax }: { tax: TaxResult }) {
@@ -46,7 +47,13 @@ export function BandsTable({ tax }: { tax: TaxResult }) {
       </div>
       <div className="flex items-center justify-between mt-3 pt-3 border-t">
         <span className="text-sm font-semibold">Total</span>
-        <span className="money text-sm font-semibold">{tax.total_tax}</span>
+        {/* Bands only. `total_tax` is bands PLUS the FSI final tax, so showing it
+            here credited the whole liability to a panel titled "Progressive
+            Bands" — for a mostly-foreign-income return that read as 744,000 of
+            band tax against 0.00 taxable income. */}
+        <span className="money text-sm font-semibold">
+          {(money(tax.total_tax) - money(tax.fsi_tax)).toFixed(2)}
+        </span>
       </div>
     </div>
   );

@@ -42,7 +42,7 @@ export function AppHeader() {
     <div className="sticky top-0 z-20 border-b bg-background shadow-sm">
       <div className={APP_CONTAINER_CLASS}>
         <div className="flex h-12 items-center gap-3">
-          <SidebarTrigger className="-ml-1.5" />
+          <SidebarTrigger id="tour-sidebar-trigger" className="-ml-1.5" />
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>

@@ -1,8 +1,10 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import type { CardComponentProps } from "nextstepjs";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { TOUR_CARD_LAYOUT, type TourArrowPosition } from "./steps";
 
@@ -34,20 +36,35 @@ export function TourCard({
 }: CardComponentProps) {
   const isFirst = currentStep === 0;
   const isLast = currentStep === totalSteps - 1;
+  const isMobile = useIsMobile();
 
   // Card position + caret placement come from our own per-step config rather
   // than the library's `side` handling — see the note on TOUR_CARD_LAYOUT.
   const layout = TOUR_CARD_LAYOUT[currentStep] ?? {};
   const { offsetX = 0, offsetY = 0, arrow = "none" } = layout;
+  // Those offsets (and the caret that pairs with them) were measured against
+  // the desktop layout, where there is room beside the target. They are skipped
+  // on mobile, which uses the pinned layout below instead.
   const offsetStyle =
-    offsetX || offsetY ? { transform: `translate(${offsetX}px, ${offsetY}px)` } : undefined;
+    !isMobile && (offsetX || offsetY)
+      ? { transform: `translate(${offsetX}px, ${offsetY}px)` }
+      : undefined;
 
-  return (
+  const card = (
     <div
       style={offsetStyle}
-      className="relative w-[340px] rounded-lg border bg-card p-5 text-card-foreground shadow-lg ring-1 ring-foreground/10"
+      className={cn(
+        "rounded-lg border bg-card p-5 text-card-foreground shadow-lg ring-1 ring-foreground/10",
+        // Mobile pins the card to the bottom of the screen. There is no room to
+        // sit a 340px card beside a target on a 375px viewport — anchored, the
+        // library placed step 1 at left 90 / top -90, i.e. half off-screen. The
+        // spotlight still marks the target; the card just stops chasing it.
+        isMobile
+          ? "fixed inset-x-4 bottom-4 z-[9999] w-auto"
+          : "relative w-[340px]"
+      )}
     >
-      {arrow !== "none" && (
+      {arrow !== "none" && !isMobile && (
         <div className={cn("absolute size-3.5 rotate-45 bg-card", ARROW_CLASSES[arrow])} />
       )}
       <div className="flex items-start justify-between gap-3">
@@ -59,7 +76,9 @@ export function TourCard({
             type="button"
             aria-label="Skip tour"
             onClick={skipTour}
-            className="text-muted-foreground hover:text-foreground"
+            // Negative margin absorbs the padding, so the tap area grows to
+            // 32px without shifting the header row it sits in.
+            className="-m-2 p-2 text-muted-foreground hover:text-foreground"
           >
             <X className="size-4" />
           </button>
@@ -84,4 +103,9 @@ export function TourCard({
       </div>
     </div>
   );
+
+  // The library wraps this card in an element it positions with a transform,
+  // and a transformed ancestor becomes the containing block for `fixed`
+  // descendants — so pinning only escapes that wrapper through a portal.
+  return isMobile ? createPortal(card, document.body) : card;
 }

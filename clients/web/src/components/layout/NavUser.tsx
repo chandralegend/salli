@@ -4,7 +4,7 @@ import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Bug, ChevronsUpDown, LogOut, Moon, Settings, Sun } from "lucide-react";
+import { Bug, ChevronsUpDown, Compass, LogOut, Moon, Settings, Sun } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
@@ -85,12 +85,27 @@ export function NavUser() {
             <button
               type="button"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+              className="flex w-full items-center gap-2.5 rounded-md px-2 py-2.5 sm:py-1.5 text-sm hover:bg-accent"
             >
               {mounted && theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
               {mounted && theme === "dark" ? "Light mode" : "Dark mode"}
             </button>
-            <Link href="/settings" className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+            {/* The tour used to be reachable only from Settings (or by being a
+                brand-new account). `?tour=1` is the existing replay entry point
+                — TourAutoStart picks the param up and clears it, so this works
+                from any page, including a second run. */}
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                router.push("/dashboard?tour=1");
+              }}
+              className="flex w-full items-center gap-2.5 rounded-md px-2 py-2.5 sm:py-1.5 text-sm hover:bg-accent"
+            >
+              <Compass className="size-4" />
+              Take a tour
+            </button>
+            <Link href="/settings" className="flex w-full items-center gap-2.5 rounded-md px-2 py-2.5 sm:py-1.5 text-sm hover:bg-accent">
               <Settings className="size-4" />
               Settings
             </Link>
@@ -100,7 +115,7 @@ export function NavUser() {
                 setMenuOpen(false);
                 openBugReport();
               }}
-              className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+              className="flex w-full items-center gap-2.5 rounded-md px-2 py-2.5 sm:py-1.5 text-sm hover:bg-accent"
             >
               <Bug className="size-4" />
               Report a problem
@@ -109,7 +124,7 @@ export function NavUser() {
             <button
               type="button"
               onClick={signOut}
-              className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10"
+              className="flex w-full items-center gap-2.5 rounded-md px-2 py-2.5 sm:py-1.5 text-sm text-destructive hover:bg-destructive/10"
             >
               <LogOut className="size-4" />
               Log out

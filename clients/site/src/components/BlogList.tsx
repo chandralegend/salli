@@ -80,7 +80,13 @@ export function BlogList({ featured, posts }: { featured: Post; posts: Post[] })
                 className="object-cover"
               />
             )}
-            <div className={clsx("absolute inset-0 opacity-55", COVER_STYLE_CLASS[featured.coverStyle as CoverStyle])} />
+            {/* The brand wash existed to unify mismatched stock photography.
+                The covers are now generated in the site palette, so tinting
+                them only muddies the cream and reads as inconsistent — one card
+                pink, the next grey. Kept for imageless posts. */}
+            {!featured.coverImage && (
+              <div className={clsx("absolute inset-0 opacity-55", COVER_STYLE_CLASS[featured.coverStyle as CoverStyle])} />
+            )}
           </div>
         </Link>
       </section>
@@ -97,7 +103,9 @@ export function BlogList({ featured, posts }: { featured: Post; posts: Post[] })
                   {p.coverImage && (
                     <Image src={p.coverImage} alt={p.coverImageAlt || p.title} fill className="object-cover" />
                   )}
-                  <div className={clsx("absolute inset-0 opacity-55", COVER_STYLE_CLASS[p.coverStyle as CoverStyle])} />
+                  {!p.coverImage && (
+                    <div className={clsx("absolute inset-0 opacity-55", COVER_STYLE_CLASS[p.coverStyle as CoverStyle])} />
+                  )}
                   <span className="relative z-10 rounded-full bg-cream/90 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[.06em] text-ink">
                     {p.category}
                   </span>

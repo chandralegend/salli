@@ -278,7 +278,7 @@ export default function DashboardPage() {
                 return (
                   <div key={e.id} className="flex items-center gap-3 py-2.5">
                     <span className="font-mono text-xs text-muted-foreground w-20 shrink-0">{e.entry_date}</span>
-                    <span className="text-sm truncate flex-1">{e.description}</span>
+                    <span className="text-sm truncate flex-1 min-w-0">{e.description}</span>
                     <StatusChip tone={credit ? "success" : "neutral"}>{credit ? "CR" : "DR"}</StatusChip>
                     <span className="money text-sm w-32 text-right shrink-0">LKR {Number(amount).toLocaleString()}</span>
                   </div>

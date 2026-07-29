@@ -34,7 +34,7 @@ export function StatCard({
     <div
       id={id}
       className={cn(
-        "rounded-lg border p-5 flex flex-col gap-3",
+        "rounded-lg border p-4 sm:p-5 flex flex-col gap-3",
         emphasis
           ? "bg-[var(--emphasis)] text-white border-[var(--emphasis)]"
           : "bg-card text-card-foreground",
@@ -52,8 +52,11 @@ export function StatCard({
         </>
       ) : (
         <>
+          {/* Money figures are one unbreakable token, so a 12-character value
+              like 5,600,000.00 needs 171px at 28px — more than a 2-up card gets
+              on a 375px screen. 20px is the largest size that fits there. */}
           {value !== undefined && (
-            <p className="money text-[28px] leading-none font-semibold">{value}</p>
+            <p className="money text-[20px] sm:text-[28px] leading-none font-semibold">{value}</p>
           )}
           {(badge || caption) && (
             <div className="flex items-center gap-2 text-xs">

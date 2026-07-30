@@ -346,6 +346,11 @@ class BillingPort(ABC):
         """Map a provider price ID to a plan key (falls back to 'free')."""
         ...
 
+    @abstractmethod
+    def cycle_for_price_id(self, price_id: str) -> str | None:
+        """Map a provider price ID to "month" or "year", or None if unmapped."""
+        ...
+
 
 # ── Financial Independence ───────────────────────────────────────────────────
 

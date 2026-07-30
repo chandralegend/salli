@@ -39,13 +39,18 @@ export default function BillingScreen() {
   });
 
   const currentPlan = entitlements.data?.plan ?? "free";
+  const currentCycle = entitlements.data?.billing_cycle ?? null;
   const isPaid = currentPlan !== "free";
   const siteUrl = process.env.EXPO_PUBLIC_SITE_URL ?? "https://salli.lk";
 
   const checkout = useCreateCheckout();
   const portal = useBillingPortal();
   const queryClient = useQueryClient();
-  const [cycle, setCycle] = useState<BillingCycle>("month");
+  // An override rather than useState(currentCycle): entitlements are still loading
+  // on first render, so a seeded state would stick on the "month" fallback and
+  // never reflect what the user actually bought.
+  const [cycleOverride, setCycleOverride] = useState<BillingCycle | null>(null);
+  const cycle = cycleOverride ?? currentCycle ?? "month";
 
   // Checkout/portal happen in a web browser (no native Paddle SDK). Re-pull the
   // subscription + plan state whenever we come back so the plan reflects a change.
@@ -98,6 +103,7 @@ export default function BillingScreen() {
           <View className="bg-salli-navy-card px-4 pb-4 pt-3.5">
             <Text className="mb-3 text-[11px] font-sans-medium uppercase tracking-wide text-white/50 capitalize">
               {entitlements.data?.plan_name ?? "Free"} Plan
+              {currentCycle ? (currentCycle === "year" ? " · Annual" : " · Monthly") : ""}
             </Text>
             <View className="gap-3">
               {(entitlements.data?.usage ?? []).map((u) => {
@@ -134,7 +140,7 @@ export default function BillingScreen() {
           {(["month", "year"] as const).map((c) => (
             <Pressable
               key={c}
-              onPress={() => setCycle(c)}
+              onPress={() => setCycleOverride(c)}
               className={cn(
                 "rounded-pill px-4 py-1.5",
                 cycle === c && "bg-primary",
@@ -154,7 +160,12 @@ export default function BillingScreen() {
 
         <View className="gap-2.5">
           {(plans.data ?? []).map((plan) => {
-            const isCurrent = plan.key === currentPlan;
+            const isCurrentPlan = plan.key === currentPlan;
+            // Same plan on the other cycle is a real, purchasable change — it must
+            // not render as a dead "Current Plan" row with no way to act on it.
+            const isCycleSwitch =
+              isCurrentPlan && currentCycle !== null && cycle !== currentCycle;
+            const isCurrent = isCurrentPlan && !isCycleSwitch;
             return (
               <Card key={plan.key} className={cn("p-4", isCurrent && "border-salli-accent/40")}>
                 <View className="mb-1.5 flex-row items-center justify-between">
@@ -204,7 +215,9 @@ export default function BillingScreen() {
                       <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
                       <Text className="text-[13px] font-sans-semibold text-primary-foreground">
-                        Upgrade to {plan.name}
+                        {isCycleSwitch
+                          ? `Switch to ${cycle === "year" ? "annual" : "monthly"}`
+                          : `Upgrade to ${plan.name}`}
                       </Text>
                     )}
                   </Pressable>

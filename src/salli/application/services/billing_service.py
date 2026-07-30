@@ -128,6 +128,9 @@ class BillingService:
             "plan": plan.key,
             "plan_name": plan.name,
             "paid": plan.paid,
+            # Gated on the *effective* plan: a canceled paid row keeps its stored
+            # cycle, and surfacing it would render as "Free · Annual".
+            "billing_cycle": sub.get("billing_cycle") if plan.paid else None,
             "status": sub.get("status", "active"),
             "current_period_end": sub.get("current_period_end"),
             "cancel_at_period_end": sub.get("cancel_at_period_end", False),
@@ -174,16 +177,16 @@ class BillingService:
             raise RuntimeError("Billing provider not configured")
         await self._ensure_user(user_id, email)  # bootstrap free sub/profile on first use
         async with self._uow_factory() as uow:
-            profile = await uow.user_profiles.get(user_id)
-        customer_id = (profile or {}).get("paddle_customer_id")
+            sub = await uow.subscriptions.get(user_id)
+        customer_id = (sub or {}).get("provider_customer_id")
         return await self._billing.create_checkout(user_id, email, plan_key, cycle, customer_id)
 
     async def get_portal_url(self, user_id: str, email: str | None = None) -> str:
         if self._billing is None:
             raise RuntimeError("Billing provider not configured")
         async with self._uow_factory() as uow:
-            profile = await uow.user_profiles.get(user_id)
-        customer_id = (profile or {}).get("paddle_customer_id")
+            sub = await uow.subscriptions.get(user_id)
+        customer_id = (sub or {}).get("provider_customer_id")
         if not customer_id:
             raise RuntimeError("No billing customer for this user yet")
         return await self._billing.get_portal_url(customer_id)
@@ -204,7 +207,11 @@ class BillingService:
             return
         fields: dict[str, Any] = {"provider": "paddle"}
         if "price_id" in event:
+            # The price ID is the only place the cycle survives — Paddle reports the
+            # subscription's plan and its billing interval as one identifier, so both
+            # are resolved here or the cycle is lost for good.
             fields["plan"] = self._billing.plan_for_price_id(event["price_id"])
+            fields["billing_cycle"] = self._billing.cycle_for_price_id(event["price_id"])
         for key in (
             "status",
             "provider_customer_id",
@@ -219,8 +226,6 @@ class BillingService:
             if key in event:
                 fields[key] = _parse_dt(event[key])
         async with self._uow_factory() as uow:
+            # provider_customer_id is already in `fields` — the subscription row is
+            # the single home for it, next to provider_subscription_id.
             await uow.subscriptions.upsert(user_id, fields)
-            if event.get("provider_customer_id"):
-                await uow.user_profiles.upsert(
-                    user_id, {"paddle_customer_id": event["provider_customer_id"]}
-                )

@@ -40,6 +40,7 @@ class FakeSubscriptionRepo:
                 "id": f"sub-{user_id}",
                 "user_id": user_id,
                 "plan": "free",
+                "billing_cycle": None,
                 "status": "active",
                 "provider": "paddle",
                 "provider_customer_id": None,
@@ -106,8 +107,21 @@ class FakeUnitOfWork:
 class FakeBillingPort:
     """Records calls; returns canned data. Implements the BillingPort surface."""
 
-    def __init__(self, price_to_plan: dict[str, str] | None = None) -> None:
-        self._price_to_plan = price_to_plan or {"pri_plus": "plus", "pri_pro": "pro"}
+    def __init__(
+        self,
+        price_to_plan: dict[str, str] | None = None,
+        price_to_cycle: dict[str, str] | None = None,
+    ) -> None:
+        self._price_to_plan = price_to_plan or {
+            "pri_plus": "plus",
+            "pri_pro": "pro",
+            "pri_pro_y": "pro",
+        }
+        self._price_to_cycle = price_to_cycle or {
+            "pri_plus": "month",
+            "pri_pro": "month",
+            "pri_pro_y": "year",
+        }
         self.checkout_calls: list[tuple] = []
         self.portal_calls: list[str] = []
 
@@ -124,6 +138,9 @@ class FakeBillingPort:
 
     def plan_for_price_id(self, price_id: str) -> str:
         return self._price_to_plan.get(price_id, "free")
+
+    def cycle_for_price_id(self, price_id: str) -> str | None:
+        return self._price_to_cycle.get(price_id)
 
 
 # ── Fixtures ────────────────────────────────────────────────────────────────────
@@ -282,10 +299,10 @@ def test_get_plans_matches_registry(service):
 # ── Checkout / portal orchestration ──────────────────────────────────────────
 
 
-async def test_create_checkout_passes_customer_id_from_profile(service, repos, billing_port):
-    _, _, profiles = repos
+async def test_create_checkout_passes_customer_id_from_subscription(service, repos, billing_port):
+    subs, _, _ = repos
     await service.get_entitlements(USER, email="u@example.com")
-    await profiles.upsert(USER, {"paddle_customer_id": "ctm_123"})
+    await subs.upsert(USER, {"provider_customer_id": "ctm_123"})
 
     await service.create_checkout(USER, "u@example.com", "plus")
 
@@ -309,15 +326,15 @@ async def test_create_checkout_without_provider_raises(uow_factory):
 
 
 async def test_get_portal_url_requires_customer(service, repos):
-    _, _, profiles = repos
-    await profiles.upsert(USER, {"email": "u@example.com"})  # no paddle_customer_id
+    subs, _, _ = repos
+    await subs.upsert(USER, {"plan": "free"})  # row exists, no provider_customer_id
     with pytest.raises(RuntimeError, match="No billing customer"):
         await service.get_portal_url(USER)
 
 
 async def test_get_portal_url_delegates_with_customer(service, repos, billing_port):
-    _, _, profiles = repos
-    await profiles.upsert(USER, {"paddle_customer_id": "ctm_9"})
+    subs, _, _ = repos
+    await subs.upsert(USER, {"provider_customer_id": "ctm_9"})
     url = await service.get_portal_url(USER)
     assert url == "https://portal.example/ctm_9"
     assert billing_port.portal_calls == ["ctm_9"]
@@ -326,8 +343,8 @@ async def test_get_portal_url_delegates_with_customer(service, repos, billing_po
 # ── Webhook application ──────────────────────────────────────────────────────
 
 
-async def test_apply_webhook_event_updates_subscription_and_profile(service, repos):
-    subs, _, profiles = repos
+async def test_apply_webhook_event_updates_subscription(service, repos):
+    subs, _, _ = repos
     event = {
         "user_id": USER,
         "price_id": "pri_pro",
@@ -351,8 +368,49 @@ async def test_apply_webhook_event_updates_subscription_and_profile(service, rep
     assert row["current_period_end"] == datetime.datetime(2026, 8, 1, tzinfo=datetime.UTC)
     assert row["current_period_start"] == datetime.datetime(2026, 7, 1, tzinfo=datetime.UTC)
 
-    # Customer id is mirrored onto the profile for later portal calls.
-    assert (await profiles.get(USER))["paddle_customer_id"] == "ctm_77"
+
+async def test_apply_webhook_event_records_annual_cycle(service, repos):
+    """The price ID is the only carrier of the cycle — both plan and cycle resolve from it."""
+    subs, _, _ = repos
+    await service.apply_webhook_event(
+        {"user_id": USER, "price_id": "pri_pro_y", "status": "active"}
+    )
+    row = await subs.get(USER)
+    assert row["plan"] == "pro"
+    assert row["billing_cycle"] == "year"
+    assert (await service.get_entitlements(USER))["billing_cycle"] == "year"
+
+
+async def test_apply_webhook_event_records_monthly_cycle(service, repos):
+    subs, _, _ = repos
+    await service.apply_webhook_event({"user_id": USER, "price_id": "pri_pro", "status": "active"})
+    assert (await subs.get(USER))["billing_cycle"] == "month"
+
+
+async def test_unmapped_price_leaves_cycle_unknown(service, repos):
+    """An unmapped price must read as 'unknown', not as a default monthly."""
+    subs, _, _ = repos
+    await service.apply_webhook_event({"user_id": USER, "price_id": "pri_???", "status": "active"})
+    row = await subs.get(USER)
+    assert row["plan"] == "free"
+    assert row["billing_cycle"] is None
+
+
+async def test_entitlements_hide_cycle_when_plan_not_effective(service, repos):
+    """A canceled row keeps billing_cycle in the DB, but surfacing it would render
+    as 'Free · Annual' — the effective plan governs what the client sees."""
+    subs, _, _ = repos
+    await service.apply_webhook_event(
+        {"user_id": USER, "price_id": "pri_pro_y", "status": "canceled"}
+    )
+    assert (await subs.get(USER))["billing_cycle"] == "year"  # still stored
+    ent = await service.get_entitlements(USER)
+    assert ent["plan"] == "free"
+    assert ent["billing_cycle"] is None
+
+
+async def test_entitlements_cycle_is_none_on_free_plan(service):
+    assert (await service.get_entitlements(USER))["billing_cycle"] is None
 
 
 async def test_apply_webhook_event_downgrades_entitlements_on_cancel(service, repos):
@@ -376,9 +434,9 @@ async def test_apply_webhook_event_downgrades_entitlements_on_cancel(service, re
 async def test_apply_webhook_event_captures_customer_from_transaction(service, repos):
     """A transaction.completed-shaped event (no plan/status) still stores the customer id
     so the portal becomes reachable before the subscription webhook lands."""
-    _, _, profiles = repos
+    subs, _, _ = repos
     await service.apply_webhook_event({"user_id": USER, "provider_customer_id": "ctm_txn"})
-    assert (await profiles.get(USER))["paddle_customer_id"] == "ctm_txn"
+    assert (await subs.get(USER))["provider_customer_id"] == "ctm_txn"
     # And get_portal_url now succeeds for this user.
     assert await service.get_portal_url(USER) == "https://portal.example/ctm_txn"
 

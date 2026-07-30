@@ -15,6 +15,9 @@ export type Subscription = {
   plan: string;
   plan_name: string;
   paid: boolean;
+  /** What the user is actually charged on. Null on free plans, and on paid rows
+   *  bought before the cycle was recorded — render nothing rather than a guess. */
+  billing_cycle: BillingCycle | null;
   status: string;
   current_period_end: string | null;
   cancel_at_period_end: boolean;

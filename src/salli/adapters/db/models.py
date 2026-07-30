@@ -308,7 +308,6 @@ class UserProfileORM(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     email: Mapped[str | None] = mapped_column(String(320), nullable=True)
     display_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
-    paddle_customer_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Fact-find (Phase 1 onboarding redo) — all nullable: unanswered until the user
     # completes the corresponding step.
@@ -344,6 +343,10 @@ class SubscriptionORM(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(String(64), nullable=False)
     plan: Mapped[str] = mapped_column(String(20), nullable=False, default="free")
+    # "month" | "year" — which price the user is actually charged on, resolved from
+    # the webhook's price ID. NULL on free plans and on rows written before this
+    # column existed; those resolve on the next subscription webhook.
+    billing_cycle: Mapped[str | None] = mapped_column(String(10), nullable=True)
     # active | trialing | past_due | canceled
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
     provider: Mapped[str] = mapped_column(String(20), nullable=False, default="paddle")

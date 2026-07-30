@@ -102,6 +102,29 @@ def test_plan_for_price_id(adapter):
     assert adapter.plan_for_price_id("pri_unknown") == "free"
 
 
+def test_cycle_for_price_id(adapter):
+    # The other half of the same lookup: the cycle the plan key deliberately drops.
+    assert adapter.cycle_for_price_id("pri_plus_m") == "month"
+    assert adapter.cycle_for_price_id("pri_plus_y") == "year"
+    assert adapter.cycle_for_price_id("pri_pro_m") == "month"
+    assert adapter.cycle_for_price_id("pri_pro_y") == "year"
+    # None, not "month": an unmapped price means the cycle is genuinely unknown,
+    # and the UI must be able to tell that apart from a known monthly plan.
+    assert adapter.cycle_for_price_id("pri_unknown") is None
+
+
+def test_cycle_lookup_ignores_unconfigured_prices():
+    """A half-configured environment (no annual prices) must not invent cycles."""
+    adapter = PaddleBillingAdapter(
+        api_key="apikey_test",
+        webhook_secret=SECRET,
+        environment="sandbox",
+        price_map={"plus:month": "pri_plus_m", "plus:year": "", "pro:month": "", "pro:year": ""},
+    )
+    assert adapter.cycle_for_price_id("pri_plus_m") == "month"
+    assert adapter.cycle_for_price_id("") is None
+
+
 def test_environment_falls_back_to_sandbox():
     a = PaddleBillingAdapter("k", "s", "bogus-env", PRICE_MAP)
     assert a._base == "https://sandbox-api.paddle.com"

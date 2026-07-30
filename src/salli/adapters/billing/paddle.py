@@ -48,6 +48,10 @@ class PaddleBillingAdapter(BillingPort):
         self._plan_by_price = {
             v: k.split(":", 1)[0] for k, v in self._price_map.items()
         }
+        # The other half of the same reverse lookup: price_id -> "month" | "year".
+        # Kept separate from _plan_by_price so a caller asks for exactly the fact it
+        # needs — the plan drives entitlements, the cycle is display/checkout only.
+        self._cycle_by_price = {v: k.split(":", 1)[1] for k, v in self._price_map.items()}
 
     @property
     def _base(self) -> str:
@@ -158,3 +162,9 @@ class PaddleBillingAdapter(BillingPort):
 
     def plan_for_price_id(self, price_id: str) -> str:
         return self._plan_by_price.get(price_id, "free")
+
+    def cycle_for_price_id(self, price_id: str) -> str | None:
+        # None rather than a "month" default: an unmapped price means we genuinely
+        # don't know what the user is charged on, and the UI must be able to tell
+        # that apart from a known monthly subscription.
+        return self._cycle_by_price.get(price_id)

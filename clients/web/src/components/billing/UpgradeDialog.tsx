@@ -33,12 +33,16 @@ export function UpgradeDialog({
   open,
   onOpenChange,
   currentPlan,
+  currentCycle,
   highlightPlan,
   initialCycle,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   currentPlan: string;
+  // The cycle the user is currently billed on, or null if free/unknown. Distinct
+  // from initialCycle, which is only what the toggle opens on.
+  currentCycle: BillingCycle | null;
   highlightPlan?: string;
   // Required rather than defaulted to "month": a merge once dropped this prop at
   // the only call site, silently billing annual sign-ups monthly. Required makes
@@ -48,7 +52,12 @@ export function UpgradeDialog({
   const plans = usePlans();
   const checkout = useCheckout();
   const queryClient = useQueryClient();
-  const [cycle, setCycle] = useState<BillingCycle>(initialCycle);
+  // Track the user's toggle as an override rather than seeding state from
+  // initialCycle: this component stays mounted while the subscription query is
+  // still loading, so a useState seed would freeze on the "month" fallback and
+  // never pick up the real cycle once it arrives.
+  const [cycleOverride, setCycleOverride] = useState<BillingCycle | null>(null);
+  const cycle = cycleOverride ?? initialCycle;
 
   async function upgrade(planKey: string) {
     try {
@@ -92,7 +101,7 @@ export function UpgradeDialog({
           <div className="inline-flex rounded-lg border p-0.5 text-[13px]">
             <button
               type="button"
-              onClick={() => setCycle("month")}
+              onClick={() => setCycleOverride("month")}
               className={`rounded-md px-3 py-1 font-medium transition ${
                 cycle === "month" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
               }`}
@@ -101,7 +110,7 @@ export function UpgradeDialog({
             </button>
             <button
               type="button"
-              onClick={() => setCycle("year")}
+              onClick={() => setCycleOverride("year")}
               className={`rounded-md px-3 py-1 font-medium transition ${
                 cycle === "year" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
               }`}
@@ -117,7 +126,11 @@ export function UpgradeDialog({
         ) : (
           <div className="space-y-3">
             {(plans.data ?? []).map((p) => {
-              const isCurrent = p.key === currentPlan;
+              const isCurrentPlan = p.key === currentPlan;
+              // Same plan on the other cycle is a real, purchasable change, so it
+              // must not render as "Current plan" with no way to act on it.
+              const isCycleSwitch = isCurrentPlan && currentCycle !== null && cycle !== currentCycle;
+              const isCurrent = isCurrentPlan && !isCycleSwitch;
               const isHighlighted = p.key === highlightPlan;
               return (
                 <div
@@ -141,7 +154,13 @@ export function UpgradeDialog({
                     <StatusChip tone="neutral">Current plan</StatusChip>
                   ) : p.paid ? (
                     <Button size="sm" onClick={() => upgrade(p.key)} disabled={checkout.isPending}>
-                      {checkout.isPending ? <Loader2 className="size-3.5 animate-spin" /> : "Upgrade"}
+                      {checkout.isPending ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : isCycleSwitch ? (
+                        cycle === "year" ? "Switch to annual" : "Switch to monthly"
+                      ) : (
+                        "Upgrade"
+                      )}
                     </Button>
                   ) : (
                     <span className="text-xs text-muted-foreground">Downgrade via portal</span>

@@ -55,9 +55,16 @@ function SettingsContent() {
     }
   }, [upgradeParam]);
 
-  const initialCycle: BillingCycle = params.get("cycle") === "year" ? "year" : "month";
-
   const sub = subscription.data;
+
+  // An explicit ?cycle= wins (the marketing site's annual CTA links here and must
+  // land on Annual). Otherwise open on what the user is already paying, so an
+  // annual subscriber isn't shown monthly prices for their own plan.
+  const cycleParam = params.get("cycle");
+  const initialCycle: BillingCycle =
+    cycleParam === "year" || cycleParam === "month"
+      ? cycleParam
+      : (sub?.billing_cycle ?? "month");
 
   async function openPortal() {
     try {
@@ -105,7 +112,10 @@ function SettingsContent() {
             <>
               <p className="text-2xl font-semibold">
                 {sub.plan_name || sub.plan}
-                <span className="text-sm font-normal text-muted-foreground"> · billed via Paddle</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  {sub.billing_cycle ? (sub.billing_cycle === "year" ? " · Annual" : " · Monthly") : ""}
+                  {" · billed via Paddle"}
+                </span>
               </p>
               <p className="text-[13px] text-muted-foreground mt-1">
                 {sub.cancel_at_period_end
@@ -227,6 +237,7 @@ function SettingsContent() {
         open={upgradeOpen}
         onOpenChange={setUpgradeOpen}
         currentPlan={sub?.plan ?? "free"}
+        currentCycle={sub?.billing_cycle ?? null}
         highlightPlan={upgradeParam && upgradeParam !== "1" ? upgradeParam : undefined}
         initialCycle={initialCycle}
       />

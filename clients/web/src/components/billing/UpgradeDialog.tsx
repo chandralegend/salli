@@ -282,7 +282,8 @@ export function UpgradeDialog({
                 Confirm the change to your subscription.
               </DialogDescription>
             </DialogHeader>
-            <div className="rounded-lg border bg-muted/40 p-4 space-y-2 text-[13px]">
+            {/* min-w-0 for the same grid reason as the plan list below. */}
+            <div className="min-w-0 space-y-2 rounded-lg border bg-muted/40 p-4 text-[13px]">
               {confirmLines(pending, isDowngradeTo(pending.plan)).map(
                 (line) => (
                   <p
@@ -294,7 +295,9 @@ export function UpgradeDialog({
                 ),
               )}
             </div>
-            <div className="flex justify-end gap-2">
+            {/* Wraps rather than overflows: "Confirm and pay LKR 12,345.00" is a
+                wide label in a currency with long formatting. */}
+            <div className="flex flex-wrap justify-end gap-2">
               <Button
                 variant="outline"
                 onClick={() => setPending(null)}
@@ -357,7 +360,12 @@ export function UpgradeDialog({
                 <Loader2 className="size-5 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <div className="space-y-3">
+              // min-w-0 is load-bearing: DialogContent is a grid, and a grid item
+              // defaults to min-width:auto, so without this the list refuses to
+              // shrink below the widest row's intrinsic width — long plan summaries
+              // and a nowrap button push the whole dialog into horizontal overflow
+              // and the `truncate` below never engages.
+              <div className="min-w-0 space-y-3">
                 {(plans.data ?? []).map((p) => {
                   const isCurrentPlan = p.key === currentPlan;
                   // Same plan on the other cycle is a real, purchasable change, so it
@@ -384,7 +392,7 @@ export function UpgradeDialog({
                       }
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-[15px] font-semibold">
+                        <p className="text-[15px] font-semibold text-balance">
                           {p.name}
                           <span className="text-[13px] font-normal text-muted-foreground">
                             {" "}
@@ -395,46 +403,50 @@ export function UpgradeDialog({
                           {planSummary(p)}
                         </p>
                       </div>
-                      {isCurrent ? (
-                        <StatusChip tone="neutral">Current plan</StatusChip>
-                      ) : unavailableCycle ? (
-                        <span className="text-xs text-muted-foreground">
-                          No annual price
-                        </span>
-                      ) : p.paid ? (
-                        <Button
-                          size="sm"
-                          onClick={() => choosePlan(p)}
-                          disabled={
-                            busyPlan !== null || changeMode === "blocked"
-                          }
-                          title={
-                            changeMode === "blocked"
-                              ? blockedMessage
-                              : undefined
-                          }
-                        >
-                          {busy ? (
-                            <Loader2 className="size-3.5 animate-spin" />
-                          ) : isCycleSwitch ? (
-                            cycle === "year" ? (
-                              "Switch to annual"
+                      {/* shrink-0: the row shrinks by truncating the summary, never
+                          by crushing the action. */}
+                      <div className="shrink-0">
+                        {isCurrent ? (
+                          <StatusChip tone="neutral">Current plan</StatusChip>
+                        ) : unavailableCycle ? (
+                          <span className="text-xs text-muted-foreground">
+                            No annual price
+                          </span>
+                        ) : p.paid ? (
+                          <Button
+                            size="sm"
+                            onClick={() => choosePlan(p)}
+                            disabled={
+                              busyPlan !== null || changeMode === "blocked"
+                            }
+                            title={
+                              changeMode === "blocked"
+                                ? blockedMessage
+                                : undefined
+                            }
+                          >
+                            {busy ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : isCycleSwitch ? (
+                              cycle === "year" ? (
+                                "Switch to annual"
+                              ) : (
+                                "Switch to monthly"
+                              )
+                            ) : changeMode === "in_place" ? (
+                              // Pro→Starter is a legitimate in-place change, so the label
+                              // can't assume the move is upward.
+                              `Switch to ${p.name}`
                             ) : (
-                              "Switch to monthly"
-                            )
-                          ) : changeMode === "in_place" ? (
-                            // Pro→Starter is a legitimate in-place change, so the label
-                            // can't assume the move is upward.
-                            `Switch to ${p.name}`
-                          ) : (
-                            "Upgrade"
-                          )}
-                        </Button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          Downgrade via portal
-                        </span>
-                      )}
+                              "Upgrade"
+                            )}
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            Downgrade via portal
+                          </span>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

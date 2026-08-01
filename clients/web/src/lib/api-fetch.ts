@@ -1,5 +1,5 @@
 import { API_URL } from "./api-client";
-import { ApiError, messageFrom } from "./api-error";
+import { ApiError, codeFrom, messageFrom } from "./api-error";
 import { pathTemplate, recordFailure, requestIdOf } from "./diagnostics";
 import { getStoredToken } from "./store";
 
@@ -57,7 +57,7 @@ export async function apiFetch<T = unknown>(
     // Routed through messageFrom rather than thrown raw: this previously used the
     // entire response body as the error message, and callers toast that verbatim —
     // so a 422 displayed a JSON blob containing the values the user had submitted.
-    throw new ApiError(res.status, messageFrom(parsed, res.status));
+    throw new ApiError(res.status, messageFrom(parsed, res.status), codeFrom(parsed));
   }
 
   if (res.status === 204) return undefined as T;

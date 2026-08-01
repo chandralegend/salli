@@ -21,6 +21,21 @@ export function formatMoney(value: string | null | undefined, decimals = 2): str
   return negative ? `(${out})` : out;
 }
 
+/**
+ * Provider money (integer minor units + ISO currency) → a localized amount with its
+ * symbol: (4271, "USD") → "$42.71".
+ *
+ * Separate from formatMoney, which takes a decimal string and renders no symbol. The
+ * exponent comes from Intl rather than a hardcoded /100 because zero-decimal
+ * currencies exist (JPY, KRW) — dividing those by 100 understates the charge
+ * hundredfold. Paddle localizes prices, so the currency is never assumed.
+ */
+export function formatMinor(minor: number, currency: string): string {
+  const fmt = new Intl.NumberFormat(undefined, { style: "currency", currency });
+  const exponent = fmt.resolvedOptions().maximumFractionDigits ?? 2;
+  return fmt.format(minor / 10 ** exponent);
+}
+
 /** Compact magnitude for stat cards: "3990000" → "3.99M". Display only. */
 export function formatCompact(value: string | number | null | undefined): string {
   if (value == null || value === "") return "—";

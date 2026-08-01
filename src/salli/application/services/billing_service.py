@@ -35,6 +35,21 @@ class PlanRequiredError(Exception):
         super().__init__(f"'{feature}' requires a paid plan (currently on {plan_key})")
 
 
+class SubscriptionChangeUnavailable(Exception):
+    """The user's subscription can't be changed in place right now.
+
+    `reason` is a stable machine code the clients branch on:
+      checkout_required — no live provider subscription; buy through checkout instead
+      past_due / paused / scheduled_change / unknown_status — the provider won't accept
+        an item change in this state; the customer portal is the way out
+      no_change — already on the requested plan and cycle
+    """
+
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+        super().__init__(reason)
+
+
 def _period(now: datetime.datetime | None = None) -> str:
     now = now or datetime.datetime.now(datetime.UTC)
     return now.strftime("%Y-%m")
@@ -71,6 +86,37 @@ def _effective_plan(sub: dict[str, Any]):
     if sub.get("status") in _ACTIVE_STATUSES:
         return get_plan(sub.get("plan"))
     return get_plan("free")
+
+
+def _change_mode(sub: dict[str, Any]) -> tuple[str, str | None]:
+    """How this user must change plan: ("in_place" | "checkout" | "blocked", reason).
+
+    Deliberately a pure function of the stored row — it never consults the billing
+    port, so a deployment with no provider configured still renders a coherent
+    Settings page.
+
+    Reading `status` raw rather than through _effective_plan is load-bearing:
+    _effective_plan reports Free for a past_due subscriber, which would offer them
+    "Upgrade" and buy a *second* subscription alongside the one already in dunning.
+    """
+    if not sub or sub.get("plan") == "free" or not sub.get("provider_subscription_id"):
+        return ("checkout", None)
+    status = sub.get("status")
+    if status == "canceled":
+        # Terminal at the provider — it can never be patched again, and it isn't
+        # billing, so a fresh purchase is correct and carries no double-charge risk.
+        return ("checkout", None)
+    if sub.get("cancel_at_period_end"):
+        return ("blocked", "scheduled_change")
+    if status == "past_due":
+        return ("blocked", "past_due")
+    if status == "paused":
+        return ("blocked", "paused")
+    if status in _ACTIVE_STATUSES:
+        return ("in_place", None)
+    # Fail closed. An unrecognised status must never fall through to checkout — that
+    # is exactly the path that produces a duplicate subscription.
+    return ("blocked", "unknown_status")
 
 
 class BillingService:
@@ -111,6 +157,9 @@ class BillingService:
         async with self._uow_factory() as uow:
             counts = await uow.usage.get_counts(user_id, period)
         resets_at = _period_resets_at()
+        # From the raw row, not `plan` — see _change_mode on why the effective plan
+        # would mislabel a past_due subscriber as free and offer them a second purchase.
+        mode, blocked_reason = _change_mode(sub)
         usage = []
         for metric in METRICS:
             used = counts.get(metric, 0)
@@ -131,6 +180,10 @@ class BillingService:
             # Gated on the *effective* plan: a canceled paid row keeps its stored
             # cycle, and surfacing it would render as "Free · Annual".
             "billing_cycle": sub.get("billing_cycle") if plan.paid else None,
+            # How the clients must route a plan change. Server-owned so neither client
+            # has to re-derive it from status; see _change_mode.
+            "change_mode": mode,
+            "change_blocked_reason": blocked_reason,
             "status": sub.get("status", "active"),
             "current_period_end": sub.get("current_period_end"),
             "cancel_at_period_end": sub.get("cancel_at_period_end", False),
@@ -190,6 +243,99 @@ class BillingService:
         if not customer_id:
             raise RuntimeError("No billing customer for this user yet")
         return await self._billing.get_portal_url(customer_id)
+
+    # ── Plan changes on an existing subscription ──────────────────────────────
+
+    async def _require_changeable(
+        self, user_id: str, email: str | None, plan_key: str, cycle: str
+    ) -> dict[str, Any]:
+        """Validate a requested change and return the subscription row to act on.
+
+        Raises RuntimeError (not configured), ValueError (bad input) or
+        SubscriptionChangeUnavailable. Never writes, except to self-heal a missing
+        provider subscription ID.
+        """
+        if self._billing is None:
+            raise RuntimeError("Billing provider not configured")
+        if cycle not in ("month", "year"):
+            raise ValueError(f"Unknown billing cycle '{cycle}'")
+        target = get_plan(plan_key)
+        # get_plan falls back to free for anything unknown, so compare keys rather than
+        # trusting the lookup, and refuse free here — downgrades go through the portal.
+        if target.key != plan_key or not target.paid:
+            raise ValueError(f"'{plan_key}' is not a paid plan")
+
+        await self._ensure_user(user_id, email)
+        async with self._uow_factory() as uow:
+            sub: dict[str, Any] = await uow.subscriptions.get(user_id) or {}
+
+        sub = await self._heal_subscription_id(user_id, sub)
+        mode, reason = _change_mode(sub)
+        if mode == "blocked":
+            raise SubscriptionChangeUnavailable(reason or "unknown_status")
+        if mode != "in_place":
+            raise SubscriptionChangeUnavailable("checkout_required")
+
+        # Compare against the stored plan, not the effective one: a trialing user's
+        # effective plan is their real plan, but the guard has to hold for every status
+        # _change_mode admits. A null cycle means "recorded before we tracked it" —
+        # unknown, not equal, so let the change through and let the preview tell them.
+        if sub.get("plan") == plan_key and sub.get("billing_cycle") == cycle:
+            raise SubscriptionChangeUnavailable("no_change")
+        return sub
+
+    async def _heal_subscription_id(self, user_id: str, sub: dict[str, Any]) -> dict[str, Any]:
+        """Recover a subscription ID we never recorded.
+
+        `transaction.completed` writes only the customer ID (paddle.py), so if
+        `subscription.created` never arrived we hold a paying customer with no
+        subscription ID — and _change_mode would route them to checkout, buying them a
+        second subscription. Ask the provider instead, and persist what it says.
+        """
+        if sub.get("provider_subscription_id") or not sub.get("provider_customer_id"):
+            return sub
+        assert self._billing is not None
+        found = await self._billing.find_subscription_id(sub["provider_customer_id"])
+        if not found:
+            return sub
+        async with self._uow_factory() as uow:
+            await uow.subscriptions.upsert(user_id, {"provider_subscription_id": found})
+            return await uow.subscriptions.get(user_id) or sub
+
+    async def preview_plan_change(
+        self, user_id: str, email: str | None, plan_key: str, cycle: str
+    ) -> dict[str, Any]:
+        """What changing to `plan_key`/`cycle` would cost. Charges nothing, writes nothing."""
+        sub = await self._require_changeable(user_id, email, plan_key, cycle)
+        assert self._billing is not None
+        return await self._billing.preview_subscription_change(
+            sub["provider_subscription_id"], plan_key, cycle
+        )
+
+    async def change_plan(
+        self, user_id: str, email: str | None, plan_key: str, cycle: str
+    ) -> dict[str, Any]:
+        """Move an existing subscription to `plan_key`/`cycle`; return fresh entitlements."""
+        sub = await self._require_changeable(user_id, email, plan_key, cycle)
+        assert self._billing is not None
+        result = await self._billing.change_subscription(
+            sub["provider_subscription_id"], plan_key, cycle
+        )
+
+        # Persist through the same path a webhook takes, rather than waiting for the
+        # webhook itself: mobile has no checkout-completion callback, so otherwise the
+        # screen would still show the old plan after a successful change. It also keeps
+        # the feature working where the webhook can't reach us.
+        async with self._uow_factory() as uow:
+            current: dict[str, Any] = await uow.subscriptions.get(user_id) or {}
+        already_applied: bool = (
+            current.get("provider_subscription_id") == result.get("provider_subscription_id")
+            and current.get("plan") == plan_key
+            and current.get("billing_cycle") == cycle
+        )
+        if not already_applied:
+            await self.apply_webhook_event({**result, "user_id": user_id})
+        return await self.get_entitlements(user_id, email)
 
     def verify_and_parse_webhook(
         self, raw_body: bytes, signature: str | None

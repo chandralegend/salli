@@ -311,6 +311,30 @@ class UserProfileRepository(ABC):
     async def upsert(self, user_id: str, fields: dict[str, Any]) -> None: ...
 
 
+class BillingChangeRejected(RuntimeError):
+    """The provider refused a subscription change for a business reason.
+
+    A declined card, a subscription locked mid-renewal, a scheduled change already
+    pending. The caller's state is unchanged — the provider applied nothing. Subclasses
+    RuntimeError so routers that already catch RuntimeError keep working.
+    """
+
+    def __init__(self, code: str, detail: str) -> None:
+        self.code = code
+        self.detail = detail
+        super().__init__(f"{code}: {detail}" if code else detail)
+
+
+class BillingChangePending(RuntimeError):
+    """A subscription change is in flight and its outcome is unknown.
+
+    Raised on timeout: the provider may well have charged the card and applied the
+    change before we gave up waiting. Callers must NOT retry — there is no idempotency
+    key for a subscription update, so a retry would prorate a second time. Wait for the
+    provider's webhook instead.
+    """
+
+
 class BillingPort(ABC):
     """Payment-provider boundary (Paddle today). Adapters live in adapters/billing/."""
 
@@ -332,6 +356,43 @@ class BillingPort(ABC):
     @abstractmethod
     async def get_portal_url(self, customer_id: str) -> str:
         """Return a customer-portal URL for managing/cancelling the subscription."""
+        ...
+
+    @abstractmethod
+    async def preview_subscription_change(
+        self, subscription_id: str, plan_key: str, cycle: str
+    ) -> dict[str, Any]:
+        """Cost of moving an existing subscription to `plan_key`/`cycle`, charging nothing.
+
+        Returns provider-neutral keys, all money as int minor units:
+        `immediate_charge_minor`, `credit_applied_minor`, `currency`, `result`
+        ("charge" | "credit" | "none"), `result_amount_minor`, `recurring_amount_minor`,
+        `next_billed_at`. `result` is a label with an unsigned amount rather than a signed
+        number because a credit goes to provider account balance, not back to the card —
+        the distinction has to survive to the UI.
+        """
+        ...
+
+    @abstractmethod
+    async def change_subscription(
+        self, subscription_id: str, plan_key: str, cycle: str
+    ) -> dict[str, Any]:
+        """Move an existing subscription to `plan_key`/`cycle`, prorated and charged now.
+
+        Returns the same shape as the subscription branch of `verify_and_parse_webhook`
+        (minus `user_id`), so the caller can persist it through the same path a webhook
+        takes. Raises BillingChangeRejected if the provider refuses, BillingChangePending
+        if the outcome is unknown.
+        """
+        ...
+
+    @abstractmethod
+    async def find_subscription_id(self, customer_id: str) -> str | None:
+        """The customer's live subscription ID, or None if they have none.
+
+        Recovery path for a row that has a customer ID but no subscription ID — without
+        it such a user would be routed to a fresh checkout and end up billed twice.
+        """
         ...
 
     @abstractmethod

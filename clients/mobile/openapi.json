@@ -362,7 +362,7 @@
           "entries"
         ],
         "summary": "Parse Entry",
-        "description": "AI-parse a free-text / dictated note into a DRAFT entry (never posted).\n\nThe LLM extracts the stated amount and maps the note to existing account ids;\nthe client pre-fills the New Entry form for the user to review and post via\nthe deterministic, balance-checked POST /entries/.",
+        "description": "AI-parse a free-text / dictated note into a DRAFT entry (never posted).\n\nThe LLM extracts the stated amount and maps the note to existing account ids;\nthe client pre-fills the New Entry form for the user to review and post via\nthe deterministic, balance-checked POST /entries/. Counts against the same\nmonthly AI-usage quota as /agent/chat \u2014 it's an AI feature like any other.",
         "operationId": "parse_entry_entries_parse_post",
         "requestBody": {
           "content": {
@@ -2265,6 +2265,96 @@
         ]
       }
     },
+    "/billing/subscription/preview": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Preview Plan Change",
+        "description": "What switching to this plan/cycle would cost. Charges nothing.",
+        "operationId": "preview_plan_change_billing_subscription_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/billing/subscription/change": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Change Plan",
+        "description": "Move the existing subscription to this plan/cycle. Charges the card on file.",
+        "operationId": "change_plan_billing_subscription_change_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/billing/portal": {
       "post": {
         "tags": [
@@ -2599,7 +2689,7 @@
           "financial-independence"
         ],
         "summary": "Generate Strategy",
-        "description": "Trigger AI FIRE strategy generation. Returns an SSE stream.\n\nStream events:\n  {\"type\": \"status\",  \"message\": \"...\"} \u2014 progress updates\n  {\"type\": \"done\",    \"strategy\": {...}} \u2014 final result\n  {\"type\": \"error\",   \"message\": \"...\"}  \u2014 failure",
+        "description": "Trigger AI FIRE strategy generation. Returns an SSE stream.\n\nStream events:\n  {\"type\": \"status\",  \"message\": \"...\"} \u2014 progress updates\n  {\"type\": \"done\",    \"strategy\": {...}} \u2014 final result\n  {\"type\": \"error\",   \"message\": \"...\"}  \u2014 failure\n\nCounts against the same monthly AI-usage quota as /agent/chat \u2014 checked\nbefore the stream opens, same as chat, rather than mid-stream.",
         "operationId": "generate_strategy_fi_strategy_generate_post",
         "responses": {
           "200": {
@@ -3205,6 +3295,140 @@
             "schema": {
               "type": "string",
               "title": "Budget Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bug-reports/": {
+      "post": {
+        "tags": [
+          "bug-reports"
+        ],
+        "summary": "Create Bug Report",
+        "description": "File a bug report. Always persisted locally; mirrored to the issue tracker on\na best-effort basis, so a tracker outage still returns 201.",
+        "operationId": "create_bug_report_bug_reports__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BugReportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "bug-reports"
+        ],
+        "summary": "List Bug Reports",
+        "operationId": "list_bug_reports_bug_reports__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bug-reports/{report_id}": {
+      "get": {
+        "tags": [
+          "bug-reports"
+        ],
+        "summary": "Get Bug Report",
+        "operationId": "get_bug_report_bug_reports__report_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Id"
             }
           }
         ],
@@ -4557,6 +4781,498 @@
         }
       }
     },
+    "/.well-known/oauth-authorization-server": {
+      "get": {
+        "tags": [
+          "mcp-oauth"
+        ],
+        "summary": "Authorization Server Metadata",
+        "operationId": "authorization_server_metadata__well_known_oauth_authorization_server_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/.well-known/oauth-protected-resource": {
+      "get": {
+        "tags": [
+          "mcp-oauth"
+        ],
+        "summary": "Protected Resource Metadata",
+        "operationId": "protected_resource_metadata__well_known_oauth_protected_resource_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/oauth/register": {
+      "post": {
+        "tags": [
+          "mcp-oauth"
+        ],
+        "summary": "Register Client",
+        "operationId": "register_client_mcp_oauth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/oauth/authorize": {
+      "get": {
+        "tags": [
+          "mcp-oauth"
+        ],
+        "summary": "Authorize",
+        "operationId": "authorize_mcp_oauth_authorize_get",
+        "parameters": [
+          {
+            "name": "response_type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Response Type"
+            }
+          },
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Redirect Uri"
+            }
+          },
+          {
+            "name": "code_challenge",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code Challenge"
+            }
+          },
+          {
+            "name": "code_challenge_method",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "S256",
+              "title": "Code Challenge Method"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Scope"
+            }
+          },
+          {
+            "name": "resource",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Resource"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/oauth/consent-info": {
+      "get": {
+        "tags": [
+          "mcp-oauth"
+        ],
+        "summary": "Consent Info",
+        "operationId": "consent_info_mcp_oauth_consent_info_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rt",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Rt"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/oauth/consent": {
+      "post": {
+        "tags": [
+          "mcp-oauth"
+        ],
+        "summary": "Consent",
+        "operationId": "consent_mcp_oauth_consent_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentDecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/mcp/oauth/token": {
+      "post": {
+        "tags": [
+          "mcp-oauth"
+        ],
+        "summary": "Token",
+        "operationId": "token_mcp_oauth_token_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_token_mcp_oauth_token_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/oauth/revoke": {
+      "post": {
+        "tags": [
+          "mcp-oauth"
+        ],
+        "summary": "Revoke",
+        "operationId": "revoke_mcp_oauth_revoke_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Revoke Mcp Oauth Revoke Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/connections/": {
+      "get": {
+        "tags": [
+          "mcp-oauth"
+        ],
+        "summary": "List Connections",
+        "operationId": "list_connections_mcp_connections__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/mcp/connections/{token_id}": {
+      "delete": {
+        "tags": [
+          "mcp-oauth"
+        ],
+        "summary": "Revoke Connection",
+        "operationId": "revoke_connection_mcp_connections__token_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "token_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/connections/enabled": {
+      "get": {
+        "tags": [
+          "mcp-oauth"
+        ],
+        "summary": "Get Mcp Enabled",
+        "operationId": "get_mcp_enabled_mcp_connections_enabled_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "mcp-oauth"
+        ],
+        "summary": "Set Mcp Enabled",
+        "operationId": "set_mcp_enabled_mcp_connections_enabled_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/McpEnabledRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/healthz": {
       "get": {
         "tags": [
@@ -4688,6 +5404,68 @@
           "balances"
         ],
         "title": "BalanceSheetRequest"
+      },
+      "Body_token_mcp_oauth_token_post": {
+        "properties": {
+          "grant_type": {
+            "type": "string",
+            "title": "Grant Type"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "redirect_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Redirect Uri"
+          },
+          "client_id": {
+            "type": "string",
+            "title": "Client Id"
+          },
+          "code_verifier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code Verifier"
+          },
+          "refresh_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refresh Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "grant_type",
+          "client_id"
+        ],
+        "title": "Body_token_mcp_oauth_token_post"
       },
       "Body_upload_file_agent_files_post": {
         "properties": {
@@ -4838,6 +5616,257 @@
         "type": "object",
         "title": "BudgetUpdateRequest"
       },
+      "BugContext": {
+        "properties": {
+          "route": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route"
+          },
+          "page_title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Title"
+          },
+          "app_commit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Commit"
+          },
+          "viewport": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Viewport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "user_agent": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 400
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Agent"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "theme": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theme"
+          },
+          "supabase_configured": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supabase Configured"
+          },
+          "token_exp": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Exp"
+          },
+          "agent_thread_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Thread Id"
+          },
+          "onboarding_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Onboarding Complete"
+          },
+          "tour_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tour Complete"
+          },
+          "react_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "React Version"
+          },
+          "recent_failures": {
+            "items": {
+              "$ref": "#/components/schemas/RecentFailure"
+            },
+            "type": "array",
+            "title": "Recent Failures"
+          },
+          "client_error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClientError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "BugContext"
+      },
+      "BugReportRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "blocking"
+            ],
+            "title": "Severity"
+          },
+          "area": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area"
+          },
+          "contact_ok": {
+            "type": "boolean",
+            "title": "Contact Ok",
+            "default": false
+          },
+          "file_ref": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Ref"
+          },
+          "context": {
+            "$ref": "#/components/schemas/BugContext"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "severity"
+        ],
+        "title": "BugReportRequest"
+      },
       "ChatRequest": {
         "properties": {
           "thread_id": {
@@ -4881,6 +5910,78 @@
           "plan"
         ],
         "title": "CheckoutRequest"
+      },
+      "ClientError": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "stack": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stack"
+          },
+          "component_stack": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Component Stack"
+          }
+        },
+        "type": "object",
+        "title": "ClientError"
+      },
+      "ConsentDecisionRequest": {
+        "properties": {
+          "rt": {
+            "type": "string",
+            "title": "Rt"
+          },
+          "approve": {
+            "type": "boolean",
+            "title": "Approve"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rt",
+          "approve"
+        ],
+        "title": "ConsentDecisionRequest"
       },
       "CreateReminderRequest": {
         "properties": {
@@ -5324,6 +6425,19 @@
         ],
         "title": "IncomeItem"
       },
+      "McpEnabledRequest": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "McpEnabledRequest"
+      },
       "OnboardingGoalItem": {
         "properties": {
           "name": {
@@ -5552,6 +6666,32 @@
           "description"
         ],
         "title": "ParsedEntryDraft"
+      },
+      "PlanChangeRequest": {
+        "properties": {
+          "plan": {
+            "type": "string",
+            "enum": [
+              "plus",
+              "pro"
+            ],
+            "title": "Plan"
+          },
+          "cycle": {
+            "type": "string",
+            "enum": [
+              "month",
+              "year"
+            ],
+            "title": "Cycle",
+            "default": "month"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan"
+        ],
+        "title": "PlanChangeRequest"
       },
       "PolicyRequest": {
         "properties": {
@@ -5844,6 +6984,101 @@
         "type": "object",
         "title": "ProfileIdentityRequest"
       },
+      "RecentFailure": {
+        "properties": {
+          "ago_ms": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 86400000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ago Ms"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 999.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "path_template": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path Template"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
+        },
+        "type": "object",
+        "title": "RecentFailure"
+      },
+      "RegisterClientRequest": {
+        "properties": {
+          "client_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Name"
+          },
+          "redirect_uris": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Redirect Uris"
+          }
+        },
+        "type": "object",
+        "required": [
+          "redirect_uris"
+        ],
+        "title": "RegisterClientRequest"
+      },
       "ResumeRequest": {
         "properties": {
           "thread_id": {
@@ -5878,6 +7113,19 @@
           "decision"
         ],
         "title": "ResumeRequest"
+      },
+      "RevokeRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token"
+        ],
+        "title": "RevokeRequest"
       },
       "RiskQuestionnaireRequest": {
         "properties": {
@@ -6147,6 +7395,51 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "Viewport": {
+        "properties": {
+          "w": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "W"
+          },
+          "h": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "H"
+          },
+          "dpr": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 16.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dpr"
+          }
+        },
+        "type": "object",
+        "title": "Viewport"
       }
     },
     "securitySchemes": {

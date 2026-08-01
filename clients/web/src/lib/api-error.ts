@@ -9,12 +9,26 @@
 
 export class ApiError extends Error {
   status: number;
+  /** Machine-readable `detail.error` when the backend sent a structured body.
+   *  Callers branch on this — a billing change answering "checkout_required"
+   *  has to be distinguishable from any other 409 without matching on prose. */
+  code?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.code = code;
   }
+}
+
+/** The `detail.error` code from a structured FastAPI error body, if there is one. */
+export function codeFrom(body: unknown): string | undefined {
+  if (!body || typeof body !== "object") return undefined;
+  const detail = (body as { detail?: unknown }).detail;
+  if (!detail || typeof detail !== "object" || Array.isArray(detail)) return undefined;
+  const error = (detail as { error?: unknown }).error;
+  return typeof error === "string" ? error : undefined;
 }
 
 /**
@@ -43,8 +57,13 @@ export function messageFrom(body: unknown, status: number): string {
       }
     }
 
-    // Structured details, e.g. the quota and rate-limit payloads.
+    // Structured details, e.g. the quota, rate-limit and billing payloads.
     if (detail && typeof detail === "object") {
+      // Prefer prose the backend wrote for a human. Falling straight to `error`
+      // renders codes like "checkout_required" as "checkout required", which is a
+      // machine token with the underscores filed off, not an explanation.
+      const message = (detail as { message?: unknown }).message;
+      if (typeof message === "string" && message.trim()) return message;
       const error = (detail as { error?: unknown }).error;
       if (typeof error === "string") return error.replace(/_/g, " ");
     }

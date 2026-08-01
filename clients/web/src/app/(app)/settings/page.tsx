@@ -124,6 +124,19 @@ function SettingsContent() {
                     ? `Renews ${formatDate(sub.current_period_end)}`
                     : "Free plan — no billing date"}
               </p>
+              {/* Shown on the card, not just inside the dialog: a past_due subscriber
+                  needs to know why before hunting for a button that won't work. */}
+              {sub.change_mode === "blocked" && (
+                <p className="text-[13px] text-muted-foreground mt-2">
+                  {sub.change_blocked_reason === "past_due"
+                    ? "There's an unpaid invoice — settle it in the billing portal to change plans."
+                    : sub.change_blocked_reason === "paused"
+                      ? "Your subscription is paused. Resume it to change plans."
+                      : sub.change_blocked_reason === "scheduled_change"
+                        ? "A cancellation is already scheduled. Manage it in the billing portal."
+                        : "Manage this subscription in the billing portal."}
+                </p>
+              )}
               <div className="flex gap-2 mt-5">
                 <Button variant="outline" onClick={openPortal} disabled={portal.isPending}>
                   {portal.isPending ? <Loader2 className="size-4 animate-spin" /> : <ExternalLink className="size-4" />}
@@ -238,6 +251,10 @@ function SettingsContent() {
         onOpenChange={setUpgradeOpen}
         currentPlan={sub?.plan ?? "free"}
         currentCycle={sub?.billing_cycle ?? null}
+        // Default to checkout while the subscription is still loading: it's the
+        // conservative branch, since it can't charge a card without the Paddle overlay.
+        changeMode={sub?.change_mode ?? "checkout"}
+        blockedReason={sub?.change_blocked_reason ?? null}
         highlightPlan={upgradeParam && upgradeParam !== "1" ? upgradeParam : undefined}
         initialCycle={initialCycle}
       />

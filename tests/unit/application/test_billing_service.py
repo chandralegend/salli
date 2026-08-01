@@ -12,7 +12,12 @@ from typing import Any
 
 import pytest
 
-from salli.application.services.billing_service import BillingService, QuotaExceeded
+from salli.application.ports import BillingChangeRejected
+from salli.application.services.billing_service import (
+    BillingService,
+    QuotaExceeded,
+    SubscriptionChangeUnavailable,
+)
 from salli.domain.billing.plans import (
     METRIC_AGENT_MESSAGES,
     METRIC_STATEMENT_UPLOADS,
@@ -114,16 +119,25 @@ class FakeBillingPort:
     ) -> None:
         self._price_to_plan = price_to_plan or {
             "pri_plus": "plus",
+            "pri_plus_y": "plus",
             "pri_pro": "pro",
             "pri_pro_y": "pro",
         }
         self._price_to_cycle = price_to_cycle or {
             "pri_plus": "month",
+            "pri_plus_y": "year",
             "pri_pro": "month",
             "pri_pro_y": "year",
         }
         self.checkout_calls: list[tuple] = []
         self.portal_calls: list[str] = []
+        self.change_calls: list[tuple] = []
+        self.preview_calls: list[tuple] = []
+        self.find_calls: list[str] = []
+        # Test hooks: what find_subscription_id discovers, and an exception to throw
+        # from change_subscription instead of succeeding.
+        self.found_subscription_id: str | None = None
+        self.change_raises: Exception | None = None
 
     async def create_checkout(self, user_id, email, plan_key, cycle, customer_id):
         self.checkout_calls.append((user_id, email, plan_key, cycle, customer_id))
@@ -141,6 +155,28 @@ class FakeBillingPort:
 
     def cycle_for_price_id(self, price_id: str) -> str | None:
         return self._price_to_cycle.get(price_id)
+
+    async def preview_subscription_change(self, subscription_id, plan_key, cycle):
+        self.preview_calls.append((subscription_id, plan_key, cycle))
+        return {"plan": plan_key, "cycle": cycle, "immediate_charge_minor": 4271}
+
+    async def change_subscription(self, subscription_id, plan_key, cycle):
+        self.change_calls.append((subscription_id, plan_key, cycle))
+        if self.change_raises:
+            raise self.change_raises
+        return {
+            "price_id": f"pri_{plan_key}" + ("_y" if cycle == "year" else ""),
+            "status": "active",
+            "provider_customer_id": "ctm_1",
+            "provider_subscription_id": subscription_id,
+            "current_period_start": "2026-08-01T00:00:00Z",
+            "current_period_end": "2027-08-01T00:00:00Z",
+            "cancel_at_period_end": False,
+        }
+
+    async def find_subscription_id(self, customer_id: str) -> str | None:
+        self.find_calls.append(customer_id)
+        return self.found_subscription_id
 
 
 # ── Fixtures ────────────────────────────────────────────────────────────────────
@@ -461,3 +497,240 @@ def test_verify_and_parse_webhook_none_without_provider(uow_factory):
 
 def test_verify_and_parse_webhook_delegates(service):
     assert service.verify_and_parse_webhook(b"{}", "sig") == {"parsed": True}
+
+
+# ── Plan changes on an existing subscription ────────────────────────────────────
+
+
+async def _seed_paid(repos, **overrides):
+    """A user with a live Paddle subscription — the state a plan change acts on."""
+    subs = repos[0]
+    fields = {
+        "plan": "pro",
+        "billing_cycle": "month",
+        "status": "active",
+        "provider_customer_id": "ctm_1",
+        "provider_subscription_id": "sub_123",
+    }
+    fields.update(overrides)
+    await subs.upsert(USER, fields)
+
+
+async def test_change_plan_patches_the_existing_subscription_and_never_checkouts(
+    service, billing_port, repos
+):
+    """The core regression test for the double-billing bug.
+
+    A Pro-monthly subscriber moving to Plus-annual must PATCH the subscription they
+    already have. Opening checkout here is what created a second live subscription
+    while the first kept billing.
+    """
+    await _seed_paid(repos)
+
+    await service.change_plan(USER, "u@e.com", "plus", "year")
+
+    assert billing_port.change_calls == [("sub_123", "plus", "year")]
+    assert billing_port.checkout_calls == []
+
+
+async def test_change_plan_writes_the_new_plan_and_cycle(service, repos):
+    await _seed_paid(repos)
+
+    out = await service.change_plan(USER, None, "plus", "year")
+
+    row = await repos[0].get(USER)
+    assert (row["plan"], row["billing_cycle"]) == ("plus", "year")
+    assert row["provider_subscription_id"] == "sub_123"
+    # The response is full entitlements, so the client can seed its cache with it.
+    assert out["plan"] == "plus" and out["billing_cycle"] == "year"
+    assert out["current_period_end"] is not None
+
+
+async def test_change_plan_skips_the_write_when_the_webhook_got_there_first(
+    service, billing_port, repos
+):
+    # Webhook already applied the target state; re-applying our (now older) copy of the
+    # same payload would risk clobbering anything that landed after it.
+    await _seed_paid(repos, plan="plus", billing_cycle="year")
+    await repos[0].upsert(USER, {"cancel_at_period_end": False})
+
+    await service.change_plan(USER, None, "plus", "month")  # different cycle -> allowed
+    assert billing_port.change_calls == [("sub_123", "plus", "month")]
+
+
+@pytest.mark.parametrize(
+    "overrides,reason",
+    [
+        ({"status": "past_due"}, "past_due"),
+        ({"status": "paused"}, "paused"),
+        ({"status": "some_new_paddle_status"}, "unknown_status"),
+        ({"cancel_at_period_end": True}, "scheduled_change"),
+    ],
+)
+async def test_change_plan_blocks_unchangeable_states_without_offering_checkout(
+    service, billing_port, repos, overrides, reason
+):
+    # Every one of these previously fell through to checkout — a second door into the
+    # double-billing bug. past_due is the worst: _effective_plan reports Free for it.
+    await _seed_paid(repos, **overrides)
+
+    with pytest.raises(SubscriptionChangeUnavailable) as exc:
+        await service.change_plan(USER, None, "plus", "year")
+
+    assert exc.value.reason == reason
+    assert billing_port.change_calls == []
+    assert billing_port.checkout_calls == []
+
+
+async def test_change_plan_on_canceled_subscription_routes_to_checkout(service, repos):
+    # Terminal at Paddle — it can never be patched, and it isn't billing, so a fresh
+    # purchase is correct here.
+    await _seed_paid(repos, status="canceled")
+
+    with pytest.raises(SubscriptionChangeUnavailable) as exc:
+        await service.change_plan(USER, None, "plus", "year")
+
+    assert exc.value.reason == "checkout_required"
+
+
+async def test_change_plan_for_a_free_user_routes_to_checkout(service, repos):
+    with pytest.raises(SubscriptionChangeUnavailable) as exc:
+        await service.change_plan(USER, "u@e.com", "plus", "year")
+
+    assert exc.value.reason == "checkout_required"
+
+
+async def test_change_plan_refuses_a_no_op_without_calling_the_provider(
+    service, billing_port, repos
+):
+    await _seed_paid(repos, plan="pro", billing_cycle="month")
+
+    with pytest.raises(SubscriptionChangeUnavailable) as exc:
+        await service.change_plan(USER, None, "pro", "month")
+
+    assert exc.value.reason == "no_change"
+    assert billing_port.change_calls == []
+
+
+async def test_change_plan_allows_a_row_with_no_recorded_cycle(service, billing_port, repos):
+    # billing_cycle is NULL on rows written before that column existed. That's "unknown",
+    # not "matches" — refusing here would strand those users on their current plan.
+    await _seed_paid(repos, plan="pro", billing_cycle=None)
+
+    await service.change_plan(USER, None, "pro", "month")
+
+    assert billing_port.change_calls == [("sub_123", "pro", "month")]
+
+
+async def test_change_plan_recovers_a_missing_subscription_id(service, billing_port, repos):
+    # transaction.completed records only the customer id. Without recovery this user
+    # would be sent to checkout and billed twice.
+    await _seed_paid(repos, provider_subscription_id=None)
+    billing_port.found_subscription_id = "sub_recovered"
+
+    await service.change_plan(USER, None, "plus", "year")
+
+    assert billing_port.find_calls == ["ctm_1"]
+    assert billing_port.change_calls == [("sub_recovered", "plus", "year")]
+    assert (await repos[0].get(USER))["provider_subscription_id"] == "sub_recovered"
+
+
+async def test_change_plan_falls_back_to_checkout_when_no_subscription_is_found(
+    service, billing_port, repos
+):
+    await _seed_paid(repos, provider_subscription_id=None)
+    billing_port.found_subscription_id = None
+
+    with pytest.raises(SubscriptionChangeUnavailable) as exc:
+        await service.change_plan(USER, None, "plus", "year")
+
+    assert exc.value.reason == "checkout_required"
+
+
+async def test_change_plan_rejects_a_downgrade_to_free(service, repos):
+    # Free is not purchasable in place; cancelling goes through the portal.
+    await _seed_paid(repos)
+
+    with pytest.raises(ValueError, match="not a paid plan"):
+        await service.change_plan(USER, None, "free", "month")
+
+
+async def test_change_plan_rejects_an_unknown_plan(service, repos):
+    await _seed_paid(repos)
+
+    with pytest.raises(ValueError, match="not a paid plan"):
+        await service.change_plan(USER, None, "gold", "month")
+
+
+async def test_change_plan_without_a_provider_raises(uow_factory):
+    svc = BillingService(uow_factory, billing_port=None)
+
+    with pytest.raises(RuntimeError, match="not configured"):
+        await svc.change_plan(USER, None, "plus", "year")
+
+
+async def test_preview_never_writes_to_the_database(service, billing_port, repos):
+    await _seed_paid(repos)
+    before = await repos[0].get(USER)
+
+    out = await service.preview_plan_change(USER, None, "plus", "year")
+
+    assert billing_port.preview_calls == [("sub_123", "plus", "year")]
+    assert billing_port.change_calls == []
+    assert await repos[0].get(USER) == before
+    assert out["immediate_charge_minor"] == 4271
+
+
+async def test_provider_rejection_leaves_the_stored_plan_untouched(service, billing_port, repos):
+    # prevent_change means Paddle applied nothing, so neither do we.
+    await _seed_paid(repos)
+    billing_port.change_raises = BillingChangeRejected("declined", "Card declined")
+
+    with pytest.raises(BillingChangeRejected):
+        await service.change_plan(USER, None, "plus", "year")
+
+    row = await repos[0].get(USER)
+    assert (row["plan"], row["billing_cycle"]) == ("pro", "month")
+
+
+@pytest.mark.parametrize(
+    "overrides,expected",
+    [
+        ({}, "in_place"),
+        ({"status": "trialing"}, "in_place"),
+        ({"status": "canceled"}, "checkout"),
+        ({"status": "past_due"}, "blocked"),
+        ({"status": "paused"}, "blocked"),
+        ({"cancel_at_period_end": True}, "blocked"),
+        ({"provider_subscription_id": None}, "checkout"),
+    ],
+)
+async def test_entitlements_expose_the_change_mode(service, repos, overrides, expected):
+    await _seed_paid(repos, **overrides)
+
+    out = await service.get_entitlements(USER, None)
+
+    assert out["change_mode"] == expected
+    assert (out["change_blocked_reason"] is not None) == (expected == "blocked")
+
+
+async def test_change_mode_is_computed_without_a_billing_port(uow_factory, repos):
+    # Settings must still render on a deployment with no Paddle credentials.
+    await _seed_paid(repos)
+    svc = BillingService(uow_factory, billing_port=None)
+
+    out = await svc.get_entitlements(USER, None)
+
+    assert out["change_mode"] == "in_place"
+
+
+async def test_past_due_reports_free_limits_but_is_not_offered_a_new_purchase(service, repos):
+    # The two views deliberately disagree: entitlements fall back to Free, while
+    # change_mode still sees a live subscription and refuses to sell a second one.
+    await _seed_paid(repos, status="past_due")
+
+    out = await service.get_entitlements(USER, None)
+
+    assert out["plan"] == "free"
+    assert out["change_mode"] == "blocked"
+    assert out["change_blocked_reason"] == "past_due"

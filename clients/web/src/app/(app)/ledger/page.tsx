@@ -508,6 +508,8 @@ export default function LedgerPage() {
         pending={ledger.addEntry.isPending}
         serverError={ledger.addEntry.error instanceof Error ? ledger.addEntry.error.message : null}
         initialDraft={entryDraft}
+        onCreateAccount={(data, callbacks) => ledger.addAccount.mutate(data, { onSuccess: callbacks.onSuccess })}
+        creatingAccount={ledger.addAccount.isPending}
       />
       <QuickAddDialog
         open={aiOpen}
@@ -518,6 +520,8 @@ export default function LedgerPage() {
             amount: draft.amount,
             debitId: draft.debit_account_id ?? "",
             creditId: draft.credit_account_id ?? "",
+            debitHint: draft.debit_account_hint ?? undefined,
+            creditHint: draft.credit_account_hint ?? undefined,
           });
           setTab("entries");
           setEntryDialogOpen(true);

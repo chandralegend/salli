@@ -3,6 +3,7 @@ import {
   CreditCard,
   Landmark,
   PiggyBank,
+  Plus,
   ShoppingBag,
   TrendingUp,
   Wallet,
@@ -11,6 +12,8 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Modal as RNModal, Platform, Pressable, ScrollView, Text, View } from "react-native";
 
+import { AddEditAccountDrawer } from "@/components/AddEditAccountDrawer";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { PillButton } from "@/components/ui/pill-button";
@@ -18,8 +21,10 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { TextField } from "@/components/ui/text-field";
 import type { Account } from "@/hooks/useDashboard";
 import { useLedgerMutations, type EntryDraft } from "@/hooks/useLedger";
+import type { AccountHint } from "@/lib/api/types.gen";
 import { formatLKR } from "@/lib/format";
 import { useThemeColors, useThemeVars } from "@/lib/theme";
+import { useToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 type EntryType = "income" | "expense" | "transfer";
@@ -47,13 +52,20 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
   const colors = useThemeColors();
   const themeVars = useThemeVars();
   const { postEntry } = useLedgerMutations();
+  const showToast = useToast();
 
   const [type, setType] = useState<EntryType>("expense");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [debitAccountId, setDebitAccountId] = useState<string | null>(null);
   const [creditAccountId, setCreditAccountId] = useState<string | null>(null);
+  const [debitHint, setDebitHint] = useState<AccountHint | null>(null);
+  const [creditHint, setCreditHint] = useState<AccountHint | null>(null);
   const [picker, setPicker] = useState<Side | null>(null);
+  // Set while the user is creating a brand-new account from inside the picker
+  // (side that was open when they tapped "+ Add new account"). The entry form
+  // underneath stays mounted throughout, so nothing typed so far is lost.
+  const [pendingAccountSide, setPendingAccountSide] = useState<Side | null>(null);
   const [saving, setSaving] = useState(false);
 
   // On each open, apply the AI draft (voice/text quick-add) or start blank. The
@@ -62,18 +74,23 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
   useEffect(() => {
     if (!visible) return;
     setPicker(null);
+    setPendingAccountSide(null);
     if (initialDraft) {
       setType(initialDraft.entry_type);
       setAmount(initialDraft.amount ?? "");
       setDescription(initialDraft.description ?? "");
       setDebitAccountId(initialDraft.debit_account_id ?? null);
       setCreditAccountId(initialDraft.credit_account_id ?? null);
+      setDebitHint(initialDraft.debit_account_hint ?? null);
+      setCreditHint(initialDraft.credit_account_hint ?? null);
     } else {
       setType("expense");
       setAmount("");
       setDescription("");
       setDebitAccountId(null);
       setCreditAccountId(null);
+      setDebitHint(null);
+      setCreditHint(null);
     }
   }, [visible, initialDraft]);
 
@@ -126,6 +143,9 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
       });
       reset();
       onClose();
+      showToast("Entry posted.", "success");
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Could not post this entry. Please try again.", "error");
     } finally {
       setSaving(false);
     }
@@ -133,6 +153,17 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
 
   const pickerCandidates = picker === "debit" ? debitCandidates : creditCandidates;
   const pickerSelectedId = picker === "debit" ? debitAccountId : creditAccountId;
+
+  // Sensible fallback account type for a brand-new account, when the AI parser
+  // gave no hint for this side — based on the entry type + which side it is.
+  const defaultTypeForSide = (side: Side): Account["type"] => {
+    if (side === "debit") return type === "expense" ? "expense" : "asset";
+    return type === "income" ? "income" : "asset";
+  };
+  const pendingHint = pendingAccountSide === "debit" ? debitHint : pendingAccountSide === "credit" ? creditHint : null;
+  const pendingPrefill = pendingAccountSide
+    ? { name: pendingHint?.name, type: pendingHint?.type ?? defaultTypeForSide(pendingAccountSide) }
+    : undefined;
 
   return (
     <RNModal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
@@ -211,6 +242,7 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
             <View>
               <AccountRow
                 side="debit"
+                entryType={type}
                 account={debitAccount}
                 amount={amountNum}
                 position="top"
@@ -218,6 +250,7 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
               />
               <AccountRow
                 side="credit"
+                entryType={type}
                 account={creditAccount}
                 amount={amountNum}
                 position="bottom"
@@ -245,6 +278,7 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
         <AccountPickerSheet
           visible={picker !== null}
           side={picker}
+          entryType={type}
           candidates={pickerCandidates}
           selectedId={pickerSelectedId}
           onSelect={(id) => {
@@ -253,20 +287,48 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
             setPicker(null);
           }}
           onClose={() => setPicker(null)}
+          onCreateNew={() => {
+            setPendingAccountSide(picker);
+            setPicker(null);
+          }}
+        />
+
+        {/* Lives inside NewEntryModal (not the Ledger screen's Accounts-tab
+            instance) so creating an account never unmounts the in-progress
+            entry — amount/description/type are untouched throughout. */}
+        <AddEditAccountDrawer
+          visible={pendingAccountSide !== null}
+          prefill={pendingPrefill}
+          onClose={() => setPendingAccountSide(null)}
+          onCreated={(created) => {
+            if (pendingAccountSide === "debit") setDebitAccountId(created.id);
+            else if (pendingAccountSide === "credit") setCreditAccountId(created.id);
+            setPendingAccountSide(null);
+          }}
         />
       </View>
     </RNModal>
   );
 }
 
+// "Debit"/"Credit" mean nothing to a non-accountant — say what the side
+// actually represents for this entry type instead.
+const SIDE_LABEL: Record<EntryType, Record<Side, string>> = {
+  expense: { debit: "Category", credit: "Paid from" },
+  income: { debit: "Received into", credit: "Source" },
+  transfer: { debit: "To", credit: "From" },
+};
+
 function AccountRow({
   side,
+  entryType,
   account,
   amount,
   position,
   onPress,
 }: {
   side: Side;
+  entryType: EntryType;
   account: Account | undefined;
   amount: number;
   position: "top" | "bottom";
@@ -276,6 +338,7 @@ function AccountRow({
   const meta = account ? TYPE_META[account.type] : null;
   const Icon = meta?.Icon ?? (side === "debit" ? ShoppingBag : Landmark);
   const filled = Boolean(account);
+  const label = SIDE_LABEL[entryType][side];
 
   return (
     <Pressable
@@ -295,11 +358,11 @@ function AccountRow({
       </View>
       <View className="flex-1">
         <Text className="mb-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
-          {side === "debit" ? "Debit" : "Credit"}
+          {label}
           {meta ? ` · ${meta.label}` : ""}
         </Text>
         <Text className={cn("font-sans-semibold text-[13px]", filled ? "text-foreground" : "text-foreground/35")}>
-          {account ? `${account.code} · ${account.name}` : `Select ${side} account`}
+          {account ? `${account.code} · ${account.name}` : `Select ${label.toLowerCase()}`}
         </Text>
       </View>
       <View className="flex-row items-center gap-2">
@@ -321,28 +384,43 @@ function AccountRow({
 function AccountPickerSheet({
   visible,
   side,
+  entryType,
   candidates,
   selectedId,
   onSelect,
   onClose,
+  onCreateNew,
 }: {
   visible: boolean;
   side: Side | null;
+  entryType: EntryType;
   candidates: Account[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   onClose: () => void;
+  onCreateNew: () => void;
 }) {
   const colors = useThemeColors();
   return (
     <Drawer
       visible={visible}
       onClose={onClose}
-      title={side === "debit" ? "Debit account" : "Credit account"}
+      title={side ? SIDE_LABEL[entryType][side] : ""}
       keyboardAvoiding={false}
     >
+      <AnimatedPressable
+        onPress={onCreateNew}
+        haptic="light"
+        className="mb-2 flex-row items-center gap-2.5 rounded-card border border-dashed border-salli-accent/40 bg-salli-accent/[0.06] px-3.5 py-3"
+      >
+        <View className="h-8 w-8 items-center justify-center rounded-[9px] bg-salli-accent/15">
+          <Plus size={15} color={colors.accent} strokeWidth={2.5} />
+        </View>
+        <Text className="font-sans-semibold text-[13px] text-salli-accent">Add new account</Text>
+      </AnimatedPressable>
+
       {candidates.length === 0 ? (
-        <Text className="px-1 pb-4 text-[13px] text-foreground/40">No matching accounts for this entry type.</Text>
+        <Text className="px-1 pb-4 text-[13px] text-foreground/40">No matching accounts for this entry type yet.</Text>
       ) : (
         <View className="gap-1.5">
           {candidates.map((a) => {

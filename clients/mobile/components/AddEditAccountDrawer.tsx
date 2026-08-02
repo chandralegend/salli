@@ -16,15 +16,21 @@ const FieldLabel = ({ children }: { children: string }) => (
 );
 
 /** Bottom-sheet for creating a new account or editing an existing one. When
- * `account` is passed it opens in edit mode (prefilled); otherwise create mode. */
+ * `account` is passed it opens in edit mode (prefilled); otherwise create mode.
+ * `prefill`/`onCreated` are create-mode-only, used by NewEntryModal to offer
+ * inline account creation without losing the in-progress entry. */
 export function AddEditAccountDrawer({
   visible,
   account,
+  prefill,
   onClose,
+  onCreated,
 }: {
   visible: boolean;
   account?: Account | null;
+  prefill?: { name?: string; type?: Account["type"] };
   onClose: () => void;
+  onCreated?: (account: Account) => void;
 }) {
   const addAccount = useAddAccount();
   const updateAccount = useUpdateAccount();
@@ -36,14 +42,15 @@ export function AddEditAccountDrawer({
   const [type, setType] = useState<Account["type"]>("asset");
   const [currency, setCurrency] = useState<string>("LKR");
 
-  // Prefill (edit) or reset (create) whenever the sheet is opened.
+  // Prefill (edit), apply a suggested name/type (create, from an AI hint), or
+  // reset (plain create) whenever the sheet is opened.
   useEffect(() => {
     if (!visible) return;
     setCode(account?.code ?? "");
-    setName(account?.name ?? "");
-    setType(account?.type ?? "asset");
+    setName(account?.name ?? prefill?.name ?? "");
+    setType(account?.type ?? prefill?.type ?? "asset");
     setCurrency(account?.currency ?? "LKR");
-  }, [visible, account]);
+  }, [visible, account, prefill]);
 
   const canSubmit = Boolean(code.trim() && name.trim());
   const saving = addAccount.isPending || updateAccount.isPending;
@@ -54,7 +61,12 @@ export function AddEditAccountDrawer({
     if (isEdit && account) {
       updateAccount.mutate({ accountId: account.id, body }, { onSuccess: onClose });
     } else {
-      addAccount.mutate(body, { onSuccess: onClose });
+      addAccount.mutate(body, {
+        onSuccess: (created) => {
+          onCreated?.(created);
+          onClose();
+        },
+      });
     }
   };
 

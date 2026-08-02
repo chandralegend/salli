@@ -5,6 +5,23 @@ export type ClientOptions = {
 };
 
 /**
+ * AccountHint
+ *
+ * A suggested NEW account (name + type) when the parser couldn't match an
+ * existing one but can infer what kind of account the transaction implies.
+ */
+export type AccountHint = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Type
+     */
+    type: 'asset' | 'liability' | 'equity' | 'income' | 'expense';
+};
+
+/**
  * AddAccountRequest
  */
 export type AddAccountRequest = {
@@ -64,6 +81,36 @@ export type BalanceSheetRequest = {
      * Balances
      */
     balances: Array<OpeningBalanceItem>;
+};
+
+/**
+ * Body_token_mcp_oauth_token_post
+ */
+export type BodyTokenMcpOauthTokenPost = {
+    /**
+     * Grant Type
+     */
+    grant_type: string;
+    /**
+     * Code
+     */
+    code?: string | null;
+    /**
+     * Redirect Uri
+     */
+    redirect_uri?: string | null;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Code Verifier
+     */
+    code_verifier?: string | null;
+    /**
+     * Refresh Token
+     */
+    refresh_token?: string | null;
 };
 
 /**
@@ -161,6 +208,101 @@ export type BudgetUpdateRequest = {
 };
 
 /**
+ * BugContext
+ */
+export type BugContext = {
+    /**
+     * Route
+     */
+    route?: string | null;
+    /**
+     * Page Title
+     */
+    page_title?: string | null;
+    /**
+     * App Commit
+     */
+    app_commit?: string | null;
+    viewport?: Viewport | null;
+    /**
+     * User Agent
+     */
+    user_agent?: string | null;
+    /**
+     * Language
+     */
+    language?: string | null;
+    /**
+     * Timezone
+     */
+    timezone?: string | null;
+    /**
+     * Theme
+     */
+    theme?: string | null;
+    /**
+     * Supabase Configured
+     */
+    supabase_configured?: boolean | null;
+    /**
+     * Token Exp
+     */
+    token_exp?: number | null;
+    /**
+     * Agent Thread Id
+     */
+    agent_thread_id?: string | null;
+    /**
+     * Onboarding Complete
+     */
+    onboarding_complete?: boolean | null;
+    /**
+     * Tour Complete
+     */
+    tour_complete?: boolean | null;
+    /**
+     * React Version
+     */
+    react_version?: string | null;
+    /**
+     * Recent Failures
+     */
+    recent_failures?: Array<RecentFailure>;
+    client_error?: ClientError | null;
+};
+
+/**
+ * BugReportRequest
+ */
+export type BugReportRequest = {
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Severity
+     */
+    severity: 'low' | 'medium' | 'high' | 'blocking';
+    /**
+     * Area
+     */
+    area?: string | null;
+    /**
+     * Contact Ok
+     */
+    contact_ok?: boolean;
+    /**
+     * File Ref
+     */
+    file_ref?: string | null;
+    context?: BugContext;
+};
+
+/**
  * ChatRequest
  */
 export type ChatRequest = {
@@ -186,6 +328,42 @@ export type CheckoutRequest = {
      * Plan
      */
     plan: string;
+};
+
+/**
+ * ClientError
+ */
+export type ClientError = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Message
+     */
+    message?: string | null;
+    /**
+     * Stack
+     */
+    stack?: string | null;
+    /**
+     * Component Stack
+     */
+    component_stack?: string | null;
+};
+
+/**
+ * ConsentDecisionRequest
+ */
+export type ConsentDecisionRequest = {
+    /**
+     * Rt
+     */
+    rt: string;
+    /**
+     * Approve
+     */
+    approve: boolean;
 };
 
 /**
@@ -437,6 +615,16 @@ export type IncomeItem = {
 };
 
 /**
+ * McpEnabledRequest
+ */
+export type McpEnabledRequest = {
+    /**
+     * Enabled
+     */
+    enabled: boolean;
+};
+
+/**
  * OnboardingGoalItem
  */
 export type OnboardingGoalItem = {
@@ -586,6 +774,8 @@ export type ParsedEntryDraft = {
      * Credit Account Id
      */
     credit_account_id?: string | null;
+    debit_account_hint?: AccountHint | null;
+    credit_account_hint?: AccountHint | null;
     /**
      * Currency
      */
@@ -747,6 +937,69 @@ export type ProfileIdentityRequest = {
 };
 
 /**
+ * PurchaseRequest
+ *
+ * Money arrives as a STRING and is parsed to Decimal, never float — a float in
+ * the money path is a bug (CLAUDE.md). `annual_interest_rate` is a fraction
+ * (0.18 = 18%), bounded so a caller passing 18 is rejected rather than
+ * silently costing the plan ~100x too dearly.
+ */
+export type PurchaseRequest = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Term Months
+     */
+    term_months?: number | null;
+    /**
+     * Annual Interest Rate
+     */
+    annual_interest_rate?: number | string;
+};
+
+/**
+ * RecentFailure
+ */
+export type RecentFailure = {
+    /**
+     * Ago Ms
+     */
+    ago_ms?: number | null;
+    /**
+     * Method
+     */
+    method?: string | null;
+    /**
+     * Status
+     */
+    status?: number | null;
+    /**
+     * Path Template
+     */
+    path_template?: string | null;
+    /**
+     * Request Id
+     */
+    request_id?: string | null;
+};
+
+/**
+ * RegisterClientRequest
+ */
+export type RegisterClientRequest = {
+    /**
+     * Client Name
+     */
+    client_name?: string | null;
+    /**
+     * Redirect Uris
+     */
+    redirect_uris: Array<string>;
+};
+
+/**
  * ResumeRequest
  */
 export type ResumeRequest = {
@@ -768,6 +1021,16 @@ export type ResumeRequest = {
     edits?: {
         [key: string]: unknown;
     } | null;
+};
+
+/**
+ * RevokeRequest
+ */
+export type RevokeRequest = {
+    /**
+     * Token
+     */
+    token: string;
 };
 
 /**
@@ -930,6 +1193,24 @@ export type ValidationError = {
     ctx?: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * Viewport
+ */
+export type Viewport = {
+    /**
+     * W
+     */
+    w?: number | null;
+    /**
+     * H
+     */
+    h?: number | null;
+    /**
+     * Dpr
+     */
+    dpr?: number | null;
 };
 
 export type MeAuthMeGetData = {
@@ -2447,6 +2728,29 @@ export type GetSurplusBreakdownFiSurplusGetResponses = {
     200: unknown;
 };
 
+export type SimulatePurchaseFiSimulatePurchasePostData = {
+    body: PurchaseRequest;
+    path?: never;
+    query?: never;
+    url: '/fi/simulate-purchase';
+};
+
+export type SimulatePurchaseFiSimulatePurchasePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SimulatePurchaseFiSimulatePurchasePostError = SimulatePurchaseFiSimulatePurchasePostErrors[keyof SimulatePurchaseFiSimulatePurchasePostErrors];
+
+export type SimulatePurchaseFiSimulatePurchasePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type RunAdvisorAdvisorRunPostData = {
     body?: never;
     path?: never;
@@ -2773,6 +3077,85 @@ export type GetBudgetSummaryBudgetBudgetIdSummaryGetErrors = {
 export type GetBudgetSummaryBudgetBudgetIdSummaryGetError = GetBudgetSummaryBudgetBudgetIdSummaryGetErrors[keyof GetBudgetSummaryBudgetBudgetIdSummaryGetErrors];
 
 export type GetBudgetSummaryBudgetBudgetIdSummaryGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListBugReportsBugReportsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/bug-reports/';
+};
+
+export type ListBugReportsBugReportsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListBugReportsBugReportsGetError = ListBugReportsBugReportsGetErrors[keyof ListBugReportsBugReportsGetErrors];
+
+export type ListBugReportsBugReportsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type CreateBugReportBugReportsPostData = {
+    body: BugReportRequest;
+    path?: never;
+    query?: never;
+    url: '/bug-reports/';
+};
+
+export type CreateBugReportBugReportsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateBugReportBugReportsPostError = CreateBugReportBugReportsPostErrors[keyof CreateBugReportBugReportsPostErrors];
+
+export type CreateBugReportBugReportsPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: unknown;
+};
+
+export type GetBugReportBugReportsReportIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Report Id
+         */
+        report_id: string;
+    };
+    query?: never;
+    url: '/bug-reports/{report_id}';
+};
+
+export type GetBugReportBugReportsReportIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetBugReportBugReportsReportIdGetError = GetBugReportBugReportsReportIdGetErrors[keyof GetBugReportBugReportsReportIdGetErrors];
+
+export type GetBugReportBugReportsReportIdGetResponses = {
     /**
      * Successful Response
      */
@@ -3581,6 +3964,299 @@ export type ExportReportCsvReportsReportTypeExportGetResponses = {
      */
     200: unknown;
 };
+
+export type AuthorizationServerMetadataWellKnownOauthAuthorizationServerGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/.well-known/oauth-authorization-server';
+};
+
+export type AuthorizationServerMetadataWellKnownOauthAuthorizationServerGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ProtectedResourceMetadataWellKnownOauthProtectedResourceGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/.well-known/oauth-protected-resource';
+};
+
+export type ProtectedResourceMetadataWellKnownOauthProtectedResourceGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type RegisterClientMcpOauthRegisterPostData = {
+    body: RegisterClientRequest;
+    path?: never;
+    query?: never;
+    url: '/mcp/oauth/register';
+};
+
+export type RegisterClientMcpOauthRegisterPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RegisterClientMcpOauthRegisterPostError = RegisterClientMcpOauthRegisterPostErrors[keyof RegisterClientMcpOauthRegisterPostErrors];
+
+export type RegisterClientMcpOauthRegisterPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: unknown;
+};
+
+export type AuthorizeMcpOauthAuthorizeGetData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Response Type
+         */
+        response_type: string;
+        /**
+         * Client Id
+         */
+        client_id: string;
+        /**
+         * Redirect Uri
+         */
+        redirect_uri: string;
+        /**
+         * Code Challenge
+         */
+        code_challenge: string;
+        /**
+         * Code Challenge Method
+         */
+        code_challenge_method?: string;
+        /**
+         * Scope
+         */
+        scope?: string;
+        /**
+         * Resource
+         */
+        resource?: string | null;
+        /**
+         * State
+         */
+        state?: string | null;
+    };
+    url: '/mcp/oauth/authorize';
+};
+
+export type AuthorizeMcpOauthAuthorizeGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthorizeMcpOauthAuthorizeGetError = AuthorizeMcpOauthAuthorizeGetErrors[keyof AuthorizeMcpOauthAuthorizeGetErrors];
+
+export type AuthorizeMcpOauthAuthorizeGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ConsentInfoMcpOauthConsentInfoGetData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Rt
+         */
+        rt: string;
+    };
+    url: '/mcp/oauth/consent-info';
+};
+
+export type ConsentInfoMcpOauthConsentInfoGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ConsentInfoMcpOauthConsentInfoGetError = ConsentInfoMcpOauthConsentInfoGetErrors[keyof ConsentInfoMcpOauthConsentInfoGetErrors];
+
+export type ConsentInfoMcpOauthConsentInfoGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ConsentMcpOauthConsentPostData = {
+    body: ConsentDecisionRequest;
+    path?: never;
+    query?: never;
+    url: '/mcp/oauth/consent';
+};
+
+export type ConsentMcpOauthConsentPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ConsentMcpOauthConsentPostError = ConsentMcpOauthConsentPostErrors[keyof ConsentMcpOauthConsentPostErrors];
+
+export type ConsentMcpOauthConsentPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type TokenMcpOauthTokenPostData = {
+    body: BodyTokenMcpOauthTokenPost;
+    path?: never;
+    query?: never;
+    url: '/mcp/oauth/token';
+};
+
+export type TokenMcpOauthTokenPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TokenMcpOauthTokenPostError = TokenMcpOauthTokenPostErrors[keyof TokenMcpOauthTokenPostErrors];
+
+export type TokenMcpOauthTokenPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type RevokeMcpOauthRevokePostData = {
+    body: RevokeRequest;
+    path?: never;
+    query?: never;
+    url: '/mcp/oauth/revoke';
+};
+
+export type RevokeMcpOauthRevokePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RevokeMcpOauthRevokePostError = RevokeMcpOauthRevokePostErrors[keyof RevokeMcpOauthRevokePostErrors];
+
+export type RevokeMcpOauthRevokePostResponses = {
+    /**
+     * Response Revoke Mcp Oauth Revoke Post
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type RevokeMcpOauthRevokePostResponse = RevokeMcpOauthRevokePostResponses[keyof RevokeMcpOauthRevokePostResponses];
+
+export type ListConnectionsMcpConnectionsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/mcp/connections/';
+};
+
+export type ListConnectionsMcpConnectionsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type RevokeConnectionMcpConnectionsTokenIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Token Id
+         */
+        token_id: string;
+    };
+    query?: never;
+    url: '/mcp/connections/{token_id}';
+};
+
+export type RevokeConnectionMcpConnectionsTokenIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RevokeConnectionMcpConnectionsTokenIdDeleteError = RevokeConnectionMcpConnectionsTokenIdDeleteErrors[keyof RevokeConnectionMcpConnectionsTokenIdDeleteErrors];
+
+export type RevokeConnectionMcpConnectionsTokenIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type RevokeConnectionMcpConnectionsTokenIdDeleteResponse = RevokeConnectionMcpConnectionsTokenIdDeleteResponses[keyof RevokeConnectionMcpConnectionsTokenIdDeleteResponses];
+
+export type GetMcpEnabledMcpConnectionsEnabledGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/mcp/connections/enabled';
+};
+
+export type GetMcpEnabledMcpConnectionsEnabledGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SetMcpEnabledMcpConnectionsEnabledPutData = {
+    body: McpEnabledRequest;
+    path?: never;
+    query?: never;
+    url: '/mcp/connections/enabled';
+};
+
+export type SetMcpEnabledMcpConnectionsEnabledPutErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SetMcpEnabledMcpConnectionsEnabledPutError = SetMcpEnabledMcpConnectionsEnabledPutErrors[keyof SetMcpEnabledMcpConnectionsEnabledPutErrors];
+
+export type SetMcpEnabledMcpConnectionsEnabledPutResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type SetMcpEnabledMcpConnectionsEnabledPutResponse = SetMcpEnabledMcpConnectionsEnabledPutResponses[keyof SetMcpEnabledMcpConnectionsEnabledPutResponses];
 
 export type HealthHealthzGetData = {
     body?: never;

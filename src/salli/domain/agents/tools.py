@@ -34,6 +34,27 @@ def set_current_user(user_id: str) -> None:
 # ── Read-only tools (re-exported for worker agents) ───────────────────────────
 
 
+def _make_get_accounts_tool(ledger_svc: Any) -> Any:
+    """Shared `get_accounts` tool body — used by both worker agents (via
+    `make_read_tools`) and the manager agent (via `make_manager_tools`), so the
+    one agent that actually calls `post_journal_entry`/`create_account` can look
+    up real account ids directly instead of only through sub-agent delegation."""
+
+    @tool
+    async def get_accounts() -> dict[str, Any]:
+        """List all accounts in the user's chart of accounts."""
+        user_id = _current_user.get()
+        accounts = await ledger_svc.list_accounts(user_id)
+        return {
+            "accounts": [
+                {"id": a.id, "code": a.code, "name": a.name, "type": a.type, "currency": a.currency}
+                for a in accounts
+            ]
+        }
+
+    return get_accounts
+
+
 def make_read_tools(ledger_svc: Any, tax_svc: Any) -> list[Any]:
     """Return the 5 read-only tools for worker agents."""
 
@@ -50,17 +71,7 @@ def make_read_tools(ledger_svc: Any, tax_svc: Any) -> list[Any]:
             "net": str(sum(balances.values(), Decimal(0))),
         }
 
-    @tool
-    async def get_accounts() -> dict[str, Any]:
-        """List all accounts in the user's chart of accounts."""
-        user_id = _current_user.get()
-        accounts = await ledger_svc.list_accounts(user_id)
-        return {
-            "accounts": [
-                {"id": a.id, "code": a.code, "name": a.name, "type": a.type, "currency": a.currency}
-                for a in accounts
-            ]
-        }
+    get_accounts = _make_get_accounts_tool(ledger_svc)
 
     @tool
     async def get_tax_computation(
@@ -179,8 +190,11 @@ def make_manager_tools(
       - run_wealth_advisor (generate a fresh Wealth Advisor report now; quota-gated)
       - get_freedom_snapshot (FI score, Freedom number, progress, years to FI)
       - can_i_afford (costs a prospective purchase in months of freedom)
+      - get_accounts (the user's chart of accounts — call before create_account/post_journal_entry)
       - create_account, create_reminder, post_journal_entry (all need user approval)
     """
+
+    get_accounts = _make_get_accounts_tool(ledger_svc)
 
     # ── Web search ────────────────────────────────────────────────────────────
     try:
@@ -770,6 +784,7 @@ def make_manager_tools(
         get_coverage_report,
         get_latest_advisor_report,
         run_wealth_advisor,
+        get_accounts,
         create_account,
         create_reminder,
         post_journal_entry,

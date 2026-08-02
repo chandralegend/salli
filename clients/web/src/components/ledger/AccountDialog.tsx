@@ -29,6 +29,7 @@ export function AccountDialog({
   open,
   onOpenChange,
   account,
+  prefill,
   onSubmit,
   pending,
 }: {
@@ -36,6 +37,8 @@ export function AccountDialog({
   onOpenChange: (v: boolean) => void;
   /** Present when editing; absent when creating. */
   account?: Account | null;
+  /** Create-mode-only suggested starting values (e.g. from an AI quick-add hint). */
+  prefill?: { name?: string; type?: AccountType };
   onSubmit: (data: { code: string; name: string; type: AccountType; currency: string }) => void;
   pending: boolean;
 }) {
@@ -55,6 +58,7 @@ export function AccountDialog({
           <AccountForm
             key={account?.id ?? "new"}
             account={account}
+            prefill={prefill}
             onSubmit={onSubmit}
             onCancel={() => onOpenChange(false)}
             pending={pending}
@@ -67,18 +71,20 @@ export function AccountDialog({
 
 function AccountForm({
   account,
+  prefill,
   onSubmit,
   onCancel,
   pending,
 }: {
   account?: Account | null;
+  prefill?: { name?: string; type?: AccountType };
   onSubmit: (data: { code: string; name: string; type: AccountType; currency: string }) => void;
   onCancel: () => void;
   pending: boolean;
 }) {
   const [code, setCode] = useState(account?.code ?? "");
-  const [name, setName] = useState(account?.name ?? "");
-  const [type, setType] = useState<AccountType>((account?.type as AccountType) ?? "asset");
+  const [name, setName] = useState(account?.name ?? prefill?.name ?? "");
+  const [type, setType] = useState<AccountType>((account?.type as AccountType) ?? prefill?.type ?? "asset");
   const [currency, setCurrency] = useState(account?.currency ?? "LKR");
 
   function submit(e: React.FormEvent) {

@@ -136,9 +136,10 @@ export function useLedger(fromDate?: string, toDate?: string) {
       name: string;
       type: "asset" | "liability" | "equity" | "income" | "expense";
       currency?: string;
-    }) => {
+    }): Promise<Account> => {
       const res = await addAccountAccountsPost({ body: data, throwOnError: true });
-      return res.data;
+      const { id } = res.data as unknown as { id: string };
+      return { id, code: data.code, name: data.name, type: data.type, currency: data.currency ?? "LKR", is_active: true };
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["accounts"] });

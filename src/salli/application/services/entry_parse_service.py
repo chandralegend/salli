@@ -42,6 +42,37 @@ _DRAFT_SCHEMA: dict[str, Any] = {
             "type": ["string", "null"],
             "description": "Id of the account to CREDIT, ONLY from the provided chart. null if the user did not clearly indicate one — do not guess a default.",
         },
+        "debit_account_hint": {
+            "type": ["object", "null"],
+            "description": (
+                "ONLY when debit_account_id is null AND you can clearly infer what kind of NEW "
+                "account this transaction implies (e.g. a merchant/category with no existing match) — "
+                "a suggested name and type for an account that doesn't exist yet in the chart. "
+                "null whenever debit_account_id is non-null, or when nothing sensible can be inferred."
+            ),
+            "properties": {
+                "name": {"type": "string", "description": "Suggested account name, e.g. 'Uber Eats'."},
+                "type": {
+                    "type": "string",
+                    "enum": ["asset", "liability", "equity", "income", "expense"],
+                },
+            },
+            "required": ["name", "type"],
+        },
+        "credit_account_hint": {
+            "type": ["object", "null"],
+            "description": (
+                "Same as debit_account_hint, but for the credit side — ONLY when credit_account_id is null."
+            ),
+            "properties": {
+                "name": {"type": "string", "description": "Suggested account name."},
+                "type": {
+                    "type": "string",
+                    "enum": ["asset", "liability", "equity", "income", "expense"],
+                },
+            },
+            "required": ["name", "type"],
+        },
         "currency": {"type": "string", "description": "ISO code; default LKR."},
         "confidence": {
             "type": "number",
@@ -54,6 +85,8 @@ _DRAFT_SCHEMA: dict[str, Any] = {
         "description",
         "debit_account_id",
         "credit_account_id",
+        "debit_account_hint",
+        "credit_account_hint",
         "currency",
         "confidence",
     ],
@@ -74,6 +107,7 @@ Rules:
 - Extract the amount EXACTLY as the user stated it. Never compute, sum, or invent an amount. If no amount is stated, return an empty string.
 - Choose accounts ONLY from the chart above, and ONLY when the user's note clearly points to one. Match on the account's name/purpose (e.g. "groceries" → the groceries expense account; "commercial bank" → that bank asset account).
 - If the user did NOT indicate an account for a side — no bank/cash source named, or the category is unclear/ambiguous — return null for that side and lower the confidence. A null account is the correct, expected answer when the user omitted that detail. NEVER guess, and NEVER fall back to a "default" or "main" account. The user will pick it in the form.
+- When a side's account id is null because nothing in the chart matches, but the transaction clearly implies what KIND of new account is needed (e.g. "Uber Eats" clearly implies a new expense account, even though no such account exists yet), populate that side's *_account_hint with a suggested name and type. Only do this when a real account is genuinely missing — never hint if an existing account already matches well enough, and never populate a hint for a side whose id is non-null. If you can't confidently suggest one, leave the hint null too.
 - currency defaults to LKR unless the user clearly says otherwise.
 - Keep the description short and human.
 
@@ -99,6 +133,15 @@ class EntryParseService:
         for side in ("debit_account_id", "credit_account_id"):
             if draft.get(side) not in valid_ids:
                 draft[side] = None
+
+        # Guard: a hint only ever accompanies an unresolved side — if the id
+        # resolved after all, drop any hint the model returned alongside it.
+        for id_key, hint_key in (
+            ("debit_account_id", "debit_account_hint"),
+            ("credit_account_id", "credit_account_hint"),
+        ):
+            if draft.get(id_key) is not None:
+                draft[hint_key] = None
 
         # Normalise the amount to a plain number string (strip commas / currency noise).
         amount = str(draft.get("amount") or "").replace(",", "").strip()

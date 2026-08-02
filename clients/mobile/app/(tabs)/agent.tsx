@@ -247,7 +247,7 @@ export default function AgentScreen() {
         case "error":
           setStreaming(false);
           if (/quota|limit|upgrade/i.test(event.message)) {
-            setQuotaBanner("You've used all your monthly Scrooge messages — upgrade to keep chatting.");
+            setQuotaBanner("You've used all your monthly Salli AI messages — upgrade to keep chatting.");
             setMessages((prev) => prev.slice(0, -2)); // remove the attempted user + empty assistant turn
           }
           break;
@@ -261,13 +261,13 @@ export default function AgentScreen() {
   const handleStreamError = useCallback((message: string) => {
     setStreaming(false);
     if (/quota|limit|upgrade/i.test(message)) {
-      setQuotaBanner("You've used all your monthly Scrooge messages — upgrade to keep chatting.");
+      setQuotaBanner("You've used all your monthly Salli AI messages — upgrade to keep chatting.");
       setMessages((prev) => prev.slice(0, -2)); // drop the attempted user + empty assistant turn
       return;
     }
     appendToLastAssistant((parts) => [
       ...parts,
-      { kind: "text", content: "Something went wrong reaching Scrooge. Please try again." },
+      { kind: "text", content: "Something went wrong reaching Salli AI. Please try again." },
     ]);
   }, [appendToLastAssistant]);
 
@@ -330,7 +330,7 @@ export default function AgentScreen() {
           <Menu size={18} color={colors.mutedForeground} strokeWidth={2} />
         </Pressable>
         <View className="flex-1 items-center gap-0.5">
-          <Text className="font-sans-semibold text-[16px] text-foreground">Scrooge</Text>
+          <Text className="font-sans-semibold text-[16px] text-foreground">Salli AI</Text>
           <View className="flex-row items-center gap-1.5">
             <View className="h-1.5 w-1.5 rounded-full bg-salli-accent" />
             <Text className="text-[11px] text-foreground/30">AI Financial Advisor</Text>
@@ -347,7 +347,7 @@ export default function AgentScreen() {
             <View className="h-[68px] w-[68px] items-center justify-center rounded-full border border-salli-accent/25 bg-salli-accent/15">
               <PiggyBank size={30} color={colors.accent} strokeWidth={1.8} />
             </View>
-            <Text className="mt-4 text-center font-sans-bold text-[19px] text-foreground">Meet Scrooge</Text>
+            <Text className="mt-4 text-center font-sans-bold text-[19px] text-foreground">Meet Salli AI</Text>
             <Text className="mt-1.5 text-center text-[13px] leading-5 text-foreground/40">
               Your AI advisor for tax, budgets, and FIRE. Every number comes from the deterministic engine — not guessed.
             </Text>
@@ -430,7 +430,7 @@ export default function AgentScreen() {
             <TextInput
               value={input}
               onChangeText={setInput}
-              placeholder="Message Scrooge..."
+              placeholder="Message Salli AI..."
               placeholderTextColor="rgba(128,128,128,0.4)"
               className="flex-1 text-[14px] text-foreground"
               multiline

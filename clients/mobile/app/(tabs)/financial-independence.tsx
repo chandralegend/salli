@@ -1,9 +1,12 @@
+import { useRouter } from "expo-router";
 import {
   Check,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Home,
   Info,
+  Lock,
   type LucideIcon,
   PiggyBank,
   Plus,
@@ -19,6 +22,8 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import Markdown from "react-native-markdown-display";
 import Svg, { Circle, Line, Path, Polyline } from "react-native-svg";
 
+import { QuotaBanner } from "@/components/QuotaBanner";
+import { TourTarget } from "@/components/tour/TourTarget";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { PageShell } from "@/components/ui/page-shell";
@@ -37,7 +42,6 @@ import {
   useRunAdvisor,
   type FiProjections,
 } from "@/hooks/useFi";
-import { useBalanceSheet } from "@/hooks/useReports";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -58,27 +62,37 @@ const GOAL_ICON: Record<string, LucideIcon> = {
 };
 
 /** Portfolio-projection line chart (mockup's Strategy hero): three engine
- * series (growth/base/conservative) plus a dashed FIRE-target line. */
+ * series (growth/base/conservative) plus a dashed FIRE-target line. Locked
+ * (Free-tier) scenarios arrive as `null` on every point — omit them entirely
+ * rather than plotting `Number(null) === 0` as a false flat line. */
 function ProjectionChart({ projections }: { projections: FiProjections }) {
   const colors = useThemeColors();
   const W = 320;
   const H = 90;
   const pad = 8;
   const pts = projections.points;
+  const locked = new Set(projections.scenario_access?.locked ?? []);
   const maxYear = Math.max(1, ...pts.map((p) => p.year));
   const target = Number(projections.fi_number);
-  const maxVal = Math.max(target, ...pts.map((p) => Number(p.growth))) || 1;
+  const maxVal = Math.max(target, ...pts.map((p) => Number(p.growth ?? p.base))) || 1;
   const x = (yr: number) => (yr / maxYear) * W;
   const y = (v: number) => H - pad - (v / maxVal) * (H - pad * 2);
   const line = (key: "conservative" | "base" | "growth") =>
-    pts.map((p) => `${x(p.year).toFixed(1)},${y(Number(p[key])).toFixed(1)}`).join(" ");
+    pts
+      .filter((p) => p[key] !== null)
+      .map((p) => `${x(p.year).toFixed(1)},${y(Number(p[key])).toFixed(1)}`)
+      .join(" ");
   const targetY = y(target);
   return (
     <Svg width="100%" height={90} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
       <Line x1={0} y1={targetY} x2={W} y2={targetY} stroke="rgba(255,255,255,0.25)" strokeWidth={1} strokeDasharray="3 3" />
-      <Polyline points={line("conservative")} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={2} strokeDasharray="4 3" strokeLinejoin="round" />
+      {!locked.has("conservative") ? (
+        <Polyline points={line("conservative")} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={2} strokeDasharray="4 3" strokeLinejoin="round" />
+      ) : null}
       <Polyline points={line("base")} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={2} strokeDasharray="4 3" strokeLinejoin="round" />
-      <Polyline points={line("growth")} fill="none" stroke={colors.accent} strokeWidth={2.5} strokeLinejoin="round" />
+      {!locked.has("growth") ? (
+        <Polyline points={line("growth")} fill="none" stroke={colors.accent} strokeWidth={2.5} strokeLinejoin="round" />
+      ) : null}
     </Svg>
   );
 }
@@ -160,53 +174,9 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
-type MilestoneStatus = "completed" | "current" | "upcoming";
-type Milestone = { label: string; subtitle: string; status: MilestoneStatus };
-
-/** One milestone row: status circle (filled check / ring+dot / faint) + text. */
-function MilestoneRow({ milestone }: { milestone: Milestone }) {
-  const { status, label, subtitle } = milestone;
-  return (
-    <View className="flex-row items-start gap-3">
-      {status === "completed" ? (
-        <View className="mt-0.5 h-[22px] w-[22px] items-center justify-center rounded-full bg-salli-accent">
-          <Check size={9} color="#FFFFFF" strokeWidth={3} />
-        </View>
-      ) : status === "current" ? (
-        <View className="mt-0.5 h-[22px] w-[22px] items-center justify-center rounded-full border-2 border-salli-accent">
-          <View className="h-[7px] w-[7px] rounded-full bg-salli-accent" />
-        </View>
-      ) : (
-        <View className="mt-0.5 h-[22px] w-[22px] rounded-full border-[1.5px] border-foreground/10" />
-      )}
-      <View className="flex-1">
-        <Text
-          className={cn(
-            "font-sans-medium text-[13px]",
-            status === "completed"
-              ? "text-foreground/50 line-through"
-              : status === "current"
-                ? "text-foreground"
-                : "text-foreground/35",
-          )}
-        >
-          {label}
-        </Text>
-        <Text
-          className={cn(
-            "mt-0.5 text-[11px]",
-            status === "current" ? "text-salli-accent" : "text-foreground/25",
-          )}
-        >
-          {subtitle}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 export default function FinancialIndependenceScreen() {
   const colors = useThemeColors();
+  const router = useRouter();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Overview");
   const [strategyOpen, setStrategyOpen] = useState(true);
   const [selectedBucket, setSelectedBucket] = useState<number | null>(null);
@@ -224,7 +194,6 @@ export default function FinancialIndependenceScreen() {
   const { createGoal, deleteGoal } = useFiGoalMutations();
   const advisorReport = useLatestAdvisorReport();
   const runAdvisor = useRunAdvisor();
-  const balanceSheet = useBalanceSheet();
 
   const submitGoal = () => {
     if (!newName.trim() || !newAmount) return;
@@ -254,54 +223,20 @@ export default function FinancialIndependenceScreen() {
   const freedomYear = nowYear + Math.round(yearsToFi);
   const targetAge = strategy.data?.target_age ?? null;
 
-  // Milestones (mockup's TIER 3) — synthesized from real figures: emergency-fund
-  // coverage, outstanding liabilities, and net-worth progress. The first
-  // not-yet-met milestone is marked "current"; the rest "upcoming".
-  const monthlyExp = Number(fiScore.data?.monthly_expenses ?? 0);
-  const netWorthNum = Number(fiScore.data?.net_worth ?? 0);
-  const efMonths = Number(fiScore.data?.emergency_fund_months ?? 0);
-  const efCurrent = efMonths * monthlyExp;
-  const liabilities = balanceSheet.data ? Number(balanceSheet.data.total_liabilities) : 0;
-  const rawMilestones: { label: string; done: boolean; subtitle: (s: MilestoneStatus) => string }[] = [
-    {
-      label: "3-month Emergency Fund",
-      done: efMonths >= 3,
-      subtitle: (s) =>
-        s === "completed"
-          ? `Rs. ${formatLKRAbbrev(monthlyExp * 3)} · Completed`
-          : `Rs. ${formatLKRAbbrev(Math.min(efCurrent, monthlyExp * 3))} of Rs. ${formatLKRAbbrev(monthlyExp * 3)}`,
-    },
-    {
-      label: "6-month Emergency Fund",
-      done: efMonths >= 6,
-      subtitle: (s) =>
-        s === "completed"
-          ? `Rs. ${formatLKRAbbrev(monthlyExp * 6)} · Completed`
-          : `Rs. ${formatLKRAbbrev(Math.min(efCurrent, monthlyExp * 6))} of Rs. ${formatLKRAbbrev(monthlyExp * 6)}${s === "current" ? " · In progress" : ""}`,
-    },
-    {
-      label: "Debt-free",
-      done: liabilities <= 0,
-      subtitle: () => (liabilities > 0 ? `Rs. ${formatLKRAbbrev(liabilities)} outstanding` : "No liabilities"),
-    },
-    {
-      label: "Rs. 1 Cr Net Worth",
-      done: netWorthNum >= 1e7,
-      subtitle: () => `Rs. ${formatLKRAbbrev(netWorthNum)} · ${Math.round((netWorthNum / 1e7) * 100)}% funded`,
-    },
-  ];
-  const firstPendingIdx = rawMilestones.findIndex((m) => !m.done);
-  const milestones: Milestone[] = rawMilestones.map((m, i) => {
-    const status: MilestoneStatus = m.done ? "completed" : i === firstPendingIdx ? "current" : "upcoming";
-    return { label: m.label, status, subtitle: m.subtitle(status) };
-  });
+  // Goals snapshot for the Overview tab — same real /fi/goals data the Goals
+  // tab renders in full, never invented client-side milestones.
+  const allGoals = goals.data ?? [];
+  const completeGoals = allGoals.filter((g) => g.progress >= 1);
+  const activeGoals = allGoals.filter((g) => g.progress < 1);
 
   return (
     <PageShell>
-      <View className="flex-row items-center px-5 pb-1 pt-2.5">
-        <Text className="flex-1 font-sans-bold text-[20px] text-foreground">Freedom</Text>
-        <Info size={18} color={colors.mutedForeground} strokeWidth={2} />
-      </View>
+      <TourTarget id="freedom-header">
+        <View className="flex-row items-center px-5 pb-1 pt-2.5">
+          <Text className="flex-1 font-sans-bold text-[20px] text-foreground">Freedom</Text>
+          <Info size={18} color={colors.mutedForeground} strokeWidth={2} />
+        </View>
+      </TourTarget>
 
       <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
 
@@ -389,17 +324,52 @@ export default function FinancialIndependenceScreen() {
             </Card>
           </View>
 
-          {/* TIER 3 — Milestones */}
+          {/* TIER 3 — Goals status, from the same /fi/goals data the Goals tab
+              renders in full (never invented client-side milestones). */}
           <Card className="p-4">
-            <View className="mb-3.5 flex-row items-center gap-1.5">
-              <Text className="font-sans-semibold text-[14px] text-foreground">Milestones</Text>
-              <Info size={12} color="rgba(255,255,255,0.25)" strokeWidth={2} />
+            <View className="mb-3.5 flex-row items-center justify-between">
+              <View className="flex-row items-center gap-1.5">
+                <Text className="font-sans-semibold text-[14px] text-foreground">Goals</Text>
+                <Info size={12} color="rgba(255,255,255,0.25)" strokeWidth={2} />
+              </View>
+              <Pressable onPress={() => setTab("Goals")}>
+                <Text className="text-[12px] font-sans-medium text-salli-accent">See all</Text>
+              </Pressable>
             </View>
-            <View className="gap-3">
-              {milestones.map((m) => (
-                <MilestoneRow key={m.label} milestone={m} />
-              ))}
-            </View>
+            {allGoals.length === 0 ? (
+              <Text className="text-[12px] text-foreground/35">No goals yet — add one in the Goals tab.</Text>
+            ) : (
+              <>
+                <Text className="mb-3 text-[11px] text-foreground/30">
+                  {completeGoals.length} of {allGoals.length} complete
+                </Text>
+                <View className="gap-3">
+                  {(activeGoals.length > 0 ? activeGoals : completeGoals).slice(0, 3).map((goal) => {
+                    const GoalIcon = GOAL_ICON[goal.kind] ?? Target;
+                    const done = goal.progress >= 1;
+                    return (
+                      <View key={goal.id}>
+                        <View className="mb-1.5 flex-row items-center gap-2">
+                          <GoalIcon size={13} color={done ? colors.mutedForeground : colors.accent} strokeWidth={2} />
+                          <Text
+                            className={cn(
+                              "flex-1 font-sans-medium text-[13px]",
+                              done ? "text-foreground/40 line-through" : "text-foreground",
+                            )}
+                          >
+                            {goal.name}
+                          </Text>
+                          <Text className="font-sans-semibold text-[12px] text-salli-accent">
+                            {(goal.progress * 100).toFixed(0)}%
+                          </Text>
+                        </View>
+                        <ProgressBar pct={goal.progress} />
+                      </View>
+                    );
+                  })}
+                </View>
+              </>
+            )}
           </Card>
 
           {/* TIER 4 — FI Score */}
@@ -456,17 +426,32 @@ export default function FinancialIndependenceScreen() {
               <ProjectionChart projections={projections.data} />
               <View className="mt-2.5 flex-row items-center gap-3">
                 {[
-                  { c: colors.accent, l: "Growth" },
-                  { c: "rgba(255,255,255,0.4)", l: "Base" },
-                  { c: "rgba(255,255,255,0.2)", l: "Conservative" },
-                ].map((x) => (
-                  <View key={x.l} className="flex-row items-center gap-1.5">
-                    <View style={{ width: 12, height: 2, borderRadius: 2, backgroundColor: x.c }} />
-                    <Text className="text-[10px] text-white/50">{x.l}</Text>
-                  </View>
-                ))}
+                  { key: "growth", c: colors.accent, l: "Growth" },
+                  { key: "base", c: "rgba(255,255,255,0.4)", l: "Base" },
+                  { key: "conservative", c: "rgba(255,255,255,0.2)", l: "Conservative" },
+                ]
+                  .filter((x) => !projections.data!.scenario_access?.locked.includes(x.key))
+                  .map((x) => (
+                    <View key={x.l} className="flex-row items-center gap-1.5">
+                      <View style={{ width: 12, height: 2, borderRadius: 2, backgroundColor: x.c }} />
+                      <Text className="text-[10px] text-white/50">{x.l}</Text>
+                    </View>
+                  ))}
                 <Text className="flex-1 text-right text-[10px] text-white/30">- - Freedom target</Text>
               </View>
+              {projections.data.scenario_access && projections.data.scenario_access.locked.length > 0 ? (
+                <Pressable
+                  onPress={() => router.push("/(tabs)/more/billing")}
+                  className="mt-2.5 flex-row items-center gap-1.5 rounded-control bg-white/[0.06] px-3 py-2"
+                >
+                  <Lock size={12} color="rgba(255,255,255,0.5)" strokeWidth={2} />
+                  <Text className="flex-1 text-[10.5px] text-white/50">
+                    {projections.data.scenario_access.locked.map((s) => (s === "conservative" ? "Conservative" : "Growth")).join(" & ")} scenario
+                    {projections.data.scenario_access.locked.length > 1 ? "s" : ""} locked · Unlock on Plus
+                  </Text>
+                  <ChevronRight size={12} color="rgba(255,255,255,0.4)" strokeWidth={2} />
+                </Pressable>
+              ) : null}
             </View>
           ) : null}
 
@@ -499,8 +484,10 @@ export default function FinancialIndependenceScreen() {
                 <Text className="text-center text-[11px] text-foreground/30">Tap a slice to see how each bucket works</Text>
               </Card>
 
-              {/* Scrooge's Strategy — collapsible */}
-              {strategy.data.ai_rationale ? (
+              {/* Salli AI's Strategy — collapsible. Shown whenever there's a
+                  full rationale OR a locked preview (Free tier) — never just
+                  vanishes for a locked user the way `ai_rationale` alone would. */}
+              {strategy.data.ai_rationale || strategy.data.rationale_locked ? (
                 <View className="rounded-[16px] border border-salli-accent/20 bg-card">
                   <Pressable
                     onPress={() => setStrategyOpen((o) => !o)}
@@ -509,7 +496,7 @@ export default function FinancialIndependenceScreen() {
                     <View className="h-[26px] w-[26px] items-center justify-center rounded-[8px] bg-salli-accent/15">
                       <PiggyBank size={14} color={colors.accent} strokeWidth={2} />
                     </View>
-                    <Text className="flex-1 font-sans-semibold text-[13px] text-foreground">Scrooge&apos;s Strategy</Text>
+                    <Text className="flex-1 font-sans-semibold text-[13px] text-foreground">Salli AI&apos;s Strategy</Text>
                     <Text className="text-[10px] capitalize text-foreground/30">
                       {strategy.data.fire_style} · v{strategy.data.version}
                     </Text>
@@ -522,19 +509,37 @@ export default function FinancialIndependenceScreen() {
                   {strategyOpen ? (
                     <View className="px-3.5 pb-3.5">
                       <View className="mb-2.5 border-t border-foreground/[0.06] pt-2.5">
-                        <Markdown
-                          style={{
-                            body: { color: "rgba(200,200,200,0.75)", fontSize: 12, lineHeight: 18, fontFamily: "Archivo_400Regular" },
-                            heading1: { color: colors.foreground, fontFamily: "Archivo_700Bold", fontSize: 13, marginTop: 4, marginBottom: 2 },
-                            heading2: { color: colors.foreground, fontFamily: "Archivo_600SemiBold", fontSize: 12, marginTop: 4, marginBottom: 2 },
-                            heading3: { color: colors.foreground, fontFamily: "Archivo_600SemiBold", fontSize: 12, marginTop: 3, marginBottom: 1 },
-                            strong: { color: colors.foreground, fontFamily: "Archivo_600SemiBold" },
-                            bullet_list: { marginTop: 2 },
-                            list_item: { marginVertical: 1 },
-                          }}
-                        >
-                          {strategy.data.ai_rationale}
-                        </Markdown>
+                        {strategy.data.rationale_locked ? (
+                          <>
+                            <Text className="pt-2 text-[12px] leading-[18px] text-foreground/50">
+                              {strategy.data.rationale_preview}
+                            </Text>
+                            <Pressable
+                              onPress={() => router.push("/(tabs)/more/billing")}
+                              className="mt-2.5 flex-row items-center gap-1.5 rounded-control bg-salli-accent/[0.08] px-3 py-2"
+                            >
+                              <Lock size={12} color={colors.accent} strokeWidth={2} />
+                              <Text className="flex-1 text-[11px] font-sans-medium text-salli-accent">
+                                Read the full AI rationale · Upgrade to Plus
+                              </Text>
+                              <ChevronRight size={12} color={colors.accent} strokeWidth={2} />
+                            </Pressable>
+                          </>
+                        ) : (
+                          <Markdown
+                            style={{
+                              body: { color: "rgba(200,200,200,0.75)", fontSize: 12, lineHeight: 18, fontFamily: "Archivo_400Regular" },
+                              heading1: { color: colors.foreground, fontFamily: "Archivo_700Bold", fontSize: 13, marginTop: 4, marginBottom: 2 },
+                              heading2: { color: colors.foreground, fontFamily: "Archivo_600SemiBold", fontSize: 12, marginTop: 4, marginBottom: 2 },
+                              heading3: { color: colors.foreground, fontFamily: "Archivo_600SemiBold", fontSize: 12, marginTop: 3, marginBottom: 1 },
+                              strong: { color: colors.foreground, fontFamily: "Archivo_600SemiBold" },
+                              bullet_list: { marginTop: 2 },
+                              list_item: { marginVertical: 1 },
+                            }}
+                          >
+                            {strategy.data.ai_rationale}
+                          </Markdown>
+                        )}
                       </View>
                       <View className="flex-row flex-wrap gap-1.5">
                         {["4% rule", `${formatPct(strategy.data.swr, 0)} SWR`, `${formatPct(strategy.data.return_base, 0)} base`].map((t) => (
@@ -563,20 +568,51 @@ export default function FinancialIndependenceScreen() {
               <Text className="font-sans-semibold text-[14px] text-foreground">Freedom Mentor</Text>
               {runAdvisor.isPending ? <ActivityIndicator color={colors.accent} /> : null}
             </View>
+
+            {/* The generated client throws the raw parsed JSON error body on
+                throwOnError, and FastAPI wraps HTTPException detail under
+                "detail" — not the web apiFetch convention (instanceof Error +
+                .message.includes(...)), which won't work here. */}
+            {(runAdvisor.error as { detail?: { error?: string } } | null)?.detail?.error === "quota_exceeded" ? (
+              <QuotaBanner message="You've used your AI advisor runs for this plan. Upgrade for more." />
+            ) : null}
+
             {advisorReport.data ? (
               <>
                 <Text className="mb-2.5 text-[12px] leading-5 text-foreground/50">{advisorReport.data.summary}</Text>
-                {advisorReport.data.recommendations.map((rec) => (
-                  <View key={rec.id} className="mb-2 rounded-control border border-foreground/10 bg-muted p-3">
-                    <View className="mb-1 flex-row items-center gap-1.5">
-                      <View className="rounded-[4px] bg-salli-accent/15 px-1.5 py-0.5">
-                        <Text className="text-[9px] font-sans-semibold text-salli-accent">P{rec.priority}</Text>
+                {advisorReport.data.recommendations.map((rec) =>
+                  rec.locked ? (
+                    <View key={rec.id} className="mb-2 flex-row items-center gap-2 rounded-control border border-foreground/10 bg-muted p-3 opacity-60">
+                      <Lock size={12} color={colors.mutedForeground} strokeWidth={2} />
+                      <View className="flex-1">
+                        <Text className="font-sans-medium text-[12px] text-foreground">{rec.title}</Text>
+                        <Text className="text-[10px] capitalize text-foreground/35">{rec.category}</Text>
                       </View>
-                      <Text className="flex-1 font-sans-medium text-[12px] text-foreground">{rec.title}</Text>
                     </View>
-                    <Text className="text-[11px] leading-4 text-foreground/35">{rec.rationale}</Text>
-                  </View>
-                ))}
+                  ) : (
+                    <View key={rec.id} className="mb-2 rounded-control border border-foreground/10 bg-muted p-3">
+                      <View className="mb-1 flex-row items-center gap-1.5">
+                        <View className="rounded-[4px] bg-salli-accent/15 px-1.5 py-0.5">
+                          <Text className="text-[9px] font-sans-semibold text-salli-accent">P{rec.priority}</Text>
+                        </View>
+                        <Text className="flex-1 font-sans-medium text-[12px] text-foreground">{rec.title}</Text>
+                      </View>
+                      <Text className="text-[11px] leading-4 text-foreground/35">{rec.rationale}</Text>
+                    </View>
+                  ),
+                )}
+                {advisorReport.data.recommendations_locked_count > 0 ? (
+                  <Pressable
+                    onPress={() => router.push("/(tabs)/more/billing")}
+                    className="mb-1 flex-row items-center gap-1.5 rounded-control bg-salli-accent/[0.08] px-3 py-2"
+                  >
+                    <Text className="flex-1 text-[11px] font-sans-medium text-salli-accent">
+                      Unlock {advisorReport.data.recommendations_locked_count} more recommendation
+                      {advisorReport.data.recommendations_locked_count > 1 ? "s" : ""}
+                    </Text>
+                    <ChevronRight size={12} color={colors.accent} strokeWidth={2} />
+                  </Pressable>
+                ) : null}
               </>
             ) : (
               <Text className="mb-3 text-[12px] text-foreground/35">

@@ -1,6 +1,6 @@
 import { Check } from "lucide-react-native";
 import { useQuery } from "@tanstack/react-query";
-import { ActivityIndicator, Alert, Linking, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, Text, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
@@ -8,6 +8,7 @@ import { ScreenHeader } from "@/components/ui/screen-header";
 import { getPlansBillingPlansGet } from "@/lib/api/sdk.gen";
 import { useBillingPortal, useCreateCheckout, useEntitlements } from "@/hooks/useSettings";
 import { useThemeColors } from "@/lib/theme";
+import { useToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 type Plan = {
@@ -21,6 +22,7 @@ type Plan = {
 
 export default function BillingScreen() {
   const colors = useThemeColors();
+  const showToast = useToast();
   const entitlements = useEntitlements();
   const plans = useQuery({
     queryKey: ["billing-plans"],
@@ -46,7 +48,7 @@ export default function BillingScreen() {
       const url = data.url ?? `${siteUrl}/settings?upgrade=${encodeURIComponent(planKey)}`;
       await Linking.openURL(url);
     } catch {
-      Alert.alert("Checkout unavailable", "We couldn't start checkout right now. Please try again.");
+      showToast("We couldn't start checkout right now. Please try again.", "error");
     }
   };
 
@@ -56,7 +58,7 @@ export default function BillingScreen() {
       const url = await portal.mutateAsync();
       await Linking.openURL(url);
     } catch {
-      Alert.alert("Portal unavailable", "We couldn't open the billing portal right now. Please try again.");
+      showToast("We couldn't open the billing portal right now. Please try again.", "error");
     }
   };
 

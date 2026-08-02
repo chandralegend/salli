@@ -12,16 +12,19 @@ import {
   TrendingUp,
 } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Text, TextInput, View } from "react-native";
 
 import { AccountDetailModal } from "@/components/AccountDetailModal";
 import { AddEditAccountDrawer } from "@/components/AddEditAccountDrawer";
 import { EntryDetailSheet } from "@/components/EntryDetailSheet";
 import { NewEntryModal } from "@/components/NewEntryModal";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
 import { Tabs } from "@/components/ui/tabs";
+import { useThemedRefreshControl } from "@/components/ui/themed-refresh-control";
+import { TourTarget } from "@/components/tour/TourTarget";
 import type { Account, JournalEntry } from "@/hooks/useDashboard";
 import {
   useAccounts,
@@ -96,6 +99,14 @@ export default function LedgerScreen() {
   const { from, to } = monthRange();
   const incomeStatement = useIncomeStatement(from, to);
 
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([accounts.refetch(), entries.refetch(), balances.refetch(), incomeStatement.refetch()]);
+    setRefreshing(false);
+  };
+  const refreshControl = useThemedRefreshControl(refreshing, onRefresh);
+
   const quickAddEntryRequest = useSalliStore((s) => s.quickAddEntryRequest);
   useEffect(() => {
     if (quickAddEntryRequest > 0) {
@@ -140,18 +151,21 @@ export default function LedgerScreen() {
   }, [accounts.data, acctFilter, acctSearch]);
 
   return (
-    <PageShell>
+    <PageShell refreshControl={refreshControl}>
       <View className="flex-row items-center px-5 pt-2.5">
         <Text className="flex-1 font-sans-bold text-[22px] text-foreground">Ledger</Text>
-        <Pressable
+        <AnimatedPressable
           onPress={() => (tab === "Accounts" ? setAddAccountOpen(true) : setModalVisible(true))}
+          haptic="light"
           className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
         >
           <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
-        </Pressable>
+        </AnimatedPressable>
       </View>
 
-      <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
+      <TourTarget id="ledger-tabs">
+        <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
+      </TourTarget>
 
       {tab === "Journal" ? (
         <>
@@ -166,7 +180,7 @@ export default function LedgerScreen() {
                 className="flex-1 text-[13px] text-foreground"
               />
             </View>
-            <Pressable
+            <AnimatedPressable
               onPress={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
               className="h-[38px] flex-row items-center gap-1.5 rounded-[10px] border border-foreground/[0.08] bg-card px-3"
             >
@@ -178,7 +192,7 @@ export default function LedgerScreen() {
               <Text className="font-sans-medium text-[12px] text-foreground/40">
                 {sortDir === "desc" ? "Newest" : "Oldest"}
               </Text>
-            </Pressable>
+            </AnimatedPressable>
           </View>
           <View className="flex-row flex-wrap gap-1.5 px-4 pb-2.5">
             {TYPE_FILTERS.map((f) => (
@@ -206,7 +220,7 @@ export default function LedgerScreen() {
                       const isIncome = debitAcc?.type === "asset" && creditAcc?.type === "income";
                       const reversed = Boolean(entry.reversed_by);
                       return (
-                        <Pressable
+                        <AnimatedPressable
                           key={entry.id}
                           onPress={() => setSelectedEntry(entry)}
                           className={cn("flex-row gap-2.5 rounded-[14px] border border-foreground/[0.08] bg-card p-3", reversed && "opacity-40")}
@@ -230,7 +244,7 @@ export default function LedgerScreen() {
                               </Text>
                             </View>
                           </View>
-                        </Pressable>
+                        </AnimatedPressable>
                       );
                     })}
                   </View>
@@ -279,7 +293,7 @@ export default function LedgerScreen() {
                       {group.items.map((a) => {
                         const bal = balances.data?.[a.id];
                         return (
-                          <Pressable
+                          <AnimatedPressable
                             key={a.id}
                             onPress={() => setSelectedAccountId(a.id)}
                             className={cn("flex-row items-center gap-2.5 rounded-[14px] border border-foreground/[0.08] bg-card p-3", !a.is_active && "opacity-45")}
@@ -312,7 +326,7 @@ export default function LedgerScreen() {
                               </Text>
                               <ChevronRight size={13} color={colors.mutedForeground} strokeWidth={2} />
                             </View>
-                          </Pressable>
+                          </AnimatedPressable>
                         );
                       })}
                     </View>

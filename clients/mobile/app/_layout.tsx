@@ -26,6 +26,8 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 
+import { TourOverlay } from "@/components/tour/TourOverlay";
+import { ToastHost } from "@/components/ui/toast-host";
 import { useAuth } from "../lib/auth";
 import { ThemeProvider, useAppTheme, useThemeColors } from "../lib/theme";
 
@@ -60,6 +62,8 @@ function AppShell() {
           contentStyle: { backgroundColor: colors.background },
         }}
       />
+      <TourOverlay />
+      <ToastHost />
     </QueryClientProvider>
   );
 }
@@ -81,7 +85,11 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync();
+    // .catch: a Fast Refresh full reload re-runs this module (re-arming
+    // preventAutoHideAsync) without a new native splash screen to hide,
+    // which rejects with "No native splash screen registered" — dev-only
+    // noise, harmless, but otherwise surfaces as an unhandled rejection.
+    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
   }, [fontsLoaded]);
 
   if (!fontsLoaded) return null;

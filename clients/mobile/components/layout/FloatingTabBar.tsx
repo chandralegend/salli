@@ -1,9 +1,12 @@
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import * as Haptics from "expo-haptics";
 import { LayoutGrid, PiggyBank, Plus, Table, TrendingUp } from "lucide-react-native";
-import { useState } from "react";
-import { Platform, Pressable, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Platform, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { TourTarget } from "@/components/tour/TourTarget";
 import { VoiceCaptureSheet } from "../VoiceCaptureSheet";
 import type { EntryDraft } from "../../hooks/useLedger";
 import { useSalliStore } from "../../lib/store";
@@ -12,9 +15,65 @@ import { useAppTheme, useThemeColors } from "../../lib/theme";
 const ROUTE_META: Record<string, { Icon: typeof LayoutGrid; label: string }> = {
   index: { Icon: LayoutGrid, label: "Home" },
   ledger: { Icon: Table, label: "Ledger" },
-  agent: { Icon: PiggyBank, label: "Scrooge" },
+  agent: { Icon: PiggyBank, label: "Salli AI" },
   "financial-independence": { Icon: TrendingUp, label: "Freedom" },
 };
+
+/** One nav tab — owns its own highlight-crossfade Animated.Value so each tab
+ * animates independently as focus moves between them. */
+function NavTab({
+  isFocused,
+  label,
+  Icon,
+  onPress,
+  accessibilityLabel,
+}: {
+  isFocused: boolean;
+  label: string;
+  Icon: typeof LayoutGrid;
+  onPress: () => void;
+  accessibilityLabel: string;
+}) {
+  const colors = useThemeColors();
+  const { isDark } = useAppTheme();
+  const highlight = useRef(new Animated.Value(isFocused ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(highlight, { toValue: isFocused ? 1 : 0, duration: 160, useNativeDriver: true }).start();
+  }, [isFocused, highlight]);
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={isFocused ? { selected: true } : {}}
+      accessibilityLabel={accessibilityLabel}
+      className="flex-1 items-center justify-center gap-0.5"
+    >
+      <View className="items-center justify-center rounded-full px-4 py-1">
+        <Animated.View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            borderRadius: 9999,
+            opacity: highlight,
+            backgroundColor: isDark ? "rgba(245,49,15,0.18)" : "rgba(245,49,15,0.12)",
+          }}
+        />
+        <Icon size={22} color={isFocused ? colors.accent : colors.mutedForeground} strokeWidth={isFocused ? 2.2 : 1.9} />
+      </View>
+      <Text
+        style={{ color: isFocused ? colors.accent : colors.mutedForeground, fontSize: 10 }}
+        className={isFocused ? "font-sans-semibold" : "font-sans-medium"}
+      >
+        {label}
+      </Text>
+    </AnimatedPressable>
+  );
+}
 
 /**
  * Floating rounded dock — theme-aware (a light card in light mode, an elevated
@@ -62,29 +121,25 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
       }
     };
 
-    return (
-      <Pressable
+    const tab = (
+      <NavTab
         key={route.key}
+        isFocused={isFocused}
+        label={label}
+        Icon={Icon}
         onPress={onPress}
-        accessibilityRole="button"
-        accessibilityState={isFocused ? { selected: true } : {}}
         accessibilityLabel={options.title ?? label}
-        className="flex-1 items-center justify-center gap-0.5"
-      >
-        <View
-          style={isFocused ? { backgroundColor: isDark ? "rgba(245,49,15,0.18)" : "rgba(245,49,15,0.12)" } : undefined}
-          className="items-center justify-center rounded-full px-4 py-1"
-        >
-          <Icon size={22} color={isFocused ? colors.accent : colors.mutedForeground} strokeWidth={isFocused ? 2.2 : 1.9} />
-        </View>
-        <Text
-          style={{ color: isFocused ? colors.accent : colors.mutedForeground, fontSize: 10 }}
-          className={isFocused ? "font-sans-semibold" : "font-sans-medium"}
-        >
-          {label}
-        </Text>
-      </Pressable>
+      />
     );
+
+    if (route.name === "agent") {
+      return (
+        <TourTarget key={route.key} id="tabbar-scrooge" className="flex-1">
+          {tab}
+        </TourTarget>
+      );
+    }
+    return tab;
   };
 
   return (
@@ -102,10 +157,14 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
       >
         {leftRoutes.map(renderTab)}
 
-        <View className="flex-1 items-center justify-center">
-          <Pressable
+        <TourTarget id="tabbar-quickadd" className="flex-1 items-center justify-center">
+          <AnimatedPressable
             onPress={() => openNewEntry()}
-            onLongPress={() => setCaptureOpen(true)}
+            haptic="medium"
+            onLongPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setCaptureOpen(true);
+            }}
             delayLongPress={300}
             accessibilityRole="button"
             accessibilityLabel="New entry — long-press for voice/text quick add"
@@ -128,8 +187,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
             }}
           >
             <Plus size={24} color="#FFFFFF" strokeWidth={2.6} />
-          </Pressable>
-        </View>
+          </AnimatedPressable>
+        </TourTarget>
 
         {rightRoutes.map(renderTab)}
       </View>

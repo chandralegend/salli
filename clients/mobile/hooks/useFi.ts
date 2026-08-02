@@ -11,17 +11,21 @@ import {
   latestReportAdvisorReportsLatestGet,
   listGoalsFiGoalsGet,
   runAdvisorAdvisorRunPost,
+  simulatePurchaseFiSimulatePurchasePost,
 } from "@/lib/api/sdk.gen";
 import type { FiScore } from "./useDashboard";
 
-export type FiProjectionPoint = { year: number; conservative: string; base: string; growth: string };
+/** Locked (Free-tier) scenarios arrive as `null` — never plot them as zero. */
+export type FiProjectionPoint = { year: number; conservative: string | null; base: string; growth: string | null };
+export type ScenarioAccess = { visible: string[]; locked: string[]; requires_plan: string | null };
 export type FiProjections = {
   points: FiProjectionPoint[];
   fi_number: string;
-  fire_year_conservative: number | string;
+  fire_year_conservative: number | string | null;
   fire_year_base: number | string;
-  fire_year_growth: number | string;
+  fire_year_growth: number | string | null;
   current_portfolio: string;
+  scenario_access?: ScenarioAccess;
 };
 
 export type FiSurplus = {
@@ -29,6 +33,52 @@ export type FiSurplus = {
   gross_monthly_expenses: string;
   monthly_surplus: string;
   savings_rate: string;
+};
+
+/**
+ * One way of funding a purchase, costed in months of freedom.
+ *
+ * `months_delay: null` means the FI date is not reachable on current figures —
+ * NOT that the purchase is free. Render it as "can't tell yet", never as 0.
+ */
+export type PurchaseOption = {
+  key: "cash" | "installments";
+  label: string;
+  total_cost: string;
+  interest_cost: string;
+  monthly_payment: string | null;
+  term_months: number | null;
+  months_to_fi: number | null;
+  months_delay: number | null;
+  exceeds_monthly_surplus: boolean;
+};
+
+export type PurchaseImpact = {
+  amount: string;
+  currency: string;
+  fi_number: string;
+  fi_asset_base_before: string;
+  monthly_surplus: string;
+  baseline_months_to_fi: number | null;
+  payable_from_liquid: boolean;
+  emergency_months_before: string;
+  emergency_months_after_cash: string;
+  emergency_fund_target_months: number;
+  options: PurchaseOption[];
+  cheapest_option_key: string | null;
+  data_as_of: string | null;
+  is_stale: boolean;
+  stale_after_days: number;
+  real_return_used: string;
+  swr: string;
+};
+
+export type PurchaseQuery = {
+  /** Decimal STRING, never a number — a float in the money path is a bug. */
+  amount: string;
+  term_months?: number | null;
+  /** Fraction, not a percentage: 0.18 for 18%. */
+  annual_interest_rate?: string;
 };
 
 export type FiStrategy = {
@@ -41,7 +91,12 @@ export type FiStrategy = {
   target_monthly_expenses: string;
   target_age: number | null;
   buckets: { name: string; target_pct: string; description: string }[];
-  ai_rationale?: string;
+  // Null + a preview/count when rationale_locked is true (Free tier).
+  ai_rationale?: string | null;
+  rationale_preview?: string;
+  rationale_locked?: boolean;
+  theories_applied?: string[] | null;
+  theories_applied_count?: number;
 };
 
 export type FiGoal = {
@@ -58,9 +113,12 @@ export type AdvisorRecommendation = {
   id: string;
   title: string;
   category: string;
-  status: string;
-  rationale: string;
   priority: number;
+  locked: boolean;
+  // Absent on locked stubs — the server drops these fields entirely rather
+  // than nulling them.
+  status?: string;
+  rationale?: string;
 };
 
 export type AdvisorReport = {
@@ -68,6 +126,7 @@ export type AdvisorReport = {
   summary: string;
   fire_tier_assessment: string;
   recommendations: AdvisorRecommendation[];
+  recommendations_locked_count: number;
 };
 
 export function useFiScore() {
@@ -96,6 +155,16 @@ export function useFiSurplus() {
     queryFn: async () => {
       const { data } = await getSurplusBreakdownFiSurplusGet({ throwOnError: true });
       return data as unknown as FiSurplus;
+    },
+  });
+}
+
+/** Deliberately NOT metered — pure deterministic engine math, no quota check. */
+export function useSimulatePurchase() {
+  return useMutation({
+    mutationFn: async (body: PurchaseQuery) => {
+      const { data } = await simulatePurchaseFiSimulatePurchasePost({ body, throwOnError: true });
+      return data as unknown as PurchaseImpact;
     },
   });
 }

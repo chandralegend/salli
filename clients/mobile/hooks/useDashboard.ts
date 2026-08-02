@@ -166,6 +166,8 @@ export function useDashboard() {
   const sumValues = (m?: Record<string, string>) =>
     m ? Object.values(m).reduce((s, v) => s + Number(v), 0) : null;
 
+  const queries = [netWorth, fiScore, tax, accounts, entries, trialBalance, incomeStatement, budgets];
+
   return {
     isLoading: netWorth.isLoading || fiScore.isLoading || accounts.isLoading || entries.isLoading,
     netWorth: netWorth.data,
@@ -177,5 +179,11 @@ export function useDashboard() {
     balances: trialBalance.data ?? {},
     incomeYtd: sumValues(incomeStatement.data?.income),
     expensesYtd: sumValues(incomeStatement.data?.expenses),
+    // Pull-to-refresh: refetch every underlying query at once. budgetSummary
+    // is conditional (`enabled: Boolean(latestBudgetId)`), so only include it
+    // once a budget id actually exists — refetching a disabled query is a no-op
+    // anyway, but this keeps the intent explicit.
+    refetch: () =>
+      Promise.all([...queries, ...(latestBudgetId ? [budgetSummary] : [])].map((q) => q.refetch())),
   };
 }

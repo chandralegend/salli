@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
 import { Card3D } from "@/components/shared/Card3D";
+import { AffordabilityCard } from "@/components/fi/AffordabilityCard";
 import { RadialProgress } from "@/components/shared/RadialProgress";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StatusChip } from "@/components/shared/StatusChip";
@@ -235,6 +236,11 @@ export default function DashboardPage() {
         </Card3D>
       </div>
 
+      {/* The pre-purchase question — sits under the Freedom card because it is
+          the actionable half of it: that card says when you're free, this one
+          says what a purchase costs you. */}
+      <AffordabilityCard id="tour-dash-afford-card" />
+
       {/* Recent entries + deadlines */}
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="rounded-lg border bg-card p-5">
@@ -272,7 +278,7 @@ export default function DashboardPage() {
                 return (
                   <div key={e.id} className="flex items-center gap-3 py-2.5">
                     <span className="font-mono text-xs text-muted-foreground w-20 shrink-0">{e.entry_date}</span>
-                    <span className="text-sm truncate flex-1">{e.description}</span>
+                    <span className="text-sm truncate flex-1 min-w-0">{e.description}</span>
                     <StatusChip tone={credit ? "success" : "neutral"}>{credit ? "CR" : "DR"}</StatusChip>
                     <span className="money text-sm w-32 text-right shrink-0">LKR {Number(amount).toLocaleString()}</span>
                   </div>

@@ -1,11 +1,12 @@
 import { Bell, CreditCard, Info, Landmark, Percent, User } from "lucide-react-native";
 import { useMemo, useState } from "react";
-import { Alert, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
+import { TourTarget } from "@/components/tour/TourTarget";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Tabs } from "@/components/ui/tabs";
 import type { TaxComputationFull, TaxPack } from "@/hooks/useTax";
@@ -13,6 +14,7 @@ import { useComputeTax, useLatestTax, useTaxHistory, useTaxPacks } from "@/hooks
 import { useReminderMutations } from "@/hooks/useReminders";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useThemeColors } from "@/lib/theme";
+import { useToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 const CURRENT_YEAR = "2025/26";
@@ -88,7 +90,9 @@ export default function TaxScreen() {
   return (
     <PageShell>
       <View className="px-5 pt-2.5">
-        <ScreenHeader title="Tax" back />
+        <TourTarget id="tax-header">
+          <ScreenHeader title="Tax" back />
+        </TourTarget>
       </View>
 
       <Tabs items={TABS} value={tab} onChange={setTab} className="mt-3" />
@@ -126,6 +130,7 @@ function OverviewTab({
   compute: ReturnType<typeof useComputeTax>;
 }) {
   const reminders = useReminderMutations();
+  const showToast = useToast();
 
   const handleSetReminder = () => {
     reminders.create.mutate(
@@ -135,8 +140,8 @@ function OverviewTab({
       },
       {
         onSuccess: () =>
-          Alert.alert("Reminder set", `Added to your reminders · ${dueDateLabel(pack, data.pack_year)}.`),
-        onError: () => Alert.alert("Couldn't set reminder", "Please try again."),
+          showToast(`Added to your reminders · ${dueDateLabel(pack, data.pack_year)}.`, "success"),
+        onError: () => showToast("Couldn't set reminder. Please try again.", "error"),
       },
     );
   };

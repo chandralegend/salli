@@ -5,6 +5,23 @@ export type ClientOptions = {
 };
 
 /**
+ * AccountHint
+ *
+ * A suggested NEW account (name + type) when the parser couldn't match an
+ * existing one but can infer what kind of account the transaction implies.
+ */
+export type AccountHint = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Type
+     */
+    type: 'asset' | 'liability' | 'equity' | 'income' | 'expense';
+};
+
+/**
  * AddAccountRequest
  */
 export type AddAccountRequest = {
@@ -191,6 +208,101 @@ export type BudgetUpdateRequest = {
 };
 
 /**
+ * BugContext
+ */
+export type BugContext = {
+    /**
+     * Route
+     */
+    route?: string | null;
+    /**
+     * Page Title
+     */
+    page_title?: string | null;
+    /**
+     * App Commit
+     */
+    app_commit?: string | null;
+    viewport?: Viewport | null;
+    /**
+     * User Agent
+     */
+    user_agent?: string | null;
+    /**
+     * Language
+     */
+    language?: string | null;
+    /**
+     * Timezone
+     */
+    timezone?: string | null;
+    /**
+     * Theme
+     */
+    theme?: string | null;
+    /**
+     * Supabase Configured
+     */
+    supabase_configured?: boolean | null;
+    /**
+     * Token Exp
+     */
+    token_exp?: number | null;
+    /**
+     * Agent Thread Id
+     */
+    agent_thread_id?: string | null;
+    /**
+     * Onboarding Complete
+     */
+    onboarding_complete?: boolean | null;
+    /**
+     * Tour Complete
+     */
+    tour_complete?: boolean | null;
+    /**
+     * React Version
+     */
+    react_version?: string | null;
+    /**
+     * Recent Failures
+     */
+    recent_failures?: Array<RecentFailure>;
+    client_error?: ClientError | null;
+};
+
+/**
+ * BugReportRequest
+ */
+export type BugReportRequest = {
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Severity
+     */
+    severity: 'low' | 'medium' | 'high' | 'blocking';
+    /**
+     * Area
+     */
+    area?: string | null;
+    /**
+     * Contact Ok
+     */
+    contact_ok?: boolean;
+    /**
+     * File Ref
+     */
+    file_ref?: string | null;
+    context?: BugContext;
+};
+
+/**
  * ChatRequest
  */
 export type ChatRequest = {
@@ -220,6 +332,28 @@ export type CheckoutRequest = {
      * Cycle
      */
     cycle?: string;
+};
+
+/**
+ * ClientError
+ */
+export type ClientError = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Message
+     */
+    message?: string | null;
+    /**
+     * Stack
+     */
+    stack?: string | null;
+    /**
+     * Component Stack
+     */
+    component_stack?: string | null;
 };
 
 /**
@@ -644,6 +778,8 @@ export type ParsedEntryDraft = {
      * Credit Account Id
      */
     credit_account_id?: string | null;
+    debit_account_hint?: AccountHint | null;
+    credit_account_hint?: AccountHint | null;
     /**
      * Currency
      */
@@ -802,6 +938,55 @@ export type ProfileIdentityRequest = {
      * Ird Number
      */
     ird_number?: string | null;
+};
+
+/**
+ * PurchaseRequest
+ *
+ * Money arrives as a STRING and is parsed to Decimal, never float — a float in
+ * the money path is a bug (CLAUDE.md). `annual_interest_rate` is a fraction
+ * (0.18 = 18%), bounded so a caller passing 18 is rejected rather than
+ * silently costing the plan ~100x too dearly.
+ */
+export type PurchaseRequest = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Term Months
+     */
+    term_months?: number | null;
+    /**
+     * Annual Interest Rate
+     */
+    annual_interest_rate?: number | string;
+};
+
+/**
+ * RecentFailure
+ */
+export type RecentFailure = {
+    /**
+     * Ago Ms
+     */
+    ago_ms?: number | null;
+    /**
+     * Method
+     */
+    method?: string | null;
+    /**
+     * Status
+     */
+    status?: number | null;
+    /**
+     * Path Template
+     */
+    path_template?: string | null;
+    /**
+     * Request Id
+     */
+    request_id?: string | null;
 };
 
 /**
@@ -1012,6 +1197,24 @@ export type ValidationError = {
     ctx?: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * Viewport
+ */
+export type Viewport = {
+    /**
+     * W
+     */
+    w?: number | null;
+    /**
+     * H
+     */
+    h?: number | null;
+    /**
+     * Dpr
+     */
+    dpr?: number | null;
 };
 
 export type MeAuthMeGetData = {
@@ -2529,6 +2732,29 @@ export type GetSurplusBreakdownFiSurplusGetResponses = {
     200: unknown;
 };
 
+export type SimulatePurchaseFiSimulatePurchasePostData = {
+    body: PurchaseRequest;
+    path?: never;
+    query?: never;
+    url: '/fi/simulate-purchase';
+};
+
+export type SimulatePurchaseFiSimulatePurchasePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SimulatePurchaseFiSimulatePurchasePostError = SimulatePurchaseFiSimulatePurchasePostErrors[keyof SimulatePurchaseFiSimulatePurchasePostErrors];
+
+export type SimulatePurchaseFiSimulatePurchasePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type RunAdvisorAdvisorRunPostData = {
     body?: never;
     path?: never;
@@ -2855,6 +3081,85 @@ export type GetBudgetSummaryBudgetBudgetIdSummaryGetErrors = {
 export type GetBudgetSummaryBudgetBudgetIdSummaryGetError = GetBudgetSummaryBudgetBudgetIdSummaryGetErrors[keyof GetBudgetSummaryBudgetBudgetIdSummaryGetErrors];
 
 export type GetBudgetSummaryBudgetBudgetIdSummaryGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListBugReportsBugReportsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/bug-reports/';
+};
+
+export type ListBugReportsBugReportsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListBugReportsBugReportsGetError = ListBugReportsBugReportsGetErrors[keyof ListBugReportsBugReportsGetErrors];
+
+export type ListBugReportsBugReportsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type CreateBugReportBugReportsPostData = {
+    body: BugReportRequest;
+    path?: never;
+    query?: never;
+    url: '/bug-reports/';
+};
+
+export type CreateBugReportBugReportsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateBugReportBugReportsPostError = CreateBugReportBugReportsPostErrors[keyof CreateBugReportBugReportsPostErrors];
+
+export type CreateBugReportBugReportsPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: unknown;
+};
+
+export type GetBugReportBugReportsReportIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Report Id
+         */
+        report_id: string;
+    };
+    query?: never;
+    url: '/bug-reports/{report_id}';
+};
+
+export type GetBugReportBugReportsReportIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetBugReportBugReportsReportIdGetError = GetBugReportBugReportsReportIdGetErrors[keyof GetBugReportBugReportsReportIdGetErrors];
+
+export type GetBugReportBugReportsReportIdGetResponses = {
     /**
      * Successful Response
      */

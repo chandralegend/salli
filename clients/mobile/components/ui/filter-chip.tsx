@@ -1,5 +1,6 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { cn } from "@/lib/utils";
 
 /** A single rounded-pill chip — used both in filter bars and in-form option
@@ -18,7 +19,7 @@ export function FilterChip({
   className?: string;
 }) {
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
       className={cn(
         "rounded-pill px-3.5 py-1.5",
@@ -35,7 +36,7 @@ export function FilterChip({
       >
         {label}
       </Text>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 

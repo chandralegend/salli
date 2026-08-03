@@ -5,6 +5,23 @@ export type ClientOptions = {
 };
 
 /**
+ * AccountHint
+ *
+ * A suggested NEW account (name + type) when the parser couldn't match an
+ * existing one but can infer what kind of account the transaction implies.
+ */
+export type AccountHint = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Type
+     */
+    type: 'asset' | 'liability' | 'equity' | 'income' | 'expense';
+};
+
+/**
  * AddAccountRequest
  */
 export type AddAccountRequest = {
@@ -311,10 +328,6 @@ export type CheckoutRequest = {
      * Plan
      */
     plan: string;
-    /**
-     * Cycle
-     */
-    cycle?: string;
 };
 
 /**
@@ -761,6 +774,8 @@ export type ParsedEntryDraft = {
      * Credit Account Id
      */
     credit_account_id?: string | null;
+    debit_account_hint?: AccountHint | null;
+    credit_account_hint?: AccountHint | null;
     /**
      * Currency
      */
@@ -769,20 +784,6 @@ export type ParsedEntryDraft = {
      * Confidence
      */
     confidence?: number;
-};
-
-/**
- * PlanChangeRequest
- */
-export type PlanChangeRequest = {
-    /**
-     * Plan
-     */
-    plan: 'plus' | 'pro';
-    /**
-     * Cycle
-     */
-    cycle?: 'month' | 'year';
 };
 
 /**
@@ -933,6 +934,29 @@ export type ProfileIdentityRequest = {
      * Ird Number
      */
     ird_number?: string | null;
+};
+
+/**
+ * PurchaseRequest
+ *
+ * Money arrives as a STRING and is parsed to Decimal, never float — a float in
+ * the money path is a bug (CLAUDE.md). `annual_interest_rate` is a fraction
+ * (0.18 = 18%), bounded so a caller passing 18 is rejected rather than
+ * silently costing the plan ~100x too dearly.
+ */
+export type PurchaseRequest = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Term Months
+     */
+    term_months?: number | null;
+    /**
+     * Annual Interest Rate
+     */
+    annual_interest_rate?: number | string;
 };
 
 /**
@@ -2469,52 +2493,6 @@ export type CreateCheckoutBillingCheckoutPostResponses = {
     200: unknown;
 };
 
-export type PreviewPlanChangeBillingSubscriptionPreviewPostData = {
-    body: PlanChangeRequest;
-    path?: never;
-    query?: never;
-    url: '/billing/subscription/preview';
-};
-
-export type PreviewPlanChangeBillingSubscriptionPreviewPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type PreviewPlanChangeBillingSubscriptionPreviewPostError = PreviewPlanChangeBillingSubscriptionPreviewPostErrors[keyof PreviewPlanChangeBillingSubscriptionPreviewPostErrors];
-
-export type PreviewPlanChangeBillingSubscriptionPreviewPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type ChangePlanBillingSubscriptionChangePostData = {
-    body: PlanChangeRequest;
-    path?: never;
-    query?: never;
-    url: '/billing/subscription/change';
-};
-
-export type ChangePlanBillingSubscriptionChangePostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type ChangePlanBillingSubscriptionChangePostError = ChangePlanBillingSubscriptionChangePostErrors[keyof ChangePlanBillingSubscriptionChangePostErrors];
-
-export type ChangePlanBillingSubscriptionChangePostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
 export type BillingPortalBillingPortalPostData = {
     body?: never;
     path?: never;
@@ -2744,6 +2722,29 @@ export type GetSurplusBreakdownFiSurplusGetData = {
 };
 
 export type GetSurplusBreakdownFiSurplusGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SimulatePurchaseFiSimulatePurchasePostData = {
+    body: PurchaseRequest;
+    path?: never;
+    query?: never;
+    url: '/fi/simulate-purchase';
+};
+
+export type SimulatePurchaseFiSimulatePurchasePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SimulatePurchaseFiSimulatePurchasePostError = SimulatePurchaseFiSimulatePurchasePostErrors[keyof SimulatePurchaseFiSimulatePurchasePostErrors];
+
+export type SimulatePurchaseFiSimulatePurchasePostResponses = {
     /**
      * Successful Response
      */

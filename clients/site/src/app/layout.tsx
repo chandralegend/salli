@@ -50,13 +50,13 @@ export const metadata: Metadata = {
     url: SITE_URL,
     siteName: "Salli",
     locale: "en_LK",
-    images: [{ url: "/screens/web-dashboard.webp", width: 1600, height: 1000, alt: "Salli dashboard showing net worth, income, tax payable, and FI score" }],
+    images: [{ url: "/screens/site-preview.png", width: 1672, height: 941, alt: "Salli's Overview, Freedom, and Tax screens showing net worth, tax payable, and Freedom Score" }],
   },
   twitter: {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: ["/screens/web-dashboard.webp"],
+    images: ["/screens/site-preview.png"],
   },
 };
 

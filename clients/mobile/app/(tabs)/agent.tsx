@@ -253,20 +253,33 @@ export default function AgentScreen() {
           break;
         case "error":
           setStreaming(false);
+          // Belt-and-suspenders: a 402 normally arrives as the structured
+          // quota_exceeded event above, but if a quota message ever surfaces
+          // through the generic error event instead, still show the banner.
+          if (/quota|limit|upgrade/i.test(event.message)) {
+            setQuotaBanner("agent_messages");
+            setMessages((prev) => prev.slice(0, -2)); // remove the attempted user + empty assistant turn
+          }
           break;
       }
     },
     [appendToLastAssistant],
   );
 
-  /** Turns a transport/stream error into a plain-language notice — never a raw JSON
-   * dump in the chat. (Quota 402s arrive as a structured quota_exceeded event.) */
+  /** Turns a transport/stream error into either the quota banner or a plain-language
+   * notice — never a raw JSON dump in the chat. Quota 402s normally arrive as a
+   * structured quota_exceeded event; the message-sniffing here only catches the
+   * rarer case where a quota error surfaces as a plain error/message instead. */
   const handleStreamError = useCallback((message: string) => {
-    void message;
     setStreaming(false);
+    if (/quota|limit|upgrade/i.test(message)) {
+      setQuotaBanner("agent_messages");
+      setMessages((prev) => prev.slice(0, -2)); // drop the attempted user + empty assistant turn
+      return;
+    }
     appendToLastAssistant((parts) => [
       ...parts,
-      { kind: "text", content: "Something went wrong reaching Scrooge. Please try again." },
+      { kind: "text", content: "Something went wrong reaching Salli AI. Please try again." },
     ]);
   }, [appendToLastAssistant]);
 
@@ -329,7 +342,7 @@ export default function AgentScreen() {
           <Menu size={18} color={colors.mutedForeground} strokeWidth={2} />
         </Pressable>
         <View className="flex-1 items-center gap-0.5">
-          <Text className="font-sans-semibold text-[16px] text-foreground">Scrooge</Text>
+          <Text className="font-sans-semibold text-[16px] text-foreground">Salli AI</Text>
           <View className="flex-row items-center gap-1.5">
             <View className="h-1.5 w-1.5 rounded-full bg-salli-accent" />
             <Text className="text-[11px] text-foreground/30">AI Financial Advisor</Text>
@@ -346,7 +359,7 @@ export default function AgentScreen() {
             <View className="h-[68px] w-[68px] items-center justify-center rounded-full border border-salli-accent/25 bg-salli-accent/15">
               <PiggyBank size={30} color={colors.accent} strokeWidth={1.8} />
             </View>
-            <Text className="mt-4 text-center font-sans-bold text-[19px] text-foreground">Meet Scrooge</Text>
+            <Text className="mt-4 text-center font-sans-bold text-[19px] text-foreground">Meet Salli AI</Text>
             <Text className="mt-1.5 text-center text-[13px] leading-5 text-foreground/40">
               Your AI advisor for tax, budgets, and FIRE. Every number comes from the deterministic engine — not guessed.
             </Text>
@@ -425,7 +438,7 @@ export default function AgentScreen() {
             <TextInput
               value={input}
               onChangeText={setInput}
-              placeholder="Message Scrooge..."
+              placeholder="Message Salli AI..."
               placeholderTextColor="rgba(128,128,128,0.4)"
               className="flex-1 text-[14px] text-foreground"
               multiline

@@ -22,7 +22,7 @@ const PRINCIPLES = [
 
 const STORY = [
   { year: "2024", t: "The frustration", b: "Founders juggling salaries, freelance income and foreign fees found no app that understood Sri Lankan tax. Spreadsheets went stale; chatbots guessed." },
-  { year: "2025", t: "The engine", b: "We built a deterministic Sri Lankan tax engine on top of a proper double-entry ledger, and had the rules reviewed by a chartered accountant." },
+  { year: "2025", t: "The engine", b: "We built a deterministic Sri Lankan tax engine on top of a proper double-entry ledger, and tested every rule against the IRD's published rate bands and the 2025 Amendment Act." },
   { year: "2025", t: "The AI, grounded", b: "We added an AI advisor that only reads and explains; it never computes your money. The math stays in the engine." },
   { year: "2026", t: "Salli, for everyone", b: "We opened Salli to salaried professionals, freelancers, foreign-income earners and investors across Sri Lanka." },
 ];

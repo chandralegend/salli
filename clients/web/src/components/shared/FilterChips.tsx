@@ -25,7 +25,9 @@ export function FilterChips<T extends string>({
             type="button"
             onClick={() => onChange(opt)}
             className={cn(
-              "rounded-full px-3 py-1 text-[12px] font-medium capitalize transition-colors",
+              // Taller on phones so the chips are comfortably tappable; the
+              // compact desktop pill returns from 640px up.
+              "rounded-full px-3 py-2 sm:py-1 text-[12px] font-medium capitalize transition-colors",
               active
                 ? "bg-primary text-primary-foreground"
                 : "border bg-card text-muted-foreground hover:text-foreground"

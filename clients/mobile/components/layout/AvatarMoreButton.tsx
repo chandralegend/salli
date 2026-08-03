@@ -1,5 +1,7 @@
 import { useRouter } from "expo-router";
-import { Pressable, Text } from "react-native";
+import { Text } from "react-native";
+
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
 
 type AvatarMoreButtonProps = {
   initial?: string;
@@ -10,13 +12,13 @@ type AvatarMoreButtonProps = {
 export function AvatarMoreButton({ initial = "?" }: AvatarMoreButtonProps) {
   const router = useRouter();
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={() => router.push("/(tabs)/more")}
       accessibilityRole="button"
       accessibilityLabel="More"
       className="h-9 w-9 items-center justify-center rounded-full bg-salli-accent"
     >
       <Text className="font-sans-bold text-[15px] text-white">{initial}</Text>
-    </Pressable>
+    </AnimatedPressable>
   );
 }

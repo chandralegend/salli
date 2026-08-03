@@ -143,7 +143,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 priority
                 className="object-cover"
               />
-              <div className={clsx("absolute inset-0 opacity-40", COVER_STYLE_CLASS[post.coverStyle as CoverStyle])} />
+
             </>
           ) : (
             <div className="font-display text-[clamp(120px,20vw,300px)] font-extrabold tracking-[-0.05em] text-cream/16">
@@ -191,7 +191,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                   {p.coverImage && (
                     <Image src={p.coverImage} alt={p.coverImageAlt || p.title} fill className="object-cover" />
                   )}
-                  <div className={clsx("absolute inset-0 opacity-55", COVER_STYLE_CLASS[p.coverStyle as CoverStyle])} />
+                  {!p.coverImage && (
+                    <div className={clsx("absolute inset-0 opacity-55", COVER_STYLE_CLASS[p.coverStyle as CoverStyle])} />
+                  )}
                   <span className="relative z-10 rounded-full bg-cream/90 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[.06em] text-ink">
                     {p.category}
                   </span>

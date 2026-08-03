@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="1200" height="560" role="img" aria-label="Annual tax payable under YA 2024/25 versus YA 2025/26 rules at four income levels. At LKR 1,500,000 tax falls from 18,000 to zero. At 3,000,000 from 252,000 to 96,000, saving 156,000. At 5,000,000 from 918,000 to 672,000, saving 246,000. At 8,000,000 from 1,998,000 to 1,752,000, saving 246,000.">
+  <rect width="1200" height="560" fill="#f2efe6"/>
+
+  <!-- title -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+    <text x="70" y="52" font-size="12.5" fill="#16130f" opacity="0.45" letter-spacing="1.6">ANNUAL TAX PAYABLE · BEFORE APIT/AIT CREDITS</text>
+  </g>
+
+  <!-- legend -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">
+    <rect x="820" y="38" width="14" height="14" fill="#16130f" opacity="0.28"/>
+    <text x="842" y="50" fill="#16130f" opacity="0.6">YA 2024/25</text>
+    <rect x="960" y="38" width="14" height="14" fill="#f5310f"/>
+    <text x="982" y="50" fill="#16130f" opacity="0.6">YA 2025/26</text>
+  </g>
+
+  <!-- gridlines: 0 / 500k / 1M / 1.5M / 2M  (scale 320px per 2,000,000) -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#16130f">
+    <line x1="150" y1="420" x2="1130" y2="420" stroke="#16130f" stroke-width="1.5"/>
+    <text x="138" y="424" text-anchor="end" opacity="0.4">0</text>
+
+    <line x1="150" y1="340" x2="1130" y2="340" stroke="#16130f" stroke-width="1" opacity="0.12"/>
+    <text x="138" y="344" text-anchor="end" opacity="0.4">500k</text>
+
+    <line x1="150" y1="260" x2="1130" y2="260" stroke="#16130f" stroke-width="1" opacity="0.12"/>
+    <text x="138" y="264" text-anchor="end" opacity="0.4">1.0M</text>
+
+    <line x1="150" y1="180" x2="1130" y2="180" stroke="#16130f" stroke-width="1" opacity="0.12"/>
+    <text x="138" y="184" text-anchor="end" opacity="0.4">1.5M</text>
+
+    <line x1="150" y1="100" x2="1130" y2="100" stroke="#16130f" stroke-width="1" opacity="0.12"/>
+    <text x="138" y="104" text-anchor="end" opacity="0.4">2.0M</text>
+  </g>
+
+  <!-- ===== group 1: income 1,500,000 — old 18,000 (2.9px) / new 0 ===== -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+    <rect x="255" y="417" width="62" height="3" fill="#16130f" opacity="0.28"/>
+    <text x="286" y="408" text-anchor="middle" font-size="12.5" fill="#16130f" opacity="0.55">18,000</text>
+    <text x="362" y="408" text-anchor="middle" font-size="12.5" fill="#f5310f" font-weight="700">0</text>
+    <text x="324" y="452" text-anchor="middle" font-size="14" fill="#16130f">LKR 1.5M</text>
+    <text x="324" y="474" text-anchor="middle" font-size="12.5" fill="#1b6b47" font-weight="600">now tax-free</text>
+  </g>
+
+  <!-- ===== group 2: income 3,000,000 — old 252,000 (40.3px) / new 96,000 (15.4px) ===== -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+    <rect x="474" y="380" width="62" height="40" fill="#16130f" opacity="0.28"/>
+    <text x="505" y="370" text-anchor="middle" font-size="12.5" fill="#16130f" opacity="0.55">252,000</text>
+    <rect x="550" y="405" width="62" height="15" fill="#f5310f"/>
+    <text x="581" y="395" text-anchor="middle" font-size="12.5" fill="#f5310f" font-weight="700">96,000</text>
+    <text x="543" y="452" text-anchor="middle" font-size="14" fill="#16130f">LKR 3M</text>
+    <text x="543" y="474" text-anchor="middle" font-size="12.5" fill="#1b6b47" font-weight="600">saves 156,000</text>
+  </g>
+
+  <!-- ===== group 3: income 5,000,000 — old 918,000 (146.9px) / new 672,000 (107.5px) ===== -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+    <rect x="693" y="273" width="62" height="147" fill="#16130f" opacity="0.28"/>
+    <text x="724" y="263" text-anchor="middle" font-size="12.5" fill="#16130f" opacity="0.55">918,000</text>
+    <rect x="769" y="313" width="62" height="107" fill="#f5310f"/>
+    <text x="800" y="303" text-anchor="middle" font-size="12.5" fill="#f5310f" font-weight="700">672,000</text>
+    <text x="762" y="452" text-anchor="middle" font-size="14" fill="#16130f">LKR 5M</text>
+    <text x="762" y="474" text-anchor="middle" font-size="12.5" fill="#1b6b47" font-weight="600">saves 246,000</text>
+  </g>
+
+  <!-- ===== group 4: income 8,000,000 — old 1,998,000 (319.7px) / new 1,752,000 (280.3px) ===== -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+    <rect x="912" y="100" width="62" height="320" fill="#16130f" opacity="0.28"/>
+    <text x="943" y="90" text-anchor="middle" font-size="12.5" fill="#16130f" opacity="0.55">1,998,000</text>
+    <rect x="988" y="140" width="62" height="280" fill="#f5310f"/>
+    <text x="1019" y="130" text-anchor="middle" font-size="12.5" fill="#f5310f" font-weight="700">1,752,000</text>
+    <text x="981" y="452" text-anchor="middle" font-size="14" fill="#16130f">LKR 8M</text>
+    <text x="981" y="474" text-anchor="middle" font-size="12.5" fill="#1b6b47" font-weight="600">saves 246,000</text>
+  </g>
+
+  <!-- footnote: the plateau, decomposed exactly -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" fill="#16130f">
+    <text x="70" y="522" opacity="0.5">Past LKR ~5M the saving flattens at 246,000 = 216,000 from the larger relief (600,000 × 36%) + 30,000 from the reshuffled bands.</text>
+  </g>
+</svg>

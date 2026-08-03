@@ -9,19 +9,25 @@ import {
   Settings,
   Upload,
 } from "lucide-react-native";
-import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Text, View } from "react-native";
 
 import { AccountDetailModal } from "@/components/AccountDetailModal";
+import { AffordabilityCard } from "@/components/AffordabilityCard";
 import { EntryDetailSheet } from "@/components/EntryDetailSheet";
+import { TourTarget } from "@/components/tour/TourTarget";
 import { AvatarMoreButton } from "@/components/layout/AvatarMoreButton";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
+import { IconButton } from "@/components/ui/icon-button";
 import { PageShell } from "@/components/ui/page-shell";
 import { StatTile } from "@/components/ui/stat-tile";
+import { useThemedRefreshControl } from "@/components/ui/themed-refresh-control";
 import type { JournalEntry } from "@/hooks/useDashboard";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useLedgerMutations } from "@/hooks/useLedger";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
+import { useSalliStore } from "@/lib/store";
 import { useAppTheme, useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -29,12 +35,38 @@ export default function DashboardScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const { isDark } = useAppTheme();
-  const { netWorth, fiScore, tax, accounts, entries, budgetSummary, balances, incomeYtd, expensesYtd } =
+  const { netWorth, fiScore, tax, accounts, entries, budgetSummary, balances, incomeYtd, expensesYtd, refetch } =
     useDashboard();
   const { reverseEntry } = useLedgerMutations();
 
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
+  const refreshControl = useThemedRefreshControl(refreshing, onRefresh);
+
+  // Today's month/year — a static label matching web's dashboard subtitle
+  // (there's no historical month picker on either platform yet: every figure
+  // here is "latest", not queryable by an arbitrary past period).
+  const currentPeriodLabel = new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" });
+
+  // Auto-start the guided tour once per user, the first time they land here —
+  // the direct mobile equivalent of web's first-/dashboard-visit trigger.
+  // `tourComplete` defaults to `true` until AsyncStorage resolves (see
+  // lib/store.ts), so this only fires once the real stored value comes back
+  // false; a short delay lets this screen's cards register their rects first.
+  const tourComplete = useSalliStore((s) => s.tourComplete);
+  const tourActive = useSalliStore((s) => s.tourActive);
+  const startTour = useSalliStore((s) => s.startTour);
+  useEffect(() => {
+    if (tourComplete || tourActive) return;
+    const timer = setTimeout(() => startTour(), 500);
+    return () => clearTimeout(timer);
+  }, [tourComplete, tourActive, startTour]);
 
   // Dashboard "Accounts" = your real-world money accounts (assets), the biggest
   // balances first. Non-money ledger accounts (income/expense/equity) are excluded.
@@ -62,25 +94,30 @@ export default function DashboardScreen() {
           style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400 }}
         />
       ) : null}
-      <PageShell transparent>
+      <PageShell transparent refreshControl={refreshControl}>
         <View className="flex-row items-center px-4 pt-1">
-          <AvatarMoreButton initial="D" />
+          {/* Fixed-width gutters (matching the icon group's width) so the
+              centered date is centered on the whole row, not just the
+              leftover space next to the single avatar button. */}
+          <View style={{ width: 80 }} className="items-start">
+            <TourTarget id="dashboard-avatar">
+              <AvatarMoreButton initial="D" />
+            </TourTarget>
+          </View>
           <View className="flex-1 flex-row items-center justify-center gap-2.5">
-            <Text className="font-sans-semibold text-[14px] text-foreground">Jul 2026</Text>
+            <Text className="font-sans-semibold text-[14px] text-foreground">{currentPeriodLabel}</Text>
           </View>
           <View className="flex-row gap-2">
-            <Pressable
+            <IconButton
+              icon={Bell}
               onPress={() => router.push("/(tabs)/more/reminders")}
-              className="h-9 w-9 items-center justify-center rounded-full bg-foreground/10"
-            >
-              <Bell size={16} color={colors.foreground} strokeWidth={2} />
-            </Pressable>
-            <Pressable
+              accessibilityLabel="Reminders"
+            />
+            <IconButton
+              icon={Settings}
               onPress={() => router.push("/(tabs)/more/settings")}
-              className="h-9 w-9 items-center justify-center rounded-full bg-foreground/10"
-            >
-              <Settings size={16} color={colors.foreground} strokeWidth={2} />
-            </Pressable>
+              accessibilityLabel="Settings"
+            />
           </View>
         </View>
 
@@ -129,57 +166,64 @@ export default function DashboardScreen() {
             />
           </View>
           <View className="flex-row gap-2">
-            <StatTile
-              onDark={isDark}
-              label="Tax"
-              value={tax ? formatLKRAbbrev(tax.tax_payable) : "—"}
-              hint="AY 25/26"
-              className="flex-1 p-4"
-              labelClassName="text-[10px]"
-              hintClassName="text-[10px]"
-              valueClassName="text-[24px]"
-            />
-            <StatTile
-              onDark={isDark}
-              label="Freedom Score"
-              value={
-                fiScore ? (
-                  <Text className="font-sans-bold text-[24px] tracking-tight text-foreground">
-                    {Number(fiScore.overall_score).toFixed(0)}
-                    <Text className="font-sans text-[12px] text-foreground/30">/100</Text>
-                  </Text>
-                ) : (
-                  "—"
-                )
-              }
-              hint={fiScore ? `Grade ${fiScore.grade}` : undefined}
-              className="flex-1 p-4"
-              labelClassName="text-[10px]"
-              hintClassName="text-[10px]"
-              valueClassName="text-[24px]"
-            />
+            <TourTarget id="dashboard-tax-tile" className="flex-1">
+              <StatTile
+                onDark={isDark}
+                label="Tax"
+                value={tax ? formatLKRAbbrev(tax.tax_payable) : "—"}
+                hint="AY 25/26"
+                className="p-4"
+                labelClassName="text-[10px]"
+                hintClassName="text-[10px]"
+                valueClassName="text-[24px]"
+              />
+            </TourTarget>
+            <TourTarget id="dashboard-freedom-tile" className="flex-1">
+              <StatTile
+                onDark={isDark}
+                label="Freedom Score"
+                value={
+                  fiScore ? (
+                    <Text className="font-sans-bold text-[24px] tracking-tight text-foreground">
+                      {Number(fiScore.overall_score).toFixed(0)}
+                      <Text className="font-sans text-[12px] text-foreground/30">/100</Text>
+                    </Text>
+                  ) : (
+                    "—"
+                  )
+                }
+                hint={fiScore ? `Grade ${fiScore.grade}` : undefined}
+                className="p-4"
+                labelClassName="text-[10px]"
+                hintClassName="text-[10px]"
+                valueClassName="text-[24px]"
+              />
+            </TourTarget>
           </View>
         </View>
 
         <View className="flex-row gap-2 px-4 pb-3.5">
-          <Pressable
+          <AnimatedPressable
             onPress={() => router.push("/(tabs)/more/statements")}
             className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-foreground/10 bg-card"
           >
             <Upload size={13} color={colors.mutedForeground} strokeWidth={2} />
             <Text className="font-sans-medium text-[11px] text-foreground/70">Upload</Text>
-          </Pressable>
-          <Pressable
+          </AnimatedPressable>
+          <AnimatedPressable
             onPress={() => router.push("/(tabs)/agent")}
+            haptic="light"
             className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control bg-salli-accent"
           >
             <PiggyBank size={13} color="rgba(255,255,255,0.8)" strokeWidth={1.8} />
-            <Text className="font-sans-semibold text-[11px] text-white">Ask Scrooge</Text>
-          </Pressable>
+            <Text className="font-sans-semibold text-[11px] text-white">Ask Salli AI</Text>
+          </AnimatedPressable>
         </View>
 
+        <AffordabilityCard />
+
         {budgetSummary ? (
-          <Pressable onPress={() => router.push("/(tabs)/more/budget")}>
+          <AnimatedPressable onPress={() => router.push("/(tabs)/more/budget")}>
             <Card className="mx-4 mb-3.5 p-3.5">
               <View className="mb-2.5 flex-row items-center justify-between">
                 <Text className="font-sans-semibold text-[14px] text-foreground">Monthly Budget</Text>
@@ -210,20 +254,20 @@ export default function DashboardScreen() {
               </View>
             </View>
             </Card>
-          </Pressable>
+          </AnimatedPressable>
         ) : null}
 
         <View className="px-4 pb-3">
           <View className="mb-2.5 flex-row items-center justify-between">
             <Text className="font-sans-semibold text-[15px] text-foreground">Accounts</Text>
-            <Pressable onPress={() => router.push("/(tabs)/ledger")}>
+            <AnimatedPressable onPress={() => router.push("/(tabs)/ledger")} hitSlop={8}>
               <Text className="font-sans-medium text-[13px] text-salli-accent">See all</Text>
-            </Pressable>
+            </AnimatedPressable>
           </View>
           {topAccounts.length > 0 ? (
             <View className="gap-2">
               {topAccounts.map((acc) => (
-                <Pressable key={acc.id} onPress={() => setSelectedAccountId(acc.id)}>
+                <AnimatedPressable key={acc.id} onPress={() => setSelectedAccountId(acc.id)}>
                   <Card className="flex-row items-center gap-3 rounded-[16px] border-foreground/[0.08] p-3.5">
                     <View className="h-10 w-10 items-center justify-center rounded-[12px] bg-salli-accent">
                       <Text className="font-sans-bold text-[16px] text-white">{acc.name.charAt(0)}</Text>
@@ -241,7 +285,7 @@ export default function DashboardScreen() {
                     ) : null}
                     <ChevronRight size={16} color={colors.mutedForeground} strokeWidth={2} />
                   </Card>
-                </Pressable>
+                </AnimatedPressable>
               ))}
             </View>
           ) : (
@@ -254,9 +298,9 @@ export default function DashboardScreen() {
         <View className="px-4">
           <View className="mb-2.5 flex-row items-center justify-between">
             <Text className="font-sans-semibold text-[15px] text-foreground">Recent Entries</Text>
-            <Pressable onPress={() => router.push("/(tabs)/ledger")}>
+            <AnimatedPressable onPress={() => router.push("/(tabs)/ledger")} hitSlop={8}>
               <Text className="font-sans-medium text-[13px] text-salli-accent">See all</Text>
-            </Pressable>
+            </AnimatedPressable>
           </View>
           {entries.length === 0 ? (
             <Card className="items-center p-5">
@@ -274,7 +318,7 @@ export default function DashboardScreen() {
                 const isIncome = debitAcc?.type === "asset" && creditAcc?.type === "income";
                 const EntryIcon = isIncome ? ArrowDownLeft : ArrowUpRight;
                 return (
-                  <Pressable key={entry.id} onPress={() => setSelectedEntry(entry)}>
+                  <AnimatedPressable key={entry.id} onPress={() => setSelectedEntry(entry)}>
                   <Card
                     className="flex-row items-center gap-2.5 rounded-[16px] border-foreground/[0.08] p-3"
                   >
@@ -297,7 +341,7 @@ export default function DashboardScreen() {
                       {isIncome ? "+" : "−"}Rs. {formatLKR(debit?.amount ?? "0", 0)}
                     </Text>
                   </Card>
-                  </Pressable>
+                  </AnimatedPressable>
                 );
               })}
             </View>

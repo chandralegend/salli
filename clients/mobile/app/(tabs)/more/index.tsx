@@ -7,14 +7,16 @@ import {
   FileText,
   Landmark,
   Receipt,
+  RefreshCw,
   Settings,
   Shield,
   ShieldCheck,
   TrendingUp,
   Upload,
 } from "lucide-react-native";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { formatLKRAbbrev, formatPct } from "@/lib/format";
@@ -35,6 +37,7 @@ const FEATURES: {
   { key: "insurance", title: "Insurance", detail: "Policies & coverage gaps", icon: Shield, href: "/(tabs)/more/insurance" },
   { key: "reports", title: "Reports", detail: "Balance sheet, net worth", icon: FileText, href: "/(tabs)/more/reports" },
   { key: "statements", title: "Statements", detail: "Import bank transactions", icon: Upload, href: "/(tabs)/more/statements" },
+  { key: "subscriptions", title: "Subscriptions", detail: "Recurring bills & renewals", icon: RefreshCw, href: "/(tabs)/more/subscriptions" },
   { key: "tax", title: "Tax", detail: "AY 2025/26 · IRD computation", icon: Receipt, href: "/(tabs)/more/tax", badge: "AY 25/26" },
   { key: "reminders", title: "Reminders", detail: "Filing deadlines & alerts", icon: Bell, href: "/(tabs)/more/reminders" },
   { key: "documents", title: "Documents", detail: "AI-saved notes & memories", icon: Book, href: "/(tabs)/more/documents" },
@@ -44,14 +47,14 @@ const FEATURES: {
 function QuickStatCard({ label, value, hint, onPress }: { label: string; value: string; hint: string; onPress: () => void }) {
   const colors = useThemeColors();
   return (
-    <Pressable onPress={onPress} className="w-[48%] rounded-[16px] border border-foreground/[0.08] bg-card p-3.5">
+    <AnimatedPressable onPress={onPress} className="w-[48%] rounded-[16px] border border-foreground/[0.08] bg-card p-3.5">
       <View className="mb-1.5 flex-row items-center justify-between">
         <Text className="text-[11px] font-sans-medium text-foreground/40">{label}</Text>
         <ChevronRight size={12} color={colors.mutedForeground} strokeWidth={2} />
       </View>
       <Text className="mb-0.5 font-sans-bold text-[16px] text-foreground">{value}</Text>
       <Text className="text-[10px] text-foreground/25">{hint}</Text>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -65,12 +68,12 @@ export default function MoreScreen() {
     <PageShell>
       <View className="flex-row items-center px-5 pb-3 pt-2.5">
         <Text className="flex-1 font-sans-bold text-[22px] text-foreground">More</Text>
-        <Pressable
+        <AnimatedPressable
           onPress={() => router.push("/(tabs)/more/settings")}
           className="h-[34px] w-[34px] items-center justify-center rounded-full border border-foreground/[0.08] bg-foreground/[0.07]"
         >
           <Settings size={15} color={colors.mutedForeground} strokeWidth={2} />
-        </Pressable>
+        </AnimatedPressable>
       </View>
 
       <Card className="mx-4 mb-3 flex-row items-center gap-3 rounded-[18px] border-foreground/[0.08] p-3.5">
@@ -85,12 +88,13 @@ export default function MoreScreen() {
           </Text>
           <Text className="mt-0.5 text-[11px] text-foreground/35">{profile?.email ?? ""}</Text>
         </View>
-        <Pressable
+        <AnimatedPressable
           onPress={() => router.push("/(tabs)/more/billing")}
+          haptic="light"
           className="rounded-pill bg-salli-accent px-3 py-1.5"
         >
           <Text className="font-sans-semibold text-[11px] text-white">Upgrade</Text>
-        </Pressable>
+        </AnimatedPressable>
       </Card>
 
       <View className="mx-4 mb-3.5 flex-row flex-wrap justify-between gap-2">
@@ -134,7 +138,7 @@ export default function MoreScreen() {
       </View>
 
       {overdueCount > 0 ? (
-        <Pressable
+        <AnimatedPressable
           onPress={() => router.push("/(tabs)/more/reminders")}
           className="mx-4 mb-3 flex-row items-center gap-2.5 rounded-control border border-foreground/10 bg-card px-3.5 py-2.5"
         >
@@ -143,7 +147,7 @@ export default function MoreScreen() {
             {overdueCount} overdue reminder{overdueCount === 1 ? "" : "s"}
           </Text>
           <Text className="text-[12px] text-foreground/30">Reminders →</Text>
-        </Pressable>
+        </AnimatedPressable>
       ) : null}
 
       <View className="px-4">
@@ -152,7 +156,7 @@ export default function MoreScreen() {
         </Text>
         <Card className="overflow-hidden rounded-[16px] border-foreground/[0.08]">
           {FEATURES.map((f, i) => (
-            <Pressable
+            <AnimatedPressable
               key={f.key}
               onPress={() => router.push(f.href as never)}
               className={`flex-row items-center px-3.5 py-2.5 ${i < FEATURES.length - 1 ? "border-b border-foreground/[0.05]" : ""}`}
@@ -173,7 +177,7 @@ export default function MoreScreen() {
                 <View className="mr-2.5 h-[7px] w-[7px] rounded-full bg-foreground" />
               ) : null}
               <ChevronRight size={13} color={colors.mutedForeground} strokeWidth={2} />
-            </Pressable>
+            </AnimatedPressable>
           ))}
         </Card>
       </View>

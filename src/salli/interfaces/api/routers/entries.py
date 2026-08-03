@@ -34,12 +34,22 @@ class ParseEntryRequest(BaseModel):
     text: str
 
 
+class AccountHint(BaseModel):
+    """A suggested NEW account (name + type) when the parser couldn't match an
+    existing one but can infer what kind of account the transaction implies."""
+
+    name: str
+    type: Literal["asset", "liability", "equity", "income", "expense"]
+
+
 class ParsedEntryDraft(BaseModel):
     entry_type: Literal["income", "expense", "transfer"]
     amount: str
     description: str
     debit_account_id: str | None = None
     credit_account_id: str | None = None
+    debit_account_hint: AccountHint | None = None
+    credit_account_hint: AccountHint | None = None
     currency: str = "LKR"
     confidence: float = 0.0
 

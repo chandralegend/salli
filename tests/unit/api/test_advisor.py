@@ -1,6 +1,7 @@
 import pytest
 
 from salli.domain.billing.plans import PLANS
+from tests.billing_fixtures import RESTRICTED_PLAN
 from tests.unit.api.conftest import AUTH
 
 
@@ -29,10 +30,10 @@ def _report(recs: list[dict]) -> dict:
 
 
 @pytest.mark.asyncio
-async def test_run_advisor_free_truncates(client, mock_services):
+async def test_run_advisor_restricted_truncates(client, mock_services):
     recs = [_recommendation(str(i), 1) for i in range(5)]
     mock_services.advisor.run_advisor.return_value = _report(recs)
-    mock_services.billing.get_current_plan.return_value = PLANS["free"]
+    mock_services.billing.get_current_plan.return_value = RESTRICTED_PLAN
 
     r = await client.post("/advisor/run", headers=AUTH)
     assert r.status_code == 200
@@ -70,10 +71,10 @@ async def test_latest_report_empty_skips_plan_lookup(client, mock_services):
 
 
 @pytest.mark.asyncio
-async def test_latest_report_free_truncates(client, mock_services):
+async def test_latest_report_restricted_truncates(client, mock_services):
     recs = [_recommendation(str(i), 1) for i in range(5)]
     mock_services.advisor.get_latest_report.return_value = _report(recs)
-    mock_services.billing.get_current_plan.return_value = PLANS["free"]
+    mock_services.billing.get_current_plan.return_value = RESTRICTED_PLAN
 
     r = await client.get("/advisor/reports/latest", headers=AUTH)
     assert r.status_code == 200
@@ -85,7 +86,7 @@ async def test_latest_report_free_truncates(client, mock_services):
 async def test_list_reports_truncates_each(client, mock_services):
     recs = [_recommendation(str(i), 1) for i in range(5)]
     mock_services.advisor.list_reports.return_value = [_report(recs), _report(recs)]
-    mock_services.billing.get_current_plan.return_value = PLANS["free"]
+    mock_services.billing.get_current_plan.return_value = RESTRICTED_PLAN
 
     r = await client.get("/advisor/reports", headers=AUTH)
     assert r.status_code == 200

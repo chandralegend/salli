@@ -296,3 +296,160 @@ def test_shipped_pack_weights_sum_to_one():
 
     pack = registry.get_pack()
     assert sum(pack.weights.values(), Decimal(0)) == Decimal(1)
+
+
+# ── simulate_purchase — hand-checked purchase scenarios ───────────────────────
+#
+# Scenarios use a realistic Sri Lankan professional so the figures are legible:
+# LKR 250,000 income, 200,000 expenses (50,000 monthly surplus), 600,000 liquid,
+# 900,000 invested, 400,000 owed → FI asset base 1,100,000.
+
+
+def _buyer(**over) -> FinancialSnapshot:
+    base = dict(
+        monthly_income=Decimal("250000"),
+        monthly_expenses=Decimal("200000"),
+        liquid_savings=Decimal("600000"),
+        investments=Decimal("900000"),
+        total_assets=Decimal("1500000"),
+        total_liabilities=Decimal("400000"),
+        goal_progress=None,
+    )
+    base.update(over)
+    return FinancialSnapshot(**base)  # type: ignore[arg-type]
+
+
+def test_purchase_is_costed_in_months_of_freedom():
+    impact = engine.simulate_purchase(_buyer(), PACK, Decimal("450000"))
+
+    # FI number = 200,000 × 12 / 0.04 = 60,000,000
+    assert impact.fi_number == Decimal("60000000")
+    assert impact.fi_asset_base_before == Decimal("1100000.00")  # 600k + 900k − 400k
+    assert impact.monthly_surplus == Decimal("50000.00")
+    # A real delay, expressed in months — not a vague "this will slow you down".
+    cash = impact.options[0]
+    assert cash.months_delay is not None and cash.months_delay > 0
+    assert cash.total_cost == Decimal("450000.00")
+    assert cash.interest_cost == Decimal("0.00")
+
+
+def test_the_engine_reports_an_emergency_fund_breach():
+    """
+    Paying cash here leaves under one month of expenses against a 6-month target.
+    Affordability is not only about the FI date — this is the part a user needs
+    loudest, and it is deterministic, not a judgement the LLM should make.
+    """
+    impact = engine.simulate_purchase(_buyer(), PACK, Decimal("450000"))
+
+    assert impact.payable_from_liquid is True  # 600,000 ≥ 450,000
+    assert impact.emergency_months_before == Decimal("3.00")  # 600k / 200k
+    assert impact.emergency_months_after_cash == Decimal("0.75")  # 150k / 200k
+    assert impact.emergency_fund_target_months == 6
+    assert impact.emergency_months_after_cash < impact.emergency_fund_target_months
+
+
+def test_purchase_beyond_liquid_savings_is_flagged():
+    impact = engine.simulate_purchase(_buyer(), PACK, Decimal("900000"))
+    assert impact.payable_from_liquid is False  # 600,000 < 900,000
+    assert impact.emergency_months_after_cash < 0  # honestly negative, not clamped
+
+
+def test_installments_cost_more_in_total_and_in_freedom():
+    impact = engine.simulate_purchase(
+        _buyer(),
+        PACK,
+        Decimal("450000"),
+        term_months=12,
+        annual_interest_rate=Decimal("0.18"),
+    )
+    cash, inst = impact.options[0], impact.options[1]
+
+    assert inst.term_months == 12
+    assert inst.monthly_payment == Decimal("41256.00")  # 18% / 12 months on 450k
+    assert inst.total_cost > cash.total_cost
+    assert inst.interest_cost == Decimal("45071.96")
+    # Cash is never the dearer option in absolute rupees.
+    assert impact.cheapest_option_key == "cash"
+
+
+def test_installment_exceeding_surplus_is_flagged():
+    """A payment larger than the monthly surplus is cash-flow negative, not just slow."""
+    impact = engine.simulate_purchase(
+        _buyer(),
+        PACK,
+        Decimal("450000"),
+        term_months=6,  # ~78k/month against a 50k surplus
+        annual_interest_rate=Decimal("0.18"),
+    )
+    inst = impact.options[1]
+    assert inst.monthly_payment is not None and inst.monthly_payment > impact.monthly_surplus
+    assert inst.exceeds_monthly_surplus is True
+
+
+def test_no_installment_option_unless_a_term_is_given():
+    impact = engine.simulate_purchase(_buyer(), PACK, Decimal("450000"))
+    assert [o.key for o in impact.options] == ["cash"]
+
+
+def test_unreachable_target_reports_none_not_zero():
+    """
+    No surplus and no return means FI is not reachable. The delay must be None —
+    reporting 0 would tell the user the purchase is free.
+    """
+    broke = _buyer(monthly_income=Decimal("200000"), monthly_expenses=Decimal("200000"))
+    impact = engine.simulate_purchase(
+        broke, PACK, Decimal("450000"), annual_real_return=Decimal("0")
+    )
+    assert impact.baseline_months_to_fi is None
+    assert impact.options[0].months_delay is None
+    assert impact.cheapest_option_key is None
+
+
+def test_staleness_is_carried_through_untouched():
+    impact = engine.simulate_purchase(
+        _buyer(), PACK, Decimal("450000"), data_as_of="2026-03-01", is_stale=True
+    )
+    assert impact.data_as_of == "2026-03-01"
+    assert impact.is_stale is True
+
+
+def test_purchase_and_score_agree_on_the_fi_number():
+    """
+    `simulate_purchase` and `compute` must derive an IDENTICAL Freedom number from
+    the same inputs.
+
+    This is the audit's headline bug in miniature: the FI number was once computed
+    in two places with different withdrawal rates, and the page showed 81.2M in one
+    panel and 92.8M in another. Any new surface that re-derives the target is a
+    place for those to drift apart again, so pin them equal — including when a
+    strategy overrides the SWR and the target expenses.
+    """
+    snap = _buyer()
+    for swr, target_expenses in (
+        (None, None),
+        (Decimal("0.035"), None),
+        (Decimal("0.04"), Decimal("150000")),
+        (Decimal("0.05"), Decimal("300000")),
+    ):
+        score = engine.compute(snap, PACK, swr=swr, target_monthly_expenses=target_expenses)
+        impact = engine.simulate_purchase(
+            snap, PACK, Decimal("450000"), swr=swr, target_monthly_expenses=target_expenses
+        )
+        assert impact.fi_number == score.fi_number, f"diverged at swr={swr}, exp={target_expenses}"
+        assert impact.fi_asset_base_before == score.fi_asset_base
+        assert impact.monthly_surplus == score.monthly_surplus
+
+
+def test_purchase_baseline_agrees_with_the_headline_years():
+    """
+    The baseline month count must reconcile with `projected_fi_years`, which is
+    what the dashboard shows. ceil(months / 12) == years, always.
+    """
+    snap = _buyer()
+    score = engine.compute(snap, PACK)
+    impact = engine.simulate_purchase(snap, PACK, Decimal("450000"))
+
+    assert score.projected_fi_years is not None
+    assert impact.baseline_months_to_fi is not None
+    ceil_years = -(-impact.baseline_months_to_fi // 12)
+    assert ceil_years == int(score.projected_fi_years)

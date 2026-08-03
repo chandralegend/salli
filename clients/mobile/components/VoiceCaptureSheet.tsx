@@ -1,12 +1,13 @@
 import { Mic, Sparkles } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Alert, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 import { Drawer } from "@/components/ui/drawer";
 import { PillButton } from "@/components/ui/pill-button";
 import { TextField } from "@/components/ui/text-field";
 import { useParseEntry, type EntryDraft } from "@/hooks/useLedger";
 import { useThemeColors } from "@/lib/theme";
+import { useToast } from "@/lib/toast";
 
 /** Quick-add capture sheet — the user types or dictates (via the keyboard's
  * built-in mic) a plain-language note; AI parses it into a draft entry that
@@ -22,6 +23,7 @@ export function VoiceCaptureSheet({
 }) {
   const colors = useThemeColors();
   const parse = useParseEntry();
+  const showToast = useToast();
   const [text, setText] = useState("");
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export function VoiceCaptureSheet({
     if (!value) return;
     parse.mutate(value, {
       onSuccess: (draft) => onDraft(draft),
-      onError: () => Alert.alert("Couldn't read that", "Please try rephrasing, or add the entry manually."),
+      onError: () => showToast("Couldn't read that — try rephrasing, or add the entry manually.", "error"),
     });
   };
 

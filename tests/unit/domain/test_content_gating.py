@@ -12,10 +12,39 @@ from salli.domain.billing.content_gating import (
     truncate_strategy,
 )
 from salli.domain.billing.plans import PLANS
+from tests.billing_fixtures import RESTRICTED_PLAN as RESTRICTED
 
 FREE = PLANS["free"]
 PLUS = PLANS["plus"]
 PRO = PLANS["pro"]
+
+
+class TestFreeTierIntent:
+    """
+    Pins the current commercial intent: Free gets the FULL DEPTH of an answer,
+    and is differentiated from paid plans by metered volume alone.
+
+    This is not a correctness invariant — it is a deliberate go-to-market
+    decision (see the comment above PLANS["free"]). If this test fails,
+    someone narrowed Free. That may be entirely right, but it should be a
+    conscious choice rather than a side effect, so update this test in the
+    same commit and say why.
+    """
+
+    def test_free_grants_full_content_depth(self):
+        assert FREE.fire_rationale_visible is True
+        assert FREE.fi_scenario_limit == PLUS.fi_scenario_limit
+        assert FREE.advisor_recommendation_limit is None
+
+    def test_free_allowance_does_not_throttle_the_core_loop(self):
+        # The affordability conversation is tool-heavy and multi-turn; a
+        # single exploratory first session must not exhaust the month.
+        assert FREE.limits["agent_messages"] >= 100
+
+    def test_paid_plans_still_differentiated_by_volume(self):
+        for metric in ("agent_messages", "statement_uploads", "advisor_runs"):
+            assert PLUS.limits[metric] > FREE.limits[metric]
+            assert PRO.limits[metric] > PLUS.limits[metric]
 
 
 def _projections() -> dict:
@@ -33,9 +62,9 @@ def _projections() -> dict:
 
 
 class TestTruncateProjections:
-    def test_free_redacts_non_base_scenarios(self):
+    def test_restricted_redacts_non_base_scenarios(self):
         data = _projections()
-        out = truncate_projections(data, FREE)
+        out = truncate_projections(data, RESTRICTED)
 
         for point in out["points"]:
             assert point["conservative"] is None
@@ -67,7 +96,7 @@ class TestTruncateProjections:
     def test_does_not_mutate_input(self):
         data = _projections()
         original = copy.deepcopy(data)
-        truncate_projections(data, FREE)
+        truncate_projections(data, RESTRICTED)
         assert data == original
 
     def test_fallback_path_harmless_when_scenarios_equal(self):
@@ -75,7 +104,7 @@ class TestTruncateProjections:
         for point in data["points"]:
             point["conservative"] = point["base"]
             point["growth"] = point["base"]
-        out = truncate_projections(data, FREE)
+        out = truncate_projections(data, RESTRICTED)
         for point in out["points"]:
             assert point["conservative"] is None
             assert point["growth"] is None
@@ -95,9 +124,9 @@ def _strategy(rationale: str = "Save aggressively. Invest the surplus. Retire ea
 
 
 class TestTruncateStrategy:
-    def test_free_truncates_rationale_and_theories(self):
+    def test_restricted_truncates_rationale_and_theories(self):
         strategy = _strategy()
-        out = truncate_strategy(strategy, FREE)
+        out = truncate_strategy(strategy, RESTRICTED)
 
         assert out["ai_rationale"] is None
         assert out["rationale_locked"] is True
@@ -131,7 +160,7 @@ class TestTruncateStrategy:
         ],
     )
     def test_first_sentence_extraction(self, text, expected):
-        out = truncate_strategy(_strategy(rationale=text), FREE)
+        out = truncate_strategy(_strategy(rationale=text), RESTRICTED)
         assert out["rationale_preview"] == expected
 
 
@@ -154,7 +183,7 @@ def _report(recs: list[dict]) -> dict:
 
 
 class TestTruncateRecommendations:
-    def test_free_limits_to_top_n_by_priority(self):
+    def test_restricted_limits_to_top_n_by_priority(self):
         recs = [
             _recommendation("a", 3),
             _recommendation("b", 1),
@@ -162,7 +191,7 @@ class TestTruncateRecommendations:
             _recommendation("d", 1),
             _recommendation("e", 3),
         ]
-        out = truncate_recommendations(_report(recs), FREE)
+        out = truncate_recommendations(_report(recs), RESTRICTED)
         out_recs = out["recommendations"]
 
         assert [r["id"] for r in out_recs] == ["a", "b", "c", "d", "e"]  # original order preserved
@@ -176,8 +205,8 @@ class TestTruncateRecommendations:
 
     def test_tiebreak_is_stable(self):
         recs = [_recommendation(str(i), 1) for i in range(5)]
-        out1 = truncate_recommendations(_report(recs), FREE)
-        out2 = truncate_recommendations(_report(recs), FREE)
+        out1 = truncate_recommendations(_report(recs), RESTRICTED)
+        out2 = truncate_recommendations(_report(recs), RESTRICTED)
         unlocked1 = [r["id"] for r in out1["recommendations"] if not r["locked"]]
         unlocked2 = [r["id"] for r in out2["recommendations"] if not r["locked"]]
         assert unlocked1 == unlocked2 == ["0", "1"]
@@ -191,13 +220,13 @@ class TestTruncateRecommendations:
         assert all("rationale" in r for r in out["recommendations"])
 
     def test_fewer_than_limit_no_stubs_added(self):
-        out = truncate_recommendations(_report([_recommendation("a", 1)]), FREE)
+        out = truncate_recommendations(_report([_recommendation("a", 1)]), RESTRICTED)
         assert len(out["recommendations"]) == 1
         assert out["recommendations"][0]["locked"] is False
         assert "rationale" in out["recommendations"][0]
         assert out["recommendations_locked_count"] == 0
 
     def test_empty_list(self):
-        out = truncate_recommendations(_report([]), FREE)
+        out = truncate_recommendations(_report([]), RESTRICTED)
         assert out["recommendations"] == []
         assert out["recommendations_locked_count"] == 0

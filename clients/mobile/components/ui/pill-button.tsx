@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
-import { ActivityIndicator, Pressable, Text, type PressableProps } from "react-native";
+import { ActivityIndicator, Text, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
 
+import { AnimatedPressable } from "./animated-pressable";
 import { useThemeColors } from "../../lib/theme";
 import { cn } from "../../lib/utils";
 
-type PillButtonProps = PressableProps & {
+type PillButtonProps = Omit<PressableProps, "style"> & {
   children: ReactNode;
   variant?: "primary" | "secondary" | "accent";
   loading?: boolean;
+  style?: StyleProp<ViewStyle>;
   className?: string;
 };
 
@@ -30,8 +32,9 @@ export function PillButton({
     variant === "primary" ? colors.primaryForeground : variant === "accent" ? "#FFFFFF" : colors.foreground;
 
   return (
-    <Pressable
+    <AnimatedPressable
       disabled={disabled || loading}
+      haptic={variant === "secondary" ? "none" : "light"}
       className={cn(
         "h-[50px] flex-row items-center justify-center gap-2 rounded-pill",
         variant === "secondary" && "border border-foreground/10 bg-foreground/5",
@@ -50,6 +53,6 @@ export function PillButton({
       ) : (
         children
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }

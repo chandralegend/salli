@@ -1,5 +1,6 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { cn } from "@/lib/utils";
 
 /** Underline segmented tabs — one shared implementation for the ~9 screens that
@@ -20,7 +21,7 @@ export function Tabs<T extends string>({
       {items.map((item) => {
         const active = item === value;
         return (
-          <Pressable key={item} onPress={() => onChange(item)} className="px-3.5 py-2">
+          <AnimatedPressable key={item} onPress={() => onChange(item)} className="px-3.5 py-2">
             <Text
               className={cn(
                 "text-[13px]",
@@ -30,7 +31,7 @@ export function Tabs<T extends string>({
               {item}
             </Text>
             {active ? <View className="mt-2 h-0.5 rounded-pill bg-salli-accent" /> : null}
-          </Pressable>
+          </AnimatedPressable>
         );
       })}
     </View>

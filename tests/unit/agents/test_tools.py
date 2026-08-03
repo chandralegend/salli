@@ -217,3 +217,114 @@ async def test_get_tax_computation_unknown_year():
 
     with pytest.raises(KeyError):
         await get_tax.ainvoke({"year": "1999/00", "user_id": "u1"})
+
+
+# ── can_i_afford / get_freedom_snapshot — the affordability tools ──────────────
+#
+# The engine's arithmetic is covered in tests/golden and tests/properties. What
+# matters at this layer is that the tool refuses bad input rather than passing it
+# to the money path, and that it surfaces staleness instead of hiding it.
+
+
+class FakeFiService:
+    """Records what the tool passed through, and echoes a canned impact."""
+
+    def __init__(self, is_stale: bool = False):
+        self.calls: list[dict] = []
+        self._is_stale = is_stale
+
+    async def simulate_purchase(self, user_id, amount, *, term_months=None, annual_interest_rate=0):
+        self.calls.append(
+            {
+                "user_id": user_id,
+                "amount": amount,
+                "term_months": term_months,
+                "annual_interest_rate": annual_interest_rate,
+            }
+        )
+        return {
+            "amount": str(amount),
+            "is_stale": self._is_stale,
+            "data_as_of": "2026-03-01" if self._is_stale else "2026-07-20",
+            "options": [{"key": "cash", "months_delay": 9}],
+        }
+
+    async def get_or_compute_score(self, user_id):
+        return {"overall_score": "61.01", "grade": "Strong"}
+
+
+def _manager_tool(name: str, fi_svc=None):
+    from salli.domain.agents.tools import make_manager_tools, set_current_user
+
+    set_current_user("u1")
+    tools = make_manager_tools(None, None, None, fi_svc=fi_svc)
+    return next(t for t in tools if t.name == name)
+
+
+def test_affordability_tools_are_registered():
+    """`make_manager_tools` previously took no fi_svc, so the agent could not
+    discuss Freedom at all. Guard against that regressing."""
+    from salli.domain.agents.tools import make_manager_tools
+
+    names = {t.name for t in make_manager_tools(None, None, None, fi_svc=FakeFiService())}
+    assert "can_i_afford" in names
+    assert "get_freedom_snapshot" in names
+
+
+@pytest.mark.asyncio
+async def test_can_i_afford_passes_decimal_amount_through():
+    fi = FakeFiService()
+    tool = _manager_tool("can_i_afford", fi)
+
+    await tool.ainvoke({"amount": "450000", "term_months": 12, "annual_interest_rate": "0.18"})
+
+    assert fi.calls[0]["amount"] == Decimal("450000")
+    assert fi.calls[0]["annual_interest_rate"] == Decimal("0.18")
+    assert fi.calls[0]["term_months"] == 12
+
+
+@pytest.mark.asyncio
+async def test_can_i_afford_rejects_a_percentage_mistaken_for_a_fraction():
+    """
+    18 instead of 0.18 would overstate the finance cost ~100x. Reject rather than
+    compute — the same reason FireStrategySchema bounds its rates.
+    """
+    fi = FakeFiService()
+    tool = _manager_tool("can_i_afford", fi)
+
+    result = await tool.ainvoke(
+        {"amount": "450000", "term_months": 12, "annual_interest_rate": "18"}
+    )
+
+    assert "error" in result
+    assert fi.calls == []  # never reached the money path
+
+
+@pytest.mark.asyncio
+async def test_can_i_afford_rejects_unparseable_and_negative_amounts():
+    fi = FakeFiService()
+    tool = _manager_tool("can_i_afford", fi)
+
+    assert "error" in await tool.ainvoke({"amount": "a lot"})
+    assert "error" in await tool.ainvoke({"amount": "-100"})
+    assert fi.calls == []
+
+
+@pytest.mark.asyncio
+async def test_can_i_afford_surfaces_staleness_to_the_model():
+    """The refusal is the model's job, but it can only refuse if it is told."""
+    tool = _manager_tool("can_i_afford", FakeFiService(is_stale=True))
+
+    result = await tool.ainvoke({"amount": "450000"})
+
+    assert result["is_stale"] is True
+    assert result["data_as_of"] == "2026-03-01"
+
+
+@pytest.mark.asyncio
+async def test_freedom_tools_degrade_without_the_service():
+    for name in ("can_i_afford", "get_freedom_snapshot"):
+        tool = _manager_tool(name, None)
+        payload = {"amount": "1000"} if name == "can_i_afford" else {}
+        result = await tool.ainvoke(payload)
+        assert "error" in result

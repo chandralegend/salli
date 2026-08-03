@@ -1,9 +1,13 @@
 import { File, Paths } from "expo-file-system";
 import { useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
-import { AlertTriangle, Check, ChevronRight, Download, LogOut } from "lucide-react-native";
+import { AlertTriangle, Bug, Check, ChevronRight, Compass, Download, LogOut } from "lucide-react-native";
+import { useState } from "react";
 import { ActivityIndicator, Alert, Linking, Pressable, Text, View } from "react-native";
 
+import { BugReportDrawer } from "@/components/settings/BugReportDrawer";
+import { McpConnectionsCard } from "@/components/settings/McpConnectionsCard";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
@@ -11,11 +15,13 @@ import { useCreateCheckout, useDeleteAccount, useEntitlements, useExportData } f
 import { useMore } from "@/hooks/useMore";
 import { logout } from "@/lib/auth";
 import { confirmDestructive } from "@/lib/confirm";
+import { useSalliStore } from "@/lib/store";
 import { useDarkModeToggle, useThemeColors } from "@/lib/theme";
+import { useToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 const PLUS_FEATURES: { lead: string; rest: string }[] = [
-  { lead: "500 AI messages/mo", rest: "25× Scrooge conversations" },
+  { lead: "500 AI messages/mo", rest: "25× Salli AI conversations" },
   { lead: "50 bank statement uploads", rest: "any Sri Lankan bank" },
   { lead: "Unlimited FIRE advisor", rest: "run your strategy anytime" },
 ];
@@ -38,6 +44,9 @@ export default function SettingsScreen() {
   const deleteAccount = useDeleteAccount();
   const checkout = useCreateCheckout();
   const siteUrl = process.env.EXPO_PUBLIC_SITE_URL ?? "https://salli.lk";
+  const [bugReportOpen, setBugReportOpen] = useState(false);
+  const startTour = useSalliStore((s) => s.startTour);
+  const showToast = useToast();
 
   const isFree = entitlements.data?.plan === "free";
 
@@ -49,7 +58,7 @@ export default function SettingsScreen() {
       const url = data.url ?? `${siteUrl}/settings?upgrade=${encodeURIComponent(planKey)}`;
       await Linking.openURL(url);
     } catch {
-      Alert.alert("Checkout unavailable", "We couldn't start checkout right now. Please try again.");
+      showToast("We couldn't start checkout right now. Please try again.", "error");
     }
   }
   const usage = entitlements.data?.usage ?? [];
@@ -75,10 +84,10 @@ export default function SettingsScreen() {
           UTI: "public.json",
         });
       } else {
-        Alert.alert("Export ready", "Your data was exported, but sharing isn't available on this device.");
+        showToast("Your data was exported, but sharing isn't available on this device.", "info");
       }
     } catch {
-      Alert.alert("Export failed", "Could not export your data right now. Please try again.");
+      showToast("Could not export your data right now. Please try again.", "error");
     }
   }
 
@@ -182,9 +191,10 @@ export default function SettingsScreen() {
                   </View>
                 ))}
               </View>
-              <Pressable
+              <AnimatedPressable
                 onPress={() => handleUpgrade("plus")}
                 disabled={checkout.isPending}
+                haptic="light"
                 className="h-[50px] flex-row items-center justify-center gap-1.5 rounded-pill bg-white"
               >
                 {checkout.isPending ? (
@@ -195,20 +205,37 @@ export default function SettingsScreen() {
                     <Text className="text-[14px] text-black/40">· $9/mo</Text>
                   </>
                 )}
-              </Pressable>
+              </AnimatedPressable>
               <Text className="mt-2 text-center text-[11px] text-white/25">Cancel anytime · Secure checkout</Text>
             </View>
           </View>
         ) : null}
 
         <Card className="overflow-hidden p-0">
-          <Pressable
+          <AnimatedPressable
             onPress={() => router.push("/onboarding")}
             className="flex-row items-center justify-between border-b border-foreground/[0.06] px-4 py-3.5"
           >
             <Text className="font-sans-medium text-[14px] text-foreground">Redo profile setup</Text>
             <ChevronRight size={14} color={colors.mutedForeground} strokeWidth={2} />
-          </Pressable>
+          </AnimatedPressable>
+          <AnimatedPressable
+            onPress={() => {
+              router.push("/(tabs)");
+              startTour();
+            }}
+            className="flex-row items-center justify-between border-b border-foreground/[0.06] px-4 py-3.5"
+          >
+            <Text className="font-sans-medium text-[14px] text-foreground">Take a tour</Text>
+            <Compass size={14} color={colors.mutedForeground} strokeWidth={2} />
+          </AnimatedPressable>
+          <AnimatedPressable
+            onPress={() => setBugReportOpen(true)}
+            className="flex-row items-center justify-between border-b border-foreground/[0.06] px-4 py-3.5"
+          >
+            <Text className="font-sans-medium text-[14px] text-foreground">Report a bug</Text>
+            <Bug size={14} color={colors.mutedForeground} strokeWidth={2} />
+          </AnimatedPressable>
           <View className="flex-row items-center justify-between px-4 py-3.5">
             <Text className="font-sans-medium text-[14px] text-foreground">Appearance</Text>
             <View className="flex-row rounded-pill bg-foreground/[0.08] p-0.5">
@@ -226,13 +253,15 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        <Pressable
+        <McpConnectionsCard />
+
+        <AnimatedPressable
           onPress={handleSignOut}
           className="flex-row items-center justify-between rounded-card border border-foreground/10 bg-card p-4"
         >
           <Text className="font-sans-medium text-[14px] text-foreground">Sign Out</Text>
           <LogOut size={16} color={colors.mutedForeground} strokeWidth={2} />
-        </Pressable>
+        </AnimatedPressable>
 
         <Card className="overflow-hidden p-0">
           <View className="px-4 pb-2 pt-3">
@@ -240,7 +269,7 @@ export default function SettingsScreen() {
               Danger Zone
             </Text>
           </View>
-          <Pressable
+          <AnimatedPressable
             onPress={handleExport}
             disabled={exportData.isPending}
             className="flex-row items-center justify-between border-t border-foreground/[0.05] px-4 py-2.5"
@@ -251,8 +280,8 @@ export default function SettingsScreen() {
             ) : (
               <Download size={14} color={colors.mutedForeground} strokeWidth={2} />
             )}
-          </Pressable>
-          <Pressable
+          </AnimatedPressable>
+          <AnimatedPressable
             onPress={confirmDelete}
             disabled={deleteAccount.isPending}
             className="flex-row items-center justify-between border-t border-foreground/[0.05] px-4 py-2.5"
@@ -263,9 +292,11 @@ export default function SettingsScreen() {
             ) : (
               <AlertTriangle size={14} color="#EF4444" strokeWidth={2} />
             )}
-          </Pressable>
+          </AnimatedPressable>
         </Card>
       </View>
+
+      <BugReportDrawer visible={bugReportOpen} onClose={() => setBugReportOpen(false)} />
     </PageShell>
   );
 }

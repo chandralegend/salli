@@ -1,5 +1,6 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { cn } from "@/lib/utils";
 
 /** Enclosed equal-width pill toggle (income/expense/transfer, debt strategy,
@@ -22,9 +23,10 @@ export function SegmentedControl<T extends string>({
       {options.map((opt) => {
         const active = opt === value;
         return (
-          <Pressable
+          <AnimatedPressable
             key={opt}
             onPress={() => onChange(opt)}
+            haptic="selection"
             className={cn(
               "h-9 flex-1 items-center justify-center rounded-pill",
               active && "border border-foreground/10 bg-background",
@@ -39,7 +41,7 @@ export function SegmentedControl<T extends string>({
             >
               {opt}
             </Text>
-          </Pressable>
+          </AnimatedPressable>
         );
       })}
     </View>

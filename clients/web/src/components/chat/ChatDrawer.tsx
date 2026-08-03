@@ -68,7 +68,7 @@ function SessionDropdown({
         render={
           <button
             type="button"
-            className="flex items-center gap-1 text-[12px] text-white/50 hover:text-white transition-colors max-w-44"
+            className="flex items-center gap-1 py-2 sm:py-0 text-[12px] text-white/50 hover:text-white transition-colors max-w-44"
           />
         }
       >
@@ -89,7 +89,7 @@ function SessionDropdown({
             )}
             onClick={() => onSelect(s.thread_id)}
           >
-            <span className="truncate flex-1">{truncate(s.title)}</span>
+            <span className="truncate flex-1 min-w-0">{truncate(s.title)}</span>
             <button
               type="button"
               aria-label="Delete session"
@@ -501,7 +501,7 @@ export function ChatDrawer() {
               type="button"
               onClick={close}
               aria-label="Close"
-              className="size-8 rounded-md flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10"
+              className="size-10 sm:size-8 rounded-md flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10"
             >
               <X className="size-4" />
             </button>
@@ -592,7 +592,7 @@ export function ChatDrawer() {
               type="button"
               aria-label="Attach file"
               onClick={() => fileInputRef.current?.click()}
-              className="size-8 shrink-0 rounded-md flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10"
+              className="size-10 sm:size-8 shrink-0 rounded-md flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10"
             >
               <Paperclip className="size-4" />
             </button>
@@ -626,7 +626,7 @@ export function ChatDrawer() {
               aria-label="Send"
               onClick={send}
               disabled={!input.trim() || streaming || uploadingFiles}
-              className="size-8 shrink-0 rounded-md bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 transition-opacity"
+              className="size-10 sm:size-8 shrink-0 rounded-md bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 transition-opacity"
             >
               {streaming || uploadingFiles ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
             </button>

@@ -101,6 +101,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         subscription,
         insurance,
         advisor,
+        fi,
         checkpointer=checkpointer,
         uow_factory=uow_factory,
     )
@@ -128,7 +129,9 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     reports = ReportService(ledger, fi)
     mcp_oauth = McpOAuthService(
         uow_factory,
-        signing_secret=settings.mcp_signing_secret or settings.supabase_jwt_secret or "dev-insecure-secret",
+        signing_secret=settings.mcp_signing_secret
+        or settings.supabase_jwt_secret
+        or "dev-insecure-secret",
         mcp_resource_url=f"{settings.mcp_public_base_url.rstrip('/')}/mcp",
         app_base_url=settings.app_base_url,
         art_ttl_seconds=settings.mcp_art_ttl_seconds,

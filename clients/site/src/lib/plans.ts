@@ -34,7 +34,7 @@ export const TIERS: Tier[] = [
     monthlyPrice: 0,
     annualPrice: 0,
     cta: "Start free",
-    features: ["Immutable double-entry ledger", "Full Sri Lanka tax engine", "Debt payoff & FIRE planning", "20 AI messages / month", "Community support"],
+    features: ["Immutable double-entry ledger", "Full Sri Lanka tax engine", "Debt payoff & FIRE planning", "150 AI messages / month", "10 statement uploads / month", "10 wealth-advisor runs / month", "Full FIRE scenarios, AI rationale & all advisor recommendations", "Community support"],
   },
   {
     name: "Plus",

@@ -62,7 +62,12 @@ export const TOUR_STEPS: Tour[] = [
         title: "Welcome to Salli",
         content:
           "This is your home base — net worth, tax, and FI status, all computed from your real ledger. Let's take a quick look around.",
-        selector: "#tour-nav-dashboard",
+        // Two selectors, because the sidebar nav is unmounted below `md` — the
+        // sheet only exists once opened. Without the fallback NextStep finds no
+        // target for step 1 and the whole tour silently never renders on a
+        // phone. querySelector takes the first match in DOCUMENT order, and the
+        // sidebar precedes the header, so desktop still anchors to the nav item.
+        selector: "#tour-nav-dashboard, #tour-sidebar-trigger",
         side: "right",
       },
       {

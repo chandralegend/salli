@@ -1,6 +1,6 @@
 import { ArrowDownRight, ArrowUpRight, Download } from "lucide-react-native";
 import { useState } from "react";
-import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import Svg, { Polygon, Polyline } from "react-native-svg";
 
 import { Card } from "@/components/ui/card";
@@ -17,23 +17,35 @@ import {
 } from "@/hooks/useReports";
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
 import { useThemeColors } from "@/lib/theme";
+import { useToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 const TABS = ["Balance Sheet", "Income Stmt", "Net Worth"] as const;
-const PERIODS = ["Jul 2026", "Jun 2026", "YTD", "AY 25/26"] as const;
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-function currentMonthLabel() {
-  const d = new Date();
+function monthYearLabel(d: Date): string {
   return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
+
+function currentMonthLabel(): string {
+  return monthYearLabel(new Date());
+}
+
+function lastMonthLabel(): string {
+  const d = new Date();
+  return monthYearLabel(new Date(d.getFullYear(), d.getMonth() - 1, 1));
+}
+
+// Computed once at module load — the first two pills are always the real
+// current/previous month, never a stale hardcoded date.
+const PERIODS = [currentMonthLabel(), lastMonthLabel(), "YTD", "AY 25/26"] as const;
 
 /** "2026-07-15T…" → "Jul 2026". Falls back to the raw string if unparseable. */
 function monthLabel(isoDate: string): string {
   const d = new Date(isoDate);
   if (Number.isNaN(d.getTime())) return isoDate;
-  return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  return monthYearLabel(d);
 }
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -44,7 +56,7 @@ function periodRange(period: string): { from: string; to: string; label: string 
   const y = now.getFullYear();
   if (period === "YTD") return { from: `${y}-01-01`, to: iso(now), label: `${y} YTD` };
   if (period === "AY 25/26") return { from: "2025-04-01", to: "2026-03-31", label: "AY 2025/26" };
-  if (period === "Jun 2026" || /^[A-Za-z]{3} \d{4}$/.test(period)) {
+  if (/^[A-Za-z]{3} \d{4}$/.test(period)) {
     // A specific month pill, e.g. "Jun 2026".
     const [mon, yr] = period.split(" ");
     const m = MONTHS.indexOf(mon);
@@ -85,8 +97,9 @@ function TrendChart({ values }: { values: number[] }) {
 
 export default function ReportsScreen() {
   const colors = useThemeColors();
+  const showToast = useToast();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Balance Sheet");
-  const [period, setPeriod] = useState<(typeof PERIODS)[number]>("Jul 2026");
+  const [period, setPeriod] = useState<(typeof PERIODS)[number]>(PERIODS[0]);
   const [exporting, setExporting] = useState(false);
   const range = periodRange(period);
   const balanceSheet = useBalanceSheet();
@@ -128,7 +141,7 @@ export default function ReportsScreen() {
     try {
       await exportReportCsv(exportType);
     } catch (e) {
-      Alert.alert("Export failed", e instanceof Error ? e.message : "Could not export this report.");
+      showToast(e instanceof Error ? e.message : "Could not export this report.", "error");
     } finally {
       setExporting(false);
     }

@@ -3,7 +3,6 @@ import { Archivo, Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { MobileGate } from "@/components/layout/MobileGate";
 
 const archivo = Archivo({
   variable: "--font-archivo",
@@ -41,7 +40,6 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans">
         <Providers>
           <TooltipProvider>{children}</TooltipProvider>
-          <MobileGate />
         </Providers>
       </body>
     </html>

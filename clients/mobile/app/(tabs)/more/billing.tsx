@@ -19,6 +19,7 @@ import {
   type PlanChangePreview,
 } from "@/hooks/useSettings";
 import { formatMinor } from "@/lib/format";
+import { useToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 // Mirrors the backend's blocked reasons, so a blocked subscription explains itself
@@ -81,6 +82,7 @@ type Plan = {
 
 export default function BillingScreen() {
   const colors = useThemeColors();
+  const showToast = useToast();
   const entitlements = useEntitlements();
   const plans = useQuery({
     queryKey: ["billing-plans"],
@@ -143,10 +145,7 @@ export default function BillingScreen() {
       queryClient.setQueryData(["entitlements"], updated);
       refreshBilling();
     } catch (err) {
-      Alert.alert(
-        "Plan not changed",
-        detailMessage(err) ?? "We couldn't change your plan right now. Please try again.",
-      );
+      showToast(detailMessage(err) ?? "We couldn't change your plan right now. Please try again.", "error");
       // A rejection can mean the subscription moved underneath us (cancelled in the
       // portal), so re-read rather than trusting what's on screen.
       refreshBilling();
@@ -189,7 +188,7 @@ export default function BillingScreen() {
           /* fall through to the generic message below */
         }
       }
-      Alert.alert("Plan change unavailable", detailMessage(err) ?? "Please try again.");
+      showToast(detailMessage(err) ?? "Please try again.", "error");
     } finally {
       setBusyPlan(null);
     }
@@ -202,7 +201,7 @@ export default function BillingScreen() {
       await WebBrowser.openBrowserAsync(url);
       refreshBilling();
     } catch {
-      Alert.alert("Portal unavailable", "We couldn't open the billing portal right now. Please try again.");
+      showToast("We couldn't open the billing portal right now. Please try again.", "error");
     }
   };
 

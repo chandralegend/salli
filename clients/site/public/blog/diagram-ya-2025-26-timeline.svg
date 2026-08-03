@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 430" width="1200" height="430" role="img" aria-label="Timeline of YA 2025/26 tax dates: four quarterly instalments due 15 August 2025, 15 November 2025, 15 February 2026 and 15 May 2026, all passed; e-filing opened 7 July 2026; the annual return is due 30 November 2026.">
+  <rect width="1200" height="430" fill="#f2efe6"/>
+
+  <!-- axis -->
+  <line x1="70" y1="215" x2="1130" y2="215" stroke="#16130f" stroke-width="2"/>
+
+  <!-- passed segment shading -->
+  <rect x="70" y="211" width="620" height="8" fill="#16130f" opacity="0.14"/>
+  <!-- live window -->
+  <rect x="690" y="211" width="440" height="8" fill="#f5310f" opacity="0.18"/>
+
+  <!-- ===== PASSED: four quarterly instalments (below the line) ===== -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" fill="#16130f">
+    <!-- Q1 -->
+    <circle cx="140" cy="215" r="7" fill="#f2efe6" stroke="#16130f" stroke-width="2"/>
+    <line x1="140" y1="222" x2="140" y2="262" stroke="#16130f" stroke-width="1.5" opacity="0.45"/>
+    <text x="140" y="286" text-anchor="middle" opacity="0.55">15 Aug 2025</text>
+    <text x="140" y="308" text-anchor="middle" font-size="13" opacity="0.4">Q1 instalment</text>
+
+    <!-- Q2 -->
+    <circle cx="278" cy="215" r="7" fill="#f2efe6" stroke="#16130f" stroke-width="2"/>
+    <line x1="278" y1="222" x2="278" y2="262" stroke="#16130f" stroke-width="1.5" opacity="0.45"/>
+    <text x="278" y="286" text-anchor="middle" opacity="0.55">15 Nov 2025</text>
+    <text x="278" y="308" text-anchor="middle" font-size="13" opacity="0.4">Q2 instalment</text>
+
+    <!-- Q3 -->
+    <circle cx="416" cy="215" r="7" fill="#f2efe6" stroke="#16130f" stroke-width="2"/>
+    <line x1="416" y1="222" x2="416" y2="262" stroke="#16130f" stroke-width="1.5" opacity="0.45"/>
+    <text x="416" y="286" text-anchor="middle" opacity="0.55">15 Feb 2026</text>
+    <text x="416" y="308" text-anchor="middle" font-size="13" opacity="0.4">Q3 instalment</text>
+
+    <!-- Q4 -->
+    <circle cx="554" cy="215" r="7" fill="#f2efe6" stroke="#16130f" stroke-width="2"/>
+    <line x1="554" y1="222" x2="554" y2="262" stroke="#16130f" stroke-width="1.5" opacity="0.45"/>
+    <text x="554" y="286" text-anchor="middle" opacity="0.55">15 May 2026</text>
+    <text x="554" y="308" text-anchor="middle" font-size="13" opacity="0.4">Q4 instalment</text>
+  </g>
+
+  <!-- year end -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#16130f">
+    <line x1="486" y1="150" x2="486" y2="215" stroke="#16130f" stroke-width="1" stroke-dasharray="3 4" opacity="0.45"/>
+    <text x="486" y="140" text-anchor="middle" opacity="0.5">31 Mar 2026 · year ends</text>
+  </g>
+
+  <!-- ===== LIVE: filing window (above the line) ===== -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+    <!-- e-filing opened -->
+    <circle cx="690" cy="215" r="8" fill="#1b6b47"/>
+    <line x1="690" y1="207" x2="690" y2="172" stroke="#1b6b47" stroke-width="2"/>
+    <text x="690" y="160" text-anchor="middle" font-size="15" fill="#1b6b47" font-weight="600">7 Jul 2026</text>
+    <text x="690" y="138" text-anchor="middle" font-size="13" fill="#1b6b47">e-filing opened</text>
+
+    <!-- deadline -->
+    <circle cx="1090" cy="215" r="11" fill="#f5310f"/>
+    <line x1="1090" y1="204" x2="1090" y2="172" stroke="#f5310f" stroke-width="2.5"/>
+    <text x="1090" y="160" text-anchor="end" font-size="17" fill="#f5310f" font-weight="700">30 Nov 2026</text>
+    <text x="1090" y="138" text-anchor="end" font-size="13" fill="#f5310f">return due</text>
+  </g>
+
+  <!-- window label -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" fill="#f5310f" letter-spacing="1.4">
+    <text x="890" y="248" text-anchor="middle">YOU ARE HERE — FILING WINDOW OPEN</text>
+  </g>
+
+  <!-- caption -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" fill="#16130f" opacity="0.45">
+    <text x="70" y="400">Year of Assessment 2025/26 · 1 Apr 2025 – 31 Mar 2026 · instalment dates below the line, filing dates above</text>
+  </g>
+</svg>

@@ -51,6 +51,9 @@ gcloud_auth_client_secret.json
 # Documentation (internal — not for distribution)
 doc/
 
+# Scratch dump — generated media, drafts, loose files. Never distributed.
+.dump/
+
 # Node (clients — added later)
 node_modules/
 .next/
@@ -66,3 +69,6 @@ node_modules/
 # build/install caches
 .pnpm-store/
 *.tsbuildinfo
+# Skills installed via `npx skills add` — real content lives in the ignored
+# .agents/, so these symlinks would be broken for anyone else who cloned.
+.claude/skills/higgsfield-*

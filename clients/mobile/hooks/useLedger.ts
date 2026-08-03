@@ -114,8 +114,17 @@ export function useParseEntry() {
 export function useAddAccount() {
   const invalidate = useAccountInvalidate();
   return useMutation({
-    mutationFn: async (input: AddAccountRequest) => {
-      await addAccountAccountsPost({ body: input, throwOnError: true });
+    mutationFn: async (input: AddAccountRequest): Promise<Account> => {
+      const { data } = await addAccountAccountsPost({ body: input, throwOnError: true });
+      const { id } = data as unknown as { id: string };
+      return {
+        id,
+        code: input.code,
+        name: input.name,
+        type: input.type,
+        currency: input.currency ?? "LKR",
+        is_active: true,
+      };
     },
     onSuccess: invalidate,
   });

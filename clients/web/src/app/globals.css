@@ -195,6 +195,14 @@
   body {
     @apply bg-background text-foreground antialiased;
   }
+  /* Grid items default to `min-width: auto`, so a track refuses to shrink below
+     its content's min-content width. On a 375px phone that made every card grid
+     size itself to its widest row and pushed the whole page sideways — the
+     dashboard's single column measured 569px inside a 335px container. Grid
+     tracks here are always meant to follow the container, never the content. */
+  .grid > * {
+    min-width: 0;
+  }
 }
 
 /* Financial figures: aligned digits everywhere money is shown */

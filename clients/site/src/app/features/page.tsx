@@ -27,7 +27,7 @@ const PILLARS = [
     n: "02",
     tag: "Deterministic",
     title: "A Sri Lankan tax engine",
-    body: "Relief, rate bands, the 15% foreign-service final tax, and credits, all computed against versioned, CA-reviewed packs.",
+    body: "Relief, rate bands, the 15% foreign-service final tax, and credits, all computed against versioned packs, tested against the IRD's published rate bands.",
     points: ["APIT, AIT and foreign tax credits applied", "Versioned 2025/26 IRD tax pack", "Every rule recorded and reproducible"],
   },
   {

@@ -1,0 +1,8 @@
+allowBuilds:
+  # Optional native profiling addon pulled in transitively by eas-cli; not
+  # needed for `eas build`/`eas submit` (both are just network API calls), and
+  # the package no-ops gracefully without its native binding.
+  dtrace-provider: false
+minimumReleaseAgeExclude:
+  - '@expo/steps@21.7.1'
+  - eas-cli@21.7.1

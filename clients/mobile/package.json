@@ -51,6 +51,7 @@
     "@hey-api/openapi-ts": "^0.99.0",
     "@types/node": "^26.1.1",
     "@types/react": "~19.1.17",
+    "eas-cli": "^21.7.1",
     "typescript": "~5.9.3"
   },
   "scripts": {
@@ -58,7 +59,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "gen:api": "openapi-ts"
+    "gen:api": "openapi-ts",
+    "build:ios": "eas build --platform ios --profile production",
+    "submit:ios": "eas submit --platform ios --latest"
   },
   "private": true
 }

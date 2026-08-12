@@ -2,7 +2,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 
 import {
   billingPortalBillingPortalPost,
-  createCheckoutBillingCheckoutPost,
   deleteMyAccountOnboardingAccountDelete,
   exportMyDataOnboardingExportGet,
   getSubscriptionBillingSubscriptionGet,
@@ -37,22 +36,9 @@ export function useExportData() {
   });
 }
 
-// The /billing/checkout endpoint returns Paddle.js overlay data (price_id,
-// custom_data, …), not a hosted URL — the Paddle overlay only runs on web. On
-// mobile we therefore call the endpoint (which also provisions the Paddle
-// customer) and then open the web checkout page in the system browser. If a
-// future backend ever returns a `url`, we honour it directly.
-export type CheckoutData = { url?: string } & Record<string, unknown>;
-
-export function useCreateCheckout() {
-  return useMutation({
-    mutationFn: async (plan: string) => {
-      const { data } = await createCheckoutBillingCheckoutPost({ body: { plan }, throwOnError: true });
-      return data as unknown as CheckoutData;
-    },
-  });
-}
-
+// Mobile never initiates checkout — the app ships free, and entitlements are
+// granted server-side (e.g. via the web app's Paddle checkout). This hook
+// only opens the portal so an already-paying user can manage/cancel.
 export function useBillingPortal() {
   return useMutation({
     mutationFn: async () => {

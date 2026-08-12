@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { getPlansBillingPlansGet } from "@/lib/api/sdk.gen";
-import { useBillingPortal, useCreateCheckout, useEntitlements } from "@/hooks/useSettings";
+import { useBillingPortal, useEntitlements } from "@/hooks/useSettings";
 import { useThemeColors } from "@/lib/theme";
 import { useToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -34,23 +34,8 @@ export default function BillingScreen() {
 
   const currentPlan = entitlements.data?.plan ?? "free";
   const isPaid = currentPlan !== "free";
-  const siteUrl = process.env.EXPO_PUBLIC_SITE_URL ?? "https://salli.lk";
 
-  const checkout = useCreateCheckout();
   const portal = useBillingPortal();
-
-  const handleUpgrade = async (planKey: string) => {
-    if (checkout.isPending) return;
-    try {
-      const data = await checkout.mutateAsync(planKey);
-      // The Paddle overlay only runs on web, so open the hosted web checkout
-      // page (honouring a returned url if the backend provides one).
-      const url = data.url ?? `${siteUrl}/settings?upgrade=${encodeURIComponent(planKey)}`;
-      await Linking.openURL(url);
-    } catch {
-      showToast("We couldn't start checkout right now. Please try again.", "error");
-    }
-  };
 
   const handleManage = async () => {
     if (portal.isPending) return;
@@ -141,19 +126,11 @@ export default function BillingScreen() {
                     </View>
                   )
                 ) : (
-                  <Pressable
-                    onPress={() => handleUpgrade(plan.key)}
-                    disabled={checkout.isPending}
-                    className="h-[42px] flex-row items-center justify-center rounded-pill bg-primary"
-                  >
-                    {checkout.isPending && checkout.variables === plan.key ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <Text className="text-[13px] font-sans-semibold text-primary-foreground">
-                        Upgrade to {plan.name}
-                      </Text>
-                    )}
-                  </Pressable>
+                  <View className="items-center rounded-pill border border-foreground/10 bg-foreground/[0.06] py-2.5">
+                    <Text className="text-[13px] font-sans-semibold text-foreground/40">
+                      Manage your plan at salli.lk
+                    </Text>
+                  </View>
                 )}
               </Card>
             );

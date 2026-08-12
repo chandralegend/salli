@@ -88,13 +88,6 @@ export default function MoreScreen() {
           </Text>
           <Text className="mt-0.5 text-[11px] text-foreground/35">{profile?.email ?? ""}</Text>
         </View>
-        <AnimatedPressable
-          onPress={() => router.push("/(tabs)/more/billing")}
-          haptic="light"
-          className="rounded-pill bg-salli-accent px-3 py-1.5"
-        >
-          <Text className="font-sans-semibold text-[11px] text-white">Upgrade</Text>
-        </AnimatedPressable>
       </Card>
 
       <View className="mx-4 mb-3.5 flex-row flex-wrap justify-between gap-2">

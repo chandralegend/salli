@@ -1,9 +1,9 @@
 import { File, Paths } from "expo-file-system";
 import { useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
-import { AlertTriangle, Bug, Check, ChevronRight, Compass, Download, LogOut } from "lucide-react-native";
+import { AlertTriangle, Bug, ChevronRight, Compass, Download, LogOut } from "lucide-react-native";
 import { useState } from "react";
-import { ActivityIndicator, Alert, Linking, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 
 import { BugReportDrawer } from "@/components/settings/BugReportDrawer";
 import { McpConnectionsCard } from "@/components/settings/McpConnectionsCard";
@@ -11,7 +11,7 @@ import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { useCreateCheckout, useDeleteAccount, useEntitlements, useExportData } from "@/hooks/useSettings";
+import { useDeleteAccount, useEntitlements, useExportData } from "@/hooks/useSettings";
 import { useMore } from "@/hooks/useMore";
 import { logout } from "@/lib/auth";
 import { confirmDestructive } from "@/lib/confirm";
@@ -19,12 +19,6 @@ import { useSalliStore } from "@/lib/store";
 import { useDarkModeToggle, useThemeColors } from "@/lib/theme";
 import { useToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-
-const PLUS_FEATURES: { lead: string; rest: string }[] = [
-  { lead: "500 AI messages/mo", rest: "25× Salli AI conversations" },
-  { lead: "50 bank statement uploads", rest: "any Sri Lankan bank" },
-  { lead: "Unlimited FIRE advisor", rest: "run your strategy anytime" },
-];
 
 function formatShortDate(iso?: string | null) {
   if (!iso) return null;
@@ -42,25 +36,12 @@ export default function SettingsScreen() {
   const entitlements = useEntitlements();
   const exportData = useExportData();
   const deleteAccount = useDeleteAccount();
-  const checkout = useCreateCheckout();
-  const siteUrl = process.env.EXPO_PUBLIC_SITE_URL ?? "https://salli.lk";
   const [bugReportOpen, setBugReportOpen] = useState(false);
   const startTour = useSalliStore((s) => s.startTour);
   const showToast = useToast();
 
   const isFree = entitlements.data?.plan === "free";
 
-  async function handleUpgrade(planKey: string) {
-    if (checkout.isPending) return;
-    try {
-      const data = await checkout.mutateAsync(planKey);
-      // The Paddle overlay only runs on web, so open the hosted web checkout page.
-      const url = data.url ?? `${siteUrl}/settings?upgrade=${encodeURIComponent(planKey)}`;
-      await Linking.openURL(url);
-    } catch {
-      showToast("We couldn't start checkout right now. Please try again.", "error");
-    }
-  }
   const usage = entitlements.data?.usage ?? [];
   const messages = usage.find((u) => u.metric === "messages");
   const resetsAt = formatShortDate(usage[0]?.resets_at ?? entitlements.data?.current_period_end);
@@ -174,39 +155,6 @@ export default function SettingsScreen() {
                   );
                 })}
               </View>
-            </View>
-            {/* upgrade pitch */}
-            <View style={{ backgroundColor: "#0A1040" }} className="px-4 pb-4 pt-[18px]">
-              <Text className="mb-1 font-sans-bold text-[18px] text-white">Unlock Plus</Text>
-              <Text className="mb-4 text-[13px] text-white/45">Everything you need to master your finances.</Text>
-              <View className="mb-[18px] gap-2.5">
-                {PLUS_FEATURES.map((f) => (
-                  <View key={f.lead} className="flex-row items-start gap-2.5">
-                    <View className="mt-px h-[18px] w-[18px] items-center justify-center rounded-full bg-white/[0.12]">
-                      <Check size={9} color="#FFFFFF" strokeWidth={3} />
-                    </View>
-                    <Text className="flex-1 text-[13px] leading-[18px] text-white/70">
-                      <Text className="font-sans-semibold text-white">{f.lead}</Text> — {f.rest}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-              <AnimatedPressable
-                onPress={() => handleUpgrade("plus")}
-                disabled={checkout.isPending}
-                haptic="light"
-                className="h-[50px] flex-row items-center justify-center gap-1.5 rounded-pill bg-white"
-              >
-                {checkout.isPending ? (
-                  <ActivityIndicator size="small" color="#000000" />
-                ) : (
-                  <>
-                    <Text className="font-sans-bold text-[15px] text-black">Upgrade to Plus</Text>
-                    <Text className="text-[14px] text-black/40">· $9/mo</Text>
-                  </>
-                )}
-              </AnimatedPressable>
-              <Text className="mt-2 text-center text-[11px] text-white/25">Cancel anytime · Secure checkout</Text>
             </View>
           </View>
         ) : null}

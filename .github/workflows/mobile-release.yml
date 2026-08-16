@@ -62,6 +62,20 @@ jobs:
         if: inputs.profile == 'production'
         run: echo "${{ secrets.ASC_API_KEY_P8_BASE64 }}" | base64 --decode > asc-api-key.p8
 
+      # Temporary — verify the key decoded to a real PEM file without ever
+      # printing its contents. Remove once submit is confirmed working.
+      - name: Debug ASC API key file
+        if: inputs.profile == 'production'
+        run: |
+          echo "byte count: $(wc -c < asc-api-key.p8)"
+          echo "line count: $(wc -l < asc-api-key.p8)"
+          echo "first line matches PEM header: $(head -1 asc-api-key.p8 | grep -c 'BEGIN PRIVATE KEY' || true)"
+          echo "issuer id length: ${#EXPO_ASC_API_KEY_ISSUER_ID}"
+          echo "key id length: ${#EXPO_ASC_API_KEY_ID}"
+        env:
+          EXPO_ASC_API_KEY_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+          EXPO_ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+
       - name: Build (production also auto-submits to the App Store)
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

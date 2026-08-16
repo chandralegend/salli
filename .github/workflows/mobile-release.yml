@@ -42,16 +42,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # No eas-version pinned here — the action then uses the eas-cli already
-      # installed by the previous step (pinned in package.json), which
-      # respects pnpm-workspace.yaml's supply-chain allowBuilds exception.
-      # Specifying eas-version makes the action `pnpm add` its own copy in an
-      # isolated location outside the repo, which ignores that config and
-      # fails on eas-cli's unapproved dtrace-provider build script.
-      - uses: expo/expo-github-action@v9
-        with:
-          token: ${{ secrets.EXPO_TOKEN }}
-          packager: pnpm
+      # eas-cli auths non-interactively straight from EXPO_TOKEN, so we don't
+      # need expo-github-action at all — it only adds an install step, and
+      # forcing it to install its own eas-cli copy (via `eas-version`) does so
+      # in an isolated location outside the repo that ignores
+      # pnpm-workspace.yaml's supply-chain allowBuilds exception, failing on
+      # eas-cli's unapproved dtrace-provider build script. We already have
+      # eas-cli as a devDependency installed by the step above, which does
+      # respect that config.
+      - name: Verify Expo auth
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: pnpm exec eas whoami
 
       # Only needed for the production profile's --auto-submit below — eas-cli
       # auto-detects these three well-known env var names, so nothing
@@ -62,14 +64,15 @@ jobs:
 
       - name: Build (production also auto-submits to the App Store)
         env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_ASC_API_KEY_PATH: asc-api-key.p8
           EXPO_ASC_API_KEY_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
           EXPO_ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
         run: |
           if [ "${{ inputs.profile }}" = "production" ]; then
-            eas build --platform ios --profile production --non-interactive --auto-submit
+            pnpm exec eas build --platform ios --profile production --non-interactive --auto-submit
           else
-            eas build --platform ios --profile "${{ inputs.profile }}" --non-interactive
+            pnpm exec eas build --platform ios --profile "${{ inputs.profile }}" --non-interactive
           fi
 
       - name: Remove App Store Connect API key

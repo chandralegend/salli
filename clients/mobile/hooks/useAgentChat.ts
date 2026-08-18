@@ -67,6 +67,17 @@ export function useAgentChat({ persona }: { persona: AgentPersona }) {
     [persona],
   );
 
+  /** react-native-sse's EventSource treats a completed request like long-polling:
+   * once the XHR reaches DONE (on success OR error), it silently reopens the
+   * same request again after a few seconds unless explicitly closed — left
+   * unclosed, a single chat turn replays itself (and its side effects: quota
+   * increments, write-approval prompts) forever in the background. Every
+   * terminal event (done, app-level error, transport error) must close it. */
+  const closeStream = useCallback(() => {
+    closeStreamRef.current?.();
+    closeStreamRef.current = null;
+  }, []);
+
   const appendToLastAssistant = useCallback((updater: (parts: AssistantPart[]) => AssistantPart[]) => {
     setMessages((prev) => {
       const next = [...prev];
@@ -105,6 +116,7 @@ export function useAgentChat({ persona }: { persona: AgentPersona }) {
           appendToLastAssistant((parts) => [...parts, { kind: "approval", action: event.action }]);
           break;
         case "done":
+          closeStream();
           setStreaming(false);
           setMessages((prev) => {
             const next = [...prev];
@@ -114,6 +126,7 @@ export function useAgentChat({ persona }: { persona: AgentPersona }) {
           });
           break;
         case "error":
+          closeStream();
           setStreaming(false);
           if (/quota|limit|upgrade/i.test(event.message)) {
             setQuotaBanner("You've used all your monthly Salli AI messages — upgrade to keep chatting.");
@@ -122,13 +135,14 @@ export function useAgentChat({ persona }: { persona: AgentPersona }) {
           break;
       }
     },
-    [appendToLastAssistant],
+    [appendToLastAssistant, closeStream],
   );
 
   /** Turns a transport/stream error into either the friendly quota banner or a
    * plain-language notice — never a raw JSON dump in the chat. */
   const handleStreamError = useCallback(
     (message: string) => {
+      closeStream();
       setStreaming(false);
       if (/quota|limit|upgrade/i.test(message)) {
         setQuotaBanner("You've used all your monthly Salli AI messages — upgrade to keep chatting.");
@@ -140,7 +154,7 @@ export function useAgentChat({ persona }: { persona: AgentPersona }) {
         { kind: "text", content: "Something went wrong reaching Salli AI. Please try again." },
       ]);
     },
-    [appendToLastAssistant],
+    [appendToLastAssistant, closeStream],
   );
 
   const send = useCallback(
@@ -155,6 +169,7 @@ export function useAgentChat({ persona }: { persona: AgentPersona }) {
       ]);
       setStreaming(true);
 
+      closeStream(); // defensive: never let two streams run concurrently
       closeStreamRef.current = streamAgentChat(
         "/agent/chat",
         { thread_id: threadIdRef.current, message: trimmed, persona },
@@ -162,7 +177,7 @@ export function useAgentChat({ persona }: { persona: AgentPersona }) {
         handleStreamError,
       );
     },
-    [streaming, persona, handleEvent, handleStreamError],
+    [streaming, persona, handleEvent, handleStreamError, closeStream],
   );
 
   const resolveApproval = useCallback(
@@ -178,14 +193,15 @@ export function useAgentChat({ persona }: { persona: AgentPersona }) {
         }
         return next;
       });
-      streamAgentChat(
+      closeStream(); // defensive: never let two streams run concurrently
+      closeStreamRef.current = streamAgentChat(
         "/agent/resume",
         { thread_id: threadIdRef.current, decision, workflow: "chat", persona },
         handleEvent,
         handleStreamError,
       );
     },
-    [persona, handleEvent, handleStreamError],
+    [persona, handleEvent, handleStreamError, closeStream],
   );
 
   useEffect(() => () => closeStreamRef.current?.(), []);

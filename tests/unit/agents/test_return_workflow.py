@@ -201,7 +201,7 @@ def test_agent_service_constructs():
     ledger_svc, tax_svc = _make_services()
     svc = AgentService(ledger_svc, tax_svc)
     # Agents are lazily built — just verify construction doesn't crash
-    assert svc._agent is None
+    assert svc._agents == {}
     assert svc._workflow is None
 
 

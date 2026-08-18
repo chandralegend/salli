@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import AsyncIterator
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
@@ -86,6 +87,10 @@ class ChatRequest(BaseModel):
     thread_id: str
     message: str
     file_refs: list[str] = []
+    # "scrooge" is the existing "Salli AI" persona (Pro Mode); "buddy" is the
+    # warmer persona behind the mobile app's Buddy Mode. Defaulting to
+    # "scrooge" keeps any client that doesn't send this field unchanged.
+    persona: Literal["scrooge", "buddy"] = "scrooge"
 
 
 @router.post("/chat")
@@ -131,6 +136,7 @@ async def chat(body: ChatRequest, user_id: CurrentUser, email: CurrentEmail, svc
                     thread_id=body.thread_id,
                     message=body.message,
                     file_refs=body.file_refs or None,
+                    persona=body.persona,
                 )
             )
         ),
@@ -167,6 +173,7 @@ class ResumeRequest(BaseModel):
     decision: str  # "approved"|"denied" (chat) or "approve"|"edit"|"reject" (return)
     workflow: str = "chat"  # "chat" | "return"
     edits: dict | None = None
+    persona: Literal["scrooge", "buddy"] = "scrooge"
 
 
 @router.post("/resume")
@@ -188,6 +195,7 @@ async def resume(body: ResumeRequest, user_id: CurrentUser, svc: AppServices):
                 user_id=user_id,
                 thread_id=body.thread_id,
                 decision=body.decision,
+                persona=body.persona,
             )
         ),
         media_type="text/event-stream",
@@ -204,16 +212,26 @@ async def _wrap_return_resume(
 
 
 @router.get("/history/{thread_id}")
-async def get_history(thread_id: str, user_id: CurrentUser, svc: AppServices):
+async def get_history(
+    thread_id: str,
+    user_id: CurrentUser,
+    svc: AppServices,
+    persona: Literal["scrooge", "buddy"] = "scrooge",
+):
     """Return the message history for a conversation thread."""
-    messages = await svc.agent.get_history(user_id=user_id, thread_id=thread_id)
+    messages = await svc.agent.get_history(user_id=user_id, thread_id=thread_id, persona=persona)
     return {"thread_id": thread_id, "messages": messages}
 
 
 @router.get("/sessions")
-async def list_sessions(user_id: CurrentUser, svc: AppServices, limit: int = 50):
-    """Return the user's conversation sessions sorted by most recent activity."""
-    sessions = await svc.agent.list_sessions(user_id=user_id, limit=limit)
+async def list_sessions(
+    user_id: CurrentUser,
+    svc: AppServices,
+    limit: int = 50,
+    persona: Literal["scrooge", "buddy"] = "scrooge",
+):
+    """Return the user's conversation sessions (for this persona) sorted by most recent activity."""
+    sessions = await svc.agent.list_sessions(user_id=user_id, limit=limit, persona=persona)
     return {"sessions": sessions}
 
 

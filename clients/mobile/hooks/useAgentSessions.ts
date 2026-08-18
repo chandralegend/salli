@@ -16,19 +16,25 @@ export type HistoryMessage =
   | { role: "user"; content: string }
   | { role: "assistant"; parts: HistoryPart[] };
 
-export function useAgentSessions() {
+export type AgentPersona = "scrooge" | "buddy";
+
+export function useAgentSessions(persona: AgentPersona = "scrooge") {
   return useQuery({
-    queryKey: ["agent-sessions"],
+    queryKey: ["agent-sessions", persona],
     queryFn: async () => {
-      const { data } = await listSessionsAgentSessionsGet({ throwOnError: true });
+      const { data } = await listSessionsAgentSessionsGet({ query: { persona }, throwOnError: true });
       return (data as unknown as { sessions: AgentSessionMeta[] }).sessions;
     },
   });
 }
 
-export async function fetchThreadHistory(threadId: string): Promise<HistoryMessage[]> {
+export async function fetchThreadHistory(
+  threadId: string,
+  persona: AgentPersona = "scrooge",
+): Promise<HistoryMessage[]> {
   const { data } = await getHistoryAgentHistoryThreadIdGet({
     path: { thread_id: threadId },
+    query: { persona },
     throwOnError: true,
   });
   return (data as unknown as { messages: HistoryMessage[] }).messages;

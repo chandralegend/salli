@@ -282,7 +282,7 @@ export const getHistoryAgentHistoryThreadIdGet = <ThrowOnError extends boolean =
 /**
  * List Sessions
  *
- * Return the user's conversation sessions sorted by most recent activity.
+ * Return the user's conversation sessions (for this persona) sorted by most recent activity.
  */
 export const listSessionsAgentSessionsGet = <ThrowOnError extends boolean = false>(options?: Options<ListSessionsAgentSessionsGetData, ThrowOnError>): RequestResult<ListSessionsAgentSessionsGetResponses, ListSessionsAgentSessionsGetErrors, ThrowOnError> => (options?.client ?? client).get<ListSessionsAgentSessionsGetResponses, ListSessionsAgentSessionsGetErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

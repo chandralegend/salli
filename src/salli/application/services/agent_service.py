@@ -99,19 +99,29 @@ class AgentService:
         self._fi_svc = fi_svc
         self._checkpointer = checkpointer
         self._uow_factory = uow_factory
-        self._agent: Any = None
-        self._agent_date: str | None = None
+        self._agents: dict[str, Any] = {}
+        self._agent_dates: dict[str, str] = {}
         self._workflow: Any = None
         self._briefing_workflow: Any = None
 
-    def _get_agent(self) -> Any:
+    _PERSONA_BUILDERS = {
+        "scrooge": "salli.domain.agents.manager_agent:build_manager_agent",
+        "buddy": "salli.domain.agents.buddy_agent:build_buddy_agent",
+    }
+
+    def _get_agent(self, persona: str = "scrooge") -> Any:
         import datetime
+        import importlib
+
+        if persona not in self._PERSONA_BUILDERS:
+            persona = "scrooge"
 
         today = datetime.date.today().isoformat()
-        if self._agent is None or self._agent_date != today:
-            from salli.domain.agents.manager_agent import build_manager_agent
+        if self._agents.get(persona) is None or self._agent_dates.get(persona) != today:
+            module_path, func_name = self._PERSONA_BUILDERS[persona].split(":")
+            build_fn = getattr(importlib.import_module(module_path), func_name)
 
-            self._agent = build_manager_agent(
+            self._agents[persona] = build_fn(
                 self._ledger_svc,
                 self._tax_svc,
                 self._doc_svc,
@@ -125,8 +135,8 @@ class AgentService:
                 self._fi_svc,
                 checkpointer=self._checkpointer,
             )
-            self._agent_date = today
-        return self._agent
+            self._agent_dates[persona] = today
+        return self._agents[persona]
 
     def _get_workflow(self) -> Any:
         if self._workflow is None:
@@ -294,12 +304,12 @@ class AgentService:
 
     # ── Session management ────────────────────────────────────────────────────
 
-    async def _ensure_session(self, user_id: str, thread_id: str) -> None:
+    async def _ensure_session(self, user_id: str, thread_id: str, persona: str = "scrooge") -> None:
         if not self._uow_factory:
             return
         try:
             async with self._uow_factory() as uow:
-                await uow.agent_sessions.upsert(user_id, thread_id)
+                await uow.agent_sessions.upsert(user_id, thread_id, persona=persona)
         except Exception:
             pass
 
@@ -328,11 +338,13 @@ class AgentService:
         except Exception:
             pass  # title generation is best-effort
 
-    async def list_sessions(self, user_id: str, limit: int = 50) -> list[dict[str, Any]]:
+    async def list_sessions(
+        self, user_id: str, limit: int = 50, persona: str = "scrooge"
+    ) -> list[dict[str, Any]]:
         if not self._uow_factory:
             return []
         async with self._uow_factory() as uow:
-            return await uow.agent_sessions.list(user_id, limit=limit)
+            return await uow.agent_sessions.list(user_id, limit=limit, persona=persona)
 
     async def get_audit_log(self, user_id: str, limit: int = 100) -> list[dict[str, Any]]:
         """Every agent-initiated write decision (approved or denied) recorded
@@ -356,6 +368,7 @@ class AgentService:
         message: str,
         thread_id: str | None = None,
         file_refs: list[str] | None = None,
+        persona: str = "scrooge",
     ) -> AsyncIterator[tuple[str, Any]]:
         """
         Yield (event_type, payload) tuples for SSE:
@@ -375,9 +388,9 @@ class AgentService:
         from salli.domain.agents.tools import set_current_user
 
         set_current_user(user_id)  # tools read this, never the LLM-supplied id
-        await self._ensure_session(user_id, thread_id)
+        await self._ensure_session(user_id, thread_id, persona=persona)
 
-        agent = self._get_agent()
+        agent = self._get_agent(persona)
         config = {"configurable": {"thread_id": f"{user_id}:{thread_id}", "user_id": user_id}}
         input_messages = await self._build_input_messages(user_id, message, file_refs)
 
@@ -389,6 +402,7 @@ class AgentService:
         user_id: str,
         thread_id: str,
         decision: str,
+        persona: str = "scrooge",
     ) -> AsyncIterator[tuple[str, Any]]:
         """
         Resume the manager agent after an interrupt (write-tool approval gate).
@@ -399,7 +413,7 @@ class AgentService:
         from salli.domain.agents.tools import set_current_user
 
         set_current_user(user_id)
-        agent = self._get_agent()
+        agent = self._get_agent(persona)
         config = {"configurable": {"thread_id": f"{user_id}:{thread_id}", "user_id": user_id}}
 
         async for event in self._stream_events(agent, Command(resume=decision), config):
@@ -409,6 +423,7 @@ class AgentService:
         self,
         user_id: str,
         thread_id: str,
+        persona: str = "scrooge",
     ) -> list[dict[str, Any]]:
         """
         Rebuild the full rich conversation so a reloaded thread looks like it did
@@ -420,7 +435,7 @@ class AgentService:
           {"type": "tool_call", "name": str, "input": dict, "done": true}
           {"type": "subagent_section", "agent": str, "active": false, "parts": [...]}
         """
-        agent = self._get_agent()
+        agent = self._get_agent(persona)
         config = {"configurable": {"thread_id": f"{user_id}:{thread_id}"}}
         state = await agent.aget_state(config)
         all_msgs = state.values.get("messages", [])

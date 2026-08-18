@@ -318,6 +318,10 @@ export type ChatRequest = {
      * File Refs
      */
     file_refs?: Array<string>;
+    /**
+     * Persona
+     */
+    persona?: 'scrooge' | 'buddy';
 };
 
 /**
@@ -1021,6 +1025,10 @@ export type ResumeRequest = {
     edits?: {
         [key: string]: unknown;
     } | null;
+    /**
+     * Persona
+     */
+    persona?: 'scrooge' | 'buddy';
 };
 
 /**
@@ -1790,7 +1798,12 @@ export type GetHistoryAgentHistoryThreadIdGetData = {
          */
         thread_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Persona
+         */
+        persona?: 'scrooge' | 'buddy';
+    };
     url: '/agent/history/{thread_id}';
 };
 
@@ -1818,6 +1831,10 @@ export type ListSessionsAgentSessionsGetData = {
          * Limit
          */
         limit?: number;
+        /**
+         * Persona
+         */
+        persona?: 'scrooge' | 'buddy';
     };
     url: '/agent/sessions';
 };

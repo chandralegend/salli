@@ -26,9 +26,11 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 
+import { EdgeSwipeModeSwitcher } from "@/components/layout/EdgeSwipeModeSwitcher";
 import { TourOverlay } from "@/components/tour/TourOverlay";
 import { ToastHost } from "@/components/ui/toast-host";
 import { useAuth } from "../lib/auth";
+import { useSalliStore } from "../lib/store";
 import { ThemeProvider, useAppTheme, useThemeColors } from "../lib/theme";
 
 SplashScreen.preventAutoHideAsync();
@@ -53,15 +55,22 @@ function AppShell() {
   // session, rather than only while the index guard is mounted.
   useAuth();
 
+  const loadMode = useSalliStore((s) => s.loadMode);
+  useEffect(() => {
+    loadMode();
+  }, [loadMode]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <StatusBar style={isDark ? "light" : "dark"} />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.background },
-        }}
-      />
+      <EdgeSwipeModeSwitcher>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.background },
+          }}
+        />
+      </EdgeSwipeModeSwitcher>
       <TourOverlay />
       <ToastHost />
     </QueryClientProvider>

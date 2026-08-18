@@ -1,11 +1,12 @@
+import { useRouter } from "expo-router";
 import {
-  ArrowUpRight,
+  ChevronLeft,
   Check,
   LoaderCircle,
   Menu,
-  Paperclip,
-  PiggyBank,
+  Mic,
   Send,
+  Smile,
   SquarePen,
   Trash2,
 } from "lucide-react-native";
@@ -25,20 +26,23 @@ import { ApprovalCard } from "@/components/agent/ApprovalCard";
 import { AssistantMarkdown } from "@/components/agent/AssistantMarkdown";
 import { Drawer } from "@/components/ui/drawer";
 import { type ChatMessage, useAgentChat } from "@/hooks/useAgentChat";
+import { useSalliStore } from "@/lib/store";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const SUGGESTED_PROMPTS = [
-  "What's my tax payable?",
-  "How is my money bin growing?",
-  "Where am I wasting money?",
-  "Am I on track for FIRE?",
+  "How am I doing this month?",
+  "Can I afford a new phone?",
+  "Help me save a bit more",
+  "What's eating my money?",
 ];
 
-export default function AgentScreen() {
+export default function BuddyScreen() {
+  const router = useRouter();
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  const setMode = useSalliStore((s) => s.setMode);
 
   const [input, setInput] = useState("");
   const [sessionsOpen, setSessionsOpen] = useState(false);
@@ -53,7 +57,7 @@ export default function AgentScreen() {
     resolveApproval,
     startNewChat,
     loadThread,
-  } = useAgentChat({ persona: "scrooge" });
+  } = useAgentChat({ persona: "buddy" });
 
   const send = (text: string) => {
     if (!text.trim() || streaming) return;
@@ -64,6 +68,11 @@ export default function AgentScreen() {
   const handleLoadThread = async (threadId: string) => {
     setSessionsOpen(false);
     await loadThread(threadId);
+  };
+
+  const goToProMode = () => {
+    setMode("pro");
+    router.replace("/(tabs)");
   };
 
   useEffect(() => {
@@ -82,13 +91,10 @@ export default function AgentScreen() {
         >
           <Menu size={18} color={colors.mutedForeground} strokeWidth={2} />
         </Pressable>
-        <View className="flex-1 items-center gap-0.5">
-          <Text className="font-sans-semibold text-[16px] text-foreground">Salli AI</Text>
-          <View className="flex-row items-center gap-1.5">
-            <View className="h-1.5 w-1.5 rounded-full bg-salli-accent" />
-            <Text className="text-[11px] text-foreground/30">AI Financial Advisor</Text>
-          </View>
-        </View>
+        <Pressable onPress={goToProMode} className="flex-1 flex-row items-center justify-center gap-1">
+          <ChevronLeft size={12} color={colors.mutedForeground} strokeWidth={2.5} />
+          <Text className="text-[11px] font-sans-medium text-foreground/35">Pro Mode</Text>
+        </Pressable>
         <Pressable onPress={startNewChat} className="h-9 w-9 items-center justify-center">
           <SquarePen size={18} color={colors.mutedForeground} strokeWidth={1.8} />
         </Pressable>
@@ -97,25 +103,24 @@ export default function AgentScreen() {
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
         {messages.length === 0 ? (
           <View className="flex-1 items-center justify-center px-6">
-            <View className="h-[68px] w-[68px] items-center justify-center rounded-full border border-salli-accent/25 bg-salli-accent/15">
-              <PiggyBank size={30} color={colors.accent} strokeWidth={1.8} />
+            <View className="h-[72px] w-[72px] items-center justify-center rounded-full border border-salli-accent/25 bg-salli-accent/15">
+              <Smile size={32} color={colors.accent} strokeWidth={1.6} />
             </View>
-            <Text className="mt-4 text-center font-sans-bold text-[19px] text-foreground">Meet Salli AI</Text>
+            <Text className="mt-4 text-center font-sans-bold text-[20px] text-foreground">
+              Hey, I&apos;m Salli
+            </Text>
             <Text className="mt-1.5 text-center text-[13px] leading-5 text-foreground/40">
-              Your AI advisor for tax, budgets, and FIRE. Every number comes from the deterministic engine — not guessed.
+              Think of me as your money buddy. No jargon, no judgment — just talk to me{"\n"}
+              about whatever&apos;s on your mind, and we&apos;ll figure it out together.
             </Text>
             <View className="mt-5 w-full gap-2">
-              <Text className="pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/25">
-                Try asking
-              </Text>
               {SUGGESTED_PROMPTS.map((p) => (
                 <Pressable
                   key={p}
                   onPress={() => send(p)}
-                  className="flex-row items-center justify-between rounded-control border border-foreground/[0.08] bg-card px-4 py-3"
+                  className="items-center rounded-pill border border-foreground/[0.08] bg-card px-4 py-3"
                 >
-                  <Text className="flex-1 text-[13px] text-foreground/70">{p}</Text>
-                  <ArrowUpRight size={15} color={colors.mutedForeground} strokeWidth={2} />
+                  <Text className="text-[13px] text-foreground/70">{p}</Text>
                 </Pressable>
               ))}
             </View>
@@ -125,46 +130,47 @@ export default function AgentScreen() {
             ref={listRef}
             data={messages}
             keyExtractor={(m) => m.id}
-            contentContainerStyle={{ padding: 14, gap: 12 }}
-            ListHeaderComponent={
-              <View className="flex-row items-center gap-2.5">
-                <View className="h-px flex-1 bg-foreground/[0.08]" />
-                <Text className="text-[11px] text-foreground/20">Today</Text>
-                <View className="h-px flex-1 bg-foreground/[0.08]" />
-              </View>
-            }
+            contentContainerStyle={{ padding: 14, gap: 14 }}
             renderItem={({ item }) =>
               item.role === "user" ? (
                 <View className="flex-row justify-end">
-                  <View className="max-w-[76%] rounded-[18px] rounded-br-[4px] bg-salli-accent px-3.5 py-2.5">
-                    <Text className="text-[13px] leading-5 text-white">{item.content}</Text>
+                  <View className="max-w-[80%] rounded-[20px] rounded-br-[6px] bg-salli-accent px-4 py-3">
+                    <Text className="text-[14px] leading-5 text-white">{item.content}</Text>
                   </View>
                 </View>
               ) : (
-                <View className="gap-1.5 pl-0.5">
-                  {item.parts.map((part, i) =>
-                    part.kind === "tool_call" ? (
-                      <View key={i} className="flex-row items-center gap-[7px] pl-0.5">
-                        <LoaderCircle size={11} color={colors.mutedForeground} strokeWidth={2} />
-                        <Text className="text-[11px] capitalize text-foreground/30">
-                          {part.agent ? `${part.agent.replace(/_/g, " ")}: ` : ""}
-                          {part.name.replace(/_/g, " ")}
-                        </Text>
-                        {part.done ? <Check size={9} color={colors.accent} strokeWidth={2.5} /> : null}
-                      </View>
-                    ) : part.kind === "approval" ? (
-                      <ApprovalCard
-                        key={i}
-                        action={part.action}
-                        resolved={part.resolved}
-                        onResolve={resolveApproval}
-                      />
-                    ) : (
-                      <View key={i} className="pl-0.5 pr-1">
-                        <AssistantMarkdown content={part.content} />
-                      </View>
-                    ),
-                  )}
+                <View className="flex-row items-start gap-2 pr-8">
+                  <View className="mt-0.5 h-6 w-6 items-center justify-center rounded-full bg-salli-accent/15">
+                    <Smile size={12} color={colors.accent} strokeWidth={2} />
+                  </View>
+                  <View className="flex-1 gap-1.5">
+                    {item.parts.map((part, i) =>
+                      part.kind === "tool_call" ? (
+                        <View key={i} className="flex-row items-center gap-[7px] pl-0.5">
+                          <LoaderCircle size={11} color={colors.mutedForeground} strokeWidth={2} />
+                          <Text className="text-[11px] capitalize text-foreground/30">
+                            {part.agent ? `${part.agent.replace(/_/g, " ")}: ` : ""}
+                            {part.name.replace(/_/g, " ")}
+                          </Text>
+                          {part.done ? <Check size={9} color={colors.accent} strokeWidth={2.5} /> : null}
+                        </View>
+                      ) : part.kind === "approval" ? (
+                        <ApprovalCard
+                          key={i}
+                          action={part.action}
+                          resolved={part.resolved}
+                          onResolve={resolveApproval}
+                        />
+                      ) : (
+                        <View
+                          key={i}
+                          className="rounded-[18px] rounded-tl-[6px] bg-card px-3.5 py-3"
+                        >
+                          <AssistantMarkdown content={part.content} />
+                        </View>
+                      ),
+                    )}
+                  </View>
                 </View>
               )
             }
@@ -177,38 +183,42 @@ export default function AgentScreen() {
           </View>
         ) : null}
 
-        <View className="border-t border-foreground/[0.08] px-3.5 pt-2" style={{ paddingBottom: insets.bottom + 64 + 10 }}>
-          <View className="flex-row items-center gap-2.5 rounded-[20px] border border-foreground/10 bg-card py-1.5 pl-3.5 pr-1.5">
-            <Paperclip size={17} color={colors.mutedForeground} strokeWidth={1.8} />
+        <View className="px-3.5 pt-2" style={{ paddingBottom: insets.bottom + 16 }}>
+          <View className="flex-row items-center gap-2.5 rounded-[24px] border border-foreground/10 bg-card py-1.5 pl-4 pr-1.5">
             <TextInput
               value={input}
               onChangeText={setInput}
-              placeholder="Message Salli AI..."
+              placeholder="Tell me what's up..."
               placeholderTextColor="rgba(128,128,128,0.4)"
               className="flex-1 text-[14px] text-foreground"
               multiline
               onSubmitEditing={() => send(input)}
             />
-            <Pressable
-              onPress={() => send(input)}
-              disabled={!input.trim() || streaming}
-              className={cn(
-                "h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent",
-                (!input.trim() || streaming) && "opacity-40",
-              )}
-            >
-              <Send size={14} color="#FFFFFF" strokeWidth={2.5} />
-            </Pressable>
+            {input.trim() ? (
+              <Pressable
+                onPress={() => send(input)}
+                disabled={streaming}
+                className={cn(
+                  "h-[36px] w-[36px] items-center justify-center rounded-full bg-salli-accent",
+                  streaming && "opacity-40",
+                )}
+              >
+                <Send size={15} color="#FFFFFF" strokeWidth={2.5} />
+              </Pressable>
+            ) : (
+              // Voice input is a planned fast-follow — the composer already
+              // reserves the spot so adding it later needs no layout change.
+              <View className="h-[36px] w-[36px] items-center justify-center rounded-full bg-foreground/[0.06] opacity-40">
+                <Mic size={15} color={colors.mutedForeground} strokeWidth={2} />
+              </View>
+            )}
           </View>
-          <Text className="mt-1.5 text-center text-[10px] text-foreground/20">
-            Numbers from deterministic engine · Write actions need your approval.
-          </Text>
         </View>
       </KeyboardAvoidingView>
 
       <Drawer visible={sessionsOpen} onClose={() => setSessionsOpen(false)} keyboardAvoiding={false}>
         <View className="flex-row items-center justify-between px-1 pb-3 pt-1">
-          <Text className="font-sans-bold text-[17px] text-foreground">Chats</Text>
+          <Text className="font-sans-bold text-[17px] text-foreground">Conversations</Text>
           <Pressable
             onPress={() => {
               startNewChat();

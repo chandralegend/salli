@@ -66,20 +66,22 @@ function LoginContent() {
     >
       {supabaseReady && (
         <>
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => signInWithOAuth("google").catch(() => setError("Google sign-in failed."))}
-          >
-            <GoogleIcon /> Continue with Google
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => signInWithOAuth("apple").catch(() => setError("Apple sign-in failed."))}
-          >
-            <AppleIcon /> Continue with Apple
-          </Button>
+          <div className="space-y-2.5">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => signInWithOAuth("apple").catch(() => setError("Apple sign-in failed."))}
+            >
+              <AppleIcon /> Continue with Apple
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => signInWithOAuth("google").catch(() => setError("Google sign-in failed."))}
+            >
+              <GoogleIcon /> Continue with Google
+            </Button>
+          </div>
           <AuthDivider />
         </>
       )}

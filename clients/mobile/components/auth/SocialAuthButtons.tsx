@@ -1,35 +1,53 @@
+import * as AppleAuthentication from "expo-apple-authentication";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
 import { isAppleAuthAvailable, signInWithApple, signInWithGoogle } from "@/lib/auth";
 
+/** Official 4-color Google "G" mark — Google's brand guidelines for a custom
+ * "Sign in with Google" button (there's no first-party RN component) require
+ * this exact multi-color logo, not a single-tone approximation. */
 function GoogleIcon() {
   return (
-    <Svg width={16} height={16} viewBox="0 0 24 24">
+    <Svg width={20} height={20} viewBox="0 0 48 48">
       <Path
-        fill="#FFFFFF"
-        d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81"
+        fill="#FFC107"
+        d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12 c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24 c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
       />
-    </Svg>
-  );
-}
-
-function AppleIcon() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24">
       <Path
-        fill="#FFFFFF"
-        d="M16.365 1.43c0 1.14-.393 2.033-1.18 2.68-.79.646-1.7.998-2.73.912-.13-1.09.36-2.11 1.14-2.79.79-.68 1.83-1.13 2.77-1.28v.478zm3.42 17.44c-.53 1.21-1.14 2.4-2.05 3.53-.9 1.12-1.98 2.25-3.36 2.28-1.35.02-1.78-.79-3.31-.79-1.53 0-2 .77-3.28.81-1.32.05-2.53-1.2-3.45-2.32-1.86-2.3-3.34-6.5-1.4-9.35 1.08-1.6 2.85-2.6 4.7-2.63 1.35-.03 2.62.9 3.44.9.82 0 2.37-1.11 4-.95.68.03 2.6.28 3.83 2.08-3.13 1.72-2.65 6.05.18 6.44z"
+        fill="#FF3D00"
+        d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039 l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
+      />
+      <Path
+        fill="#4CAF50"
+        d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36 c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
+      />
+      <Path
+        fill="#1976D2"
+        d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571 c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"
       />
     </Svg>
   );
 }
 
 /** Google (system-browser OAuth) + Apple (native, iOS-only) sign-in buttons,
- * shared between the login and signup screens. Apple only renders once
- * `isAppleAuthAvailable()` resolves true (iOS + signed into an Apple ID) —
- * Android/simulators-without-an-Apple-ID never show it. */
+ * shared between the login and signup screens.
+ *
+ * Apple's button is Apple's own native `AppleAuthenticationButton` component,
+ * not a custom one — the App Store Guidelines require using it verbatim
+ * (fixed text/logo/color options only) rather than a look-alike, and it only
+ * renders once `isAppleAuthAvailable()` resolves true (iOS + signed into an
+ * Apple ID), so it never shows on Android. It's rendered first, above
+ * Google — Guideline 4.8 requires Sign in with Apple to have equal-or-greater
+ * prominence than any other third-party login offered, and both buttons are
+ * otherwise the same size/weight, so order is what actually differentiates
+ * prominence here.
+ *
+ * Google has no equivalent first-party React Native button, so this follows
+ * Google's own branding guidelines for a custom button instead: the exact
+ * 4-color "G" mark, "Continue with Google" wording, and a light/outlined
+ * button matching Google's documented light-theme spec. */
 export function SocialAuthButtons({ onError }: { onError: (message: string) => void }) {
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [busyProvider, setBusyProvider] = useState<"google" | "apple" | null>(null);
@@ -76,6 +94,33 @@ export function SocialAuthButtons({ onError }: { onError: (message: string) => v
 
   return (
     <View className="gap-2.5">
+      {appleAvailable ? (
+        <View
+          pointerEvents={busyProvider ? "none" : "auto"}
+          style={{
+            height: 54,
+            position: "relative",
+            opacity: busyProvider && busyProvider !== "apple" ? 0.5 : 1,
+          }}
+        >
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+            cornerRadius={16}
+            style={{ height: 54, width: "100%" }}
+            onPress={handleApple}
+          />
+          {busyProvider === "apple" ? (
+            <View
+              pointerEvents="none"
+              className="absolute inset-0 items-center justify-center rounded-[16px] bg-white"
+            >
+              <ActivityIndicator color="#000000" />
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+
       <Pressable
         onPress={handleGoogle}
         disabled={busyProvider !== null}
@@ -91,24 +136,6 @@ export function SocialAuthButtons({ onError }: { onError: (message: string) => v
           </>
         )}
       </Pressable>
-
-      {appleAvailable ? (
-        <Pressable
-          onPress={handleApple}
-          disabled={busyProvider !== null}
-          className="h-[54px] flex-row items-center justify-center gap-2.5 rounded-[16px] border border-white/15 bg-white/[0.04]"
-          style={{ opacity: busyProvider && busyProvider !== "apple" ? 0.5 : 1 }}
-        >
-          {busyProvider === "apple" ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <>
-              <AppleIcon />
-              <Text className="font-sans-semibold text-[15px] text-white">Continue with Apple</Text>
-            </>
-          )}
-        </Pressable>
-      ) : null}
 
       <View className="my-1 flex-row items-center gap-3">
         <View className="h-px flex-1 bg-white/10" />

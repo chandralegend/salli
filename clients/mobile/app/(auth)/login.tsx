@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { Logo } from "@/components/Logo";
+import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
 import { PillButton } from "@/components/ui/pill-button";
 import { TextField } from "@/components/ui/text-field";
 import { devLogin, signInWithPassword } from "@/lib/auth";
@@ -68,6 +69,8 @@ export default function LoginScreen() {
           </View>
 
           <View className="gap-2.5 px-6">
+            {supabaseReady ? <SocialAuthButtons onError={setError} /> : null}
+
             <TextField
               className="rounded-[16px] px-[18px] py-[14px]"
               label="Email"

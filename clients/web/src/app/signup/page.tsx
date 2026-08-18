@@ -7,7 +7,7 @@ import { Loader2, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuthCard, AuthDivider, GoogleIcon } from "@/components/auth/AuthCard";
+import { AuthCard, AuthDivider, GoogleIcon, AppleIcon } from "@/components/auth/AuthCard";
 import { signUpWithPassword, signInWithOAuth, isSupabaseConfigured } from "@/lib/auth";
 
 export default function SignupPage() {
@@ -79,6 +79,13 @@ export default function SignupPage() {
             onClick={() => signInWithOAuth("google").catch(() => setError("Google sign-in failed."))}
           >
             <GoogleIcon /> Continue with Google
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => signInWithOAuth("apple").catch(() => setError("Apple sign-in failed."))}
+          >
+            <AppleIcon /> Continue with Apple
           </Button>
           <AuthDivider />
           <form onSubmit={handleSubmit} className="space-y-4">

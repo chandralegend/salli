@@ -5,8 +5,10 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native";
 
 import { Logo } from "@/components/Logo";
+import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
 import { PillButton } from "@/components/ui/pill-button";
 import { TextField } from "@/components/ui/text-field";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { signUpWithPassword } from "@/lib/auth";
 
 export default function SignupScreen() {
@@ -73,6 +75,8 @@ export default function SignupScreen() {
             </View>
           ) : (
             <View className="gap-2.5 px-6">
+              {isSupabaseConfigured() ? <SocialAuthButtons onError={setError} /> : null}
+
               <TextField
                 className="rounded-[16px] px-[18px] py-[14px]"
                 label="Email"

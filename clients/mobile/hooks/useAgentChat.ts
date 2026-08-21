@@ -108,9 +108,17 @@ export function useAgentChat({ persona }: { persona: AgentPersona }) {
           ]);
           break;
         case "tool_result":
-          appendToLastAssistant((parts) =>
-            parts.map((p) => (p.kind === "tool_call" && p.name === event.name ? { ...p, done: true } : p)),
-          );
+          // Resolve the first not-yet-done call with this name (FIFO per name) —
+          // matching by name alone (there's no call-id in the wire protocol) would
+          // flip every in-flight same-name call at once if the model calls the
+          // same tool twice in one turn before either resolves.
+          appendToLastAssistant((parts) => {
+            const idx = parts.findIndex((p) => p.kind === "tool_call" && p.name === event.name && !p.done);
+            if (idx === -1) return parts;
+            const next = [...parts];
+            next[idx] = { ...(next[idx] as ToolCallPart), done: true };
+            return next;
+          });
           break;
         case "approval_required":
           appendToLastAssistant((parts) => [...parts, { kind: "approval", action: event.action }]);

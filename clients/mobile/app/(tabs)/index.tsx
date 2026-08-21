@@ -1,4 +1,3 @@
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
   ArrowDownLeft,
@@ -21,20 +20,19 @@ import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { IconButton } from "@/components/ui/icon-button";
 import { PageShell } from "@/components/ui/page-shell";
-import { StatTile } from "@/components/ui/stat-tile";
+import { SalliBackground } from "@/components/ui/SalliBackground";
 import { useThemedRefreshControl } from "@/components/ui/themed-refresh-control";
 import type { JournalEntry } from "@/hooks/useDashboard";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useLedgerMutations } from "@/hooks/useLedger";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useSalliStore } from "@/lib/store";
-import { useAppTheme, useThemeColors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 export default function DashboardScreen() {
   const router = useRouter();
   const colors = useThemeColors();
-  const { isDark } = useAppTheme();
   const { netWorth, fiScore, tax, accounts, entries, budgetSummary, balances, incomeYtd, expensesYtd, refetch } =
     useDashboard();
   const { reverseEntry } = useLedgerMutations();
@@ -85,15 +83,7 @@ export default function DashboardScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* Navy hero — dark mode only. In light mode the hero sits on the plain
-          light canvas (no gradient) and its text uses theme tokens instead. */}
-      {isDark ? (
-        <LinearGradient
-          colors={["#F97316", "#c85a0f", "#6b3212", "#16130f", "#000000"]}
-          locations={[0, 0.28, 0.52, 0.78, 1]}
-          style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400 }}
-        />
-      ) : null}
+      <SalliBackground intensity="subtle" />
       <PageShell transparent refreshControl={refreshControl}>
         <View className="flex-row items-center px-4 pt-1">
           {/* Fixed-width gutters (matching the icon group's width) so the
@@ -142,63 +132,63 @@ export default function DashboardScreen() {
           ) : null}
         </View>
 
-        <View className="gap-2 px-4 pb-3.5">
-          <View className="flex-row gap-2">
-            <StatTile
-              onDark={isDark}
-              label="Income"
-              value={incomeYtd != null ? formatLKRAbbrev(incomeYtd) : "—"}
-              hint="YTD"
-              className="flex-1 p-4"
-              labelClassName="text-[10px]"
-              hintClassName="text-[10px]"
-              valueClassName="text-[24px]"
-            />
-            <StatTile
-              onDark={isDark}
-              label="Expenses"
-              value={expensesYtd != null ? formatLKRAbbrev(expensesYtd) : "—"}
-              hint="YTD"
-              valueClassName="text-foreground/70 text-[24px]"
-              className="flex-1 p-4"
-              labelClassName="text-[10px]"
-              hintClassName="text-[10px]"
-            />
-          </View>
-          <View className="flex-row gap-2">
-            <TourTarget id="dashboard-tax-tile" className="flex-1">
-              <StatTile
-                onDark={isDark}
-                label="Tax"
-                value={tax ? formatLKRAbbrev(tax.tax_payable) : "—"}
-                hint="AY 25/26"
-                className="p-4"
-                labelClassName="text-[10px]"
-                hintClassName="text-[10px]"
-                valueClassName="text-[24px]"
-              />
-            </TourTarget>
-            <TourTarget id="dashboard-freedom-tile" className="flex-1">
-              <StatTile
-                onDark={isDark}
-                label="Freedom Score"
-                value={
-                  fiScore ? (
-                    <Text className="font-sans-bold text-[24px] tracking-tight text-foreground">
+        {/* One coherent 2x2 section (not four unrelated widgets) — same
+            waffle-grid technique as the Monthly Budget card below: an outer
+            hairline-background container with 1px gaps between flat cells,
+            rather than four individually-bordered tiles. */}
+        <View className="px-4 pb-3.5">
+          <View className="overflow-hidden rounded-[14px] bg-foreground/[0.06]" style={{ gap: 1 }}>
+            <View className="flex-row" style={{ gap: 1 }}>
+              <View className="flex-1 bg-card p-4">
+                <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">
+                  Income
+                </Text>
+                <Text className="text-[24px] font-sans-bold tracking-tight text-foreground">
+                  {incomeYtd != null ? formatLKRAbbrev(incomeYtd) : "—"}
+                </Text>
+                <Text className="mt-0.5 text-[10px] font-sans text-foreground/20">YTD</Text>
+              </View>
+              <View className="flex-1 bg-card p-4">
+                <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">
+                  Expenses
+                </Text>
+                <Text className="text-[24px] font-sans-bold tracking-tight text-foreground/70">
+                  {expensesYtd != null ? formatLKRAbbrev(expensesYtd) : "—"}
+                </Text>
+                <Text className="mt-0.5 text-[10px] font-sans text-foreground/20">YTD</Text>
+              </View>
+            </View>
+            <View className="flex-row" style={{ gap: 1 }}>
+              <TourTarget id="dashboard-tax-tile" className="flex-1">
+                <View className="bg-card p-4">
+                  <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">
+                    Tax
+                  </Text>
+                  <Text className="text-[24px] font-sans-bold tracking-tight text-foreground">
+                    {tax ? formatLKRAbbrev(tax.tax_payable) : "—"}
+                  </Text>
+                  <Text className="mt-0.5 text-[10px] font-sans text-foreground/20">AY 25/26</Text>
+                </View>
+              </TourTarget>
+              <TourTarget id="dashboard-freedom-tile" className="flex-1">
+                <View className="bg-card p-4">
+                  <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">
+                    Freedom Score
+                  </Text>
+                  {fiScore ? (
+                    <Text className="text-[24px] font-sans-bold tracking-tight text-foreground">
                       {Number(fiScore.overall_score).toFixed(0)}
                       <Text className="font-sans text-[12px] text-foreground/30">/100</Text>
                     </Text>
                   ) : (
-                    "—"
-                  )
-                }
-                hint={fiScore ? `Grade ${fiScore.grade}` : undefined}
-                className="p-4"
-                labelClassName="text-[10px]"
-                hintClassName="text-[10px]"
-                valueClassName="text-[24px]"
-              />
-            </TourTarget>
+                    <Text className="text-[24px] font-sans-bold tracking-tight text-foreground">—</Text>
+                  )}
+                  <Text className="mt-0.5 text-[10px] font-sans text-foreground/20">
+                    {fiScore ? `Grade ${fiScore.grade}` : ""}
+                  </Text>
+                </View>
+              </TourTarget>
+            </View>
           </View>
         </View>
 
@@ -211,7 +201,7 @@ export default function DashboardScreen() {
             <Text className="font-sans-medium text-[11px] text-foreground/70">Upload</Text>
           </AnimatedPressable>
           <AnimatedPressable
-            onPress={() => router.push("/(tabs)/agent")}
+            onPress={() => router.push("/(buddy)")}
             haptic="light"
             className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control bg-salli-accent"
           >

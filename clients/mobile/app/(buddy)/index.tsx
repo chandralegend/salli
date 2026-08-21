@@ -1,15 +1,5 @@
 import { useRouter } from "expo-router";
-import {
-  ChevronLeft,
-  Check,
-  LoaderCircle,
-  Menu,
-  Mic,
-  Send,
-  Smile,
-  SquarePen,
-  Trash2,
-} from "lucide-react-native";
+import { Mic, Paperclip, Send, SquarePen, Trash2 } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
   FlatList,
@@ -22,27 +12,26 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ApprovalCard } from "@/components/agent/ApprovalCard";
+import { ApprovalGateCard } from "@/components/agent/ApprovalGateCard";
 import { AssistantMarkdown } from "@/components/agent/AssistantMarkdown";
+import { ToolActivityBlock } from "@/components/agent/ToolActivityBlock";
 import { Drawer } from "@/components/ui/drawer";
+import { SalliBackground } from "@/components/ui/SalliBackground";
 import { type ChatMessage, useAgentChat } from "@/hooks/useAgentChat";
-import { useSalliStore } from "@/lib/store";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-const SUGGESTED_PROMPTS = [
-  "How am I doing this month?",
-  "Can I afford a new phone?",
-  "Help me save a bit more",
-  "What's eating my money?",
-];
+/** Buddy Mode's opening line — no suggestion chips, no mascot/avatar: Salli's
+ * identity here comes from typography, conversation, motion, and the brand
+ * mark only, per the UI refresh spec. */
+const WELCOME_MESSAGE =
+  "Hey, I'm Salli. I'm here to help you feel more in control of your money. What's on your mind today?";
 
 export default function BuddyScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList<ChatMessage>>(null);
-  const setMode = useSalliStore((s) => s.setMode);
 
   const [input, setInput] = useState("");
   const [sessionsOpen, setSessionsOpen] = useState(false);
@@ -70,9 +59,9 @@ export default function BuddyScreen() {
     await loadThread(threadId);
   };
 
-  const goToProMode = () => {
-    setMode("pro");
-    router.replace("/(tabs)");
+  const openSessions = () => {
+    sessions.refetch();
+    setSessionsOpen(true);
   };
 
   useEffect(() => {
@@ -81,48 +70,20 @@ export default function BuddyScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
-      <View className="flex-row items-center border-b border-foreground/[0.08] px-4 py-2.5">
-        <Pressable
-          onPress={() => {
-            sessions.refetch();
-            setSessionsOpen(true);
-          }}
-          className="h-9 w-9 items-center justify-center"
-        >
-          <Menu size={18} color={colors.mutedForeground} strokeWidth={2} />
-        </Pressable>
-        <Pressable onPress={goToProMode} className="flex-1 flex-row items-center justify-center gap-1">
-          <ChevronLeft size={12} color={colors.mutedForeground} strokeWidth={2.5} />
-          <Text className="text-[11px] font-sans-medium text-foreground/35">Pro Mode</Text>
-        </Pressable>
-        <Pressable onPress={startNewChat} className="h-9 w-9 items-center justify-center">
-          <SquarePen size={18} color={colors.mutedForeground} strokeWidth={1.8} />
-        </Pressable>
-      </View>
+      <SalliBackground intensity="strong" />
+      {/* No hamburger/new-chat icons in the header — tapping the title opens
+          the same session-history drawer that used to sit behind a menu icon,
+          per the spec's "no hamburger menu on Buddy Mode". */}
+      <Pressable onPress={openSessions} className="items-center py-2.5">
+        <Text className="font-sans-semibold text-[15px] text-foreground">Buddy Mode</Text>
+        <Text className="mt-0.5 text-[11px] text-foreground/35">Swipe left for Pro Mode</Text>
+      </Pressable>
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
         {messages.length === 0 ? (
-          <View className="flex-1 items-center justify-center px-6">
-            <View className="h-[72px] w-[72px] items-center justify-center rounded-full border border-salli-accent/25 bg-salli-accent/15">
-              <Smile size={32} color={colors.accent} strokeWidth={1.6} />
-            </View>
-            <Text className="mt-4 text-center font-sans-bold text-[20px] text-foreground">
-              Hey, I&apos;m Salli
-            </Text>
-            <Text className="mt-1.5 text-center text-[13px] leading-5 text-foreground/40">
-              Think of me as your money buddy. No jargon, no judgment — just talk to me{"\n"}
-              about whatever&apos;s on your mind, and we&apos;ll figure it out together.
-            </Text>
-            <View className="mt-5 w-full gap-2">
-              {SUGGESTED_PROMPTS.map((p) => (
-                <Pressable
-                  key={p}
-                  onPress={() => send(p)}
-                  className="items-center rounded-pill border border-foreground/[0.08] bg-card px-4 py-3"
-                >
-                  <Text className="text-[13px] text-foreground/70">{p}</Text>
-                </Pressable>
-              ))}
+          <View className="flex-1 justify-end px-4 pb-3">
+            <View className="max-w-[78%] rounded-[20px] rounded-bl-[6px] px-4 py-3" style={{ backgroundColor: colors.bubbleAgent }}>
+              <Text className="text-[14px] leading-5 text-foreground">{WELCOME_MESSAGE}</Text>
             </View>
           </View>
         ) : (
@@ -134,28 +95,20 @@ export default function BuddyScreen() {
             renderItem={({ item }) =>
               item.role === "user" ? (
                 <View className="flex-row justify-end">
-                  <View className="max-w-[80%] rounded-[20px] rounded-br-[6px] bg-salli-accent px-4 py-3">
-                    <Text className="text-[14px] leading-5 text-white">{item.content}</Text>
+                  <View
+                    className="max-w-[78%] rounded-[20px] rounded-br-[6px] px-4 py-3"
+                    style={{ backgroundColor: colors.bubbleUser }}
+                  >
+                    <Text className="text-[14px] leading-5 text-foreground">{item.content}</Text>
                   </View>
                 </View>
               ) : (
-                <View className="flex-row items-start gap-2 pr-8">
-                  <View className="mt-0.5 h-6 w-6 items-center justify-center rounded-full bg-salli-accent/15">
-                    <Smile size={12} color={colors.accent} strokeWidth={2} />
-                  </View>
-                  <View className="flex-1 gap-1.5">
+                <View className="pr-8">
+                  <ToolActivityBlock parts={item.parts} />
+                  <View className="gap-1.5">
                     {item.parts.map((part, i) =>
-                      part.kind === "tool_call" ? (
-                        <View key={i} className="flex-row items-center gap-[7px] pl-0.5">
-                          <LoaderCircle size={11} color={colors.mutedForeground} strokeWidth={2} />
-                          <Text className="text-[11px] capitalize text-foreground/30">
-                            {part.agent ? `${part.agent.replace(/_/g, " ")}: ` : ""}
-                            {part.name.replace(/_/g, " ")}
-                          </Text>
-                          {part.done ? <Check size={9} color={colors.accent} strokeWidth={2.5} /> : null}
-                        </View>
-                      ) : part.kind === "approval" ? (
-                        <ApprovalCard
+                      part.kind === "tool_call" ? null : part.kind === "approval" ? (
+                        <ApprovalGateCard
                           key={i}
                           action={part.action}
                           resolved={part.resolved}
@@ -164,7 +117,8 @@ export default function BuddyScreen() {
                       ) : (
                         <View
                           key={i}
-                          className="rounded-[18px] rounded-tl-[6px] bg-card px-3.5 py-3"
+                          className="max-w-[78%] rounded-[20px] rounded-bl-[6px] px-4 py-3"
+                          style={{ backgroundColor: colors.bubbleAgent }}
                         >
                           <AssistantMarkdown content={part.content} />
                         </View>
@@ -184,7 +138,10 @@ export default function BuddyScreen() {
         ) : null}
 
         <View className="px-3.5 pt-2" style={{ paddingBottom: insets.bottom + 16 }}>
-          <View className="flex-row items-center gap-2.5 rounded-[24px] border border-foreground/10 bg-card py-1.5 pl-4 pr-1.5">
+          <View className="flex-row items-center gap-2 rounded-[24px] border border-foreground/10 bg-card py-1.5 pl-2 pr-1.5">
+            <Pressable className="h-9 w-9 items-center justify-center" accessibilityLabel="Attach a file">
+              <Paperclip size={17} color={colors.mutedForeground} strokeWidth={1.8} />
+            </Pressable>
             <TextInput
               value={input}
               onChangeText={setInput}
@@ -206,11 +163,13 @@ export default function BuddyScreen() {
                 <Send size={15} color="#FFFFFF" strokeWidth={2.5} />
               </Pressable>
             ) : (
-              // Voice input is a planned fast-follow — the composer already
-              // reserves the spot so adding it later needs no layout change.
-              <View className="h-[36px] w-[36px] items-center justify-center rounded-full bg-foreground/[0.06] opacity-40">
+              <Pressable
+                onPress={() => router.push("/voice")}
+                className="h-[36px] w-[36px] items-center justify-center rounded-full bg-foreground/[0.06]"
+                accessibilityLabel="Start voice mode"
+              >
                 <Mic size={15} color={colors.mutedForeground} strokeWidth={2} />
-              </View>
+              </Pressable>
             )}
           </View>
         </View>

@@ -7,7 +7,7 @@ import { cn } from "../../lib/utils";
 
 type PageShellProps = ScrollViewProps & {
   children: ReactNode;
-  /** Extra bottom padding to clear the floating tab bar (64px + safe area). */
+  /** Extra bottom padding to clear the fixed tab bar (56px + safe area). */
   tabBarInset?: boolean;
   /** Make the shell transparent so a parent-rendered background (e.g. the
    * Dashboard hero gradient sitting behind it) shows through. */
@@ -17,7 +17,7 @@ type PageShellProps = ScrollViewProps & {
 
 /** Base scroll container every screen sits in: theme background, safe-area top
  * inset, and (when shown under the tab bar) enough bottom padding to clear the
- * 64px dock so the last card isn't hidden behind it. */
+ * fixed 56px bar so the last card isn't hidden behind it. */
 export function PageShell({
   children,
   tabBarInset = true,
@@ -34,7 +34,7 @@ export function PageShell({
       <ScrollView
         style={{ paddingTop: insets.top, backgroundColor: "transparent" }}
         contentContainerStyle={[
-          { paddingBottom: tabBarInset ? 64 + insets.bottom + 24 : insets.bottom + 24 },
+          { paddingBottom: tabBarInset ? 56 + insets.bottom + 16 : insets.bottom + 24 },
           contentContainerStyle,
         ]}
         className={cn(className)}

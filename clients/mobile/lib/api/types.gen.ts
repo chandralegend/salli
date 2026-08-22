@@ -114,6 +114,16 @@ export type BodyTokenMcpOauthTokenPost = {
 };
 
 /**
+ * Body_transcribe_agent_transcribe_post
+ */
+export type BodyTranscribeAgentTranscribePost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
  * Body_upload_file_agent_files_post
  */
 export type BodyUploadFileAgentFilesPost = {
@@ -1761,6 +1771,29 @@ export type UploadFileAgentFilesPostErrors = {
 export type UploadFileAgentFilesPostError = UploadFileAgentFilesPostErrors[keyof UploadFileAgentFilesPostErrors];
 
 export type UploadFileAgentFilesPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type TranscribeAgentTranscribePostData = {
+    body: BodyTranscribeAgentTranscribePost;
+    path?: never;
+    query?: never;
+    url: '/agent/transcribe';
+};
+
+export type TranscribeAgentTranscribePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TranscribeAgentTranscribePostError = TranscribeAgentTranscribePostErrors[keyof TranscribeAgentTranscribePostErrors];
+
+export type TranscribeAgentTranscribePostResponses = {
     /**
      * Successful Response
      */

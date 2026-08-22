@@ -196,11 +196,18 @@ export function useAgentChat({ persona }: { persona: AgentPersona }) {
         if (last?.role === "assistant") {
           next[next.length - 1] = {
             ...last,
+            streaming: true,
             parts: last.parts.map((p) => (p.kind === "approval" && !p.resolved ? { ...p, resolved: decision } : p)),
           };
         }
         return next;
       });
+      // The approval_required batch already closed with its own "done" (setting
+      // streaming false) before the user could act on it — re-arm both the
+      // hook-level and per-message flags so consumers (typing indicators, Voice
+      // Mode's turn-completion detection) see the resumed continuation as still
+      // in flight, not as an already-finished turn.
+      setStreaming(true);
       closeStream(); // defensive: never let two streams run concurrently
       closeStreamRef.current = streamAgentChat(
         "/agent/resume",

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Animated, Easing } from "react-native";
 import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
 
-import type { VoiceState } from "@/hooks/useVoiceMockSession";
+import type { VoiceState } from "@/hooks/useVoiceSession";
 import { useIsTablet } from "@/lib/responsive";
 
 const SIZE = 220;
@@ -32,14 +32,23 @@ export function VoiceOrb({ state }: { state: VoiceState }) {
       return;
     }
     let loop: Animated.CompositeAnimation;
-    if (state === "listening") {
+    if (state === "idle") {
+      // At rest, waiting for a press — the calmest, smallest breathing so the
+      // orb still reads as alive without competing with the "hold to talk" cue.
+      loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(scale, { toValue: 1.015, duration: 2200, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(scale, { toValue: 1, duration: 2200, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        ]),
+      );
+    } else if (state === "listening") {
       loop = Animated.loop(
         Animated.sequence([
           Animated.timing(scale, { toValue: 1.04, duration: 1250, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
           Animated.timing(scale, { toValue: 1, duration: 1250, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
         ]),
       );
-    } else if (state === "thinking") {
+    } else if (state === "thinking" || state === "transcribing") {
       loop = Animated.loop(
         Animated.sequence([
           Animated.timing(scale, { toValue: 1.015, duration: 1750, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),

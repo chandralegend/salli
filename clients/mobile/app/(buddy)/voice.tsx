@@ -1,25 +1,25 @@
-/**
- * Voice Mode — UI shell only (confirmed scope: no real mic/STT/TTS wiring).
- * Real-integration seam for later: mount useAgentChat({persona:"buddy"}) here,
- * drive thinking->speaking off its real `streaming` flag + token stream instead
- * of useVoiceMockSession's timers, and route any real approval_required event
- * into ApprovalGateCard, pausing the orb — the mock intentionally has no live
- * agent connection today, so there's nothing to gate yet.
- */
 import { useRouter } from "expo-router";
+import { setAudioModeAsync } from "expo-audio";
 import { Mic, MicOff, PhoneOff, Volume2 } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { ApprovalGateCard } from "@/components/agent/ApprovalGateCard";
 import { SalliBackground } from "@/components/ui/SalliBackground";
 import { VoiceOrb } from "@/components/agent/VoiceOrb";
-import { useVoiceMockSession } from "@/hooks/useVoiceMockSession";
+import { useVoiceSession } from "@/hooks/useVoiceSession";
 import { useIsTablet } from "@/lib/responsive";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-const STATE_LABEL = { listening: "Listening", thinking: "Thinking", speaking: "Speaking" };
+const STATE_LABEL: Record<string, string> = {
+  idle: "Hold to talk",
+  listening: "Listening…",
+  transcribing: "Transcribing…",
+  thinking: "Salli is thinking",
+  speaking: "Salli is speaking",
+};
 
 function ControlButton({
   icon: Icon,
@@ -54,10 +54,36 @@ export default function VoiceScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
-  const { state, caption } = useVoiceMockSession();
+  const isTablet = useIsTablet();
+  const {
+    state,
+    error,
+    liveText,
+    approval,
+    quotaBanner,
+    startListening,
+    stopAndSend,
+    resolveApproval,
+    stop,
+  } = useVoiceSession();
   const [muted, setMuted] = useState(false);
   const [speakerOn, setSpeakerOn] = useState(true);
-  const isTablet = useIsTablet();
+
+  useEffect(() => {
+    setAudioModeAsync({ playsInSilentMode: true, shouldRouteThroughEarpiece: !speakerOn }).catch(() => {});
+  }, [speakerOn]);
+
+  const handlePressIn = () => {
+    if (muted || approval) return;
+    startListening();
+  };
+
+  const handleEnd = () => {
+    stop();
+    router.back();
+  };
+
+  const caption = error ?? quotaBanner ?? (state === "thinking" || state === "speaking" ? liveText : "");
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
@@ -69,18 +95,37 @@ export default function VoiceScreen() {
       </View>
 
       <View className="flex-1 items-center justify-center px-8">
-        <VoiceOrb state={state} />
-        <Text className="mt-8 font-sans-semibold text-[17px] text-foreground">
-          {state === "listening" ? "Salli is listening" : `Salli is ${STATE_LABEL[state].toLowerCase()}`}
-        </Text>
-        {caption ? (
-          <Text
-            className="mt-3 text-center text-[13px] leading-5 text-foreground/35"
-            style={{ maxWidth: isTablet ? 420 : undefined }}
-          >
-            {caption}
-          </Text>
-        ) : null}
+        {approval ? (
+          <View style={{ width: "100%", maxWidth: isTablet ? 480 : undefined }}>
+            <ApprovalGateCard action={approval.action} resolved={approval.resolved} onResolve={resolveApproval} />
+          </View>
+        ) : (
+          <>
+            <Pressable
+              onPressIn={handlePressIn}
+              onPressOut={stopAndSend}
+              disabled={state !== "idle" && state !== "listening"}
+              accessibilityRole="button"
+              accessibilityLabel="Hold to talk to Salli"
+            >
+              <VoiceOrb state={state} />
+            </Pressable>
+            <Text className="mt-8 font-sans-semibold text-[17px] text-foreground">
+              {muted && state === "idle" ? "Mic is muted" : STATE_LABEL[state]}
+            </Text>
+            {caption ? (
+              <Text
+                className={cn(
+                  "mt-3 text-center text-[13px] leading-5",
+                  error || quotaBanner ? "text-destructive" : "text-foreground/35",
+                )}
+                style={{ maxWidth: isTablet ? 420 : undefined }}
+              >
+                {caption}
+              </Text>
+            ) : null}
+          </>
+        )}
       </View>
 
       <View className="flex-row justify-center gap-8 pb-2" style={{ paddingBottom: insets.bottom + 24 }}>
@@ -90,7 +135,7 @@ export default function VoiceScreen() {
           active={muted}
           onPress={() => setMuted((m) => !m)}
         />
-        <ControlButton icon={PhoneOff} label="End" danger onPress={() => router.back()} />
+        <ControlButton icon={PhoneOff} label="End" danger onPress={handleEnd} />
         <ControlButton
           icon={Volume2}
           label="Speaker"

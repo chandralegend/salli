@@ -194,6 +194,15 @@ class KnowledgeBasePort(ABC):
         ...
 
 
+class TranscriptionPort(ABC):
+    """Speech-to-text for a single recorded voice message (mobile Voice Mode)."""
+
+    @abstractmethod
+    async def transcribe(self, audio_bytes: bytes, *, filename: str, mime_type: str) -> str:
+        """Transcribe spoken audio to text."""
+        ...
+
+
 class AgentSessionRepository(ABC):
     @abstractmethod
     async def upsert(self, user_id: str, thread_id: str, persona: str = "scrooge") -> None:

@@ -168,6 +168,35 @@ async def upload_file(file: UploadFile, user_id: CurrentUser, svc: AppServices):
     }
 
 
+# Generous cap for a single push-to-talk turn — Voice Mode records short
+# utterances, not long dictation, so this is well above any legitimate use.
+_MAX_VOICE_AUDIO_BYTES = 10 * 1024 * 1024
+
+
+@router.post("/transcribe")
+async def transcribe(file: UploadFile, user_id: CurrentUser, svc: AppServices):
+    """
+    Transcribe a recorded voice message to text (mobile Voice Mode).
+
+    Turn-based, not streaming: the client records a whole push-to-talk
+    utterance, uploads it here once released, and sends the returned text
+    through the normal /agent/chat flow like any typed message.
+    """
+    if svc.transcription is None:
+        raise HTTPException(status_code=503, detail="Speech-to-text is not configured")
+    audio_bytes = await file.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Empty audio file")
+    if len(audio_bytes) > _MAX_VOICE_AUDIO_BYTES:
+        raise HTTPException(status_code=413, detail="Recording too long")
+    text = await svc.transcription.transcribe(
+        audio_bytes,
+        filename=file.filename or "voice.m4a",
+        mime_type=file.content_type or "audio/m4a",
+    )
+    return {"text": text}
+
+
 class ResumeRequest(BaseModel):
     thread_id: str
     decision: str  # "approved"|"denied" (chat) or "approve"|"edit"|"reject" (return)

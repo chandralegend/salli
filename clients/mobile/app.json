@@ -43,7 +43,13 @@
         }
       ],
       "expo-web-browser",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Salli uses your microphone in Voice Mode so you can talk to Salli instead of typing."
+        }
+      ]
     ],
     "extra": {
       "router": {},

@@ -26,8 +26,11 @@ import { useAccounts, useTrialBalance } from "@/hooks/useLedger";
 import type { ParsedTransaction, StatementUploadResult } from "@/hooks/useStatements";
 import { usePendingStatement, usePostStatement, uploadStatement } from "@/hooks/useStatements";
 import { formatLKR } from "@/lib/format";
+import { useIsTablet } from "@/lib/responsive";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+
+const TABLET_POST_BAR_MAX_WIDTH = 720;
 
 const TABS = ["Review", "History", "Banks"] as const;
 type Tab = (typeof TABS)[number];
@@ -47,6 +50,7 @@ function txnSubtitle(t: ParsedTransaction, bank: string): string {
 
 export default function StatementsScreen() {
   const colors = useThemeColors();
+  const isTablet = useIsTablet();
   const [upload, setUpload] = useState<StatementUploadResult | null>(null);
   const [uploading, setUploading] = useState(false);
   const [approved, setApproved] = useState<Set<string>>(new Set());
@@ -183,7 +187,16 @@ export default function StatementsScreen() {
               "h-[52px] flex-row items-center justify-center gap-2 rounded-pill bg-salli-accent",
               (approved.size === 0 || postStatement.isPending) && "opacity-50",
             )}
-            style={{ shadowColor: colors.accent, shadowOpacity: 0.35, shadowRadius: 20, shadowOffset: { width: 0, height: 4 }, elevation: 6 }}
+            style={{
+              shadowColor: colors.accent,
+              shadowOpacity: 0.35,
+              shadowRadius: 20,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 6,
+              width: "100%",
+              maxWidth: isTablet ? TABLET_POST_BAR_MAX_WIDTH : undefined,
+              alignSelf: "center",
+            }}
           >
             {postStatement.isPending ? (
               <ActivityIndicator color="#FFFFFF" />

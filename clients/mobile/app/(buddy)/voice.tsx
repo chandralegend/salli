@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SalliBackground } from "@/components/ui/SalliBackground";
 import { VoiceOrb } from "@/components/agent/VoiceOrb";
 import { useVoiceMockSession } from "@/hooks/useVoiceMockSession";
+import { useIsTablet } from "@/lib/responsive";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +57,7 @@ export default function VoiceScreen() {
   const { state, caption } = useVoiceMockSession();
   const [muted, setMuted] = useState(false);
   const [speakerOn, setSpeakerOn] = useState(true);
+  const isTablet = useIsTablet();
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
@@ -72,7 +74,12 @@ export default function VoiceScreen() {
           {state === "listening" ? "Salli is listening" : `Salli is ${STATE_LABEL[state].toLowerCase()}`}
         </Text>
         {caption ? (
-          <Text className="mt-3 text-center text-[13px] leading-5 text-foreground/35">{caption}</Text>
+          <Text
+            className="mt-3 text-center text-[13px] leading-5 text-foreground/35"
+            style={{ maxWidth: isTablet ? 420 : undefined }}
+          >
+            {caption}
+          </Text>
         ) : null}
       </View>
 

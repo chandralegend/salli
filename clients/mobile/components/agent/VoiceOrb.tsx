@@ -3,8 +3,10 @@ import { AccessibilityInfo, Animated, Easing } from "react-native";
 import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
 
 import type { VoiceState } from "@/hooks/useVoiceMockSession";
+import { useIsTablet } from "@/lib/responsive";
 
 const SIZE = 220;
+const SIZE_TABLET = 300;
 
 /** Listening/thinking/speaking each get a distinct motion character; Reduce
  * Motion swaps all of it for a plain, instant opacity state instead of
@@ -14,6 +16,8 @@ const SIZE = 220;
 export function VoiceOrb({ state }: { state: VoiceState }) {
   const scale = useRef(new Animated.Value(1)).current;
   const [reduceMotion, setReduceMotion] = useState(false);
+  const isTablet = useIsTablet();
+  const size = isTablet ? SIZE_TABLET : SIZE;
 
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
@@ -61,7 +65,7 @@ export function VoiceOrb({ state }: { state: VoiceState }) {
 
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
-      <Svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <Defs>
           <RadialGradient id="orb-outer">
             <Stop offset="0%" stopColor="#F15A32" stopOpacity={0.5} />
@@ -74,8 +78,8 @@ export function VoiceOrb({ state }: { state: VoiceState }) {
             <Stop offset="100%" stopColor="#7B2A20" stopOpacity={0.6} />
           </RadialGradient>
         </Defs>
-        <Circle cx={SIZE / 2} cy={SIZE / 2} r={SIZE / 2} fill="url(#orb-outer)" />
-        <Circle cx={SIZE / 2} cy={SIZE / 2} r={SIZE / 2.9} fill="url(#orb-core)" />
+        <Circle cx={size / 2} cy={size / 2} r={size / 2} fill="url(#orb-outer)" />
+        <Circle cx={size / 2} cy={size / 2} r={size / 2.9} fill="url(#orb-core)" />
       </Svg>
     </Animated.View>
   );

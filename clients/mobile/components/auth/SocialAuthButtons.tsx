@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
 import { isAppleAuthAvailable, signInWithApple, signInWithGoogle } from "@/lib/auth";
+import { useThemeColors } from "@/lib/theme";
 
 /** Official 4-color Google "G" mark — Google's brand guidelines for a custom
  * "Sign in with Google" button (there's no first-party RN component) require
@@ -49,6 +50,7 @@ function GoogleIcon() {
  * 4-color "G" mark, "Continue with Google" wording, and a light/outlined
  * button matching Google's documented light-theme spec. */
 export function SocialAuthButtons({ onError }: { onError: (message: string) => void }) {
+  const colors = useThemeColors();
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [busyProvider, setBusyProvider] = useState<"google" | "apple" | null>(null);
 
@@ -124,23 +126,23 @@ export function SocialAuthButtons({ onError }: { onError: (message: string) => v
       <Pressable
         onPress={handleGoogle}
         disabled={busyProvider !== null}
-        className="h-[54px] flex-row items-center justify-center gap-2.5 rounded-[16px] border border-white/15 bg-white/[0.04]"
+        className="h-[54px] flex-row items-center justify-center gap-2.5 rounded-[16px] border border-foreground/15 bg-foreground/[0.04]"
         style={{ opacity: busyProvider && busyProvider !== "google" ? 0.5 : 1 }}
       >
         {busyProvider === "google" ? (
-          <ActivityIndicator color="#FFFFFF" />
+          <ActivityIndicator color={colors.foreground} />
         ) : (
           <>
             <GoogleIcon />
-            <Text className="font-sans-semibold text-[15px] text-white">Continue with Google</Text>
+            <Text className="font-sans-semibold text-[15px] text-foreground">Continue with Google</Text>
           </>
         )}
       </Pressable>
 
       <View className="my-1 flex-row items-center gap-3">
-        <View className="h-px flex-1 bg-white/10" />
-        <Text className="text-[12px] text-white/20">or</Text>
-        <View className="h-px flex-1 bg-white/10" />
+        <View className="h-px flex-1 bg-foreground/10" />
+        <Text className="text-[12px] text-foreground/20">or</Text>
+        <View className="h-px flex-1 bg-foreground/10" />
       </View>
     </View>
   );

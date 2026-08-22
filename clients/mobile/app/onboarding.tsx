@@ -29,6 +29,7 @@ import {
   submitRiskQuestionnaireOnboardingRiskQuestionnairePost,
   updateProfileOnboardingProfilePatch,
 } from "@/lib/api/sdk.gen";
+import { useIsTablet } from "@/lib/responsive";
 import type { AppMode } from "@/lib/store";
 import { useSalliStore } from "@/lib/store";
 import { useThemeColors } from "@/lib/theme";
@@ -36,6 +37,11 @@ import { cn } from "@/lib/utils";
 
 const STEP_LABELS = ["Profile", "Income", "Risk", "Goals", "Review", "Mode"];
 const TOTAL_STEPS = STEP_LABELS.length + 1; // +1 for the Welcome step
+
+/** Each step's form column is capped and centered on tablet instead of
+ * stretching edge-to-edge, matching AuthShell's narrower form-width pattern
+ * (this wizard is single-column fields/choice-cards, not a data grid). */
+const TABLET_STEP_MAX_WIDTH = 480;
 
 const WELCOME_ITEMS = [
   { icon: Briefcase, title: "Your profile", detail: "Name, DOB, tax residency, employment" },
@@ -148,6 +154,12 @@ export default function OnboardingScreen() {
   // Comfortable top breathing room even on notchless devices / web preview,
   // where the safe-area inset is 0 and content would otherwise hug the edge.
   const topPad = Math.max(insets.top, 24);
+  const isTablet = useIsTablet();
+  const stepColumnStyle = {
+    width: "100%" as const,
+    maxWidth: isTablet ? TABLET_STEP_MAX_WIDTH : undefined,
+    alignSelf: "center" as const,
+  };
   const setOnboardingComplete = useSalliStore((s) => s.setOnboardingComplete);
   const setMode = useSalliStore((s) => s.setMode);
   const setModeChosen = useSalliStore((s) => s.setModeChosen);
@@ -311,7 +323,7 @@ export default function OnboardingScreen() {
   if (step === 0) {
     return (
       <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
-        <View className="flex-1 px-6 pt-4" style={{ paddingBottom: insets.bottom + 16 }}>
+        <View className="flex-1 px-6 pt-4" style={[{ paddingBottom: insets.bottom + 16 }, stepColumnStyle]}>
           <View className="mb-5 items-center">
             <Logo size={36} className="text-foreground" />
             <Text className="mb-1.5 mt-3 text-center font-sans-bold text-[26px] tracking-tight text-foreground">
@@ -366,7 +378,7 @@ export default function OnboardingScreen() {
       <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={0} onBack={() => setStep(0)} />
-          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled">
+          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" contentContainerStyle={stepColumnStyle}>
             <StepTitle title="About You" subtitle="Used to compute your IRD tax and FIRE plan." />
             <View className="gap-2">
               <TextField label="Full Name *" active value={fullName} onChangeText={setFullName} placeholder="Your full name" />
@@ -435,7 +447,7 @@ export default function OnboardingScreen() {
       <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={1} onBack={handleBack} />
-          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled">
+          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" contentContainerStyle={stepColumnStyle}>
             <StepTitle title="Income Sources" subtitle="Select all that apply — we map each to a ledger account." />
             <View className="gap-2">
               {INCOME_SOURCES.map((source) => {
@@ -503,7 +515,7 @@ export default function OnboardingScreen() {
       <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={2} onBack={handleBack} />
-          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled">
+          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" contentContainerStyle={stepColumnStyle}>
             <StepTitle title="Risk Profile" subtitle="Shapes your FIRE strategy's asset allocation." />
             <View className="gap-3.5">
               <View>
@@ -610,7 +622,7 @@ export default function OnboardingScreen() {
       <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={3} onBack={handleBack} />
-          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled">
+          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" contentContainerStyle={stepColumnStyle}>
             <StepTitle title="Financial Goals" subtitle="What are you working toward?" />
             <View className="gap-3">
               {goals.map((goal, i) => (
@@ -688,7 +700,7 @@ export default function OnboardingScreen() {
     return (
       <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <StepHeader index={4} onBack={handleBack} />
-        <ScrollView className="flex-1 px-5">
+        <ScrollView className="flex-1 px-5" contentContainerStyle={stepColumnStyle}>
           <StepTitle title="Review Setup" subtitle="Confirm — we'll post opening balances as ledger entries." />
           <View className="gap-2">
             {(
@@ -754,7 +766,7 @@ export default function OnboardingScreen() {
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
       <StepHeader index={5} onBack={handleBack} />
-      <ScrollView className="flex-1 px-5">
+      <ScrollView className="flex-1 px-5" contentContainerStyle={stepColumnStyle}>
         <StepTitle
           title="How do you want to use Salli?"
           subtitle="Pick a starting point — you can switch anytime with a swipe."

@@ -18,6 +18,7 @@ import { ToolActivityBlock } from "@/components/agent/ToolActivityBlock";
 import { Drawer } from "@/components/ui/drawer";
 import { SalliBackground } from "@/components/ui/SalliBackground";
 import { type ChatMessage, useAgentChat } from "@/hooks/useAgentChat";
+import { useIsTablet } from "@/lib/responsive";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -27,11 +28,23 @@ import { cn } from "@/lib/utils";
 const WELCOME_MESSAGE =
   "Hey, I'm Salli. I'm here to help you feel more in control of your money. What's on your mind today?";
 
+/** On tablet, chat content (messages + composer) is capped to a readable
+ * column and centered instead of stretching edge-to-edge across the screen —
+ * same idea as AuthShell's form column, wider here since it needs to hold
+ * message bubbles rather than form fields. */
+const TABLET_CHAT_WIDTH = 640;
+
 export default function BuddyScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
+  const isTablet = useIsTablet();
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  const chatColumnStyle = {
+    width: "100%" as const,
+    maxWidth: isTablet ? TABLET_CHAT_WIDTH : undefined,
+    alignSelf: "center" as const,
+  };
 
   const [input, setInput] = useState("");
   const [sessionsOpen, setSessionsOpen] = useState(false);
@@ -82,8 +95,10 @@ export default function BuddyScreen() {
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
         {messages.length === 0 ? (
           <View className="flex-1 justify-end px-4 pb-3">
-            <View className="max-w-[78%] rounded-[20px] rounded-bl-[6px] px-4 py-3" style={{ backgroundColor: colors.bubbleAgent }}>
-              <Text className="text-[14px] leading-5 text-foreground">{WELCOME_MESSAGE}</Text>
+            <View style={chatColumnStyle}>
+              <View className="max-w-[78%] rounded-[20px] rounded-bl-[6px] px-4 py-3" style={{ backgroundColor: colors.bubbleAgent }}>
+                <Text className="text-[14px] leading-5 text-foreground">{WELCOME_MESSAGE}</Text>
+              </View>
             </View>
           </View>
         ) : (
@@ -91,7 +106,7 @@ export default function BuddyScreen() {
             ref={listRef}
             data={messages}
             keyExtractor={(m) => m.id}
-            contentContainerStyle={{ padding: 14, gap: 14 }}
+            contentContainerStyle={{ padding: 14, gap: 14, ...chatColumnStyle }}
             renderItem={({ item }) =>
               item.role === "user" ? (
                 <View className="flex-row justify-end">
@@ -132,13 +147,21 @@ export default function BuddyScreen() {
         )}
 
         {quotaBanner ? (
-          <View className="mx-4 mb-2 rounded-control border border-destructive/25 bg-destructive/10 px-3.5 py-2.5">
-            <Text className="text-[12px] text-destructive">{quotaBanner}</Text>
+          <View className="mb-2 px-4">
+            <View
+              className="rounded-control border border-destructive/25 bg-destructive/10 px-3.5 py-2.5"
+              style={chatColumnStyle}
+            >
+              <Text className="text-[12px] text-destructive">{quotaBanner}</Text>
+            </View>
           </View>
         ) : null}
 
         <View className="px-3.5 pt-2" style={{ paddingBottom: insets.bottom + 16 }}>
-          <View className="flex-row items-center gap-2 rounded-[24px] border border-foreground/10 bg-card py-1.5 pl-2 pr-1.5">
+          <View
+            className="flex-row items-center gap-2 rounded-[24px] border border-foreground/10 bg-card py-1.5 pl-2 pr-1.5"
+            style={chatColumnStyle}
+          >
             <Pressable className="h-9 w-9 items-center justify-center" accessibilityLabel="Attach a file">
               <Paperclip size={17} color={colors.mutedForeground} strokeWidth={1.8} />
             </Pressable>

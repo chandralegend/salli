@@ -5,7 +5,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Logo } from "@/components/Logo";
 import { ModeChoiceStep } from "@/components/onboarding/ModeChoiceStep";
+import { useIsTablet } from "@/lib/responsive";
 import { useSalliStore } from "@/lib/store";
+
+const TABLET_MAX_WIDTH = 480;
 
 /** One-time prompt for users who onboarded before Buddy Mode shipped — the
  * fresh-signup version of this same question lives in the onboarding wizard's
@@ -14,6 +17,7 @@ import { useSalliStore } from "@/lib/store";
 export default function ModeChoiceScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const isTablet = useIsTablet();
   const mode = useSalliStore((s) => s.mode);
   const setMode = useSalliStore((s) => s.setMode);
   const setModeChosen = useSalliStore((s) => s.setModeChosen);
@@ -27,7 +31,15 @@ export default function ModeChoiceScreen() {
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: Math.max(insets.top, 24) }}>
-      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
+      <ScrollView
+        className="flex-1 px-6"
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + 24,
+          width: "100%",
+          maxWidth: isTablet ? TABLET_MAX_WIDTH : undefined,
+          alignSelf: "center",
+        }}
+      >
         <View className="mb-6 items-center pt-4">
           <Logo size={32} className="text-foreground" />
           <Text className="mb-1.5 mt-3 text-center font-sans-bold text-[24px] tracking-tight text-foreground">

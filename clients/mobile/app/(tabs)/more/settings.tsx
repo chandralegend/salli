@@ -16,7 +16,7 @@ import { useMore } from "@/hooks/useMore";
 import { logout } from "@/lib/auth";
 import { confirmDestructive } from "@/lib/confirm";
 import { useSalliStore } from "@/lib/store";
-import { useDarkModeToggle, useThemeColors } from "@/lib/theme";
+import { useThemeColors, useThemeMode } from "@/lib/theme";
 import { useToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +31,7 @@ function formatShortDate(iso?: string | null) {
 export default function SettingsScreen() {
   const router = useRouter();
   const colors = useThemeColors();
-  const { isDark, toggle } = useDarkModeToggle();
+  const { mode, setMode } = useThemeMode();
   const { profile } = useMore();
   const entitlements = useEntitlements();
   const exportData = useExportData();
@@ -187,16 +187,31 @@ export default function SettingsScreen() {
           <View className="flex-row items-center justify-between px-4 py-3.5">
             <Text className="font-sans-medium text-[14px] text-foreground">Appearance</Text>
             <View className="flex-row rounded-pill bg-foreground/[0.08] p-0.5">
-              <Pressable onPress={() => !isDark && toggle()} className={cn("rounded-pill px-3.5 py-1.5", isDark && "bg-primary")}>
-                <Text className={cn("text-[12px] font-sans-semibold", isDark ? "text-primary-foreground" : "text-foreground/40")}>
-                  Dark
-                </Text>
-              </Pressable>
-              <Pressable onPress={() => isDark && toggle()} className={cn("rounded-pill px-3.5 py-1.5", !isDark && "bg-primary")}>
-                <Text className={cn("text-[12px] font-sans-medium", !isDark ? "text-primary-foreground" : "text-foreground/40")}>
-                  Light
-                </Text>
-              </Pressable>
+              {(
+                [
+                  { value: "light", label: "Light" },
+                  { value: "dark", label: "Dark" },
+                  { value: "system", label: "Device" },
+                ] as const
+              ).map((opt) => {
+                const active = mode === opt.value;
+                return (
+                  <Pressable
+                    key={opt.value}
+                    onPress={() => setMode(opt.value)}
+                    className={cn("rounded-pill px-2.5 py-1.5", active && "bg-primary")}
+                  >
+                    <Text
+                      className={cn(
+                        "text-[12px]",
+                        active ? "font-sans-semibold text-primary-foreground" : "font-sans-medium text-foreground/40",
+                      )}
+                    >
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
         </Card>

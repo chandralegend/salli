@@ -1,9 +1,15 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { View } from "react-native";
+import { useColorScheme, View } from "react-native";
 import { vars } from "nativewind";
 
-const STORAGE_KEY = "salli-dark";
+export type ThemeMode = "light" | "dark" | "system";
+
+const STORAGE_KEY = "salli-theme-mode";
+/** Pre-"Device option" installs stored a plain "true"/"false" boolean under
+ * this key — read once as a fallback so upgrading users keep their explicit
+ * choice instead of silently landing on "system". */
+const LEGACY_STORAGE_KEY = "salli-dark";
 
 // Mirrors global.css :root / .dark — kept in sync by hand since NativeWind's
 // vars() needs plain JS values, not CSS custom properties, for RN Modal content
@@ -83,30 +89,37 @@ const COLORS = {
 
 type ThemeContextValue = {
   isDark: boolean;
-  toggle: () => void;
-  setDark: (dark: boolean) => void;
+  mode: ThemeMode;
+  setMode: (mode: ThemeMode) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [isDark, setIsDark] = useState(true); // dark is the mockup's default identity
+  const systemScheme = useColorScheme();
+  // "system" is the default for fresh installs — falls back to whatever the
+  // OS is set to until a stored preference (new or legacy) resolves.
+  const [mode, setModeState] = useState<ThemeMode>("system");
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((stored) => {
-      if (stored !== null) setIsDark(stored === "true");
+    AsyncStorage.getItem(STORAGE_KEY).then(async (stored) => {
+      if (stored === "light" || stored === "dark" || stored === "system") {
+        setModeState(stored);
+        return;
+      }
+      const legacy = await AsyncStorage.getItem(LEGACY_STORAGE_KEY);
+      if (legacy !== null) setModeState(legacy === "true" ? "dark" : "light");
     });
   }, []);
 
-  const setDark = (dark: boolean) => {
-    setIsDark(dark);
-    AsyncStorage.setItem(STORAGE_KEY, String(dark));
+  const setMode = (next: ThemeMode) => {
+    setModeState(next);
+    AsyncStorage.setItem(STORAGE_KEY, next);
   };
 
-  const value = useMemo<ThemeContextValue>(
-    () => ({ isDark, toggle: () => setDark(!isDark), setDark }),
-    [isDark],
-  );
+  const isDark = mode === "system" ? systemScheme === "dark" : mode === "dark";
+
+  const value = useMemo<ThemeContextValue>(() => ({ isDark, mode, setMode }), [isDark, mode]);
 
   const themeVars = useMemo(() => vars(isDark ? DARK : LIGHT), [isDark]);
 
@@ -135,7 +148,7 @@ export function useThemeColors() {
   return isDark ? COLORS.dark : COLORS.light;
 }
 
-export function useDarkModeToggle() {
-  const { isDark, toggle } = useAppTheme();
-  return { isDark, toggle };
+export function useThemeMode() {
+  const { mode, isDark, setMode } = useAppTheme();
+  return { mode, isDark, setMode };
 }

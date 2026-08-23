@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { TourTarget } from "@/components/tour/TourTarget";
+import { useModeSwitch } from "@/hooks/useModeSwitch";
 import { VoiceCaptureSheet } from "../VoiceCaptureSheet";
 import type { EntryDraft } from "../../hooks/useLedger";
 import { useSalliStore } from "../../lib/store";
@@ -82,6 +83,7 @@ function NavTab({
  */
 export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const router = useRouter();
+  const { enterBuddy } = useModeSwitch();
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const requestQuickAddEntry = useSalliStore((s) => s.requestQuickAddEntry);
@@ -106,8 +108,10 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
     const onPress = () => {
       // "Salli AI" enters Buddy Mode directly — the separate Scrooge-persona
       // screen is retired, so this never lets the tab's own route mount.
+      // Via useModeSwitch so the stored mode moves with the navigation; setting
+      // only the route left the edge-swipe believing we were still in Pro Mode.
       if (route.name === "agent") {
-        router.push("/(buddy)");
+        enterBuddy();
         return;
       }
       const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });

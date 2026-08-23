@@ -1,9 +1,9 @@
-import { useRouter } from "expo-router";
 import { MessageCircle } from "lucide-react-native";
 import { type ReactNode, useMemo, useRef, useState } from "react";
 import { Animated, PanResponder, useWindowDimensions, View } from "react-native";
 
 import { Logo } from "@/components/Logo";
+import { useModeSwitch } from "@/hooks/useModeSwitch";
 import { useSalliStore } from "@/lib/store";
 import { useThemeColors } from "@/lib/theme";
 
@@ -27,12 +27,11 @@ const COMMIT_VELOCITY = 0.8;
  * exact frame the overlay still fully covers the screen.
  */
 export function EdgeSwipeModeSwitcher({ children }: { children: ReactNode }) {
-  const router = useRouter();
   const { width } = useWindowDimensions();
   const colors = useThemeColors();
   const mode = useSalliStore((s) => s.mode);
   const modeChosen = useSalliStore((s) => s.modeChosen);
-  const setMode = useSalliStore((s) => s.setMode);
+  const { enter } = useModeSwitch();
 
   const [dragging, setDragging] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
@@ -40,8 +39,10 @@ export function EdgeSwipeModeSwitcher({ children }: { children: ReactNode }) {
 
   const commit = () => {
     Animated.timing(translateX, { toValue: -width, duration: 180, useNativeDriver: true }).start(() => {
-      setMode(targetMode);
-      router.replace(targetMode === "buddy" ? "/(buddy)" : "/(tabs)");
+      // Same helper every other entry point uses, so the stored mode and the
+      // visible screen can't drift apart. replace, not push: swiping between
+      // modes shouldn't grow the back stack.
+      enter(targetMode, { replace: true });
       translateX.setValue(0);
       setDragging(false);
     });

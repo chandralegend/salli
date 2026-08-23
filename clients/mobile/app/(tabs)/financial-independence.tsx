@@ -5,7 +5,6 @@ import {
   ChevronRight,
   ChevronUp,
   Home,
-  Info,
   Lock,
   type LucideIcon,
   PiggyBank,
@@ -26,6 +25,7 @@ import { QuotaBanner } from "@/components/shared/QuotaBanner";
 import { TourTarget } from "@/components/tour/TourTarget";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
+import { InfoButton } from "@/components/ui/info-button";
 import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
 import { Tabs } from "@/components/ui/tabs";
@@ -235,7 +235,15 @@ export default function FinancialIndependenceScreen() {
       <TourTarget id="freedom-header">
         <View className="flex-row items-center px-5 pb-1 pt-2.5">
           <Text className="flex-1 font-sans-bold text-[20px] text-foreground">Freedom</Text>
-          <Info size={18} color={colors.mutedForeground} strokeWidth={2} />
+          <InfoButton
+            size={18}
+            title="Freedom"
+            description={
+              "Freedom is the point where your investments can cover your living costs, so working becomes a choice.\n\n" +
+              "Everything here is computed from your own ledger — your real income, spending, and net worth — not from estimates. " +
+              "As those change, so do these numbers."
+            }
+          />
         </View>
       </TourTarget>
 
@@ -255,7 +263,15 @@ export default function FinancialIndependenceScreen() {
               <Text className="text-[11px] font-sans-semibold uppercase tracking-wide text-white/50">
                 Freedom Number
               </Text>
-              <Info size={13} color="rgba(255,255,255,0.3)" strokeWidth={2} />
+              <InfoButton
+                onDark
+                title="Freedom Number"
+                description={
+                  "The total you'd need invested for returns alone to cover your yearly spending — indefinitely.\n\n" +
+                  "It's your annual expenses divided by your safe withdrawal rate. At a 4% rate, spending Rs. 100,000 a year means a Freedom Number of Rs. 2,500,000.\n\n" +
+                  "Spend less, and the target falls as well as getting closer."
+                }
+              />
             </View>
             <View className="mb-2.5 rounded-[8px] border border-white/10 bg-white/[0.06] px-2.5 py-1.5">
               <Text className="text-[11px] leading-4 text-white/45">
@@ -304,7 +320,14 @@ export default function FinancialIndependenceScreen() {
             <Card className="flex-1 p-3.5">
               <View className="mb-1.5 flex-row items-center gap-1.5">
                 <Text className="text-[11px] font-sans-medium text-foreground/40">Years to Freedom</Text>
-                <Info size={11} color="rgba(255,255,255,0.2)" strokeWidth={2} />
+                <InfoButton
+                  size={11}
+                  title="Years to Freedom"
+                  description={
+                    "How long until you reach your Freedom Number, if you keep saving at your current rate and investments grow at the assumed return.\n\n" +
+                    "It moves fastest when you raise your savings rate — that both adds to the pot and lowers the target, because you're living on less."
+                  }
+                />
               </View>
               <Text className="mb-1 font-sans-extrabold text-[28px] leading-[28px] tracking-tight text-foreground">
                 {projections.data ? yearsToFi.toFixed(1) : "—"}
@@ -316,7 +339,14 @@ export default function FinancialIndependenceScreen() {
             <Card className="flex-1 p-3.5">
               <View className="mb-1.5 flex-row items-center gap-1.5">
                 <Text className="text-[11px] font-sans-medium text-foreground/40">Savings Rate</Text>
-                <Info size={11} color="rgba(255,255,255,0.2)" strokeWidth={2} />
+                <InfoButton
+                  size={11}
+                  title="Savings Rate"
+                  description={
+                    "The share of your income you don't spend, from your actual ledger entries.\n\n" +
+                    "It's the single biggest lever on your Freedom date: it raises what you put away and lowers what you need, at the same time."
+                  }
+                />
               </View>
               <Text className="mb-1 font-sans-extrabold text-[28px] leading-[28px] tracking-tight text-foreground">
                 {fiScore.data ? formatPct(fiScore.data.savings_rate, 0) : "—"}
@@ -331,7 +361,14 @@ export default function FinancialIndependenceScreen() {
             <View className="mb-3.5 flex-row items-center justify-between">
               <View className="flex-row items-center gap-1.5">
                 <Text className="font-sans-semibold text-[14px] text-foreground">Goals</Text>
-                <Info size={12} color="rgba(255,255,255,0.25)" strokeWidth={2} />
+                <InfoButton
+                  size={12}
+                  title="Goals"
+                  description={
+                    "Specific things you're saving toward — a deposit, a fund, a purchase — each with a target amount and date.\n\n" +
+                    "Progress is measured against real balances, so it only moves when money actually does."
+                  }
+                />
               </View>
               <Pressable onPress={() => setTab("Goals")}>
                 <Text className="text-[12px] font-sans-medium text-salli-accent">See all</Text>
@@ -379,7 +416,14 @@ export default function FinancialIndependenceScreen() {
               <View>
                 <View className="flex-row items-center gap-1.5">
                   <Text className="font-sans-semibold text-[14px] text-foreground">Freedom Score</Text>
-                  <Info size={12} color="rgba(255,255,255,0.25)" strokeWidth={2} />
+                  <InfoButton
+                    size={12}
+                    title="Freedom Score"
+                    description={
+                      "A 0–100 read on your overall financial health, combining your savings rate, emergency fund, debt level, and progress toward Freedom.\n\n" +
+                      "It's a way to see whether things are improving over time — not a benchmark against anyone else."
+                    }
+                  />
                 </View>
                 {fiScore.data?.grade ? (
                   <Text className="mt-0.5 text-[11px] text-foreground/30">Grade {fiScore.data.grade}</Text>

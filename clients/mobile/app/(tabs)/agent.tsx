@@ -1,5 +1,6 @@
-import { useRouter } from "expo-router";
 import { useEffect } from "react";
+
+import { useModeSwitch } from "@/hooks/useModeSwitch";
 
 /**
  * Pro Mode's "Salli AI" tab now enters Buddy Mode directly instead of its own
@@ -9,9 +10,10 @@ import { useEffect } from "react";
  * /(buddy), so this only fires as defense-in-depth against a stray deep link.
  */
 export default function AgentTabRedirect() {
-  const router = useRouter();
+  const { enter } = useModeSwitch();
   useEffect(() => {
-    router.replace("/(buddy)");
-  }, [router]);
+    // replace, not push: this route should leave no history entry behind.
+    enter("buddy", { replace: true });
+  }, [enter]);
   return null;
 }

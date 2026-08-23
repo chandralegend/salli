@@ -25,6 +25,7 @@ import { useThemedRefreshControl } from "@/components/ui/themed-refresh-control"
 import type { JournalEntry } from "@/hooks/useDashboard";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useLedgerMutations } from "@/hooks/useLedger";
+import { useModeSwitch } from "@/hooks/useModeSwitch";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useSalliStore } from "@/lib/store";
 import { useThemeColors } from "@/lib/theme";
@@ -32,6 +33,7 @@ import { cn } from "@/lib/utils";
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { enterBuddy } = useModeSwitch();
   const colors = useThemeColors();
   const { netWorth, fiScore, tax, accounts, entries, budgetSummary, balances, incomeYtd, expensesYtd, refetch } =
     useDashboard();
@@ -201,7 +203,7 @@ export default function DashboardScreen() {
             <Text className="font-sans-medium text-[11px] text-foreground/70">Upload</Text>
           </AnimatedPressable>
           <AnimatedPressable
-            onPress={() => router.push("/(buddy)")}
+            onPress={enterBuddy}
             haptic="light"
             className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control bg-salli-accent"
           >

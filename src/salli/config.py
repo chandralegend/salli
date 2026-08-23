@@ -14,6 +14,15 @@ class Settings(BaseSettings):
     # The agent itself never calls OpenAI; this key powers /agent/transcribe alone.
     openai_api_key: str = ""
 
+    # BYOK — encrypts users' own provider keys at rest with AES-GCM.
+    # Comma-separated "version:base64key" entries so keys can be rotated: the
+    # HIGHEST version encrypts, any listed version can decrypt (each row records
+    # the version that sealed it). Generate one with:
+    #   python -c "import base64,os; print('1:'+base64.b64encode(os.urandom(32)).decode())"
+    # Left blank, BYOK reports unavailable and no user key is accepted — it must
+    # never degrade to storing a provider key in plaintext.
+    byok_encryption_keys: str = ""
+
     # Supabase
     supabase_url: str = ""
     supabase_anon_key: str = ""

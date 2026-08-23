@@ -37,6 +37,10 @@ dependencies = [
     "rapidfuzz>=3.0",
     # HTTP / utils
     "httpx>=0.27",
+    # Encryption at rest for users' own LLM API keys (BYOK). Already present
+    # transitively via python-jose[cryptography], but declared explicitly
+    # because salli imports cryptography.fernet directly.
+    "cryptography>=43.0",
     # Observability
     "structlog>=24.0",
     # API (Phase 2)

@@ -323,6 +323,37 @@ class UserProfileRepository(ABC):
     async def upsert(self, user_id: str, fields: dict[str, Any]) -> None: ...
 
 
+class LlmCredentialRepository(ABC):
+    """Per-user provider API keys (BYOK), stored encrypted.
+
+    Deliberately dumb: it moves ciphertext in and out and never encrypts,
+    decrypts, or validates. All crypto lives in LlmCredentialService so there
+    is exactly one place a plaintext key can exist.
+    """
+
+    @abstractmethod
+    async def list_for_user(self, user_id: str) -> list[dict[str, Any]]:
+        """All stored credentials for a user, ciphertext included."""
+        ...
+
+    @abstractmethod
+    async def get(self, user_id: str, provider: str) -> dict[str, Any] | None:
+        """One credential, or None."""
+        ...
+
+    @abstractmethod
+    async def upsert(
+        self, user_id: str, provider: str, ciphertext: str, last4: str, validated_at: Any
+    ) -> None:
+        """Create or replace this user's credential for the provider."""
+        ...
+
+    @abstractmethod
+    async def delete(self, user_id: str, provider: str) -> bool:
+        """Remove it. Returns False when there was nothing to remove."""
+        ...
+
+
 class BillingChangeRejected(RuntimeError):
     """The provider refused a subscription change for a business reason.
 

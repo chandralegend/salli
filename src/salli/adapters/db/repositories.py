@@ -45,6 +45,7 @@ from salli.adapters.db.models import (
     SubscriptionORM,
     TaxComputationORM,
     UsageCounterORM,
+    UserLlmCredentialORM,
     UserProfileORM,
 )
 from salli.application.ports import (
@@ -61,6 +62,7 @@ from salli.application.ports import (
     GoalRepository,
     InsuranceTargetRepository,
     LedgerRepository,
+    LlmCredentialRepository,
     OAuthClientRepository,
     OAuthTokenRepository,
     PolicyRepository,
@@ -916,6 +918,75 @@ class SQLUserProfileRepository(UserProfileRepository):
             if hasattr(row, k) and v is not None:
                 setattr(row, k, v)
         await self._s.flush()
+
+
+def _llm_credential_to_dict(row: UserLlmCredentialORM) -> dict[str, Any]:
+    return {
+        "provider": row.provider,
+        "ciphertext": row.ciphertext,
+        "last4": row.last4,
+        "validated_at": row.validated_at.isoformat() if row.validated_at else None,
+    }
+
+
+class SQLLlmCredentialRepository(LlmCredentialRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def list_for_user(self, user_id: str) -> list[dict[str, Any]]:
+        rows = (
+            (
+                await self._s.execute(
+                    select(UserLlmCredentialORM)
+                    .where(UserLlmCredentialORM.user_id == user_id)
+                    .order_by(UserLlmCredentialORM.provider)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        return [_llm_credential_to_dict(r) for r in rows]
+
+    async def get(self, user_id: str, provider: str) -> dict[str, Any] | None:
+        row = (
+            await self._s.execute(
+                select(UserLlmCredentialORM).where(
+                    UserLlmCredentialORM.user_id == user_id,
+                    UserLlmCredentialORM.provider == provider,
+                )
+            )
+        ).scalar_one_or_none()
+        return _llm_credential_to_dict(row) if row else None
+
+    async def upsert(
+        self, user_id: str, provider: str, ciphertext: str, last4: str, validated_at: Any
+    ) -> None:
+        row = (
+            await self._s.execute(
+                select(UserLlmCredentialORM).where(
+                    UserLlmCredentialORM.user_id == user_id,
+                    UserLlmCredentialORM.provider == provider,
+                )
+            )
+        ).scalar_one_or_none()
+        if row is None:
+            row = UserLlmCredentialORM(user_id=user_id, provider=provider)
+            self._s.add(row)
+        # Assigned unconditionally, unlike the user_profiles upsert above:
+        # re-saving a key must be able to clear a stale validated_at back to None.
+        row.ciphertext = ciphertext
+        row.last4 = last4
+        row.validated_at = validated_at
+        await self._s.flush()
+
+    async def delete(self, user_id: str, provider: str) -> bool:
+        result = await self._s.execute(
+            delete(UserLlmCredentialORM).where(
+                UserLlmCredentialORM.user_id == user_id,
+                UserLlmCredentialORM.provider == provider,
+            )
+        )
+        return bool(result.rowcount)
 
 
 # ── Financial Independence repositories ──────────────────────────────────────
@@ -1879,6 +1950,7 @@ class SQLDataPortabilityRepository(DataPortabilityRepository):
         await _delete(ReminderORM, ReminderORM.user_id)
         await _delete(SubscriptionORM, SubscriptionORM.user_id)
         await _delete(UsageCounterORM, UsageCounterORM.user_id)
+        await _delete(UserLlmCredentialORM, UserLlmCredentialORM.user_id)
         await _delete(GoalORM, GoalORM.user_id)
         await _delete(FiScoreORM, FiScoreORM.user_id)
         await _delete(FireStrategyORM, FireStrategyORM.user_id)

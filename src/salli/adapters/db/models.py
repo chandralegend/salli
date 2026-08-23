@@ -395,6 +395,54 @@ class UsageCounterORM(Base):
     )
 
 
+class UserLlmCredentialORM(Base):
+    """A user's own LLM API key (BYOK), encrypted at rest.
+
+    Its own table rather than columns on user_profiles for three reasons:
+    SQLUserProfileRepository.upsert skips None values so it cannot clear a
+    field (which would break "remove my key"); a row delete is the natural
+    remove; and a decryptable secret is easier to reason about — and to keep
+    out of the data export — when it lives nowhere else.
+
+    Unlike the OAuth tokens above, this is NOT hashed. Those are values Salli
+    issued and only ever needs to *compare*, so SHA-256 suffices; a user's
+    provider key has to be replayed to Anthropic/OpenAI, so it must be
+    reversible. Never store plaintext here, even when no encryption key is
+    configured — the feature reports unavailable instead.
+
+    `ciphertext` is AES-GCM, with `f"{user_id}|{provider}"` as associated data.
+    The AAD is what makes a row swap detectable: without it, moving user A's
+    ciphertext onto user B's row (a bad WHERE clause, a restore from a mixed
+    backup) would silently bill A for B's calls, and nothing about the
+    ciphertext would reveal it. With it, decryption simply fails.
+    """
+
+    __tablename__ = "user_llm_credentials"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)  # anthropic | openai
+    ciphertext: Mapped[str] = mapped_column(Text, nullable=False)
+    # Which configured encryption key sealed this row. Present from day one:
+    # rotation can't be retrofitted later, because by the time you need it the
+    # old key has to still be around to re-encrypt with the new one.
+    key_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    # Last 4 characters of the plaintext, so the UI can show a recognisable
+    # preview without the key ever being readable back.
+    last4: Mapped[str] = mapped_column(String(4), nullable=False, default="")
+    # Set when a live test call against the provider succeeded. NULL means
+    # stored but never confirmed working.
+    validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+
+    __table_args__ = (UniqueConstraint("user_id", "provider", name="uq_llm_cred_user_provider"),)
+
+
 # ── Financial Independence: goals, score snapshots, advisory reports ──────────
 
 

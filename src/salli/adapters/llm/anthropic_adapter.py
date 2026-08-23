@@ -19,15 +19,25 @@ _MODEL_TIERS = {
 
 
 class AnthropicLLMAdapter(LLMPort):
-    def __init__(self, api_key: str, langsmith_project: str | None = None) -> None:
+    """One instance per resolved credential.
+
+    The key stays on the constructor rather than moving onto
+    `LLMPort.extract_structured`: the port exists so the domain never has to know
+    which provider is behind it, and a provider credential in its signature would
+    leak that back out and oblige every future implementation to pretend it has
+    an Anthropic key. Constructing one is two field assignments, so callers build
+    a fresh adapter per request instead (see EntryParseService).
+    """
+
+    def __init__(self, api_key: Any, langsmith_project: str | None = None) -> None:
         self._api_key = api_key
         self._langsmith_project = langsmith_project
 
     def _get_model(self, tier: str = "fast"):
-        from langchain_anthropic import ChatAnthropic
+        from salli.domain.agents.model_factory import chat_model
 
         model_id = _MODEL_TIERS.get(tier, _MODEL_TIERS["fast"])
-        return ChatAnthropic(model=model_id, api_key=self._api_key, temperature=0)
+        return chat_model(api_key=self._api_key, model=model_id, temperature=0)
 
     async def extract_structured(
         self,

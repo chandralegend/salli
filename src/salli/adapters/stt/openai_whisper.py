@@ -9,15 +9,27 @@ streaming transcription API here.
 
 from __future__ import annotations
 
+from typing import Any
+
 import httpx
 
 from salli.application.ports import TranscriptionPort
+
+
+def _reveal(key: Any) -> str:
+    """Accept a Secret or a plain string. Interpolating a Secret directly would
+    render the mask, so the unwrap has to be explicit and right here."""
+    return key.reveal() if hasattr(key, "reveal") else str(key)
+
 
 _TRANSCRIPTIONS_URL = "https://api.openai.com/v1/audio/transcriptions"
 
 
 class OpenAIWhisperAdapter(TranscriptionPort):
-    def __init__(self, api_key: str, model: str = "gpt-4o-mini-transcribe", timeout: float = 30.0) -> None:
+    def __init__(
+        self, api_key: Any, model: str = "gpt-4o-mini-transcribe", timeout: float = 30.0
+    ) -> None:
+        # May be a Secret; unwrapped only when the request is actually made.
         self._api_key = api_key
         self._model = model
         self._timeout = timeout
@@ -26,7 +38,7 @@ class OpenAIWhisperAdapter(TranscriptionPort):
         async with httpx.AsyncClient(timeout=self._timeout) as client:
             response = await client.post(
                 _TRANSCRIPTIONS_URL,
-                headers={"Authorization": f"Bearer {self._api_key}"},
+                headers={"Authorization": f"Bearer {_reveal(self._api_key)}"},
                 data={"model": self._model},
                 files={"file": (filename, audio_bytes, mime_type)},
             )

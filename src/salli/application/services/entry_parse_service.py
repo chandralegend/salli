@@ -51,7 +51,10 @@ _DRAFT_SCHEMA: dict[str, Any] = {
                 "null whenever debit_account_id is non-null, or when nothing sensible can be inferred."
             ),
             "properties": {
-                "name": {"type": "string", "description": "Suggested account name, e.g. 'Uber Eats'."},
+                "name": {
+                    "type": "string",
+                    "description": "Suggested account name, e.g. 'Uber Eats'.",
+                },
                 "type": {
                     "type": "string",
                     "enum": ["asset", "liability", "equity", "income", "expense"],
@@ -117,16 +120,37 @@ User's note:
 
 
 class EntryParseService:
-    def __init__(self, ledger: LedgerService, llm: LLMPort) -> None:
+    """Free-text → draft journal entry.
+
+    Takes an `llm_factory` rather than a prebuilt LLMPort so the adapter can be
+    constructed against whichever key resolved for this request. Previously this
+    service only existed when a *platform* Anthropic key was configured, which
+    meant a BYOK user got a 503 from /entries/parse despite having a working key
+    of their own.
+    """
+
+    def __init__(self, ledger: LedgerService, llm_factory: Any, credentials: Any = None) -> None:
         self._ledger = ledger
-        self._llm = llm
+        self._llm_factory = llm_factory
+        self._credentials = credentials
+
+    @property
+    def available(self) -> bool:
+        """False only when there is no credential source at all — availability is
+        now a per-user question, answered at call time."""
+        return self._credentials is not None
+
+    async def _llm_for(self, user_id: str) -> LLMPort:
+        creds = await self._credentials.resolve(user_id)
+        return self._llm_factory(creds.anthropic)
 
     async def parse_draft(self, user_id: str, text: str) -> dict[str, Any]:
         accounts = [a for a in await self._ledger.list_accounts(user_id) if a.is_active]
         chart = [{"id": a.id, "code": a.code, "name": a.name, "type": a.type} for a in accounts]
         prompt = _PROMPT.format(accounts=json.dumps(chart, ensure_ascii=False), text=text.strip())
 
-        draft = await self._llm.extract_structured(prompt, _DRAFT_SCHEMA, model_tier="fast")
+        llm = await self._llm_for(user_id)
+        draft = await llm.extract_structured(prompt, _DRAFT_SCHEMA, model_tier="fast")
 
         # Guard: never let a hallucinated account id through — only ids from the chart.
         valid_ids = {a.id for a in accounts}

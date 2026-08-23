@@ -61,8 +61,9 @@ class Services:
     data_portability: DataPortabilityService
     mcp_oauth: McpOAuthService
     llm_credentials: LlmCredentialService
-    entry_parse: EntryParseService | None
-    transcription: TranscriptionService | None
+    # Not optional any more: availability is per-user, decided at call time.
+    entry_parse: EntryParseService
+    transcription: TranscriptionService
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
@@ -120,24 +121,20 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     )
     parsing = ParsingService(uow_factory, storage, llm_credentials)
 
-    # Free-text → draft journal entry (voice/text quick-add). Only available when
-    # an Anthropic key is configured; otherwise the /entries/parse route 503s.
-    entry_parse: EntryParseService | None = None
-    if settings.anthropic_api_key:
-        from salli.adapters.llm.anthropic_adapter import AnthropicLLMAdapter
+    # Free-text → draft journal entry (voice/text quick-add) and Voice Mode
+    # speech-to-text. Both are now always constructed: which key they run on is
+    # resolved per request, so a user with their own key gets the feature even
+    # where no platform key exists. Previously both were None unless a platform
+    # key was configured, which 503'd exactly the users BYOK is for.
+    from salli.adapters.llm.anthropic_adapter import AnthropicLLMAdapter
+    from salli.adapters.stt.openai_whisper import OpenAIWhisperAdapter
 
-        entry_parse = EntryParseService(
-            ledger,
-            AnthropicLLMAdapter(settings.anthropic_api_key, settings.langsmith_project),
-        )
-
-    # Voice Mode speech-to-text. Only available when an OpenAI key is
-    # configured; otherwise /agent/transcribe 503s (mirrors entry_parse above).
-    transcription: TranscriptionService | None = None
-    if settings.openai_api_key:
-        from salli.adapters.stt.openai_whisper import OpenAIWhisperAdapter
-
-        transcription = TranscriptionService(OpenAIWhisperAdapter(settings.openai_api_key))
+    entry_parse = EntryParseService(
+        ledger,
+        lambda key: AnthropicLLMAdapter(key, settings.langsmith_project),
+        credentials=llm_credentials,
+    )
+    transcription = TranscriptionService(OpenAIWhisperAdapter, llm_credentials)
 
     reminders = ReminderService(uow_factory, budget, subscription, insurance)
     bug_reports = BugReportService(

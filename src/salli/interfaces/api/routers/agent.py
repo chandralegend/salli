@@ -29,6 +29,7 @@ from pydantic import BaseModel
 from starlette.background import BackgroundTask
 
 from salli.application.services.billing_service import QuotaExceeded
+from salli.application.services.transcription_service import TranscriptionUnavailable
 from salli.domain.billing.plans import METRIC_AGENT_MESSAGES
 from salli.domain.secrets import redact_obj
 from salli.interfaces.api.deps import AppServices, Credentials, CurrentEmail, CurrentUser
@@ -196,18 +197,26 @@ async def transcribe(file: UploadFile, user_id: CurrentUser, svc: AppServices):
     utterance, uploads it here once released, and sends the returned text
     through the normal /agent/chat flow like any typed message.
     """
-    if svc.transcription is None:
-        raise HTTPException(status_code=503, detail="Speech-to-text is not configured")
     audio_bytes = await file.read()
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="Empty audio file")
     if len(audio_bytes) > _MAX_VOICE_AUDIO_BYTES:
         raise HTTPException(status_code=413, detail="Recording too long")
-    text = await svc.transcription.transcribe(
-        audio_bytes,
-        filename=file.filename or "voice.m4a",
-        mime_type=file.content_type or "audio/m4a",
-    )
+    # Availability is per-user now: a user with their own OpenAI key gets Voice
+    # Mode even where no platform key is configured, which is the case in
+    # production today.
+    try:
+        text = await svc.transcription.transcribe(
+            user_id,
+            audio_bytes,
+            filename=file.filename or "voice.m4a",
+            mime_type=file.content_type or "audio/m4a",
+        )
+    except TranscriptionUnavailable:
+        raise HTTPException(
+            status_code=503,
+            detail="Speech-to-text needs an OpenAI key — add one in Settings.",
+        ) from None
     return {"text": text}
 
 

@@ -65,7 +65,7 @@ async def parse_entry(
     the deterministic, balance-checked POST /entries/. Counts against the same
     monthly AI-usage quota as /agent/chat — it's an AI feature like any other.
     """
-    if svc.entry_parse is None:
+    if not svc.entry_parse.available:
         raise HTTPException(status_code=503, detail="AI parsing is not configured")
     if not body.text.strip():
         raise HTTPException(status_code=400, detail="text is required")

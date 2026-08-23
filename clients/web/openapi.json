@@ -4899,6 +4899,129 @@
         }
       }
     },
+    "/llm-keys": {
+      "get": {
+        "tags": [
+          "llm-keys"
+        ],
+        "summary": "Get Llm Keys",
+        "description": "Which keys this user has stored, and whether BYOK is usable at all here.\n\n`available: false` means the deployment can't accept keys (no encryption key\nconfigured, or authentication isn't real enough to trust a user id) \u2014 the UI\nshould hide the section rather than offer a control that will 503.",
+        "operationId": "get_llm_keys_llm_keys_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/llm-keys/{provider}": {
+      "put": {
+        "tags": [
+          "llm-keys"
+        ],
+        "summary": "Save Llm Key",
+        "description": "Validate the key against the provider, then store it encrypted.\n\nValidated before storing so a typo is rejected here, on the settings screen,\nrather than surfacing later as a broken conversation \u2014 and so unusable rows\nnever enter the table.",
+        "operationId": "save_llm_key_llm_keys__provider__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "anthropic",
+                "openai"
+              ],
+              "type": "string",
+              "title": "Provider"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "llm-keys"
+        ],
+        "summary": "Delete Llm Key",
+        "description": "Remove the key. The user reverts to platform metering on the next request.",
+        "operationId": "delete_llm_key_llm_keys__provider__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "anthropic",
+                "openai"
+              ],
+              "type": "string",
+              "title": "Provider"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/.well-known/oauth-authorization-server": {
       "get": {
         "tags": [
@@ -7406,6 +7529,20 @@
           "investment_experience"
         ],
         "title": "RiskQuestionnaireRequest"
+      },
+      "SaveKeyRequest": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key"
+        ],
+        "title": "SaveKeyRequest"
       },
       "SubscriptionRequest": {
         "properties": {

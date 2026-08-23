@@ -1096,6 +1096,16 @@ export type RiskQuestionnaireRequest = {
 };
 
 /**
+ * SaveKeyRequest
+ */
+export type SaveKeyRequest = {
+    /**
+     * Key
+     */
+    key: string;
+};
+
+/**
  * SubscriptionRequest
  */
 export type SubscriptionRequest = {
@@ -4078,6 +4088,80 @@ export type ExportReportCsvReportsReportTypeExportGetResponses = {
      */
     200: unknown;
 };
+
+export type GetLlmKeysLlmKeysGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/llm-keys';
+};
+
+export type GetLlmKeysLlmKeysGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type DeleteLlmKeyLlmKeysProviderDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Provider
+         */
+        provider: 'anthropic' | 'openai';
+    };
+    query?: never;
+    url: '/llm-keys/{provider}';
+};
+
+export type DeleteLlmKeyLlmKeysProviderDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteLlmKeyLlmKeysProviderDeleteError = DeleteLlmKeyLlmKeysProviderDeleteErrors[keyof DeleteLlmKeyLlmKeysProviderDeleteErrors];
+
+export type DeleteLlmKeyLlmKeysProviderDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteLlmKeyLlmKeysProviderDeleteResponse = DeleteLlmKeyLlmKeysProviderDeleteResponses[keyof DeleteLlmKeyLlmKeysProviderDeleteResponses];
+
+export type SaveLlmKeyLlmKeysProviderPutData = {
+    body: SaveKeyRequest;
+    path: {
+        /**
+         * Provider
+         */
+        provider: 'anthropic' | 'openai';
+    };
+    query?: never;
+    url: '/llm-keys/{provider}';
+};
+
+export type SaveLlmKeyLlmKeysProviderPutErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SaveLlmKeyLlmKeysProviderPutError = SaveLlmKeyLlmKeysProviderPutErrors[keyof SaveLlmKeyLlmKeysProviderPutErrors];
+
+export type SaveLlmKeyLlmKeysProviderPutResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type SaveLlmKeyLlmKeysProviderPutResponse = SaveLlmKeyLlmKeysProviderPutResponses[keyof SaveLlmKeyLlmKeysProviderPutResponses];
 
 export type AuthorizationServerMetadataWellKnownOauthAuthorizationServerGetData = {
     body?: never;

@@ -33,6 +33,7 @@ from salli.interfaces.api.routers import (
     fi,
     insurance,
     ledger,
+    llm_keys,
     mcp_oauth,
     onboarding,
     portfolio,
@@ -162,6 +163,7 @@ def create_app() -> FastAPI:
     app.include_router(subscriptions.router)
     app.include_router(insurance.router)
     app.include_router(reports.router)
+    app.include_router(llm_keys.router)
     app.include_router(mcp_oauth.router)
     app.include_router(mcp_oauth.connections_router)
 

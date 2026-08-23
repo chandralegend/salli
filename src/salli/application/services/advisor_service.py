@@ -258,12 +258,30 @@ class AdvisorService:
     # ── Scheduling helper ────────────────────────────────────────────────────────
 
     async def due_users(self) -> list[dict[str, str]]:
-        """Active paid subscribers who have not had an advisory report today."""
+        """Opted-in users who have not had an advisory report today.
+
+        Was "active paid subscribers": the daily run is available on every tier
+        now, but opt-in rather than automatic. It spends the user's own
+        advisor_runs allowance, so switching it on by default would silently
+        consume a Free user's entire monthly quota within ten days — before they
+        had ever asked for a briefing.
+        """
         today = datetime.date.today().isoformat()
         async with self._uow_factory() as uow:
-            subs = await uow.subscriptions.list_active_paid()  # see repo
+            candidates = await uow.user_profiles.list_daily_briefing_optins()
             due = []
-            for s in subs:
-                if not await uow.advisories.ran_today(s["user_id"], today):
-                    due.append(s)
+            for c in candidates:
+                if not await uow.advisories.ran_today(c["user_id"], today):
+                    due.append(c)
         return due
+
+    async def get_daily_briefing_enabled(self, user_id: str) -> bool:
+        async with self._uow_factory() as uow:
+            profile = await uow.user_profiles.get(user_id)
+        return bool((profile or {}).get("daily_briefing_enabled"))
+
+    async def set_daily_briefing_enabled(self, user_id: str, enabled: bool) -> None:
+        """Uses set_flag, not upsert: upsert skips falsy-as-None values, so a
+        toggle routed through it could be switched on but never off."""
+        async with self._uow_factory() as uow:
+            await uow.user_profiles.set_flag(user_id, "daily_briefing_enabled", enabled)

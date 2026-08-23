@@ -332,6 +332,12 @@ class UserProfileORM(Base):
     # immediately kills already-issued MCP tokens, not just future grants.
     mcp_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
+    # Opt-in for the scheduled daily advisor run. Default off, deliberately:
+    # the run consumes the user's advisor_runs allowance, so switching it on for
+    # everyone would silently spend a Free user's whole monthly quota inside ten
+    # days — before they had ever asked for a briefing.
+    daily_briefing_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
     )

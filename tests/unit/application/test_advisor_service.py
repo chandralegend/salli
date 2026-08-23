@@ -52,19 +52,31 @@ class FakeReminderRepo:
         return reminder_id
 
 
-class FakeBillingSubscriptionRepo:
-    def __init__(self, active_paid):
-        self._active_paid = active_paid
+class FakeUserProfileRepo:
+    """The daily run is now driven by an opt-in profile flag, not by plan."""
 
-    async def list_active_paid(self):
-        return self._active_paid
+    def __init__(self, optins):
+        self._optins = optins
+        self.flags: dict[tuple[str, str], bool] = {}
+
+    async def list_daily_briefing_optins(self):
+        return self._optins
+
+    async def get(self, user_id):
+        return {
+            "id": user_id,
+            "daily_briefing_enabled": self.flags.get((user_id, "daily_briefing_enabled"), False),
+        }
+
+    async def set_flag(self, user_id, field, value):
+        self.flags[(user_id, field)] = value
 
 
 class FakeUoW:
-    def __init__(self, advisories, reminders, subscriptions=None):
+    def __init__(self, advisories, reminders, user_profiles=None):
         self.advisories = advisories
         self.reminders = reminders
-        self.subscriptions = subscriptions
+        self.user_profiles = user_profiles
 
     async def __aenter__(self):
         return self
@@ -73,14 +85,14 @@ class FakeUoW:
         pass
 
 
-def _make_service(active_paid=None):
+def _make_service(optins=None):
     advisories = FakeAdvisoryRepo()
     reminders = FakeReminderRepo()
-    subscriptions = FakeBillingSubscriptionRepo(active_paid or [])
+    profiles = FakeUserProfileRepo(optins or [])
 
     @asynccontextmanager
     async def uow_factory():
-        yield FakeUoW(advisories, reminders, subscriptions)
+        yield FakeUoW(advisories, reminders, profiles)
 
     svc = AdvisorService(uow_factory, fi_service=None, billing_service=None)
     return svc, advisories, reminders
@@ -230,18 +242,34 @@ async def test_due_users_excludes_users_who_ran_today():
     import datetime
 
     today = datetime.date.today().isoformat()
-    svc, advisories, _ = _make_service(active_paid=[{"user_id": "u1"}, {"user_id": "u2"}])
+    svc, advisories, _ = _make_service(
+        optins=[{"user_id": "u1", "email": None}, {"user_id": "u2", "email": None}]
+    )
     await advisories.save("u1", {"recommendations": [], "created_at": today})
 
     due = await svc.due_users()
 
-    assert due == [{"user_id": "u2"}]
+    assert due == [{"user_id": "u2", "email": None}]
 
 
 @pytest.mark.asyncio
-async def test_due_users_empty_when_no_active_paid_subscribers():
-    svc, _, _ = _make_service(active_paid=[])
+async def test_due_users_empty_when_nobody_opted_in():
+    """Free users are no longer excluded by plan — they're excluded by not having
+    asked, which is the point: the run spends their own advisor allowance."""
+    svc, _, _ = _make_service(optins=[])
     assert await svc.due_users() == []
+
+
+@pytest.mark.asyncio
+async def test_the_opt_in_toggle_round_trips_both_ways():
+    """upsert skips None-ish values, so a toggle routed through it could be
+    switched on but never off — hence set_flag."""
+    svc, _, _ = _make_service()
+    assert await svc.get_daily_briefing_enabled("u1") is False
+    await svc.set_daily_briefing_enabled("u1", True)
+    assert await svc.get_daily_briefing_enabled("u1") is True
+    await svc.set_daily_briefing_enabled("u1", False)
+    assert await svc.get_daily_briefing_enabled("u1") is False
 
 
 # ── generate_advice (LLM-backed — skip if no API key) ───────────────────────────

@@ -2876,6 +2876,69 @@
         ]
       }
     },
+    "/advisor/daily-briefing": {
+      "get": {
+        "tags": [
+          "advisor"
+        ],
+        "summary": "Get Daily Briefing",
+        "description": "Whether the scheduled daily advisor run is on for this user.",
+        "operationId": "get_daily_briefing_advisor_daily_briefing_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "advisor"
+        ],
+        "summary": "Set Daily Briefing",
+        "description": "Opt in or out of the scheduled daily run.\n\nAvailable on every tier, but off by default: the run spends the user's own\nadvisor_runs allowance, so it has to be something they asked for rather than\nsomething that quietly drains a Free user's month.",
+        "operationId": "set_daily_briefing_advisor_daily_briefing_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DailyBriefingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/advisor/run": {
       "post": {
         "tags": [
@@ -5481,6 +5544,7 @@
           "mcp-oauth"
         ],
         "summary": "Set Mcp Enabled",
+        "description": "No plan gate: MCP is available on every tier, Free included.",
         "operationId": "set_mcp_enabled_mcp_connections_enabled_put",
         "requestBody": {
           "content": {
@@ -6290,6 +6354,19 @@
           "due_date"
         ],
         "title": "CreateReminderRequest"
+      },
+      "DailyBriefingRequest": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "DailyBriefingRequest"
       },
       "DebtRequest": {
         "properties": {

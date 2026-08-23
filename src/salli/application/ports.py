@@ -322,6 +322,16 @@ class UserProfileRepository(ABC):
     @abstractmethod
     async def upsert(self, user_id: str, fields: dict[str, Any]) -> None: ...
 
+    @abstractmethod
+    async def set_flag(self, user_id: str, field: str, value: bool) -> None:
+        """Set a boolean flag, including to False (which `upsert` cannot do)."""
+        ...
+
+    @abstractmethod
+    async def list_daily_briefing_optins(self) -> list[dict[str, Any]]:
+        """Users who opted in to the scheduled daily advisor run."""
+        ...
+
 
 class LlmCredentialRepository(ABC):
     """Per-user provider API keys (BYOK), stored encrypted.

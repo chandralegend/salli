@@ -21,6 +21,27 @@ from salli.interfaces.api.deps import AppServices, CurrentEmail, CurrentUser
 router = APIRouter(prefix="/advisor", tags=["advisor"])
 
 
+class DailyBriefingRequest(BaseModel):
+    enabled: bool
+
+
+@router.get("/daily-briefing")
+async def get_daily_briefing(user_id: CurrentUser, svc: AppServices):
+    """Whether the scheduled daily advisor run is on for this user."""
+    return {"enabled": await svc.advisor.get_daily_briefing_enabled(user_id)}
+
+
+@router.put("/daily-briefing", status_code=status.HTTP_204_NO_CONTENT)
+async def set_daily_briefing(body: DailyBriefingRequest, user_id: CurrentUser, svc: AppServices):
+    """Opt in or out of the scheduled daily run.
+
+    Available on every tier, but off by default: the run spends the user's own
+    advisor_runs allowance, so it has to be something they asked for rather than
+    something that quietly drains a Free user's month.
+    """
+    await svc.advisor.set_daily_briefing_enabled(user_id, body.enabled)
+
+
 @router.post("/run")
 async def run_advisor(user_id: CurrentUser, email: CurrentEmail, svc: AppServices):
     """Run the Wealth Advisor now (counts against the advisor_runs quota)."""

@@ -1,10 +1,9 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { useMcpConsentInfo, useMcpConsentDecision } from "@/hooks/useMcp";
 import { ApiError } from "@/lib/api-fetch";
@@ -104,20 +103,6 @@ function ConsentContent() {
   }
 
   const info = consentInfo.data;
-
-  if (info && !info.plan_ok) {
-    return (
-      <AuthCard title="Upgrade required" subtitle={`${info.client_name} wants access`}>
-        <p className="text-[13px] text-muted-foreground leading-relaxed">
-          Connecting an AI assistant requires a paid Salli plan. Upgrade, then come back to this
-          link to finish connecting {info.client_name}.
-        </p>
-        <Link href="/settings?upgrade=plus" className={buttonVariants({ className: "mt-5 w-full" })}>
-          Upgrade in Settings
-        </Link>
-      </AuthCard>
-    );
-  }
 
   return (
     <AuthCard title="Connect to Salli" subtitle={`${info?.client_name ?? "An application"} wants access`}>

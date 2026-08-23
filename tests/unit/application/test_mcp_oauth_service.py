@@ -12,7 +12,6 @@ from contextlib import asynccontextmanager
 
 import pytest
 
-from salli.application.services.billing_service import PlanRequiredError
 from salli.application.services.mcp_oauth_service import McpOAuthService
 
 # ── In-memory fakes ────────────────────────────────────────────────────────────
@@ -87,23 +86,29 @@ async def test_is_mcp_enabled_true_on_paid_plan_with_flag_set():
 
 
 @pytest.mark.asyncio
-async def test_is_mcp_enabled_false_on_free_plan_even_with_flag_set():
-    """Covers the downgrade case: the DB flag is still True from when the user
-    was on a paid plan, but the live plan check must still deny access."""
+async def test_is_mcp_enabled_on_a_free_plan():
+    """MCP is no longer plan-gated — tiers differ only in AI usage allowance, so
+    the user's own toggle is the whole decision."""
     svc = _make_service(plan_by_user={"user-1": "free"}, mcp_enabled_by_user={"user-1": True})
-    assert await svc.is_mcp_enabled("user-1") is False
+    assert await svc.is_mcp_enabled("user-1") is True
 
 
 # ── set_mcp_enabled ──────────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
-async def test_set_mcp_enabled_raises_plan_required_on_free_plan():
+async def test_set_mcp_enabled_succeeds_on_a_free_plan():
     svc = _make_service(plan_by_user={"user-1": "free"})
-    with pytest.raises(PlanRequiredError) as exc_info:
-        await svc.set_mcp_enabled("user-1", True)
-    assert exc_info.value.feature == "mcp"
-    assert exc_info.value.plan_key == "free"
+    await svc.set_mcp_enabled("user-1", True)
+    assert await svc.is_mcp_enabled("user-1") is True
+
+
+@pytest.mark.asyncio
+async def test_the_toggle_still_revokes_immediately_when_switched_off():
+    """The live check is what makes disabling take effect on already-issued
+    tokens, so removing the plan gate must not have removed that property."""
+    svc = _make_service(plan_by_user={"user-1": "free"}, mcp_enabled_by_user={"user-1": True})
+    await svc.set_mcp_enabled("user-1", False)
     assert await svc.is_mcp_enabled("user-1") is False
 
 

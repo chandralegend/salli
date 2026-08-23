@@ -906,6 +906,7 @@ class SQLUserProfileRepository(UserProfileRepository):
             "risk_category": row.risk_category,
             "life_stage": row.life_stage,
             "mcp_enabled": row.mcp_enabled,
+            "daily_briefing_enabled": row.daily_briefing_enabled,
         }
 
     async def upsert(self, user_id: str, fields: dict[str, Any]) -> None:
@@ -918,6 +919,42 @@ class SQLUserProfileRepository(UserProfileRepository):
             if hasattr(row, k) and v is not None:
                 setattr(row, k, v)
         await self._s.flush()
+
+    async def set_flag(self, user_id: str, field: str, value: bool) -> None:
+        """Set a boolean profile flag, including to False.
+
+        `upsert` skips None but also cannot express "set this to False" for a
+        caller that builds its dict dynamically, and a toggle has to be able to
+        turn off. Restricted to a known field list so this can't become a
+        general-purpose arbitrary-column setter.
+        """
+        if field not in ("mcp_enabled", "daily_briefing_enabled"):
+            raise ValueError(f"'{field}' is not a togglable profile flag")
+        result = await self._s.execute(select(UserProfileORM).where(UserProfileORM.id == user_id))
+        row = result.scalar_one_or_none()
+        if row is None:
+            row = UserProfileORM(id=user_id)
+            self._s.add(row)
+        setattr(row, field, value)
+        await self._s.flush()
+
+    async def list_daily_briefing_optins(self) -> list[dict[str, Any]]:
+        """Users who asked for the scheduled daily advisor run.
+
+        Replaces a paid-plan filter: the run is available on every tier now, but
+        opt-in rather than automatic, because it spends the user's own advisor
+        allowance.
+        """
+        rows = (
+            (
+                await self._s.execute(
+                    select(UserProfileORM).where(UserProfileORM.daily_briefing_enabled.is_(True))
+                )
+            )
+            .scalars()
+            .all()
+        )
+        return [{"user_id": r.id, "email": r.email} for r in rows]
 
 
 def _llm_credential_to_dict(row: UserLlmCredentialORM) -> dict[str, Any]:

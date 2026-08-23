@@ -23,7 +23,6 @@ from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel
 
-from salli.application.services.billing_service import PlanRequiredError
 from salli.application.services.mcp_oauth_service import ConsentError, OAuthError
 from salli.config import get_settings
 from salli.interfaces.api.deps import AppServices, CurrentUser
@@ -210,18 +209,8 @@ class McpEnabledRequest(BaseModel):
 
 @connections_router.put("/enabled", status_code=204)
 async def set_mcp_enabled(body: McpEnabledRequest, user_id: CurrentUser, svc: AppServices):
-    try:
-        await svc.mcp_oauth.set_mcp_enabled(user_id, body.enabled)
-    except PlanRequiredError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            detail={
-                "error": "plan_required",
-                "feature": exc.feature,
-                "plan": exc.plan_key,
-                "upgrade": True,
-            },
-        ) from exc
+    """No plan gate: MCP is available on every tier, Free included."""
+    await svc.mcp_oauth.set_mcp_enabled(user_id, body.enabled)
 
 
 @connections_router.get("/enabled")

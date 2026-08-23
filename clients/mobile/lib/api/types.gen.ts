@@ -399,6 +399,16 @@ export type CreateReminderRequest = {
 };
 
 /**
+ * DailyBriefingRequest
+ */
+export type DailyBriefingRequest = {
+    /**
+     * Enabled
+     */
+    enabled: boolean;
+};
+
+/**
  * DebtRequest
  */
 export type DebtRequest = {
@@ -2874,6 +2884,45 @@ export type SimulatePurchaseFiSimulatePurchasePostResponses = {
      */
     200: unknown;
 };
+
+export type GetDailyBriefingAdvisorDailyBriefingGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/advisor/daily-briefing';
+};
+
+export type GetDailyBriefingAdvisorDailyBriefingGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SetDailyBriefingAdvisorDailyBriefingPutData = {
+    body: DailyBriefingRequest;
+    path?: never;
+    query?: never;
+    url: '/advisor/daily-briefing';
+};
+
+export type SetDailyBriefingAdvisorDailyBriefingPutErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SetDailyBriefingAdvisorDailyBriefingPutError = SetDailyBriefingAdvisorDailyBriefingPutErrors[keyof SetDailyBriefingAdvisorDailyBriefingPutErrors];
+
+export type SetDailyBriefingAdvisorDailyBriefingPutResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type SetDailyBriefingAdvisorDailyBriefingPutResponse = SetDailyBriefingAdvisorDailyBriefingPutResponses[keyof SetDailyBriefingAdvisorDailyBriefingPutResponses];
 
 export type RunAdvisorAdvisorRunPostData = {
     body?: never;

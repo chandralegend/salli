@@ -49,13 +49,18 @@ PLANS: dict[str, Plan] = {
     # user's Freedom date. Gating that depth makes the product land flat for
     # exactly the people we most need feedback from, while gating *volume* costs
     # us nothing pedagogically. So Free gets the full depth of an answer and a
-    # modest allowance of them; paid plans buy throughput, MCP clients, web
-    # search and document management.
+    # modest allowance of them.
     #
-    # Concretely: the content-depth entitlements below match the paid plans on
-    # purpose. Differentiation is the metered `limits`. This is a reversible
-    # commercial decision (plans live in code, no migration) — revisit once
-    # there is evidence about what people will actually pay for, not before.
+    # As of the BYOK work this is now the *whole* model: tiers differ ONLY in
+    # metered `limits`. Every feature — MCP clients, the daily advisor, web
+    # search, document management — is available on every plan, and a user who
+    # supplies their own LLM key has no meaningful limit at all (BYOK_LIMITS).
+    # What you pay Salli for is throughput on Salli's inference budget.
+    #
+    # The content-depth entitlements below therefore match across all plans, and
+    # content_gating.py is a no-op in practice. Kept rather than deleted because
+    # this is a reversible commercial decision (plans live in code, no
+    # migration), and re-adding the machinery later would be the expensive part.
     "free": Plan(
         key="free",
         name="Free",
@@ -67,8 +72,10 @@ PLANS: dict[str, Plan] = {
             "Sri Lanka tax engine (unlimited)",
             "150 AI agent messages / month",
             "10 statement uploads / month",
-            "10 wealth-advisor runs / month (manual)",
+            "10 wealth-advisor runs / month",
             "Full FIRE scenarios, AI rationale & all advisor recommendations",
+            "Connect Claude/ChatGPT via MCP",
+            "Unlimited AI with your own API key",
         ],
         fi_scenario_limit=3,
         advisor_recommendation_limit=None,

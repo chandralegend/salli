@@ -37,9 +37,6 @@ from urllib.parse import urlencode, urlparse
 from jose import JWTError, jwt
 from jose.exceptions import ExpiredSignatureError
 
-from salli.application.services.billing_service import PlanRequiredError
-from salli.domain.billing.plans import get_plan
-
 _ART_ISSUER = "salli-mcp-oauth"
 _log = logging.getLogger(__name__)
 
@@ -96,21 +93,19 @@ class McpOAuthService:
     # ── Per-user enable/disable ─────────────────────────────────────────────
 
     async def is_mcp_enabled(self, user_id: str) -> bool:
-        """Checked live everywhere a token is minted or verified — a plan
-        downgrade takes effect on the very next check, the same way manually
-        toggling the switch off does, with no separate revocation step."""
+        """The user's own toggle, and nothing else.
+
+        No longer plan-gated: tiers differ only in AI usage allowance now, so
+        every feature — MCP included — is available on Free. Still checked live
+        everywhere a token is minted or verified, so switching the toggle off
+        kills already-issued tokens on the next request rather than needing a
+        separate revocation step.
+        """
         async with self._uow_factory() as uow:
             profile: dict[str, Any] | None = await uow.user_profiles.get(user_id)
-        if not (profile and profile.get("mcp_enabled")):
-            return False
-        plan_key = await self._billing.get_plan_key(user_id)
-        return get_plan(plan_key).paid
+        return bool(profile and profile.get("mcp_enabled"))
 
     async def set_mcp_enabled(self, user_id: str, enabled: bool) -> None:
-        if enabled:
-            plan_key = await self._billing.get_plan_key(user_id)
-            if not get_plan(plan_key).paid:
-                raise PlanRequiredError(feature="mcp", plan_key=plan_key)
         async with self._uow_factory() as uow:
             await uow.user_profiles.upsert(user_id, {"mcp_enabled": enabled})
 
@@ -195,15 +190,16 @@ class McpOAuthService:
         payload = self._decode_art(art)
         async with self._uow_factory() as uow:
             client: dict[str, Any] | None = await uow.oauth_clients.get(payload["client_id"])
-        plan_key = await self._billing.get_plan_key(user_id)
         return {
             "client_name": (client or {}).get("client_name") or "An application",
             "scope": payload.get("scope") or "",
             "resource": payload.get("resource"),
-            # Lets the consent screen show an upgrade prompt before the user
-            # clicks Allow, instead of after — complete_consent enforces the
-            # same check regardless, this is purely a fail-fast UX signal.
-            "plan_ok": get_plan(plan_key).paid,
+            # Deprecated, and pinned True: MCP is no longer plan-gated. Kept in
+            # the response rather than removed because the web consent screen
+            # renders an "Upgrade required" wall on a falsy value — dropping the
+            # field would make `!info.plan_ok` true and wall off every user
+            # during the window where a stale client is still deployed.
+            "plan_ok": True,
         }
 
     async def complete_consent(self, art: str, user_id: str, approve: bool) -> str:

@@ -22,6 +22,8 @@ from typing import Any
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 
+from salli.domain.secrets import error_label
+
 # ── State ──────────────────────────────────────────────────────────────────────
 
 
@@ -51,7 +53,7 @@ async def _gather(state: BriefingState, advisor_svc: Any) -> dict[str, Any]:
     try:
         context = await advisor_svc.gather_context(state.user_id, state.email)
     except Exception as e:
-        return {"error": str(e)}
+        return {"error": error_label(e)}
     return {"context": context}
 
 
@@ -61,7 +63,9 @@ async def _narrate(state: BriefingState) -> dict[str, Any]:
     try:
         advice = await advisor_llm.generate_advice(state.context)
     except Exception as e:
-        return {"error": str(e)}
+        # generate_advice calls the provider, so `e` can be an SDK error whose
+        # message embeds the rejected API key — see error_label.
+        return {"error": error_label(e)}
     return {"advice": advice}
 
 

@@ -30,6 +30,7 @@ from starlette.background import BackgroundTask
 
 from salli.application.services.billing_service import QuotaExceeded
 from salli.domain.billing.plans import METRIC_AGENT_MESSAGES
+from salli.domain.secrets import redact_obj
 from salli.interfaces.api.deps import AppServices, CurrentEmail, CurrentUser
 
 router = APIRouter(prefix="/agent", tags=["agent"])
@@ -39,7 +40,11 @@ router = APIRouter(prefix="/agent", tags=["agent"])
 
 
 def _sse(data: dict) -> str:
-    return f"data: {json.dumps(data, default=str)}\n\n"
+    # Redact here rather than at each yield site: every frame in this module goes
+    # through _sse, so one pass covers `error`, `interrupt`, and `tool_result`
+    # alike. Needed because provider exceptions are stringified into the stream
+    # (see _emit_events below) and a rejected-key error can carry the key itself.
+    return f"data: {json.dumps(redact_obj(data), default=str)}\n\n"
 
 
 _SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}

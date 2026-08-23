@@ -21,6 +21,8 @@ from typing import Any
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 
+from salli.domain.secrets import error_label
+
 # ── State ──────────────────────────────────────────────────────────────────────
 
 
@@ -68,7 +70,7 @@ async def _compute(state: ReturnState, tax_svc: Any) -> dict[str, Any]:
         computation = await tax_svc.compute_tax(state.user_id, state.year)
         return {"tax_computation": computation}
     except Exception as e:
-        return {"error": str(e)}
+        return {"error": error_label(e)}
 
 
 def _map_to_cages(state: ReturnState) -> dict[str, Any]:

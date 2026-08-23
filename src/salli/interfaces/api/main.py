@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from salli.config import get_settings
+from salli.domain.secrets import redact
 from salli.interfaces.api.deps import get_services
 from salli.interfaces.api.request_context import RequestContextMiddleware
 from salli.interfaces.api.routers import (
@@ -165,18 +166,21 @@ def create_app() -> FastAPI:
     app.include_router(mcp_oauth.connections_router)
 
     # ── Exception handlers ────────────────────────────────────────────────────
+    # Both handlers echo the exception text, so both are redacted: a provider
+    # SDK error (or our own validation of a user-supplied API key) can carry the
+    # key itself, and these are catch-alls for *any* uncaught ValueError/KeyError.
     @app.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            content={"detail": str(exc)},
+            content={"detail": redact(str(exc))},
         )
 
     @app.exception_handler(KeyError)
     async def key_error_handler(request: Request, exc: KeyError) -> JSONResponse:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content={"detail": f"Not found: {exc}"},
+            content={"detail": redact(f"Not found: {exc}")},
         )
 
     # ── Health ────────────────────────────────────────────────────────────────

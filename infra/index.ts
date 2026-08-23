@@ -88,6 +88,13 @@ const paddleWebhookSecret = optEnv("PADDLE_WEBHOOK_SECRET");
 const paddleEnvironment = optEnv("PADDLE_ENVIRONMENT", "sandbox");
 const paddlePricePlus = optEnv("PADDLE_PRICE_PLUS");
 const paddlePricePro = optEnv("PADDLE_PRICE_PRO");
+// Annual prices are separate Paddle price IDs, not a modifier on the monthly one —
+// the adapter keys its price map on "<plan>:<cycle>", so a missing yearly ID makes
+// every annual checkout/plan-change 503 rather than falling back to monthly.
+const paddlePricePlusYearly = optEnv("PADDLE_PRICE_PLUS_YEARLY");
+const paddlePriceProYearly = optEnv("PADDLE_PRICE_PRO_YEARLY");
+// Speech-to-text for the mobile app's Voice Mode; absent it, /agent/transcribe 503s.
+const openaiApiKey = optEnv("OPENAI_API_KEY");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Providers (auth via env: SUPABASE_ACCESS_TOKEN, VERCEL_API_TOKEN, RENDER_API_KEY)
@@ -201,6 +208,9 @@ if (paddleApiKey) apiEnv.PADDLE_API_KEY = pulumi.secret(paddleApiKey);
 if (paddleWebhookSecret) apiEnv.PADDLE_WEBHOOK_SECRET = pulumi.secret(paddleWebhookSecret);
 if (paddlePricePlus) apiEnv.PADDLE_PRICE_PLUS = paddlePricePlus;
 if (paddlePricePro) apiEnv.PADDLE_PRICE_PRO = paddlePricePro;
+if (paddlePricePlusYearly) apiEnv.PADDLE_PRICE_PLUS_YEARLY = paddlePricePlusYearly;
+if (paddlePriceProYearly) apiEnv.PADDLE_PRICE_PRO_YEARLY = paddlePriceProYearly;
+if (openaiApiKey) apiEnv.OPENAI_API_KEY = pulumi.secret(openaiApiKey);
 
 const apiEnvVars = pulumi
   .output(apiEnv)

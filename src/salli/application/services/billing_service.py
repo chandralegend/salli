@@ -352,7 +352,14 @@ class BillingService:
         if not user_id:
             return
         fields: dict[str, Any] = {"provider": "paddle"}
-        if "price_id" in event:
+        # Truthiness, not `in`: _normalize_subscription always emits a "price_id" key
+        # and falls back to "" when the event carries no items[].price.id. An empty
+        # id resolves to plan "free" (plan_for_price_id's default), so keying off
+        # presence alone would let a subscription event that merely lacks item detail
+        # silently downgrade a paying, active subscriber to Free. Leaving plan and
+        # billing_cycle untouched keeps the last known-good values; the next event
+        # with a real price corrects them.
+        if event.get("price_id"):
             # The price ID is the only place the cycle survives — Paddle reports the
             # subscription's plan and its billing interval as one identifier, so both
             # are resolved here or the cycle is lost for good.

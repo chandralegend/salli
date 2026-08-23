@@ -194,10 +194,20 @@ class KnowledgeBasePort(ABC):
         ...
 
 
+class TranscriptionPort(ABC):
+    """Speech-to-text for a single recorded voice message (mobile Voice Mode)."""
+
+    @abstractmethod
+    async def transcribe(self, audio_bytes: bytes, *, filename: str, mime_type: str) -> str:
+        """Transcribe spoken audio to text."""
+        ...
+
+
 class AgentSessionRepository(ABC):
     @abstractmethod
-    async def upsert(self, user_id: str, thread_id: str) -> None:
-        """Create or touch (update last_active_at) a session."""
+    async def upsert(self, user_id: str, thread_id: str, persona: str = "scrooge") -> None:
+        """Create or touch (update last_active_at) a session. `persona` is only
+        used on creation — an existing session keeps its original persona."""
         ...
 
     @abstractmethod
@@ -206,8 +216,10 @@ class AgentSessionRepository(ABC):
         ...
 
     @abstractmethod
-    async def list(self, user_id: str, limit: int = 50) -> list[dict[str, Any]]:
-        """Return sessions sorted by last_active_at desc."""
+    async def list(
+        self, user_id: str, limit: int = 50, persona: str = "scrooge"
+    ) -> list[dict[str, Any]]:
+        """Return this persona's sessions sorted by last_active_at desc."""
         ...
 
     @abstractmethod

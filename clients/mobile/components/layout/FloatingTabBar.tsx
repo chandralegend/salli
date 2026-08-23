@@ -1,8 +1,9 @@
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { LayoutGrid, PiggyBank, Plus, Table, TrendingUp } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Platform, Text, View } from "react-native";
+import { Animated, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
@@ -35,7 +36,6 @@ function NavTab({
   accessibilityLabel: string;
 }) {
   const colors = useThemeColors();
-  const { isDark } = useAppTheme();
   const highlight = useRef(new Animated.Value(isFocused ? 1 : 0)).current;
 
   useEffect(() => {
@@ -60,7 +60,7 @@ function NavTab({
             bottom: 0,
             borderRadius: 9999,
             opacity: highlight,
-            backgroundColor: isDark ? "rgba(245,49,15,0.18)" : "rgba(245,49,15,0.12)",
+            backgroundColor: colors.accentSoft,
           }}
         />
         <Icon size={22} color={isFocused ? colors.accent : colors.mutedForeground} strokeWidth={isFocused ? 2.2 : 1.9} />
@@ -76,14 +76,14 @@ function NavTab({
 }
 
 /**
- * Floating rounded dock — theme-aware (a light card in light mode, an elevated
- * dark surface in dark mode) with an active-state accent pill + label and a
- * raised branded "+" that deep-links to Ledger's New Entry form.
+ * Fixed, edge-to-edge bottom nav bar — attached flush to the viewport/safe
+ * area (not a detached floating pill), with an active-state accent pill +
+ * label and a branded "+" that deep-links to Ledger's New Entry form.
  */
 export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
-  const { isDark } = useAppTheme();
   const requestQuickAddEntry = useSalliStore((s) => s.requestQuickAddEntry);
   const [captureOpen, setCaptureOpen] = useState(false);
 
@@ -98,23 +98,18 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
   const leftRoutes = visibleRoutes.slice(0, 2);
   const rightRoutes = visibleRoutes.slice(2);
 
-  const dockShadow =
-    Platform.OS === "web"
-      ? ({ boxShadow: isDark ? "0 8px 30px rgba(0,0,0,0.55)" : "0 8px 30px rgba(10,10,10,0.12)" } as object)
-      : {
-          shadowColor: "#000000",
-          shadowOpacity: isDark ? 0.5 : 0.15,
-          shadowRadius: 20,
-          shadowOffset: { width: 0, height: 8 },
-          elevation: 12,
-        };
-
   const renderTab = (route: (typeof state.routes)[number]) => {
     const { options } = descriptors[route.key];
     const isFocused = state.routes[state.index].key === route.key;
     const { Icon, label } = ROUTE_META[route.name] ?? ROUTE_META.index;
 
     const onPress = () => {
+      // "Salli AI" enters Buddy Mode directly — the separate Scrooge-persona
+      // screen is retired, so this never lets the tab's own route mount.
+      if (route.name === "agent") {
+        router.push("/(buddy)");
+        return;
+      }
       const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
       if (!isFocused && !event.defaultPrevented) {
         navigation.navigate(route.name);
@@ -144,17 +139,18 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
 
   return (
     <View
-      pointerEvents="box-none"
-      className="absolute bottom-0 left-0 right-0 items-center"
-      style={{ paddingBottom: Math.max(insets.bottom, 10), paddingHorizontal: 14 }}
+      style={{
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: colors.card,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+        paddingBottom: insets.bottom,
+      }}
     >
-      <View
-        style={[
-          { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, width: "100%", maxWidth: 460 },
-          dockShadow,
-        ]}
-        className="flex-row items-center rounded-[26px] px-2 py-2"
-      >
+      <View className="flex-row items-center px-2" style={{ height: 56 }}>
         {leftRoutes.map(renderTab)}
 
         <TourTarget id="tabbar-quickadd" className="flex-1 items-center justify-center">
@@ -175,15 +171,6 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
               backgroundColor: colors.accent,
               alignItems: "center",
               justifyContent: "center",
-              ...(Platform.OS === "web"
-                ? { boxShadow: "0 6px 18px rgba(245,49,15,0.45)" }
-                : {
-                    shadowColor: colors.accent,
-                    shadowOpacity: 0.45,
-                    shadowRadius: 16,
-                    shadowOffset: { width: 0, height: 5 },
-                    elevation: 8,
-                  }),
             }}
           >
             <Plus size={24} color="#FFFFFF" strokeWidth={2.6} />

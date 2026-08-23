@@ -27,6 +27,7 @@ export function Footer() {
               { href: "/about", label: "About" },
               { href: "/blog", label: "Blog" },
               { href: "/#faq", label: "FAQ" },
+              { href: "/support", label: "Support" },
             ]}
           />
           <FooterColumn

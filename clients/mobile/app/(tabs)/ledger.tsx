@@ -22,6 +22,7 @@ import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
+import { SalliBackground } from "@/components/ui/SalliBackground";
 import { Tabs } from "@/components/ui/tabs";
 import { useThemedRefreshControl } from "@/components/ui/themed-refresh-control";
 import { TourTarget } from "@/components/tour/TourTarget";
@@ -151,7 +152,9 @@ export default function LedgerScreen() {
   }, [accounts.data, acctFilter, acctSearch]);
 
   return (
-    <PageShell refreshControl={refreshControl}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <SalliBackground intensity="subtle" />
+      <PageShell transparent refreshControl={refreshControl}>
       <View className="flex-row items-center px-5 pt-2.5">
         <Text className="flex-1 font-sans-bold text-[22px] text-foreground">Ledger</Text>
         <AnimatedPressable
@@ -235,7 +238,7 @@ export default function LedgerScreen() {
                                 {isIncome ? "+" : "−"}Rs. {formatLKR(debit?.amount ?? "0", 0)}
                               </Text>
                             </View>
-                            <Text numberOfLines={1} className="mb-1 text-[11px] text-foreground/30">
+                            <Text numberOfLines={1} className="mb-1 text-[10px] text-foreground/20">
                               DR: {debitAcc?.name ?? "—"} · CR: {creditAcc?.name ?? "—"}
                             </Text>
                             <View className={cn("self-start rounded-[4px] px-1.5 py-0.5", entry.source === "statement" ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
@@ -369,6 +372,7 @@ export default function LedgerScreen() {
         onClose={() => setSelectedAccountId(null)}
       />
       <AddEditAccountDrawer visible={addAccountOpen} onClose={() => setAddAccountOpen(false)} />
-    </PageShell>
+      </PageShell>
+    </View>
   );
 }

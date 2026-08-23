@@ -702,6 +702,7 @@ def _session_to_dict(row: AgentSessionORM) -> dict[str, Any]:
         "user_id": row.user_id,
         "thread_id": row.thread_id,
         "title": row.title,
+        "persona": row.persona,
         "created_at": row.created_at.isoformat(),
         "last_active_at": row.last_active_at.isoformat(),
     }
@@ -711,7 +712,7 @@ class SQLAgentSessionRepository(AgentSessionRepository):
     def __init__(self, session: AsyncSession) -> None:
         self._s = session
 
-    async def upsert(self, user_id: str, thread_id: str) -> None:
+    async def upsert(self, user_id: str, thread_id: str, persona: str = "scrooge") -> None:
         stmt = select(AgentSessionORM).where(
             AgentSessionORM.user_id == user_id,
             AgentSessionORM.thread_id == thread_id,
@@ -726,6 +727,7 @@ class SQLAgentSessionRepository(AgentSessionRepository):
                     id=str(uuid.uuid4()),
                     user_id=user_id,
                     thread_id=thread_id,
+                    persona=persona,
                     last_active_at=datetime.now(UTC),
                 )
             )
@@ -742,10 +744,12 @@ class SQLAgentSessionRepository(AgentSessionRepository):
             row.title = title
             await self._s.flush()
 
-    async def list(self, user_id: str, limit: int = 50) -> list[dict[str, Any]]:
+    async def list(
+        self, user_id: str, limit: int = 50, persona: str = "scrooge"
+    ) -> list[dict[str, Any]]:
         stmt = (
             select(AgentSessionORM)
-            .where(AgentSessionORM.user_id == user_id)
+            .where(AgentSessionORM.user_id == user_id, AgentSessionORM.persona == persona)
             .order_by(AgentSessionORM.last_active_at.desc())
             .limit(limit)
         )

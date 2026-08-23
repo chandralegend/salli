@@ -1,9 +1,10 @@
-import { ArrowDownLeft, ArrowUpRight, ChevronLeft, Pencil, Power, PowerOff } from "lucide-react-native";
+import { ArrowDownLeft, ArrowUpRight, Pencil, Power, PowerOff } from "lucide-react-native";
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Modal as RNModal, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 
 import { AddEditAccountDrawer } from "@/components/AddEditAccountDrawer";
 import { Card } from "@/components/ui/card";
+import { Drawer } from "@/components/ui/drawer";
 import {
   useAccountOverview,
   useDeactivateAccount,
@@ -12,7 +13,7 @@ import {
 } from "@/hooks/useLedger";
 import { confirmDestructive } from "@/lib/confirm";
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
-import { useThemeColors, useThemeVars } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const PERIODS = ["1M", "3M", "YTD", "1Y", "All"] as const;
@@ -45,7 +46,6 @@ export function AccountDetailModal({
   onClose: () => void;
 }) {
   const colors = useThemeColors();
-  const themeVars = useThemeVars();
   const overview = useAccountOverview(accountId);
   const [period, setPeriod] = useState<(typeof PERIODS)[number]>("3M");
   const [editOpen, setEditOpen] = useState(false);
@@ -95,21 +95,14 @@ export function AccountDetailModal({
   const rows: (AccountTransaction & { delta: number })[] = [...visibleTxs].reverse();
 
   return (
-    <RNModal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
-      <View style={[{ flex: 1, backgroundColor: colors.background }, themeVars]}>
-        <View className="flex-row items-center gap-3 px-5 pt-4">
-          <Pressable onPress={onClose} className="h-9 w-9 items-center justify-center rounded-full bg-foreground/[0.08]">
-            <ChevronLeft size={16} color={colors.foreground} strokeWidth={2} />
-          </Pressable>
-          <Text className="flex-1 font-sans-bold text-[20px] text-foreground">Account Detail</Text>
-        </View>
-
+    <Drawer visible={visible} onClose={onClose} title="Account Detail" keyboardAvoiding={false}>
+      <>
         {overview.isLoading || !account ? (
-          <View className="flex-1 items-center justify-center">
+          <View className="items-center justify-center py-16">
             <ActivityIndicator color={colors.accent} />
           </View>
         ) : (
-          <ScrollView className="flex-1 px-4 pt-3.5" contentContainerStyle={{ paddingBottom: 32 }}>
+          <View className="gap-0">
             {/* hero */}
             <Card className="bg-salli-navy-card p-[18px]">
               <View className="mb-3.5 flex-row items-start justify-between">
@@ -240,11 +233,11 @@ export function AccountDetailModal({
                 </>
               )}
             </Pressable>
-          </ScrollView>
+          </View>
         )}
-      </View>
+      </>
 
       <AddEditAccountDrawer visible={editOpen} account={account} onClose={() => setEditOpen(false)} />
-    </RNModal>
+    </Drawer>
   );
 }

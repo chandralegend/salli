@@ -1,0 +1,80 @@
+name: Mobile release (EAS Build + Submit)
+
+# Manual only — an App Store submission is a deliberate, costly action (review
+# queue, can't be quietly undone), so this stays a "Run workflow" button
+# rather than firing on every push. Everything after the click is automated:
+# EAS manages signing credentials and the build number, this workflow just
+# drives the build and (for "production") submits it.
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "production submits to the App Store; preview only builds (internal distribution, no submission)"
+        type: choice
+        options:
+          - production
+          - preview
+        default: production
+
+concurrency:
+  group: mobile-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clients/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: clients/mobile/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # eas-cli auths non-interactively straight from EXPO_TOKEN, so we don't
+      # need expo-github-action at all — it only adds an install step, and
+      # forcing it to install its own eas-cli copy (via `eas-version`) does so
+      # in an isolated location outside the repo that ignores
+      # pnpm-workspace.yaml's supply-chain allowBuilds exception, failing on
+      # eas-cli's unapproved dtrace-provider build script. We already have
+      # eas-cli as a devDependency installed by the step above, which does
+      # respect that config.
+      - name: Verify Expo auth
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: pnpm exec eas whoami
+
+      # Only needed for the production profile's --auto-submit below — eas-cli
+      # auto-detects these three well-known env var names, so nothing
+      # credential-shaped needs to live in eas.json.
+      - name: Write App Store Connect API key
+        if: inputs.profile == 'production'
+        run: echo "${{ secrets.ASC_API_KEY_P8_BASE64 }}" | base64 --decode > asc-api-key.p8
+
+      - name: Build (production also auto-submits to the App Store)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_ASC_API_KEY_PATH: asc-api-key.p8
+          EXPO_ASC_API_KEY_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+          EXPO_ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+        run: |
+          if [ "${{ inputs.profile }}" = "production" ]; then
+            pnpm exec eas build --platform ios --profile production --non-interactive --auto-submit
+          else
+            pnpm exec eas build --platform ios --profile "${{ inputs.profile }}" --non-interactive
+          fi
+
+      - name: Remove App Store Connect API key
+        if: always()
+        run: rm -f asc-api-key.p8

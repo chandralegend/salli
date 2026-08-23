@@ -114,6 +114,16 @@ export type BodyTokenMcpOauthTokenPost = {
 };
 
 /**
+ * Body_transcribe_agent_transcribe_post
+ */
+export type BodyTranscribeAgentTranscribePost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
  * Body_upload_file_agent_files_post
  */
 export type BodyUploadFileAgentFilesPost = {
@@ -318,6 +328,10 @@ export type ChatRequest = {
      * File Refs
      */
     file_refs?: Array<string>;
+    /**
+     * Persona
+     */
+    persona?: 'scrooge' | 'buddy';
 };
 
 /**
@@ -1039,6 +1053,10 @@ export type ResumeRequest = {
     edits?: {
         [key: string]: unknown;
     } | null;
+    /**
+     * Persona
+     */
+    persona?: 'scrooge' | 'buddy';
 };
 
 /**
@@ -1777,6 +1795,29 @@ export type UploadFileAgentFilesPostResponses = {
     200: unknown;
 };
 
+export type TranscribeAgentTranscribePostData = {
+    body: BodyTranscribeAgentTranscribePost;
+    path?: never;
+    query?: never;
+    url: '/agent/transcribe';
+};
+
+export type TranscribeAgentTranscribePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TranscribeAgentTranscribePostError = TranscribeAgentTranscribePostErrors[keyof TranscribeAgentTranscribePostErrors];
+
+export type TranscribeAgentTranscribePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type ResumeAgentResumePostData = {
     body: ResumeRequest;
     path?: never;
@@ -1808,7 +1849,12 @@ export type GetHistoryAgentHistoryThreadIdGetData = {
          */
         thread_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Persona
+         */
+        persona?: 'scrooge' | 'buddy';
+    };
     url: '/agent/history/{thread_id}';
 };
 
@@ -1836,6 +1882,10 @@ export type ListSessionsAgentSessionsGetData = {
          * Limit
          */
         limit?: number;
+        /**
+         * Persona
+         */
+        persona?: 'scrooge' | 'buddy';
     };
     url: '/agent/sessions';
 };

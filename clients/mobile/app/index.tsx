@@ -22,6 +22,10 @@ export default function Index() {
   // Auth hydration lives in the root layout (_layout.tsx); here we just read it.
   const token = useSalliStore((s) => s.token);
   const authReady = useSalliStore((s) => s.authReady);
+  // Mode hydration also lives in the root layout, alongside auth.
+  const modeReady = useSalliStore((s) => s.modeReady);
+  const modeChosen = useSalliStore((s) => s.modeChosen);
+  const mode = useSalliStore((s) => s.mode);
 
   const onboardingStatus = useQuery({
     queryKey: ["onboarding-status"],
@@ -32,11 +36,15 @@ export default function Index() {
     enabled: authReady && Boolean(token),
   });
 
-  if (!authReady) return <Loading />;
+  if (!authReady || !modeReady) return <Loading />;
   if (!token) return <Redirect href="/(auth)/login" />;
   if (onboardingStatus.isLoading) return <Loading />;
   if (onboardingStatus.data && !onboardingStatus.data.complete) {
     return <Redirect href="/onboarding" />;
   }
-  return <Redirect href="/(tabs)" />;
+  // Onboarding (new users) picks a mode as its final step and sets modeChosen
+  // itself; existing users who onboarded before Buddy Mode shipped land here
+  // instead, so this is a one-time prompt for them, not a repeat every launch.
+  if (!modeChosen) return <Redirect href="/mode-choice" />;
+  return <Redirect href={mode === "buddy" ? "/(buddy)" : "/(tabs)"} />;
 }

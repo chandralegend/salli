@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
-import { KeyboardAvoidingView, Modal as RNModal, Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 import { AddEditAccountDrawer } from "@/components/AddEditAccountDrawer";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
@@ -23,7 +23,7 @@ import type { Account } from "@/hooks/useDashboard";
 import { useLedgerMutations, type EntryDraft } from "@/hooks/useLedger";
 import type { AccountHint } from "@/lib/api/types.gen";
 import { formatLKR } from "@/lib/format";
-import { useThemeColors, useThemeVars } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { useToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
@@ -50,7 +50,6 @@ const TYPE_META: Record<Account["type"], { Icon: typeof Wallet; label: string }>
  * deep-linked from the tab-bar "+" button from any tab. */
 export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewEntryModalProps) {
   const colors = useThemeColors();
-  const themeVars = useThemeVars();
   const { postEntry } = useLedgerMutations();
   const showToast = useToast();
 
@@ -166,148 +165,143 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
     : undefined;
 
   return (
-    <RNModal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
-      <View style={[{ flex: 1, backgroundColor: colors.background }, themeVars]}>
-        <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <View className="flex-row items-center gap-3 px-5 pt-4">
-            <Pressable onPress={onClose} className="h-9 w-9 items-center justify-center rounded-full bg-foreground/[0.08]">
-              <X size={16} color={colors.foreground} strokeWidth={2} />
-            </Pressable>
-            <Text className="flex-1 font-sans-bold text-[20px] text-foreground">New Entry</Text>
-            <View className="rounded-pill border border-foreground/10 bg-foreground/[0.07] px-3.5 py-1.5">
-              <Text className="font-sans-medium text-[12px] text-foreground/45">
-                {new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
-              </Text>
-            </View>
-          </View>
-
-          <ScrollView className="flex-1 px-4" keyboardShouldPersistTaps="handled">
-            <SegmentedControl
-              className="mt-3.5"
-              options={["income", "expense", "transfer"] as EntryType[]}
-              value={type}
-              onChange={handleType}
-              capitalize
-            />
-
-            <Card className="mt-4 border-foreground/[0.08] bg-salli-navy-card px-5 pb-4 pt-5">
-              <Text className="mb-2.5 text-[11px] font-sans-medium uppercase tracking-wide text-white/40">Amount</Text>
-              <View className="mb-3.5 flex-row items-baseline gap-1.5">
-                <Text className="font-sans-semibold text-[22px] text-white/35">Rs.</Text>
-                <TextField
-                  label=""
-                  value={amount}
-                  onChangeText={setAmount}
-                  keyboardType="decimal-pad"
-                  placeholder="0"
-                  placeholderTextColor="rgba(255,255,255,0.25)"
-                  className="flex-1 border-0 bg-transparent p-0"
-                  style={{ fontSize: 44, fontFamily: "JetBrainsMono_700Bold", letterSpacing: -2, color: "#FFFFFF" }}
-                />
-                <Text className="mb-1 font-sans-regular text-[14px] text-white/20">.00</Text>
-              </View>
-
-              {type === "transfer" ? (
-                <View className="self-start rounded-pill border border-white/10 bg-white/[0.07] px-3 py-1">
-                  <Text className="font-sans-medium text-[12px] text-white/40">Account transfer</Text>
-                </View>
-              ) : categoryAccount ? (
-                <View className="self-start flex-row items-center gap-1.5 rounded-pill border border-salli-accent/40 bg-salli-accent/25 px-3 py-1">
-                  {(() => {
-                    const Icon = TYPE_META[categoryAccount.type].Icon;
-                    return <Icon size={11} color={colors.accent} strokeWidth={2.5} />;
-                  })()}
-                  <Text className="font-sans-semibold text-[12px] text-salli-accent">{categoryAccount.name}</Text>
-                </View>
-              ) : (
-                <View className="self-start rounded-pill border border-white/10 bg-white/[0.07] px-3 py-1">
-                  <Text className="font-sans-medium text-[12px] text-white/35">
-                    {type === "income" ? "Pick an income source" : "Pick a category"}
-                  </Text>
-                </View>
-              )}
-            </Card>
-
-            <TextField
-              label="Description"
-              className="mt-2.5"
-              value={description}
-              onChangeText={setDescription}
-              placeholder="What was this for?"
-            />
-
-            <Text className="mb-1.5 mt-3.5 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
-              Double-Entry Accounts
+    <Drawer
+      visible={visible}
+      onClose={onClose}
+      footer={
+        <PillButton loading={saving} disabled={!canSubmit} onPress={handlePost}>
+          Post Entry
+        </PillButton>
+      }
+    >
+      <>
+        <View className="mb-1 flex-row items-center gap-3">
+          <Text className="flex-1 font-sans-bold text-[20px] text-foreground">New Entry</Text>
+          <View className="rounded-pill border border-foreground/10 bg-foreground/[0.07] px-3.5 py-1.5">
+            <Text className="font-sans-medium text-[12px] text-foreground/45">
+              {new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
             </Text>
-            <View>
-              <AccountRow
-                side="debit"
-                entryType={type}
-                account={debitAccount}
-                amount={amountNum}
-                position="top"
-                onPress={() => setPicker("debit")}
-              />
-              <AccountRow
-                side="credit"
-                entryType={type}
-                account={creditAccount}
-                amount={amountNum}
-                position="bottom"
-                onPress={() => setPicker("credit")}
-              />
-            </View>
+          </View>
+        </View>
 
-            <View className="mb-2 mt-3 flex-row items-center gap-2 px-0.5">
-              <View className={cn("h-2 w-2 rounded-full", canSubmit ? "bg-salli-accent" : "bg-foreground/20")} />
-              <Text className="flex-1 text-[11px] leading-4 text-foreground/30">
-                {debitAccount && creditAccount
-                  ? `Entry balanced · Dr = Cr = Rs. ${formatLKR(amountNum, 0)} · immutable once posted`
-                  : "Pick a debit and credit account to balance this entry."}
+        <SegmentedControl
+          className="mt-3.5"
+          options={["income", "expense", "transfer"] as EntryType[]}
+          value={type}
+          onChange={handleType}
+          capitalize
+        />
+
+        <Card className="mt-4 border-foreground/[0.08] bg-salli-navy-card px-5 pb-4 pt-5">
+          <Text className="mb-2.5 text-[11px] font-sans-medium uppercase tracking-wide text-white/40">Amount</Text>
+          <View className="mb-3.5 flex-row items-baseline gap-1.5">
+            <Text className="font-sans-semibold text-[22px] text-white/35">Rs.</Text>
+            <TextField
+              label=""
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="decimal-pad"
+              placeholder="0"
+              placeholderTextColor="rgba(255,255,255,0.25)"
+              className="flex-1 border-0 bg-transparent p-0"
+              style={{ fontSize: 44, fontFamily: "JetBrainsMono_700Bold", letterSpacing: -2, color: "#FFFFFF" }}
+            />
+            <Text className="mb-1 font-sans-regular text-[14px] text-white/20">.00</Text>
+          </View>
+
+          {type === "transfer" ? (
+            <View className="self-start rounded-pill border border-white/10 bg-white/[0.07] px-3 py-1">
+              <Text className="font-sans-medium text-[12px] text-white/40">Account transfer</Text>
+            </View>
+          ) : categoryAccount ? (
+            <View className="self-start flex-row items-center gap-1.5 rounded-pill border border-salli-accent/40 bg-salli-accent/25 px-3 py-1">
+              {(() => {
+                const Icon = TYPE_META[categoryAccount.type].Icon;
+                return <Icon size={11} color={colors.accent} strokeWidth={2.5} />;
+              })()}
+              <Text className="font-sans-semibold text-[12px] text-salli-accent">{categoryAccount.name}</Text>
+            </View>
+          ) : (
+            <View className="self-start rounded-pill border border-white/10 bg-white/[0.07] px-3 py-1">
+              <Text className="font-sans-medium text-[12px] text-white/35">
+                {type === "income" ? "Pick an income source" : "Pick a category"}
               </Text>
             </View>
-          </ScrollView>
+          )}
+        </Card>
 
-          <View className="px-4 pb-6 pt-2">
-            <PillButton loading={saving} disabled={!canSubmit} onPress={handlePost}>
-              Post Entry
-            </PillButton>
-          </View>
-        </KeyboardAvoidingView>
-
-        <AccountPickerSheet
-          visible={picker !== null}
-          side={picker}
-          entryType={type}
-          candidates={pickerCandidates}
-          selectedId={pickerSelectedId}
-          onSelect={(id) => {
-            if (picker === "debit") setDebitAccountId(id);
-            else setCreditAccountId(id);
-            setPicker(null);
-          }}
-          onClose={() => setPicker(null)}
-          onCreateNew={() => {
-            setPendingAccountSide(picker);
-            setPicker(null);
-          }}
+        <TextField
+          label="Description"
+          className="mt-2.5"
+          value={description}
+          onChangeText={setDescription}
+          placeholder="What was this for?"
         />
 
-        {/* Lives inside NewEntryModal (not the Ledger screen's Accounts-tab
-            instance) so creating an account never unmounts the in-progress
-            entry — amount/description/type are untouched throughout. */}
-        <AddEditAccountDrawer
-          visible={pendingAccountSide !== null}
-          prefill={pendingPrefill}
-          onClose={() => setPendingAccountSide(null)}
-          onCreated={(created) => {
-            if (pendingAccountSide === "debit") setDebitAccountId(created.id);
-            else if (pendingAccountSide === "credit") setCreditAccountId(created.id);
-            setPendingAccountSide(null);
-          }}
-        />
-      </View>
-    </RNModal>
+        <Text className="mb-1.5 mt-3.5 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+          Double-Entry Accounts
+        </Text>
+        <View>
+          <AccountRow
+            side="debit"
+            entryType={type}
+            account={debitAccount}
+            amount={amountNum}
+            position="top"
+            onPress={() => setPicker("debit")}
+          />
+          <AccountRow
+            side="credit"
+            entryType={type}
+            account={creditAccount}
+            amount={amountNum}
+            position="bottom"
+            onPress={() => setPicker("credit")}
+          />
+        </View>
+
+        <View className="mb-2 mt-3 flex-row items-center gap-2 px-0.5">
+          <View className={cn("h-2 w-2 rounded-full", canSubmit ? "bg-salli-accent" : "bg-foreground/20")} />
+          <Text className="flex-1 text-[11px] leading-4 text-foreground/30">
+            {debitAccount && creditAccount
+              ? `Entry balanced · Dr = Cr = Rs. ${formatLKR(amountNum, 0)} · immutable once posted`
+              : "Pick a debit and credit account to balance this entry."}
+          </Text>
+        </View>
+      </>
+
+      <AccountPickerSheet
+        visible={picker !== null}
+        side={picker}
+        entryType={type}
+        candidates={pickerCandidates}
+        selectedId={pickerSelectedId}
+        onSelect={(id) => {
+          if (picker === "debit") setDebitAccountId(id);
+          else setCreditAccountId(id);
+          setPicker(null);
+        }}
+        onClose={() => setPicker(null)}
+        onCreateNew={() => {
+          setPendingAccountSide(picker);
+          setPicker(null);
+        }}
+      />
+
+      {/* Lives inside NewEntryModal (not the Ledger screen's Accounts-tab
+          instance) so creating an account never unmounts the in-progress
+          entry — amount/description/type are untouched throughout. */}
+      <AddEditAccountDrawer
+        visible={pendingAccountSide !== null}
+        prefill={pendingPrefill}
+        onClose={() => setPendingAccountSide(null)}
+        onCreated={(created) => {
+          if (pendingAccountSide === "debit") setDebitAccountId(created.id);
+          else if (pendingAccountSide === "credit") setCreditAccountId(created.id);
+          setPendingAccountSide(null);
+        }}
+      />
+    </Drawer>
   );
 }
 

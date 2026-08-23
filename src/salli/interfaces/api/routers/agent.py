@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import AsyncIterator
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
@@ -86,6 +87,10 @@ class ChatRequest(BaseModel):
     thread_id: str
     message: str
     file_refs: list[str] = []
+    # "scrooge" is the existing "Salli AI" persona (Pro Mode); "buddy" is the
+    # warmer persona behind the mobile app's Buddy Mode. Defaulting to
+    # "scrooge" keeps any client that doesn't send this field unchanged.
+    persona: Literal["scrooge", "buddy"] = "scrooge"
 
 
 @router.post("/chat")
@@ -131,6 +136,7 @@ async def chat(body: ChatRequest, user_id: CurrentUser, email: CurrentEmail, svc
                     thread_id=body.thread_id,
                     message=body.message,
                     file_refs=body.file_refs or None,
+                    persona=body.persona,
                 )
             )
         ),
@@ -162,11 +168,41 @@ async def upload_file(file: UploadFile, user_id: CurrentUser, svc: AppServices):
     }
 
 
+# Generous cap for a single push-to-talk turn — Voice Mode records short
+# utterances, not long dictation, so this is well above any legitimate use.
+_MAX_VOICE_AUDIO_BYTES = 10 * 1024 * 1024
+
+
+@router.post("/transcribe")
+async def transcribe(file: UploadFile, user_id: CurrentUser, svc: AppServices):
+    """
+    Transcribe a recorded voice message to text (mobile Voice Mode).
+
+    Turn-based, not streaming: the client records a whole push-to-talk
+    utterance, uploads it here once released, and sends the returned text
+    through the normal /agent/chat flow like any typed message.
+    """
+    if svc.transcription is None:
+        raise HTTPException(status_code=503, detail="Speech-to-text is not configured")
+    audio_bytes = await file.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Empty audio file")
+    if len(audio_bytes) > _MAX_VOICE_AUDIO_BYTES:
+        raise HTTPException(status_code=413, detail="Recording too long")
+    text = await svc.transcription.transcribe(
+        audio_bytes,
+        filename=file.filename or "voice.m4a",
+        mime_type=file.content_type or "audio/m4a",
+    )
+    return {"text": text}
+
+
 class ResumeRequest(BaseModel):
     thread_id: str
     decision: str  # "approved"|"denied" (chat) or "approve"|"edit"|"reject" (return)
     workflow: str = "chat"  # "chat" | "return"
     edits: dict | None = None
+    persona: Literal["scrooge", "buddy"] = "scrooge"
 
 
 @router.post("/resume")
@@ -188,6 +224,7 @@ async def resume(body: ResumeRequest, user_id: CurrentUser, svc: AppServices):
                 user_id=user_id,
                 thread_id=body.thread_id,
                 decision=body.decision,
+                persona=body.persona,
             )
         ),
         media_type="text/event-stream",
@@ -204,16 +241,26 @@ async def _wrap_return_resume(
 
 
 @router.get("/history/{thread_id}")
-async def get_history(thread_id: str, user_id: CurrentUser, svc: AppServices):
+async def get_history(
+    thread_id: str,
+    user_id: CurrentUser,
+    svc: AppServices,
+    persona: Literal["scrooge", "buddy"] = "scrooge",
+):
     """Return the message history for a conversation thread."""
-    messages = await svc.agent.get_history(user_id=user_id, thread_id=thread_id)
+    messages = await svc.agent.get_history(user_id=user_id, thread_id=thread_id, persona=persona)
     return {"thread_id": thread_id, "messages": messages}
 
 
 @router.get("/sessions")
-async def list_sessions(user_id: CurrentUser, svc: AppServices, limit: int = 50):
-    """Return the user's conversation sessions sorted by most recent activity."""
-    sessions = await svc.agent.list_sessions(user_id=user_id, limit=limit)
+async def list_sessions(
+    user_id: CurrentUser,
+    svc: AppServices,
+    limit: int = 50,
+    persona: Literal["scrooge", "buddy"] = "scrooge",
+):
+    """Return the user's conversation sessions (for this persona) sorted by most recent activity."""
+    sessions = await svc.agent.list_sessions(user_id=user_id, limit=limit, persona=persona)
     return {"sessions": sessions}
 
 

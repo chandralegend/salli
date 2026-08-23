@@ -1,19 +1,19 @@
 import { Book, FileText, Search, Trash2 } from "lucide-react-native";
 import { useState } from "react";
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
+import { Drawer } from "@/components/ui/drawer";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { Tabs } from "@/components/ui/tabs";
 import { useDeleteDocument, useDocuments, type SalliDocument } from "@/hooks/useDocuments";
-import { useThemeColors, useThemeVars } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 
 const TABS = ["Documents", "Memories"] as const;
 
 export default function DocumentsScreen() {
   const colors = useThemeColors();
-  const themeVars = useThemeVars();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Documents");
   const documents = useDocuments();
   const deleteDoc = useDeleteDocument();
@@ -83,17 +83,12 @@ export default function DocumentsScreen() {
         )}
       </View>
 
-      <Modal visible={Boolean(viewing)} animationType="slide" onRequestClose={() => setViewing(null)} presentationStyle="pageSheet">
-        <View style={[{ flex: 1, backgroundColor: colors.background }, themeVars]}>
-          <ScreenHeader title={viewing?.title ?? ""} back={false} />
-          <ScrollView className="flex-1 px-5 pt-3">
-            <Text className="text-[13px] leading-5 text-foreground">{viewing?.content}</Text>
-            <Pressable onPress={() => setViewing(null)} className="mt-6 items-center rounded-pill border border-foreground/10 bg-card py-3">
-              <Text className="text-[13px] font-sans-medium text-foreground/50">Close</Text>
-            </Pressable>
-          </ScrollView>
-        </View>
-      </Modal>
+      <Drawer visible={Boolean(viewing)} onClose={() => setViewing(null)} title={viewing?.title ?? ""}>
+        <Text className="text-[13px] leading-5 text-foreground">{viewing?.content}</Text>
+        <Pressable onPress={() => setViewing(null)} className="mt-6 items-center rounded-pill border border-foreground/10 bg-card py-3">
+          <Text className="text-[13px] font-sans-medium text-foreground/50">Close</Text>
+        </Pressable>
+      </Drawer>
     </PageShell>
   );
 }

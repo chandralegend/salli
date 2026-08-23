@@ -5,8 +5,12 @@ import type { ParsedEntryDraft } from "@/lib/api/types.gen";
 import { TOUR_STEPS } from "@/lib/tour/steps";
 
 const TOUR_COMPLETE_KEY = "salli-tour-complete";
+const MODE_KEY = "salli-mode";
+const MODE_CHOSEN_KEY = "salli-mode-chosen";
 
 export type TourRect = { x: number; y: number; width: number; height: number };
+
+export type AppMode = "pro" | "buddy";
 
 type SalliStore = {
   /** Bearer token (Supabase access_token, or the raw dev-login string). Lives here
@@ -20,6 +24,17 @@ type SalliStore = {
 
   onboardingComplete: boolean;
   setOnboardingComplete: (complete: boolean) => void;
+
+  /** Pro Mode = today's full app (dashboard/ledger/tax/everything), unchanged.
+   * Buddy Mode = the fullscreen chat-first alternative. Persisted separately
+   * from `modeChosen` so a stale/failed read never silently drops the user
+   * into an unintended mode before they've ever picked one. */
+  mode: AppMode;
+  modeReady: boolean;
+  modeChosen: boolean;
+  loadMode: () => Promise<void>;
+  setMode: (mode: AppMode) => void;
+  setModeChosen: () => void;
 
   /** Cross-screen signal: the floating "+" tab-bar button increments this so the
    * Ledger tab (wherever it's mounted) knows to open its New Entry modal. */
@@ -53,6 +68,30 @@ export const useSalliStore = create<SalliStore>((set) => ({
 
   onboardingComplete: false,
   setOnboardingComplete: (onboardingComplete) => set({ onboardingComplete }),
+
+  mode: "pro",
+  modeReady: false,
+  modeChosen: false,
+
+  loadMode: async () => {
+    const [[, storedMode], [, storedChosen]] = await AsyncStorage.multiGet([
+      MODE_KEY,
+      MODE_CHOSEN_KEY,
+    ]);
+    set({
+      mode: storedMode === "buddy" ? "buddy" : "pro",
+      modeChosen: storedChosen === "true",
+      modeReady: true,
+    });
+  },
+  setMode: (mode) => {
+    AsyncStorage.setItem(MODE_KEY, mode);
+    set({ mode });
+  },
+  setModeChosen: () => {
+    AsyncStorage.setItem(MODE_CHOSEN_KEY, "true");
+    set({ modeChosen: true });
+  },
 
   quickAddEntryRequest: 0,
   quickAddDraft: null,

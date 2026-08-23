@@ -5,54 +5,55 @@
 /*
  * Design tokens are RAW "R G B" channel triplets (not hex/rgba strings) so
  * Tailwind's rgb(var(...) / <alpha-value>) wrapper (see tailwind.config.js)
- * can apply opacity modifiers — text-foreground/40, border-foreground/10 —
- * matching the mockup's technique of white-at-varying-opacity over black.
+ * can apply opacity modifiers — text-foreground/40, border-foreground/10.
  *
- * Dark is the mockup's literal spec. Light is derived: same structure/radii/
- * spacing, inverted surface scale, same fixed #2563EB accent both ways.
+ * Warm-charcoal system (UI refresh): brand/base (#F15A32) is fixed across
+ * both themes — only the neutral surfaces/text shift between warm-charcoal
+ * (dark) and warm-cream (light). Must be kept in sync with lib/theme.tsx's
+ * DARK/LIGHT objects (NativeWind's vars() needs the same values as plain JS
+ * for RN Modal content, which portals outside this styled tree).
  */
 :root {
-  --color-background: 245 245 247; /* #F5F5F7 — light canvas */
-  --color-foreground: 10 10 10; /* #0A0A0A — primary text */
+  --color-background: 247 243 239; /* #F7F3EF — warm cream canvas */
+  --color-foreground: 28 24 21; /* #1C1815 — warm ink, primary text */
 
   --color-card: 255 255 255; /* white cards, one step up from canvas */
-  --color-card-foreground: 10 10 10;
+  --color-card-foreground: 28 24 21;
 
   --color-popover: 255 255 255;
-  --color-popover-foreground: 10 10 10;
+  --color-popover-foreground: 28 24 21;
 
-  --color-primary: 10 10 10; /* CTA pill = inverse of canvas (dark pill) */
-  --color-primary-foreground: 255 255 255;
+  --color-primary: 28 24 21; /* CTA pill = inverse of canvas (dark pill) */
+  --color-primary-foreground: 247 243 239;
 
-  --color-muted: 237 237 240; /* inset surface, darker than card */
-  --color-muted-foreground: 100 100 105;
+  --color-muted: 240 233 226; /* #F0E9E2 — raised warm-tan surface */
+  --color-muted-foreground: 122 115 112;
 
   /* Kept a true red, deliberately distinct from salli-accent below, so a
      destructive action never looks like a CTA. */
   --color-destructive: 220 38 38; /* #DC2626 */
 
-  /* Salli accent — red-orange in light mode; shifts to a true orange in
-     dark mode (below) since the red-orange reads muddy on near-black. */
-  --color-salli-accent: 245 49 15; /* #f5310f */
+  /* Salli brand accent — fixed red-orange, same value in both themes. */
+  --color-salli-accent: 241 90 50; /* #F15A32 */
 }
 
 .dark {
-  --color-background: 0 0 0; /* #000000 — pure black canvas */
-  --color-foreground: 255 255 255;
+  --color-background: 16 15 14; /* #100F0E — warm charcoal canvas */
+  --color-foreground: 245 242 239; /* #F5F2EF */
 
-  --color-card: 26 26 26; /* #1a1a1a */
-  --color-card-foreground: 255 255 255;
+  --color-card: 26 23 21; /* #1A1715 */
+  --color-card-foreground: 245 242 239;
 
-  --color-popover: 26 26 26;
-  --color-popover-foreground: 255 255 255;
+  --color-popover: 26 23 21;
+  --color-popover-foreground: 245 242 239;
 
-  --color-primary: 255 255 255; /* CTA pill = inverse of canvas (white pill) */
-  --color-primary-foreground: 0 0 0;
+  --color-primary: 245 242 239; /* CTA pill = inverse of canvas */
+  --color-primary-foreground: 16 15 14;
 
-  --color-muted: 17 17 17; /* #111 — inset surface, darker than card */
-  --color-muted-foreground: 179 179 179;
+  --color-muted: 33 27 24; /* #211B18 — raised surface, lighter than card */
+  --color-muted-foreground: 142 137 133;
 
   --color-destructive: 239 68 68; /* #EF4444 */
 
-  --color-salli-accent: 249 115 22; /* #F97316 — orange, not red-orange */
+  --color-salli-accent: 241 90 50; /* #F15A32 — same as light, brand is fixed */
 }

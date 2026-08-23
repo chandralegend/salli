@@ -18,6 +18,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput,
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Logo } from "@/components/Logo";
+import { ModeChoiceStep } from "@/components/onboarding/ModeChoiceStep";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { PillButton } from "@/components/ui/pill-button";
 import { TextField } from "@/components/ui/text-field";
@@ -28,11 +29,19 @@ import {
   submitRiskQuestionnaireOnboardingRiskQuestionnairePost,
   updateProfileOnboardingProfilePatch,
 } from "@/lib/api/sdk.gen";
+import { useIsTablet } from "@/lib/responsive";
+import type { AppMode } from "@/lib/store";
 import { useSalliStore } from "@/lib/store";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-const STEP_LABELS = ["Profile", "Income", "Risk", "Goals", "Review"];
+const STEP_LABELS = ["Profile", "Income", "Risk", "Goals", "Review", "Mode"];
+const TOTAL_STEPS = STEP_LABELS.length + 1; // +1 for the Welcome step
+
+/** Each step's form column is capped and centered on tablet instead of
+ * stretching edge-to-edge, matching AuthShell's narrower form-width pattern
+ * (this wizard is single-column fields/choice-cards, not a data grid). */
+const TABLET_STEP_MAX_WIDTH = 480;
 
 const WELCOME_ITEMS = [
   { icon: Briefcase, title: "Your profile", detail: "Name, DOB, tax residency, employment" },
@@ -100,15 +109,15 @@ function StepHeader({ index, onBack }: { index: number; onBack: () => void }) {
           <ChevronLeft size={14} color={colors.foreground} strokeWidth={2} />
         </Pressable>
         <Text className="font-sans-medium text-[13px] text-foreground/35">
-          {index + 2} of 6
+          {index + 2} of {TOTAL_STEPS}
         </Text>
         <View style={{ width: 34 }} />
       </View>
 
-      {/* 6 bars: bar 0 = Welcome (already done), bars 1-5 = the labeled steps.
+      {/* bar 0 = Welcome (already done), the rest = the labeled steps.
           Global position of the current labeled step is index+1. */}
       <View className="flex-row gap-1 px-4 pb-1 pt-3">
-        {Array.from({ length: 6 }).map((_, g) => (
+        {Array.from({ length: TOTAL_STEPS }).map((_, g) => (
           <View
             key={g}
             className={cn(
@@ -145,9 +154,18 @@ export default function OnboardingScreen() {
   // Comfortable top breathing room even on notchless devices / web preview,
   // where the safe-area inset is 0 and content would otherwise hug the edge.
   const topPad = Math.max(insets.top, 24);
+  const isTablet = useIsTablet();
+  const stepColumnStyle = {
+    width: "100%" as const,
+    maxWidth: isTablet ? TABLET_STEP_MAX_WIDTH : undefined,
+    alignSelf: "center" as const,
+  };
   const setOnboardingComplete = useSalliStore((s) => s.setOnboardingComplete);
-  const [step, setStep] = useState(0); // 0 = Welcome, 1..5 = the 5 labeled steps
+  const setMode = useSalliStore((s) => s.setMode);
+  const setModeChosen = useSalliStore((s) => s.setModeChosen);
+  const [step, setStep] = useState(0); // 0 = Welcome, 1..6 = the 6 labeled steps
   const [saving, setSaving] = useState(false);
+  const [chosenMode, setChosenMode] = useState<AppMode>("buddy");
 
   // Step 1 — About You
   const [fullName, setFullName] = useState("");
@@ -293,7 +311,9 @@ export default function OnboardingScreen() {
         },
       });
       setOnboardingComplete(true);
-      router.replace("/(tabs)");
+      setMode(chosenMode);
+      setModeChosen();
+      router.replace(chosenMode === "buddy" ? "/(buddy)" : "/(tabs)");
     } finally {
       setSaving(false);
     }
@@ -303,7 +323,7 @@ export default function OnboardingScreen() {
   if (step === 0) {
     return (
       <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
-        <View className="flex-1 px-6 pt-4" style={{ paddingBottom: insets.bottom + 16 }}>
+        <View className="flex-1 px-6 pt-4" style={[{ paddingBottom: insets.bottom + 16 }, stepColumnStyle]}>
           <View className="mb-5 items-center">
             <Logo size={36} className="text-foreground" />
             <Text className="mb-1.5 mt-3 text-center font-sans-bold text-[26px] tracking-tight text-foreground">
@@ -358,7 +378,7 @@ export default function OnboardingScreen() {
       <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={0} onBack={() => setStep(0)} />
-          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled">
+          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" contentContainerStyle={stepColumnStyle}>
             <StepTitle title="About You" subtitle="Used to compute your IRD tax and FIRE plan." />
             <View className="gap-2">
               <TextField label="Full Name *" active value={fullName} onChangeText={setFullName} placeholder="Your full name" />
@@ -427,7 +447,7 @@ export default function OnboardingScreen() {
       <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={1} onBack={handleBack} />
-          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled">
+          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" contentContainerStyle={stepColumnStyle}>
             <StepTitle title="Income Sources" subtitle="Select all that apply — we map each to a ledger account." />
             <View className="gap-2">
               {INCOME_SOURCES.map((source) => {
@@ -495,7 +515,7 @@ export default function OnboardingScreen() {
       <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={2} onBack={handleBack} />
-          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled">
+          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" contentContainerStyle={stepColumnStyle}>
             <StepTitle title="Risk Profile" subtitle="Shapes your FIRE strategy's asset allocation." />
             <View className="gap-3.5">
               <View>
@@ -602,7 +622,7 @@ export default function OnboardingScreen() {
       <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={3} onBack={handleBack} />
-          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled">
+          <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" contentContainerStyle={stepColumnStyle}>
             <StepTitle title="Financial Goals" subtitle="What are you working toward?" />
             <View className="gap-3">
               {goals.map((goal, i) => (
@@ -673,69 +693,91 @@ export default function OnboardingScreen() {
   }
 
   // ── Step 5: Review ───────────────────────────────────────────────────────
-  const selectedSourceLabels = INCOME_SOURCES.filter((s) => selectedSources.has(s.key)).map((s) => s.label);
-  const validGoals = goals.filter((g) => g.name.trim());
+  if (step === 5) {
+    const selectedSourceLabels = INCOME_SOURCES.filter((s) => selectedSources.has(s.key)).map((s) => s.label);
+    const validGoals = goals.filter((g) => g.name.trim());
 
-  return (
-    <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
-      <StepHeader index={4} onBack={handleBack} />
-      <ScrollView className="flex-1 px-5">
-        <StepTitle title="Review Setup" subtitle="Confirm — we'll post opening balances as ledger entries." />
-        <View className="gap-2">
-          {(
-            [
-              {
-                icon: User,
-                title: fullName || "Your profile",
-                subtitle: `${residency === "resident" ? "Resident" : "Non-Resident"} · ${EMPLOYMENT_LABELS[employment]}${dateOfBirth ? ` · ${dateOfBirth}` : ""}`,
-                step: 1,
-              },
-              {
-                icon: Wallet,
-                title: `${selectedSources.size} income source${selectedSources.size === 1 ? "" : "s"}`,
-                subtitle: selectedSourceLabels.join(", ") || "None declared",
-                step: 2,
-              },
-              {
-                icon: LineChart,
-                title: `${riskResult?.category ?? "—"} risk · ${validGoals.length} goal${validGoals.length === 1 ? "" : "s"}`,
-                subtitle: validGoals[0]?.name ?? "No goals set",
-                step: 3,
-              },
-            ] as const
-          ).map((row) => (
-            <View key={row.step} className="flex-row items-center gap-2.5 rounded-control border border-foreground/[0.08] bg-card p-3.5">
-              <View className="h-8 w-8 items-center justify-center rounded-[9px] bg-foreground/[0.06]">
-                <row.icon size={14} color={colors.mutedForeground} strokeWidth={2} />
+    return (
+      <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
+        <StepHeader index={4} onBack={handleBack} />
+        <ScrollView className="flex-1 px-5" contentContainerStyle={stepColumnStyle}>
+          <StepTitle title="Review Setup" subtitle="Confirm — we'll post opening balances as ledger entries." />
+          <View className="gap-2">
+            {(
+              [
+                {
+                  icon: User,
+                  title: fullName || "Your profile",
+                  subtitle: `${residency === "resident" ? "Resident" : "Non-Resident"} · ${EMPLOYMENT_LABELS[employment]}${dateOfBirth ? ` · ${dateOfBirth}` : ""}`,
+                  step: 1,
+                },
+                {
+                  icon: Wallet,
+                  title: `${selectedSources.size} income source${selectedSources.size === 1 ? "" : "s"}`,
+                  subtitle: selectedSourceLabels.join(", ") || "None declared",
+                  step: 2,
+                },
+                {
+                  icon: LineChart,
+                  title: `${riskResult?.category ?? "—"} risk · ${validGoals.length} goal${validGoals.length === 1 ? "" : "s"}`,
+                  subtitle: validGoals[0]?.name ?? "No goals set",
+                  step: 3,
+                },
+              ] as const
+            ).map((row) => (
+              <View key={row.step} className="flex-row items-center gap-2.5 rounded-control border border-foreground/[0.08] bg-card p-3.5">
+                <View className="h-8 w-8 items-center justify-center rounded-[9px] bg-foreground/[0.06]">
+                  <row.icon size={14} color={colors.mutedForeground} strokeWidth={2} />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-sans-semibold text-[13px] capitalize text-foreground">{row.title}</Text>
+                  <Text numberOfLines={1} className="text-[11px] text-foreground/30">{row.subtitle}</Text>
+                </View>
+                <Pressable onPress={() => setStep(row.step)}>
+                  <Text className="text-[11px] font-sans-medium text-salli-accent">Edit</Text>
+                </Pressable>
               </View>
-              <View className="flex-1">
-                <Text className="font-sans-semibold text-[13px] capitalize text-foreground">{row.title}</Text>
-                <Text numberOfLines={1} className="text-[11px] text-foreground/30">{row.subtitle}</Text>
-              </View>
-              <Pressable onPress={() => setStep(row.step)}>
-                <Text className="text-[11px] font-sans-medium text-salli-accent">Edit</Text>
-              </Pressable>
+            ))}
+
+            <View className="flex-row items-center gap-2.5 rounded-control border border-salli-accent/20 bg-salli-accent/[0.08] p-3.5">
+              <CreditCard size={16} color={colors.accent} strokeWidth={2} />
+              <Text className="flex-1 text-[12px] leading-4 text-foreground/60">
+                <Text className="font-sans-semibold text-foreground">
+                  {selectedSources.size} ledger account{selectedSources.size === 1 ? "" : "s"}
+                </Text>{" "}
+                will be created with your opening balances.
+              </Text>
             </View>
-          ))}
 
-          <View className="flex-row items-center gap-2.5 rounded-control border border-salli-accent/20 bg-salli-accent/[0.08] p-3.5">
-            <CreditCard size={16} color={colors.accent} strokeWidth={2} />
-            <Text className="flex-1 text-[12px] leading-4 text-foreground/60">
-              <Text className="font-sans-semibold text-foreground">
-                {selectedSources.size} ledger account{selectedSources.size === 1 ? "" : "s"}
-              </Text>{" "}
-              will be created with your opening balances.
+            <PillButton className="mt-2" onPress={() => setStep(6)}>
+              <Text className="font-sans-bold text-[15px] text-primary-foreground">Continue</Text>
+              <ChevronRight size={13} color={colors.primaryForeground} strokeWidth={2.5} />
+            </PillButton>
+            <Text className="mb-6 mt-2 text-center text-[11px] text-foreground/20">
+              You can change anything later in Settings
             </Text>
           </View>
+        </ScrollView>
+      </View>
+    );
+  }
 
-          <PillButton className="mt-2" loading={saving} onPress={handleFinish}>
-            <Check size={15} color={colors.primaryForeground} strokeWidth={2.5} />
-            <Text className="font-sans-bold text-[15px] text-primary-foreground">Finish Setup</Text>
-          </PillButton>
-          <Text className="mb-6 mt-2 text-center text-[11px] text-foreground/20">
-            You can change anything later in Settings
-          </Text>
-        </View>
+  // ── Step 6: Mode ─────────────────────────────────────────────────────────
+  return (
+    <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
+      <StepHeader index={5} onBack={handleBack} />
+      <ScrollView className="flex-1 px-5" contentContainerStyle={stepColumnStyle}>
+        <StepTitle
+          title="How do you want to use Salli?"
+          subtitle="Pick a starting point — you can switch anytime with a swipe."
+        />
+        <ModeChoiceStep
+          value={chosenMode}
+          onChange={setChosenMode}
+          onContinue={handleFinish}
+          loading={saving}
+          continueLabel="Finish Setup"
+        />
       </ScrollView>
     </View>
   );

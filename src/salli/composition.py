@@ -29,6 +29,7 @@ from salli.application.services.reminder_service import ReminderService
 from salli.application.services.report_service import ReportService
 from salli.application.services.subscription_service import SubscriptionService
 from salli.application.services.tax_service import TaxService
+from salli.application.services.transcription_service import TranscriptionService
 from salli.application.services.user_profile_service import UserProfileService
 from salli.application.unit_of_work import UnitOfWork
 from salli.config import Settings
@@ -58,6 +59,7 @@ class Services:
     data_portability: DataPortabilityService
     mcp_oauth: McpOAuthService
     entry_parse: EntryParseService | None
+    transcription: TranscriptionService | None
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
@@ -117,6 +119,14 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
             ledger,
             AnthropicLLMAdapter(settings.anthropic_api_key, settings.langsmith_project),
         )
+
+    # Voice Mode speech-to-text. Only available when an OpenAI key is
+    # configured; otherwise /agent/transcribe 503s (mirrors entry_parse above).
+    transcription: TranscriptionService | None = None
+    if settings.openai_api_key:
+        from salli.adapters.stt.openai_whisper import OpenAIWhisperAdapter
+
+        transcription = TranscriptionService(OpenAIWhisperAdapter(settings.openai_api_key))
 
     reminders = ReminderService(uow_factory, budget, subscription, insurance)
     bug_reports = BugReportService(
@@ -180,6 +190,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         data_portability=data_portability,
         mcp_oauth=mcp_oauth,
         entry_parse=entry_parse,
+        transcription=transcription,
     )
 
 

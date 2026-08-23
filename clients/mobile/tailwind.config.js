@@ -27,27 +27,22 @@ module.exports = {
         "muted-foreground": "rgb(var(--color-muted-foreground) / <alpha-value>)",
 
         // Destructive is a deliberately different, darker red from the
-        // red-orange accent below, so "delete" never reads as just another CTA.
+        // brand accent below, so "delete" never reads as just another CTA.
         destructive: "rgb(var(--color-destructive) / <alpha-value>)",
         "salli-success": "#1b6b47",
 
-        // Salli accent — red-orange in light mode, shifts to true orange in
-        // dark mode (see global.css --color-salli-accent) since red-orange
-        // reads muddy against near-black. Active states, CTAs, icon fills.
+        // Salli brand accent — fixed red-orange, same value both themes
+        // (see global.css --color-salli-accent). Active states, CTAs, icon fills.
         "salli-accent": "rgb(var(--color-salli-accent) / <alpha-value>)",
-        // Hero gradient stops (Login / Dashboard top) — always dark (these
-        // screens don't follow the light/dark toggle), orange fading to ink.
-        "salli-hero-1": "#F97316",
-        "salli-hero-2": "#c85a0f",
-        "salli-hero-3": "#6b3212",
-        "salli-hero-4": "#16130f",
-        // Deep-ink card (Tax hero, New Entry amount hero) — theme-invariant.
-        "salli-navy-card": "#221d17",
-        // Tab bar / logo badge — theme-invariant (always dark dock, always white
-        // badge), mirrors the old app's "stays dark in both modes" tokens.
-        "salli-dock": "rgba(4,4,4,.97)",
-        "salli-badge": "#FFFFFF",
-        "salli-badge-foreground": "#F97316",
+        // brand/bright — theme-invariant, for pressed/highlight states and
+        // the Voice Mode orb core (brighter than salli-accent).
+        "salli-bright": "#FF784E",
+        // brand/deep — theme-invariant, consumed only by SalliBackground's
+        // ambient glow fields, not a general-purpose UI color.
+        "salli-glow-deep": "#7B2A20",
+        // Deep-ink card (Tax hero, New Entry amount hero, etc.) — theme-invariant,
+        // repointed to the new warm-charcoal surface/2 tone.
+        "salli-navy-card": "#211B18",
       },
       fontFamily: {
         sans: ["Archivo_400Regular"],

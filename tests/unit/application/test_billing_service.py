@@ -432,6 +432,29 @@ async def test_unmapped_price_leaves_cycle_unknown(service, repos):
     assert row["billing_cycle"] is None
 
 
+async def test_event_without_a_price_id_keeps_the_existing_plan(service, repos):
+    """A subscription event carrying no resolvable price must not downgrade a payer.
+
+    _normalize_subscription always emits a "price_id" key, falling back to "" when the
+    event has no items[].price.id, and "" resolves to plan "free". Keying the plan
+    write off key *presence* therefore turned any such event into a silent downgrade
+    for an active, paying subscriber — so an absent/empty price leaves plan and cycle
+    at their last known-good values instead.
+    """
+    subs, _, _ = repos
+    await service.apply_webhook_event(
+        {"user_id": USER, "price_id": "pri_pro_y", "status": "active"}
+    )
+    assert (await subs.get(USER))["plan"] == "pro"
+
+    # Same subscription, but this delivery carries no item detail.
+    await service.apply_webhook_event({"user_id": USER, "price_id": "", "status": "active"})
+    row = await subs.get(USER)
+    assert row["plan"] == "pro"
+    assert row["billing_cycle"] == "year"
+    assert (await service.get_entitlements(USER))["plan"] == "pro"
+
+
 async def test_entitlements_hide_cycle_when_plan_not_effective(service, repos):
     """A canceled row keeps billing_cycle in the DB, but surfacing it would render
     as 'Free · Annual' — the effective plan governs what the client sees."""

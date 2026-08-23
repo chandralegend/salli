@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     # Anthropic
     anthropic_api_key: str = ""
 
+    # OpenAI — used only for speech-to-text transcription (mobile Voice Mode).
+    # The agent itself never calls OpenAI; this key powers /agent/transcribe alone.
+    openai_api_key: str = ""
+
     # Supabase
     supabase_url: str = ""
     supabase_anon_key: str = ""

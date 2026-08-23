@@ -255,6 +255,11 @@ class AgentSessionORM(Base):
     user_id: Mapped[str] = mapped_column(String(36), nullable=False)
     thread_id: Mapped[str] = mapped_column(String(36), nullable=False)
     title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    # Which agent persona this thread belongs to ("scrooge" = Pro Mode's
+    # existing Salli AI, "buddy" = mobile Buddy Mode) — keeps the two modes'
+    # session lists from merging into one, since threads are never shared
+    # between personas.
+    persona: Mapped[str] = mapped_column(String(20), nullable=False, default="scrooge")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
     )

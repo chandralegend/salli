@@ -1,3 +1,4 @@
+import { BlurView } from "expo-blur";
 import { X } from "lucide-react-native";
 import { type ReactNode, useEffect, useMemo, useRef } from "react";
 import {
@@ -8,14 +9,25 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useThemeColors, useThemeVars } from "@/lib/theme";
+import { useIsTablet } from "@/lib/responsive";
+import { useAppTheme, useThemeColors, useThemeVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+
+/** Backdrop tint layered over the blur, keyed by theme so the scrim reads as
+ * the same "material" in both modes rather than a fixed black overlay. */
+const BACKDROP_TINT = { dark: "rgba(16,15,14,0.55)", light: "rgba(28,24,21,0.16)" };
+
+/** On tablet, the sheet is capped to a comfortable width and centered instead
+ * of spanning the full screen edge-to-edge — matches how iPadOS's own sheets
+ * (share sheet, popovers) stay a bounded width rather than stretching. */
+const TABLET_SHEET_MAX_WIDTH = 560;
 
 type DrawerProps = {
   visible: boolean;
@@ -55,18 +67,33 @@ export function Drawer({
 }: DrawerProps) {
   const colors = useThemeColors();
   const themeVars = useThemeVars();
+  const { isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
+  const isTablet = useIsTablet();
   const { height } = useWindowDimensions();
-  const translateY = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(height)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
 
-  // Reset drag position each time the sheet opens.
+  // Drive the entrance ourselves (Modal's own animationType is "none") so the
+  // backdrop fades in place while only the sheet slides — RN's built-in
+  // "slide" animationType moves the whole modal subtree as one unit, which
+  // made the backdrop tint visibly slide up together with the sheet.
   useEffect(() => {
-    if (visible) translateY.setValue(0);
-  }, [visible, translateY]);
+    if (visible) {
+      translateY.setValue(height);
+      backdropOpacity.setValue(0);
+      Animated.parallel([
+        Animated.timing(translateY, { toValue: 0, duration: 240, useNativeDriver: true }),
+        Animated.timing(backdropOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [visible, translateY, backdropOpacity, height]);
 
   const dismiss = () => {
-    Animated.timing(translateY, { toValue: height, duration: 160, useNativeDriver: true }).start(() => {
-      translateY.setValue(0);
+    Animated.parallel([
+      Animated.timing(translateY, { toValue: height, duration: 180, useNativeDriver: true }),
+      Animated.timing(backdropOpacity, { toValue: 0, duration: 180, useNativeDriver: true }),
+    ]).start(() => {
       onClose();
     });
   };
@@ -104,7 +131,14 @@ export function Drawer({
       <Animated.View
         style={[
           themeVars,
-          { transform: [{ translateY }], maxHeight: (height * maxHeightPct) / 100, paddingBottom: insets.bottom + 12 },
+          {
+            transform: [{ translateY }],
+            maxHeight: (height * maxHeightPct) / 100,
+            paddingBottom: insets.bottom + 12,
+            width: "100%",
+            maxWidth: isTablet ? TABLET_SHEET_MAX_WIDTH : undefined,
+            alignSelf: "center",
+          },
         ]}
         className={cn("rounded-t-[24px] border-t border-foreground/10 bg-background px-4 pt-2.5", className)}
       >
@@ -116,7 +150,7 @@ export function Drawer({
           <View className="flex-row items-center px-0.5 pb-3 pt-1">
             <Text className="flex-1 font-sans-bold text-[18px] text-foreground">{title}</Text>
             <Pressable
-              onPress={onClose}
+              onPress={dismiss}
               hitSlop={8}
               className="h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.08]"
             >
@@ -132,8 +166,14 @@ export function Drawer({
   );
 
   return (
-    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
-      <Pressable className="flex-1 justify-end" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onPress={onClose}>
+    <Modal visible={visible} transparent animationType="none" statusBarTranslucent onRequestClose={dismiss}>
+      <Pressable className="flex-1 justify-end" onPress={dismiss}>
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { opacity: backdropOpacity }]}>
+          <BlurView intensity={35} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFillObject} />
+          <View
+            style={[StyleSheet.absoluteFillObject, { backgroundColor: BACKDROP_TINT[isDark ? "dark" : "light"] }]}
+          />
+        </Animated.View>
         {keyboardAvoiding ? (
           <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>{sheet}</KeyboardAvoidingView>
         ) : (

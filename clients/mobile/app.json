@@ -11,7 +11,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "lk.salli.app"
+      "bundleIdentifier": "lk.salli.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "lk.salli.app",
@@ -31,12 +34,29 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      ["expo-splash-screen", {
-        "image": "./assets/splash-icon.png",
-        "backgroundColor": "#16130f",
-        "resizeMode": "contain"
-      }],
-      "expo-web-browser"
-    ]
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#16130f",
+          "resizeMode": "contain"
+        }
+      ],
+      "expo-web-browser",
+      "expo-apple-authentication",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Salli uses your microphone in Voice Mode so you can talk to Salli instead of typing."
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "365a37c2-8680-47df-b8df-c7cdf7a33e01"
+      }
+    },
+    "owner": "chandralegend"
   }
 }

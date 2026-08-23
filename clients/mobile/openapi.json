@@ -972,6 +972,51 @@
         ]
       }
     },
+    "/agent/transcribe": {
+      "post": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Transcribe",
+        "description": "Transcribe a recorded voice message to text (mobile Voice Mode).\n\nTurn-based, not streaming: the client records a whole push-to-talk\nutterance, uploads it here once released, and sends the returned text\nthrough the normal /agent/chat flow like any typed message.",
+        "operationId": "transcribe_agent_transcribe_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_transcribe_agent_transcribe_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/agent/resume": {
       "post": {
         "tags": [
@@ -1039,6 +1084,20 @@
               "type": "string",
               "title": "Thread Id"
             }
+          },
+          {
+            "name": "persona",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "scrooge",
+                "buddy"
+              ],
+              "type": "string",
+              "default": "scrooge",
+              "title": "Persona"
+            }
           }
         ],
         "responses": {
@@ -1069,7 +1128,7 @@
           "agent"
         ],
         "summary": "List Sessions",
-        "description": "Return the user's conversation sessions sorted by most recent activity.",
+        "description": "Return the user's conversation sessions (for this persona) sorted by most recent activity.",
         "operationId": "list_sessions_agent_sessions_get",
         "security": [
           {
@@ -1085,6 +1144,20 @@
               "type": "integer",
               "default": 50,
               "title": "Limit"
+            }
+          },
+          {
+            "name": "persona",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "scrooge",
+                "buddy"
+              ],
+              "type": "string",
+              "default": "scrooge",
+              "title": "Persona"
             }
           }
         ],
@@ -5538,6 +5611,20 @@
         ],
         "title": "Body_token_mcp_oauth_token_post"
       },
+      "Body_transcribe_agent_transcribe_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_transcribe_agent_transcribe_post"
+      },
       "Body_upload_file_agent_files_post": {
         "properties": {
           "file": {
@@ -5955,6 +6042,15 @@
             "type": "array",
             "title": "File Refs",
             "default": []
+          },
+          "persona": {
+            "type": "string",
+            "enum": [
+              "scrooge",
+              "buddy"
+            ],
+            "title": "Persona",
+            "default": "scrooge"
           }
         },
         "type": "object",
@@ -7247,6 +7343,15 @@
               }
             ],
             "title": "Edits"
+          },
+          "persona": {
+            "type": "string",
+            "enum": [
+              "scrooge",
+              "buddy"
+            ],
+            "title": "Persona",
+            "default": "scrooge"
           }
         },
         "type": "object",

@@ -14,7 +14,7 @@ import { UpgradeDialog } from "@/components/billing/UpgradeDialog";
 import { DangerZone } from "@/components/settings/DangerZone";
 import { McpConnectionsCard } from "@/components/settings/McpConnectionsCard";
 import { HelpFeedbackCard } from "@/components/support/HelpFeedbackCard";
-import { useSubscription, useBillingPortal } from "@/hooks/useBilling";
+import { useSubscription, useBillingPortal, type BillingCycle } from "@/hooks/useBilling";
 import { useAuth } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 
@@ -57,12 +57,26 @@ function SettingsContent() {
 
   const sub = subscription.data;
 
+  // An explicit ?cycle= wins (the marketing site's annual CTA links here and must
+  // land on Annual). Otherwise open on what the user is already paying, so an
+  // annual subscriber isn't shown monthly prices for their own plan.
+  const cycleParam = params.get("cycle");
+  const initialCycle: BillingCycle =
+    cycleParam === "year" || cycleParam === "month"
+      ? cycleParam
+      : (sub?.billing_cycle ?? "month");
+
   async function openPortal() {
     try {
       const { url } = await portal.mutateAsync();
       window.location.assign(url);
-    } catch {
-      toast.error("Billing portal unavailable — try again shortly.");
+    } catch (err) {
+      // Same reasoning as UpgradeDialog: the backend's detail is the actionable
+      // text (e.g. "No billing customer for this user yet", which means checkout
+      // has never completed), not a transient-sounding retry prompt.
+      toast.error(
+        err instanceof Error ? err.message : "Billing portal unavailable — try again shortly.",
+      );
     }
   }
 
@@ -98,7 +112,10 @@ function SettingsContent() {
             <>
               <p className="text-2xl font-semibold">
                 {sub.plan_name || sub.plan}
-                <span className="text-sm font-normal text-muted-foreground"> · billed via Paddle</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  {sub.billing_cycle ? (sub.billing_cycle === "year" ? " · Annual" : " · Monthly") : ""}
+                  {" · billed via Paddle"}
+                </span>
               </p>
               <p className="text-[13px] text-muted-foreground mt-1">
                 {sub.cancel_at_period_end
@@ -107,6 +124,19 @@ function SettingsContent() {
                     ? `Renews ${formatDate(sub.current_period_end)}`
                     : "Free plan — no billing date"}
               </p>
+              {/* Shown on the card, not just inside the dialog: a past_due subscriber
+                  needs to know why before hunting for a button that won't work. */}
+              {sub.change_mode === "blocked" && (
+                <p className="text-[13px] text-muted-foreground mt-2">
+                  {sub.change_blocked_reason === "past_due"
+                    ? "There's an unpaid invoice — settle it in the billing portal to change plans."
+                    : sub.change_blocked_reason === "paused"
+                      ? "Your subscription is paused. Resume it to change plans."
+                      : sub.change_blocked_reason === "scheduled_change"
+                        ? "A cancellation is already scheduled. Manage it in the billing portal."
+                        : "Manage this subscription in the billing portal."}
+                </p>
+              )}
               <div className="flex gap-2 mt-5">
                 <Button variant="outline" onClick={openPortal} disabled={portal.isPending}>
                   {portal.isPending ? <Loader2 className="size-4 animate-spin" /> : <ExternalLink className="size-4" />}
@@ -220,7 +250,13 @@ function SettingsContent() {
         open={upgradeOpen}
         onOpenChange={setUpgradeOpen}
         currentPlan={sub?.plan ?? "free"}
+        currentCycle={sub?.billing_cycle ?? null}
+        // Default to checkout while the subscription is still loading: it's the
+        // conservative branch, since it can't charge a card without the Paddle overlay.
+        changeMode={sub?.change_mode ?? "checkout"}
+        blockedReason={sub?.change_blocked_reason ?? null}
         highlightPlan={upgradeParam && upgradeParam !== "1" ? upgradeParam : undefined}
+        initialCycle={initialCycle}
       />
     </div>
   );

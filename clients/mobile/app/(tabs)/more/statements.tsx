@@ -13,8 +13,9 @@ import {
   Upload,
 } from "lucide-react-native";
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Modal, Pressable, Text, TextInput, View } from "react-native";
 
+import { QuotaBanner } from "@/components/shared/QuotaBanner";
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
@@ -26,6 +27,7 @@ import { useAccounts, useTrialBalance } from "@/hooks/useLedger";
 import type { ParsedTransaction, StatementUploadResult } from "@/hooks/useStatements";
 import { usePendingStatement, usePostStatement, uploadStatement } from "@/hooks/useStatements";
 import { formatLKR } from "@/lib/format";
+import { isQuotaError } from "@/lib/quota";
 import { useIsTablet } from "@/lib/responsive";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -58,6 +60,7 @@ export default function StatementsScreen() {
   const [status, setStatus] = useState<Status>("Pending");
   const [search, setSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [quotaHit, setQuotaHit] = useState(false);
 
   const statementId = upload?.statement_id ?? null;
   const pending = usePendingStatement(statementId);
@@ -76,12 +79,16 @@ export default function StatementsScreen() {
     if (result.canceled) return;
     const file = result.assets[0];
     setUploading(true);
+    setQuotaHit(false);
     try {
       const res = await uploadStatement(file.uri, file.name, file.mimeType ?? "application/octet-stream", "");
       setUpload(res);
       setApproved(new Set());
       setTab("Review");
       setStatus("Pending");
+    } catch (err) {
+      if (isQuotaError(err)) setQuotaHit(true);
+      else Alert.alert("Upload failed", "We couldn't process that statement. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -135,6 +142,8 @@ export default function StatementsScreen() {
         />
 
         <Tabs items={TABS} value={tab} onChange={setTab} className="mt-3" />
+
+        {quotaHit ? <QuotaBanner metric="statement_uploads" className="mx-4 mt-3" /> : null}
 
         {tab === "Review" ? (
           <ReviewTab

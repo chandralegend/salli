@@ -342,6 +342,10 @@ export type CheckoutRequest = {
      * Plan
      */
     plan: string;
+    /**
+     * Cycle
+     */
+    cycle?: string;
 };
 
 /**
@@ -798,6 +802,20 @@ export type ParsedEntryDraft = {
      * Confidence
      */
     confidence?: number;
+};
+
+/**
+ * PlanChangeRequest
+ */
+export type PlanChangeRequest = {
+    /**
+     * Plan
+     */
+    plan: 'plus' | 'pro';
+    /**
+     * Cycle
+     */
+    cycle?: 'month' | 'year';
 };
 
 /**
@@ -2537,6 +2555,52 @@ export type CreateCheckoutBillingCheckoutPostErrors = {
 export type CreateCheckoutBillingCheckoutPostError = CreateCheckoutBillingCheckoutPostErrors[keyof CreateCheckoutBillingCheckoutPostErrors];
 
 export type CreateCheckoutBillingCheckoutPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type PreviewPlanChangeBillingSubscriptionPreviewPostData = {
+    body: PlanChangeRequest;
+    path?: never;
+    query?: never;
+    url: '/billing/subscription/preview';
+};
+
+export type PreviewPlanChangeBillingSubscriptionPreviewPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type PreviewPlanChangeBillingSubscriptionPreviewPostError = PreviewPlanChangeBillingSubscriptionPreviewPostErrors[keyof PreviewPlanChangeBillingSubscriptionPreviewPostErrors];
+
+export type PreviewPlanChangeBillingSubscriptionPreviewPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ChangePlanBillingSubscriptionChangePostData = {
+    body: PlanChangeRequest;
+    path?: never;
+    query?: never;
+    url: '/billing/subscription/change';
+};
+
+export type ChangePlanBillingSubscriptionChangePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ChangePlanBillingSubscriptionChangePostError = ChangePlanBillingSubscriptionChangePostErrors[keyof ChangePlanBillingSubscriptionChangePostErrors];
+
+export type ChangePlanBillingSubscriptionChangePostResponses = {
     /**
      * Successful Response
      */

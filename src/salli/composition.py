@@ -205,8 +205,10 @@ def _build_billing(settings: Settings):
         webhook_secret=settings.paddle_webhook_secret,
         environment=settings.paddle_environment,
         price_map={
-            "plus": settings.paddle_price_plus,
-            "pro": settings.paddle_price_pro,
+            "plus:month": settings.paddle_price_plus,
+            "plus:year": settings.paddle_price_plus_yearly,
+            "pro:month": settings.paddle_price_pro,
+            "pro:year": settings.paddle_price_pro_yearly,
         },
     )
 

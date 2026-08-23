@@ -8,6 +8,7 @@ import { clsx } from "clsx";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { MagneticButton } from "@/components/MagneticButton";
+import { SITE_URL as BASE_URL } from "@/lib/config";
 import { getAllPosts, getAllSlugs, getPost } from "@/lib/posts";
 import { COVER_STYLE_CLASS, type CoverStyle } from "@/lib/blog-styles";
 
@@ -15,8 +16,6 @@ export async function generateStaticParams() {
   const slugs = await getAllSlugs();
   return slugs.map((slug) => ({ slug }));
 }
-
-const BASE_URL = "https://salli.leafmonkey.org";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

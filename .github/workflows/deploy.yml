@@ -47,6 +47,9 @@ jobs:
       PADDLE_ENVIRONMENT: ${{ vars.PADDLE_ENVIRONMENT }}
       PADDLE_PRICE_PLUS: ${{ vars.PADDLE_PRICE_PLUS }}
       PADDLE_PRICE_PRO: ${{ vars.PADDLE_PRICE_PRO }}
+      PADDLE_PRICE_PLUS_YEARLY: ${{ vars.PADDLE_PRICE_PLUS_YEARLY }}
+      PADDLE_PRICE_PRO_YEARLY: ${{ vars.PADDLE_PRICE_PRO_YEARLY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
       - uses: actions/checkout@v4

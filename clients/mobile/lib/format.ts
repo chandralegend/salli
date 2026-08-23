@@ -17,3 +17,21 @@ export function formatLKR(value: string | number, decimals = 2): string {
 export function formatPct(value: string | number, decimals = 1): string {
   return `${(Number(value) * 100).toFixed(decimals)}%`;
 }
+
+/**
+ * Provider money (integer minor units + ISO currency) → localized amount with symbol:
+ * (4271, "USD") → "$42.71".
+ *
+ * The exponent comes from Intl rather than a hardcoded /100 because zero-decimal
+ * currencies exist (JPY, KRW) — dividing those by 100 understates the charge
+ * hundredfold. Falls back to 2 decimals if the runtime ships without full ICU.
+ */
+export function formatMinor(minor: number, currency: string): string {
+  try {
+    const fmt = new Intl.NumberFormat(undefined, { style: "currency", currency });
+    const exponent = fmt.resolvedOptions().maximumFractionDigits ?? 2;
+    return fmt.format(minor / 10 ** exponent);
+  } catch {
+    return `${currency} ${(minor / 100).toFixed(2)}`;
+  }
+}

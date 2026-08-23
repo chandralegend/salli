@@ -114,6 +114,16 @@ export type BodyTokenMcpOauthTokenPost = {
 };
 
 /**
+ * Body_transcribe_agent_transcribe_post
+ */
+export type BodyTranscribeAgentTranscribePost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
  * Body_upload_file_agent_files_post
  */
 export type BodyUploadFileAgentFilesPost = {
@@ -318,6 +328,10 @@ export type ChatRequest = {
      * File Refs
      */
     file_refs?: Array<string>;
+    /**
+     * Persona
+     */
+    persona?: 'scrooge' | 'buddy';
 };
 
 /**
@@ -328,6 +342,10 @@ export type CheckoutRequest = {
      * Plan
      */
     plan: string;
+    /**
+     * Cycle
+     */
+    cycle?: string;
 };
 
 /**
@@ -787,6 +805,20 @@ export type ParsedEntryDraft = {
 };
 
 /**
+ * PlanChangeRequest
+ */
+export type PlanChangeRequest = {
+    /**
+     * Plan
+     */
+    plan: 'plus' | 'pro';
+    /**
+     * Cycle
+     */
+    cycle?: 'month' | 'year';
+};
+
+/**
  * PolicyRequest
  */
 export type PolicyRequest = {
@@ -1021,6 +1053,10 @@ export type ResumeRequest = {
     edits?: {
         [key: string]: unknown;
     } | null;
+    /**
+     * Persona
+     */
+    persona?: 'scrooge' | 'buddy';
 };
 
 /**
@@ -1759,6 +1795,29 @@ export type UploadFileAgentFilesPostResponses = {
     200: unknown;
 };
 
+export type TranscribeAgentTranscribePostData = {
+    body: BodyTranscribeAgentTranscribePost;
+    path?: never;
+    query?: never;
+    url: '/agent/transcribe';
+};
+
+export type TranscribeAgentTranscribePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TranscribeAgentTranscribePostError = TranscribeAgentTranscribePostErrors[keyof TranscribeAgentTranscribePostErrors];
+
+export type TranscribeAgentTranscribePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type ResumeAgentResumePostData = {
     body: ResumeRequest;
     path?: never;
@@ -1790,7 +1849,12 @@ export type GetHistoryAgentHistoryThreadIdGetData = {
          */
         thread_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Persona
+         */
+        persona?: 'scrooge' | 'buddy';
+    };
     url: '/agent/history/{thread_id}';
 };
 
@@ -1818,6 +1882,10 @@ export type ListSessionsAgentSessionsGetData = {
          * Limit
          */
         limit?: number;
+        /**
+         * Persona
+         */
+        persona?: 'scrooge' | 'buddy';
     };
     url: '/agent/sessions';
 };
@@ -2487,6 +2555,52 @@ export type CreateCheckoutBillingCheckoutPostErrors = {
 export type CreateCheckoutBillingCheckoutPostError = CreateCheckoutBillingCheckoutPostErrors[keyof CreateCheckoutBillingCheckoutPostErrors];
 
 export type CreateCheckoutBillingCheckoutPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type PreviewPlanChangeBillingSubscriptionPreviewPostData = {
+    body: PlanChangeRequest;
+    path?: never;
+    query?: never;
+    url: '/billing/subscription/preview';
+};
+
+export type PreviewPlanChangeBillingSubscriptionPreviewPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type PreviewPlanChangeBillingSubscriptionPreviewPostError = PreviewPlanChangeBillingSubscriptionPreviewPostErrors[keyof PreviewPlanChangeBillingSubscriptionPreviewPostErrors];
+
+export type PreviewPlanChangeBillingSubscriptionPreviewPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ChangePlanBillingSubscriptionChangePostData = {
+    body: PlanChangeRequest;
+    path?: never;
+    query?: never;
+    url: '/billing/subscription/change';
+};
+
+export type ChangePlanBillingSubscriptionChangePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ChangePlanBillingSubscriptionChangePostError = ChangePlanBillingSubscriptionChangePostErrors[keyof ChangePlanBillingSubscriptionChangePostErrors];
+
+export type ChangePlanBillingSubscriptionChangePostResponses = {
     /**
      * Successful Response
      */

@@ -13,6 +13,7 @@ export type AgentEvent =
   | { type: "subagent_token"; agent: string; content: string }
   | { type: "interrupt"; data: unknown }
   | { type: "done" }
+  | { type: "quota_exceeded"; metric?: string }
   | { type: "error"; message: string };
 
 /**
@@ -47,6 +48,12 @@ export function streamAgentChat(
   });
 
   es.addEventListener("error", (event) => {
+    // A 402 means the monthly agent-message quota is spent — surface it as a
+    // structured event (with an Upgrade CTA in the UI) rather than a raw error.
+    if (event.type === "error" && event.xhrStatus === 402) {
+      onEvent({ type: "quota_exceeded", metric: "agent_messages" });
+      return;
+    }
     onError("message" in event ? event.message : "Connection error.");
   });
 

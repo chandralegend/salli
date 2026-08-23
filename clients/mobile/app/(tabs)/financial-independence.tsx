@@ -22,7 +22,7 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import Markdown from "react-native-markdown-display";
 import Svg, { Circle, Line, Path, Polyline } from "react-native-svg";
 
-import { QuotaBanner } from "@/components/QuotaBanner";
+import { QuotaBanner } from "@/components/shared/QuotaBanner";
 import { TourTarget } from "@/components/tour/TourTarget";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
@@ -30,6 +30,7 @@ import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
 import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
+import { isQuotaError } from "@/lib/quota";
 import {
   useFiGoalMutations,
   useFiGoals,
@@ -569,14 +570,6 @@ export default function FinancialIndependenceScreen() {
               {runAdvisor.isPending ? <ActivityIndicator color={colors.accent} /> : null}
             </View>
 
-            {/* The generated client throws the raw parsed JSON error body on
-                throwOnError, and FastAPI wraps HTTPException detail under
-                "detail" — not the web apiFetch convention (instanceof Error +
-                .message.includes(...)), which won't work here. */}
-            {(runAdvisor.error as { detail?: { error?: string } } | null)?.detail?.error === "quota_exceeded" ? (
-              <QuotaBanner message="You've used your AI advisor runs for this plan. Upgrade for more." />
-            ) : null}
-
             {advisorReport.data ? (
               <>
                 <Text className="mb-2.5 text-[12px] leading-5 text-foreground/50">{advisorReport.data.summary}</Text>
@@ -622,6 +615,9 @@ export default function FinancialIndependenceScreen() {
             <PillButton variant="secondary" loading={runAdvisor.isPending} onPress={() => runAdvisor.mutate()}>
               {advisorReport.data ? "Re-run Freedom Mentor" : "Run Freedom Mentor"}
             </PillButton>
+            {isQuotaError(runAdvisor.error) ? (
+              <QuotaBanner metric="advisor_runs" className="mt-3" />
+            ) : null}
           </Card>
         </View>
       ) : null}

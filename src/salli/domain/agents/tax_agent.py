@@ -51,19 +51,23 @@ Begin by asking the user what they'd like help with today.
 """
 
 
-def build_tax_agent(ledger_svc, tax_svc, checkpointer=None):
+def build_tax_agent(ledger_svc, tax_svc, checkpointer=None, *, api_key):
     """
     Construct and return a compiled LangGraph Tax Agent.
+
+    NOTE: currently unreferenced — the conversational surface is the supervisor
+    in manager_agent.py / buddy_agent.py. Kept in step with the other builders
+    (explicit, required `api_key`) rather than left holding a zero-arg model
+    that would silently read ANTHROPIC_API_KEY if it were ever revived.
 
     ledger_svc / tax_svc: real application services (from composition root)
     checkpointer: LangGraph checkpointer; defaults to in-memory MemorySaver for
                   Phase 1 (CLI). Phase 2 (FastAPI) will inject AsyncPostgresSaver.
     """
-    from langchain_anthropic import ChatAnthropic
-
+    from salli.domain.agents.model_factory import chat_model
     from salli.domain.agents.tools import make_tools
 
-    model = ChatAnthropic(model="claude-sonnet-4-6", temperature=0)
+    model = chat_model(api_key=api_key, temperature=0)
     tools = make_tools(ledger_svc, tax_svc)
 
     if checkpointer is None:

@@ -12,6 +12,7 @@ Builds the manager agent (supervisor) and the return workflow. Exposes:
 from __future__ import annotations
 
 import uuid
+from collections import OrderedDict
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -97,32 +98,42 @@ class AgentService:
         self._fi_svc = fi_svc
         self._checkpointer = checkpointer
         self._uow_factory = uow_factory
-        self._agents: dict[str, Any] = {}
-        self._agent_dates: dict[str, str] = {}
+        # Compiled graphs, keyed by (persona, date, key fingerprint) — see
+        # _get_agent. Bounded because the key dimension is per-user.
+        self._agents: OrderedDict[tuple[str, str, str], Any] = OrderedDict()
+        self._tools_cache: dict[str, Any] = {}
         self._workflow: Any = None
         self._briefing_workflow: Any = None
+        self._state_reader: Any = None
 
     _PERSONA_BUILDERS = {
         "scrooge": "salli.domain.agents.manager_agent:build_manager_agent",
         "buddy": "salli.domain.agents.buddy_agent:build_buddy_agent",
     }
 
-    def _get_agent(self, persona: str = "scrooge") -> Any:
-        import datetime
-        import importlib
+    # A compiled graph is ~220 KB, so this caps the cache at a few MB. Platform-key
+    # users all collapse onto one entry per persona, so in practice this only fills
+    # up with distinct BYOK users, and evicting one is cheap: every ChatAnthropic
+    # shares a process-wide httpx connection pool (langchain_anthropic lru_caches
+    # it on base_url/timeout/proxy), so dropping a graph closes no sockets.
+    _AGENT_CACHE_MAX = 32
 
-        if persona not in self._PERSONA_BUILDERS:
-            persona = "scrooge"
+    def _build_tools(self, persona: str) -> tuple[Any, Any]:
+        """Manager + read tool lists, built once and shared across every graph.
 
-        today = datetime.date.today().isoformat()
-        if self._agents.get(persona) is None or self._agent_dates.get(persona) != today:
-            module_path, func_name = self._PERSONA_BUILDERS[persona].split(":")
-            build_fn = getattr(importlib.import_module(module_path), func_name)
+        Safe to share regardless of user or key: the tools read the current user
+        from a contextvar at call time rather than closing over one. Worth doing
+        because rebuilding them is the single largest cost in graph construction
+        (23 of ~41 ms), and with a per-key cache that cost would otherwise be
+        paid per distinct user rather than once per day.
+        """
+        if "manager" not in self._tools_cache:
+            from salli.domain.agents.tools import make_manager_tools, make_read_tools
 
-            self._agents[persona] = build_fn(
+            self._tools_cache["manager"] = make_manager_tools(
+                self._doc_svc,
                 self._ledger_svc,
                 self._tax_svc,
-                self._doc_svc,
                 self._profile_svc,
                 self._budget_svc,
                 self._debt_svc,
@@ -131,10 +142,81 @@ class AgentService:
                 self._insurance_svc,
                 self._advisor_svc,
                 self._fi_svc,
-                checkpointer=self._checkpointer,
             )
-            self._agent_dates[persona] = today
-        return self._agents[persona]
+            self._tools_cache["read"] = make_read_tools(self._ledger_svc, self._tax_svc)
+        return self._tools_cache["manager"], self._tools_cache["read"]
+
+    def _get_agent(self, persona: str = "scrooge", api_key: Any = None) -> Any:
+        """A compiled graph for this persona and this credential.
+
+        The key has to be part of the cache key: langchain binds tools eagerly, so
+        a model's api_key is fixed at construction and cannot be overridden
+        per-invocation via config — attempting that silently falls back to the
+        platform key, which is the one outcome BYOK must never produce.
+
+        Fingerprinted, never keyed on the key itself, so the cache cannot be a
+        place a credential leaks from. The date component preserves the existing
+        daily rebuild, which exists because the prompt bakes in today's date.
+        """
+        import datetime
+        import hashlib
+        import importlib
+
+        if persona not in self._PERSONA_BUILDERS:
+            persona = "scrooge"
+
+        raw = api_key.reveal() if hasattr(api_key, "reveal") else (api_key or "")
+        fingerprint = hashlib.sha256(raw.encode()).hexdigest()[:16] if raw else "none"
+        cache_key = (persona, datetime.date.today().isoformat(), fingerprint)
+
+        cached = self._agents.get(cache_key)
+        if cached is not None:
+            self._agents.move_to_end(cache_key)
+            return cached
+
+        module_path, func_name = self._PERSONA_BUILDERS[persona].split(":")
+        build_fn = getattr(importlib.import_module(module_path), func_name)
+        manager_tools, read_tools = self._build_tools(persona)
+
+        agent = build_fn(
+            self._ledger_svc,
+            self._tax_svc,
+            self._doc_svc,
+            self._profile_svc,
+            self._budget_svc,
+            self._debt_svc,
+            self._portfolio_svc,
+            self._subscription_svc,
+            self._insurance_svc,
+            self._advisor_svc,
+            self._fi_svc,
+            checkpointer=self._checkpointer,
+            api_key=api_key,
+            tools=manager_tools,
+            read_tools=read_tools,
+        )
+
+        self._agents[cache_key] = agent
+        # Drop the least recently used, and any entry from a previous day.
+        while len(self._agents) > self._AGENT_CACHE_MAX:
+            self._agents.popitem(last=False)
+        return agent
+
+    def _get_state_reader(self) -> Any:
+        """One graph, built once, used only for aget_state.
+
+        get_history and _pending_interrupt only read checkpointed state — they
+        never invoke the model — so they must not need a credential. That keeps
+        history readable for a user whose key was revoked, and keeps a listing
+        from paying graph-construction cost. The placeholder key is never used;
+        if this graph ever did invoke, it would fail with a 401 rather than
+        quietly bill the platform.
+        """
+        if self._state_reader is None:
+            self._state_reader = self._get_agent(
+                "scrooge", "unused-state-reader-never-invokes-the-model"
+            )
+        return self._state_reader
 
     def _get_workflow(self) -> Any:
         if self._workflow is None:
@@ -335,16 +417,17 @@ class AgentService:
         return stored if stored in self._PERSONA_BUILDERS else fallback
 
     async def _try_generate_title(
-        self, user_id: str, thread_id: str, user_msg: str, ai_text: str
+        self, user_id: str, thread_id: str, user_msg: str, ai_text: str, *, api_key: Any
     ) -> None:
         """Fire-and-forget: generate a Haiku title and persist it."""
         if not self._uow_factory:
             return
         try:
-            from langchain_anthropic import ChatAnthropic
             from langchain_core.messages import HumanMessage
 
-            haiku = ChatAnthropic(model="claude-haiku-4-5-20251001", temperature=0, max_tokens=20)
+            from salli.domain.agents.model_factory import HAIKU, chat_model
+
+            haiku = chat_model(api_key=api_key, model=HAIKU, temperature=0, max_tokens=20)
             prompt = (
                 "Generate a 3-5 word title for this conversation. "
                 "Reply with ONLY the title — no quotes, no punctuation, no explanation.\n\n"
@@ -390,6 +473,7 @@ class AgentService:
         thread_id: str | None = None,
         file_refs: list[str] | None = None,
         persona: str = "scrooge",
+        api_key: Any = None,
     ) -> AsyncIterator[tuple[str, Any]]:
         """
         Yield (event_type, payload) tuples for SSE:
@@ -411,7 +495,7 @@ class AgentService:
         set_current_user(user_id)  # tools read this, never the LLM-supplied id
         await self._ensure_session(user_id, thread_id, persona=persona)
 
-        agent = self._get_agent(persona)
+        agent = self._get_agent(persona, api_key)
         config = {"configurable": {"thread_id": f"{user_id}:{thread_id}", "user_id": user_id}}
         input_messages = await self._build_input_messages(user_id, message, file_refs)
 
@@ -424,6 +508,7 @@ class AgentService:
         thread_id: str,
         decision: str,
         persona: str = "scrooge",
+        api_key: Any = None,
     ) -> AsyncIterator[tuple[str, Any]]:
         """
         Resume the manager agent after an interrupt (write-tool approval gate).
@@ -435,7 +520,9 @@ class AgentService:
 
         set_current_user(user_id)
         # Server-owned, not the request's `persona` — see _persona_for_thread.
-        agent = self._get_agent(await self._persona_for_thread(user_id, thread_id, persona))
+        agent = self._get_agent(
+            await self._persona_for_thread(user_id, thread_id, persona), api_key
+        )
         config = {"configurable": {"thread_id": f"{user_id}:{thread_id}", "user_id": user_id}}
 
         async for event in self._stream_events(agent, Command(resume=decision), config):
@@ -457,7 +544,7 @@ class AgentService:
           {"type": "tool_call", "name": str, "input": dict, "done": true}
           {"type": "subagent_section", "agent": str, "active": false, "parts": [...]}
         """
-        agent = self._get_agent(await self._persona_for_thread(user_id, thread_id, persona))
+        agent = self._get_state_reader()
         config = {"configurable": {"thread_id": f"{user_id}:{thread_id}"}}
         state = await agent.aget_state(config)
         all_msgs = state.values.get("messages", [])

@@ -1,0 +1,47 @@
+"""
+The one place a chat model is constructed, and therefore the one place an API
+key is unwrapped.
+
+Every agent, worker, and one-shot LLM call goes through `chat_model()`. That
+matters for two reasons:
+
+1. `Secret.reveal()` is called here and nowhere else, so "where can a key
+   escape?" has a single, greppable answer.
+2. `api_key` is a required keyword argument with no default. Any call site that
+   forgets it raises TypeError immediately, rather than falling through to
+   ChatAnthropic's own `ANTHROPIC_API_KEY` environment lookup and silently
+   billing the platform for a user who was supposed to be paying their own way.
+   That fail-loud property is the whole point — it is why composition.py no
+   longer seeds that environment variable.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+# Model tiers, named rather than repeated as string literals across six files.
+SONNET = "claude-sonnet-4-6"
+HAIKU = "claude-haiku-4-5-20251001"
+
+
+def reveal(api_key: Any) -> str:
+    """Accept a `Secret` or a plain string, return the raw key.
+
+    Tolerates both so callers that already hold a plain string (the CLI, tests)
+    don't have to wrap it, while the request path keeps its key wrapped right up
+    to this boundary.
+    """
+    revealed = api_key.reveal() if hasattr(api_key, "reveal") else api_key
+    if not revealed:
+        raise ValueError(
+            "No Anthropic API key available for this request. Either the user's "
+            "own key could not be resolved or no platform key is configured."
+        )
+    return str(revealed)
+
+
+def chat_model(*, api_key: Any, model: str = SONNET, **kwargs: Any) -> Any:
+    """Build a ChatAnthropic bound to exactly this key."""
+    from langchain_anthropic import ChatAnthropic
+
+    return ChatAnthropic(model=model, api_key=reveal(api_key), **kwargs)

@@ -48,6 +48,7 @@ async def classify_transactions(
     raw_rows: list[RawRow],
     accounts: list[Any],
     *,
+    api_key: Any,
     batch_size: int = 30,
 ) -> list[ParsedTransaction]:
     """
@@ -56,7 +57,11 @@ async def classify_transactions(
     """
     import anthropic
 
-    client = anthropic.AsyncAnthropic()
+    from salli.domain.agents.model_factory import reveal
+
+    # Explicit key, not the SDK's zero-arg environment lookup: statement
+    # classification must bill whoever's key resolved for this request.
+    client = anthropic.AsyncAnthropic(api_key=reveal(api_key))
 
     accounts_json = json.dumps(
         [{"id": a.id, "code": a.code, "name": a.name, "type": a.type} for a in accounts]

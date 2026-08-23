@@ -17,19 +17,43 @@ from salli.domain.billing.plans import METRIC_ADVISOR_RUNS
 
 
 class AdvisorService:
-    def __init__(self, uow_factory, fi_service, billing_service, doc_service=None) -> None:
+    def __init__(
+        self, uow_factory, fi_service, billing_service, doc_service=None, credentials=None
+    ) -> None:
         self._uow_factory = uow_factory
         self._fi = fi_service
         self._billing = billing_service
         self._doc = doc_service
+        self._credentials = credentials
+
+    async def _key_for(self, user_id: str, api_key: Any) -> Any:
+        """Use the caller's already-resolved key, else resolve for this user.
+
+        The HTTP routes resolve once at the boundary and pass it down, so the hot
+        path does one lookup. The MCP server, the agent's own tools, and the CLI
+        have no such boundary, so they omit it and this resolves on their behalf
+        — which keeps every surface on the same key rather than leaving some of
+        them on the platform's.
+        """
+        if api_key is not None:
+            return api_key
+        if self._credentials is None:
+            raise RuntimeError("No LLM credential source configured")
+        return (await self._credentials.resolve(user_id)).anthropic
 
     # ── Run ─────────────────────────────────────────────────────────────────────
 
     async def run_advisor(
-        self, user_id: str, email: str | None = None, trigger: str = "manual"
+        self,
+        user_id: str,
+        email: str | None = None,
+        trigger: str = "manual",
+        *,
+        api_key: Any = None,
     ) -> dict[str, Any]:
         context = await self.gather_context(user_id, email)
-        advice = await advisor_llm.generate_advice(context)
+        key = await self._key_for(user_id, api_key)
+        advice = await advisor_llm.generate_advice(context, api_key=key)
         return await self.persist_report(user_id, trigger, advice)
 
     async def gather_context(self, user_id: str, email: str | None = None) -> dict[str, Any]:

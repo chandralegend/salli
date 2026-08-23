@@ -87,18 +87,21 @@ class Advice(BaseModel):
     recommendations: list[Recommendation] = Field(default_factory=list)
 
 
-async def generate_advice(context: dict[str, Any]) -> Advice:
-    from langchain_anthropic import ChatAnthropic
+async def generate_advice(context: dict[str, Any], *, api_key: Any) -> Advice:
     from langchain_core.messages import HumanMessage, SystemMessage
 
-    model = ChatAnthropic(model="claude-sonnet-4-6", temperature=0.3, max_tokens=2000)
+    from salli.domain.agents.model_factory import chat_model
+
+    model = chat_model(api_key=api_key, temperature=0.3, max_tokens=2000)
     structured = model.with_structured_output(Advice)
     payload = json.dumps(context, indent=2, default=str)
-    result = await structured.ainvoke([
-        SystemMessage(content=ADVISOR_PROMPT),
-        HumanMessage(
-            content=f"Here is the person's current financial picture:\n\n{payload}\n\n"
-            f"Produce 4–7 prioritised mentoring recommendations tied to their FIRE strategy."
-        ),
-    ])
+    result = await structured.ainvoke(
+        [
+            SystemMessage(content=ADVISOR_PROMPT),
+            HumanMessage(
+                content=f"Here is the person's current financial picture:\n\n{payload}\n\n"
+                f"Produce 4–7 prioritised mentoring recommendations tied to their FIRE strategy."
+            ),
+        ]
+    )
     return result  # type: ignore[return-value]

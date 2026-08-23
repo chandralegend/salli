@@ -151,8 +151,24 @@ def _score_to_dict(score: FiScore, projected_fi_date: str | None) -> dict[str, A
 
 
 class FiService:
-    def __init__(self, uow_factory: Callable[[], Any]) -> None:
+    def __init__(self, uow_factory: Callable[[], Any], credentials: Any = None) -> None:
         self._uow_factory = uow_factory
+        self._credentials = credentials
+
+    async def _key_for(self, user_id: str, api_key: Any) -> Any:
+        """Use the caller's already-resolved key, else resolve for this user.
+
+        The HTTP routes resolve once at the boundary and pass it down, so the hot
+        path does one lookup. The MCP server, the agent's own tools, and the CLI
+        have no such boundary, so they omit it and this resolves on their behalf
+        — which keeps every surface on the same key rather than leaving some of
+        them on the platform's.
+        """
+        if api_key is not None:
+            return api_key
+        if self._credentials is None:
+            raise RuntimeError("No LLM credential source configured")
+        return (await self._credentials.resolve(user_id)).anthropic
 
     # ── Snapshot ────────────────────────────────────────────────────────────────
 
@@ -437,7 +453,7 @@ class FiService:
             return await uow.fire_strategies.get_history(user_id)
 
     async def generate_strategy(
-        self, user_id: str, email: str | None = None
+        self, user_id: str, email: str | None = None, *, api_key: Any = None
     ) -> AsyncGenerator[str, None]:
         """SSE generator: streams status events, then persists and yields the result."""
         from salli.domain.agents import fire_strategy as fs_llm
@@ -485,7 +501,9 @@ class FiService:
 
         yield _sse({"type": "status", "message": "Generating personalised FIRE configuration..."})
 
-        result = await fs_llm.generate_strategy(context)
+        result = await fs_llm.generate_strategy(
+            context, api_key=await self._key_for(user_id, api_key)
+        )
 
         yield _sse({"type": "status", "message": "Saving your FIRE strategy..."})
 

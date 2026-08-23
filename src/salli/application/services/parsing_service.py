@@ -32,9 +32,30 @@ from salli.domain.parsing.models import ParsedTransaction, ParseResult, RawRow
 
 
 class ParsingService:
-    def __init__(self, uow_factory: Callable[[], Any], storage: StoragePort | None = None) -> None:
+    def __init__(
+        self,
+        uow_factory: Callable[[], Any],
+        storage: StoragePort | None = None,
+        credentials: Any = None,
+    ) -> None:
         self._uow_factory = uow_factory
         self._storage = storage
+        self._credentials = credentials
+
+    async def _key_for(self, user_id: str, api_key: Any) -> Any:
+        """Use the caller's already-resolved key, else resolve for this user.
+
+        The HTTP routes resolve once at the boundary and pass it down, so the hot
+        path does one lookup. The MCP server, the agent's own tools, and the CLI
+        have no such boundary, so they omit it and this resolves on their behalf
+        — which keeps every surface on the same key rather than leaving some of
+        them on the platform's.
+        """
+        if api_key is not None:
+            return api_key
+        if self._credentials is None:
+            raise RuntimeError("No LLM credential source configured")
+        return (await self._credentials.resolve(user_id)).anthropic
 
     async def parse_statement(
         self,
@@ -42,6 +63,8 @@ class ParsingService:
         filename: str,
         file_bytes: bytes,
         bank: str = "",
+        *,
+        api_key: Any = None,
     ) -> ParseResult:
         """
         Parse a bank statement file and store the extracted transactions.
@@ -100,7 +123,9 @@ class ParsingService:
             )
 
         # 4. LLM classifies transactions
-        parsed = await classify_transactions(unique_rows, accounts)
+        parsed = await classify_transactions(
+            unique_rows, accounts, api_key=await self._key_for(user_id, api_key)
+        )
 
         # 5. Stamp dedup keys and check against existing ledger entries
         async with self._uow_factory() as uow:

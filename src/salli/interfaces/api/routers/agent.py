@@ -31,7 +31,7 @@ from starlette.background import BackgroundTask
 from salli.application.services.billing_service import QuotaExceeded
 from salli.domain.billing.plans import METRIC_AGENT_MESSAGES
 from salli.domain.secrets import redact_obj
-from salli.interfaces.api.deps import AppServices, CurrentEmail, CurrentUser
+from salli.interfaces.api.deps import AppServices, Credentials, CurrentEmail, CurrentUser
 
 router = APIRouter(prefix="/agent", tags=["agent"])
 
@@ -99,7 +99,13 @@ class ChatRequest(BaseModel):
 
 
 @router.post("/chat")
-async def chat(body: ChatRequest, user_id: CurrentUser, email: CurrentEmail, svc: AppServices):
+async def chat(
+    body: ChatRequest,
+    user_id: CurrentUser,
+    email: CurrentEmail,
+    svc: AppServices,
+    creds: Credentials,
+):
     """
     Stream a manager agent response as Server-Sent Events.
     Counts one agent message against the user's monthly quota before streaming;
@@ -131,7 +137,9 @@ async def chat(body: ChatRequest, user_id: CurrentUser, email: CurrentEmail, svc
     async def _generate_title_bg():
         ai_text = "".join(ai_acc)[:500]
         if ai_text:
-            await svc.agent._try_generate_title(user_id, body.thread_id, body.message, ai_text)
+            await svc.agent._try_generate_title(
+                user_id, body.thread_id, body.message, ai_text, api_key=creds.anthropic
+            )
 
     return StreamingResponse(
         _emit_events(
@@ -142,6 +150,7 @@ async def chat(body: ChatRequest, user_id: CurrentUser, email: CurrentEmail, svc
                     message=body.message,
                     file_refs=body.file_refs or None,
                     persona=body.persona,
+                    api_key=creds.anthropic,
                 )
             )
         ),
@@ -211,7 +220,7 @@ class ResumeRequest(BaseModel):
 
 
 @router.post("/resume")
-async def resume(body: ResumeRequest, user_id: CurrentUser, svc: AppServices):
+async def resume(body: ResumeRequest, user_id: CurrentUser, svc: AppServices, creds: Credentials):
     """
     Resume an interrupted agent.
     - workflow="chat": resumes a write-tool approval gate (decision: "approved"|"denied")
@@ -230,6 +239,7 @@ async def resume(body: ResumeRequest, user_id: CurrentUser, svc: AppServices):
                 thread_id=body.thread_id,
                 decision=body.decision,
                 persona=body.persona,
+                api_key=creds.anthropic,
             )
         ),
         media_type="text/event-stream",

@@ -149,15 +149,12 @@ class FireStrategySchema(BaseModel):
         return self
 
 
-async def generate_strategy(context: dict[str, Any]) -> FireStrategySchema:
-    from langchain_anthropic import ChatAnthropic
+async def generate_strategy(context: dict[str, Any], *, api_key: Any) -> FireStrategySchema:
     from langchain_core.messages import HumanMessage, SystemMessage
 
-    model = ChatAnthropic(
-        model="claude-sonnet-4-6",
-        temperature=0.3,
-        max_tokens=8000,
-    )
+    from salli.domain.agents.model_factory import chat_model
+
+    model = chat_model(api_key=api_key, temperature=0.3, max_tokens=8000)
     structured = model.with_structured_output(FireStrategySchema)
     payload = json.dumps(context, indent=2, default=str)
 

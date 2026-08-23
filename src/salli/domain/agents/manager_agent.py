@@ -93,31 +93,44 @@ def build_manager_agent(
     advisor_svc: Any = None,
     fi_svc: Any = None,
     checkpointer: Any = None,
+    *,
+    api_key: Any,
+    tools: Any = None,
+    read_tools: Any = None,
 ) -> Any:
     import datetime
 
-    from langchain_anthropic import ChatAnthropic
     from langgraph_supervisor import create_supervisor
 
     from salli.domain.agents.finance_worker import build_finance_worker
+    from salli.domain.agents.model_factory import chat_model
     from salli.domain.agents.tax_worker import build_tax_worker
     from salli.domain.agents.tools import make_manager_tools
 
-    tax_worker = build_tax_worker(ledger_svc, tax_svc)
-    finance_worker = build_finance_worker(ledger_svc, tax_svc)
+    # Both workers use the same read-only tool set, so build it once.
+    if read_tools is None:
+        from salli.domain.agents.tools import make_read_tools
 
-    manager_tools = make_manager_tools(
-        doc_svc,
-        ledger_svc,
-        tax_svc,
-        profile_svc,
-        budget_svc,
-        debt_svc,
-        portfolio_svc,
-        subscription_svc,
-        insurance_svc,
-        advisor_svc,
-        fi_svc,
+        read_tools = make_read_tools(ledger_svc, tax_svc)
+    tax_worker = build_tax_worker(ledger_svc, tax_svc, api_key=api_key, tools=read_tools)
+    finance_worker = build_finance_worker(ledger_svc, tax_svc, api_key=api_key, tools=read_tools)
+
+    manager_tools = (
+        tools
+        if tools is not None
+        else make_manager_tools(
+            doc_svc,
+            ledger_svc,
+            tax_svc,
+            profile_svc,
+            budget_svc,
+            debt_svc,
+            portfolio_svc,
+            subscription_svc,
+            insurance_svc,
+            advisor_svc,
+            fi_svc,
+        )
     )
 
     today = datetime.date.today().strftime("%A, %d %B %Y")
@@ -129,7 +142,7 @@ def build_manager_agent(
 
     graph = create_supervisor(
         agents=[tax_worker, finance_worker],
-        model=ChatAnthropic(model="claude-sonnet-4-6", temperature=0),
+        model=chat_model(api_key=api_key, temperature=0),
         tools=manager_tools,
         prompt=dated_prompt,
         output_mode="full_history",

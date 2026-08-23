@@ -10,6 +10,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from salli.application.services.llm_credential_service import ResolvedCredentials
 from salli.composition import Services, build_services
 from salli.config import Settings, get_settings
 
@@ -78,7 +79,9 @@ def _decode_jwt(token: str, settings: Settings) -> tuple[str, str | None]:
 
         if alg == "HS256":
             payload = jwt.decode(
-                token, settings.supabase_jwt_secret, algorithms=["HS256"],
+                token,
+                settings.supabase_jwt_secret,
+                algorithms=["HS256"],
                 audience="authenticated",
             )
         else:
@@ -94,9 +97,7 @@ def _decode_jwt(token: str, settings: Settings) -> tuple[str, str | None]:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED, detail="Unknown signing key"
                 )
-            payload = jwt.decode(
-                token, jwk, algorithms=[alg], audience="authenticated"
-            )
+            payload = jwt.decode(token, jwk, algorithms=[alg], audience="authenticated")
 
         sub = payload.get("sub")
         if not sub:
@@ -124,7 +125,22 @@ def get_current_email(
     return _decode_jwt(creds.credentials, settings)[1]
 
 
+async def get_credentials(
+    user_id: Annotated[str, Depends(get_current_user)],
+    services: Annotated[Services, Depends(get_services)],
+) -> ResolvedCredentials:
+    """Resolve this request's LLM credentials once, at the boundary.
+
+    Deliberately not resolved lazily inside each service: the quota gate runs
+    *before* the stream opens, so it has to already know whether this user is on
+    their own key. Resolving in two places would let the metering decision and
+    the key that actually ran disagree.
+    """
+    return await services.llm_credentials.resolve(user_id)
+
+
 # Convenient type aliases for route parameters
 CurrentUser = Annotated[str, Depends(get_current_user)]
 CurrentEmail = Annotated["str | None", Depends(get_current_email)]
 AppServices = Annotated[Services, Depends(get_services)]
+Credentials = Annotated[ResolvedCredentials, Depends(get_credentials)]

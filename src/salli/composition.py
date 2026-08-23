@@ -68,10 +68,15 @@ class Services:
 def build_services(settings: Settings, checkpointer=None) -> Services:
     import os
 
-    # LangChain reads API keys directly from os.environ; pydantic-settings
-    # loads .env into Settings fields but doesn't populate the process env.
-    if settings.anthropic_api_key:
-        os.environ.setdefault("ANTHROPIC_API_KEY", settings.anthropic_api_key)
+    # ANTHROPIC_API_KEY is deliberately NOT seeded into os.environ. Every model
+    # is now constructed with an explicit key (see domain/agents/model_factory),
+    # and while that env var is set ChatAnthropic would silently fall back to it
+    # — so any construction site we missed would quietly bill the platform for a
+    # user who is supposed to be paying their own way. Leaving it unset turns
+    # such a miss into a loud failure instead.
+    #
+    # Tavily still reads the environment: its LangChain tool has no key
+    # parameter, and web search is a platform capability, not a per-user one.
     if settings.tavily_api_key:
         os.environ.setdefault("TAVILY_API_KEY", settings.tavily_api_key)
 
@@ -86,7 +91,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     ledger = LedgerService(uow_factory)
     tax = TaxService(uow_factory)
     documents = DocumentService(uow_factory, storage)
-    fi = FiService(uow_factory)
+    fi = FiService(uow_factory, llm_credentials)
     profile = UserProfileService(uow_factory, ledger, fi, documents)
     budget = BudgetService(uow_factory)
     debt = DebtService(uow_factory)
@@ -95,7 +100,9 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     insurance = InsuranceService(uow_factory)
     fx = CBSLFxRateAdapter()
     billing = BillingService(uow_factory, billing_port=_build_billing(settings))
-    advisor = AdvisorService(uow_factory, fi, billing, doc_service=documents)
+    advisor = AdvisorService(
+        uow_factory, fi, billing, doc_service=documents, credentials=llm_credentials
+    )
     agent = AgentService(
         ledger,
         tax,
@@ -111,7 +118,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         checkpointer=checkpointer,
         uow_factory=uow_factory,
     )
-    parsing = ParsingService(uow_factory, storage)
+    parsing = ParsingService(uow_factory, storage, llm_credentials)
 
     # Free-text → draft journal entry (voice/text quick-add). Only available when
     # an Anthropic key is configured; otherwise the /entries/parse route 503s.

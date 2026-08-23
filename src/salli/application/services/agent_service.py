@@ -11,11 +11,9 @@ Builds the manager agent (supervisor) and the return workflow. Exposes:
 
 from __future__ import annotations
 
-import base64
 import uuid
 from collections.abc import AsyncIterator
 from typing import Any
-
 
 _WORKER_NODES = {"tax_specialist", "finance_specialist"}
 
@@ -313,6 +311,29 @@ class AgentService:
         except Exception:
             pass
 
+    async def _persona_for_thread(self, user_id: str, thread_id: str, fallback: str) -> str:
+        """The persona this thread was actually created with.
+
+        Resuming and replaying must not trust a client-supplied persona. The two
+        graphs have identical topology and node names — only the prompt differs —
+        so resuming a Buddy thread as "scrooge" doesn't fail, it silently runs
+        the wrong system prompt over Buddy's checkpoint, including over a pending
+        write approval. `_ensure_session` already records the real persona on
+        creation, so read it back instead.
+
+        Falls back to the caller's value when there is no session row (a thread
+        that predates session tracking) or no DB at all.
+        """
+        if not self._uow_factory:
+            return fallback
+        try:
+            async with self._uow_factory() as uow:
+                session = await uow.agent_sessions.get(user_id, thread_id)
+        except Exception:
+            return fallback
+        stored = (session or {}).get("persona")
+        return stored if stored in self._PERSONA_BUILDERS else fallback
+
     async def _try_generate_title(
         self, user_id: str, thread_id: str, user_msg: str, ai_text: str
     ) -> None:
@@ -413,7 +434,8 @@ class AgentService:
         from salli.domain.agents.tools import set_current_user
 
         set_current_user(user_id)
-        agent = self._get_agent(persona)
+        # Server-owned, not the request's `persona` — see _persona_for_thread.
+        agent = self._get_agent(await self._persona_for_thread(user_id, thread_id, persona))
         config = {"configurable": {"thread_id": f"{user_id}:{thread_id}", "user_id": user_id}}
 
         async for event in self._stream_events(agent, Command(resume=decision), config):
@@ -435,7 +457,7 @@ class AgentService:
           {"type": "tool_call", "name": str, "input": dict, "done": true}
           {"type": "subagent_section", "agent": str, "active": false, "parts": [...]}
         """
-        agent = self._get_agent(persona)
+        agent = self._get_agent(await self._persona_for_thread(user_id, thread_id, persona))
         config = {"configurable": {"thread_id": f"{user_id}:{thread_id}"}}
         state = await agent.aget_state(config)
         all_msgs = state.values.get("messages", [])

@@ -924,6 +924,9 @@ def _llm_credential_to_dict(row: UserLlmCredentialORM) -> dict[str, Any]:
     return {
         "provider": row.provider,
         "ciphertext": row.ciphertext,
+        # Required to decrypt — omitting it would silently default every row to
+        # version 1 and break the moment a key is rotated.
+        "key_version": row.key_version,
         "last4": row.last4,
         "validated_at": row.validated_at.isoformat() if row.validated_at else None,
     }
@@ -959,7 +962,14 @@ class SQLLlmCredentialRepository(LlmCredentialRepository):
         return _llm_credential_to_dict(row) if row else None
 
     async def upsert(
-        self, user_id: str, provider: str, ciphertext: str, last4: str, validated_at: Any
+        self,
+        user_id: str,
+        provider: str,
+        *,
+        ciphertext: str,
+        last4: str,
+        validated_at: Any,
+        key_version: int,
     ) -> None:
         row = (
             await self._s.execute(
@@ -975,6 +985,7 @@ class SQLLlmCredentialRepository(LlmCredentialRepository):
         # Assigned unconditionally, unlike the user_profiles upsert above:
         # re-saving a key must be able to clear a stale validated_at back to None.
         row.ciphertext = ciphertext
+        row.key_version = key_version
         row.last4 = last4
         row.validated_at = validated_at
         await self._s.flush()

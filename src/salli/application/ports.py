@@ -343,9 +343,21 @@ class LlmCredentialRepository(ABC):
 
     @abstractmethod
     async def upsert(
-        self, user_id: str, provider: str, ciphertext: str, last4: str, validated_at: Any
+        self,
+        user_id: str,
+        provider: str,
+        *,
+        ciphertext: str,
+        last4: str,
+        validated_at: Any,
+        key_version: int,
     ) -> None:
-        """Create or replace this user's credential for the provider."""
+        """Create or replace this user's credential for the provider.
+
+        `key_version` records which encryption key sealed the ciphertext, so a
+        rotated-away key is a loud failure rather than a silent wrong-key
+        decrypt attempt.
+        """
         ...
 
     @abstractmethod

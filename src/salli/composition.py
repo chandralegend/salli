@@ -5,6 +5,7 @@ Both the CLI (Phase 1) and FastAPI (Phase 2) wire up services here.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 from salli.adapters.db.session import make_session_factory
@@ -22,6 +23,7 @@ from salli.application.services.entry_parse_service import EntryParseService
 from salli.application.services.fi_service import FiService
 from salli.application.services.insurance_service import InsuranceService
 from salli.application.services.ledger_service import LedgerService
+from salli.application.services.llm_credential_service import LlmCredentialService
 from salli.application.services.mcp_oauth_service import McpOAuthService
 from salli.application.services.parsing_service import ParsingService
 from salli.application.services.portfolio_service import PortfolioService
@@ -58,6 +60,7 @@ class Services:
     bug_reports: BugReportService
     data_portability: DataPortabilityService
     mcp_oauth: McpOAuthService
+    llm_credentials: LlmCredentialService
     entry_parse: EntryParseService | None
     transcription: TranscriptionService | None
 
@@ -78,6 +81,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         return UnitOfWork(session_factory)
 
     storage = _build_storage(settings)
+    llm_credentials = _build_llm_credentials(settings, uow_factory)
 
     ledger = LedgerService(uow_factory)
     tax = TaxService(uow_factory)
@@ -189,8 +193,42 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         bug_reports=bug_reports,
         data_portability=data_portability,
         mcp_oauth=mcp_oauth,
+        llm_credentials=llm_credentials,
         entry_parse=entry_parse,
         transcription=transcription,
+    )
+
+
+def _build_llm_credentials(settings: Settings, uow_factory) -> LlmCredentialService:
+    """Always constructed; `available` decides whether users may supply keys.
+
+    Two gates, both of which must hold, and both of which fail *closed*:
+
+    1. An encryption key is configured. Without one there is nowhere safe to put
+       a user's key, and storing plaintext is not an acceptable fallback.
+    2. Auth is real. `deps._decode_jwt` falls back to treating the bearer token
+       *as* the user id when Supabase is entirely unconfigured — today that is a
+       documented local-dev convenience, but with BYOK it would let any caller
+       name an arbitrary user id and spend that user's key. So BYOK stays off
+       whenever that fallback is live.
+    """
+    from salli.adapters.crypto.keyring import KeyRing
+    from salli.adapters.llm.key_check import validate_provider_key
+
+    auth_is_real = bool(settings.supabase_url or settings.supabase_jwt_secret)
+    if not auth_is_real and settings.byok_encryption_keys:
+        logging.getLogger(__name__).warning(
+            "BYOK is disabled: an encryption key is configured but authentication "
+            "is not, so any bearer token would be accepted as a user id."
+        )
+
+    return LlmCredentialService(
+        uow_factory,
+        KeyRing(settings.byok_encryption_keys),
+        platform_anthropic_key=settings.anthropic_api_key,
+        platform_openai_key=settings.openai_api_key,
+        validator=validate_provider_key,
+        feature_enabled=auth_is_real,
     )
 
 

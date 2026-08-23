@@ -7,14 +7,17 @@ import { toast } from "sonner";
 import { Copy, ExternalLink, Loader2, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusChip } from "@/components/shared/StatusChip";
 import { UsageMeter } from "@/components/billing/UsageMeter";
 import { UpgradeDialog } from "@/components/billing/UpgradeDialog";
 import { DangerZone } from "@/components/settings/DangerZone";
+import { LlmKeysCard } from "@/components/settings/LlmKeysCard";
 import { McpConnectionsCard } from "@/components/settings/McpConnectionsCard";
 import { HelpFeedbackCard } from "@/components/support/HelpFeedbackCard";
 import { useSubscription, useBillingPortal, type BillingCycle } from "@/hooks/useBilling";
+import { useDailyBriefing, useSetDailyBriefing } from "@/hooks/useAdvisorSettings";
 import { useAuth } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 
@@ -40,6 +43,8 @@ function SettingsContent() {
   const { token, logout } = useAuth();
   const subscription = useSubscription();
   const portal = useBillingPortal();
+  const dailyBriefing = useDailyBriefing();
+  const setDailyBriefing = useSetDailyBriefing();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const mounted = useMounted();
 
@@ -190,6 +195,26 @@ function SettingsContent() {
               Take a tour
             </Button>
           </div>
+
+          <div className="mt-5 flex items-start justify-between gap-4 border-t pt-4">
+            <div className="min-w-0">
+              <p className="text-[13px] font-medium">Daily briefing</p>
+              <p className="mt-0.5 text-[12px] text-muted-foreground leading-relaxed">
+                A wealth-advisor run each morning. Uses one of your monthly advisor runs.
+              </p>
+            </div>
+            {dailyBriefing.isLoading ? (
+              <Skeleton className="h-5 w-9 shrink-0 rounded-full" />
+            ) : (
+              <Switch
+                className="shrink-0"
+                checked={dailyBriefing.data?.enabled ?? false}
+                onCheckedChange={(next) => setDailyBriefing.mutate(next)}
+                disabled={setDailyBriefing.isPending}
+                aria-label="Enable the daily briefing"
+              />
+            )}
+          </div>
         </div>
 
         {/* Session */}
@@ -221,6 +246,8 @@ function SettingsContent() {
         </div>
 
         {/* MCP: connect an AI assistant */}
+        <LlmKeysCard />
+
         <McpConnectionsCard />
 
         <HelpFeedbackCard />

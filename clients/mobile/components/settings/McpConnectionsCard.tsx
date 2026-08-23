@@ -1,11 +1,9 @@
 import * as Clipboard from "expo-clipboard";
-import { useRouter } from "expo-router";
-import { Bot, Copy, ShieldOff, TriangleAlert } from "lucide-react-native";
+import { Bot, Copy, ShieldOff } from "lucide-react-native";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
-import { useEntitlements } from "@/hooks/useSettings";
 import { useMcpConnections, useMcpEnabled, useRevokeMcpConnection, useSetMcpEnabled } from "@/hooks/useMcp";
 import { API_URL } from "@/lib/api-client";
 import { useThemeColors } from "@/lib/theme";
@@ -28,20 +26,15 @@ function formatShortDate(iso: string) {
  */
 export function McpConnectionsCard() {
   const colors = useThemeColors();
-  const router = useRouter();
   const enabled = useMcpEnabled();
   const setEnabled = useSetMcpEnabled();
   const connections = useMcpConnections();
   const revoke = useRevokeMcpConnection();
-  const entitlements = useEntitlements();
   const showToast = useToast();
   const [revokingId, setRevokingId] = useState<string | null>(null);
 
-  // undefined while still loading — don't disable the toggle prematurely.
-  const requiresUpgrade = entitlements.data ? entitlements.data.plan === "free" : undefined;
-
   async function toggle() {
-    if (setEnabled.isPending || requiresUpgrade) return;
+    if (setEnabled.isPending) return;
     try {
       await setEnabled.mutateAsync(!(enabled.data ?? false));
     } catch {
@@ -72,14 +65,14 @@ export function McpConnectionsCard() {
           <Bot size={15} color={colors.mutedForeground} strokeWidth={2} />
           <Text className="font-sans-semibold text-[14px] text-foreground">Connect an AI assistant</Text>
         </View>
-        {enabled.isLoading || requiresUpgrade === undefined ? (
+        {enabled.isLoading ? (
           <ActivityIndicator size="small" color={colors.mutedForeground} />
         ) : (
           <Pressable
             onPress={toggle}
-            disabled={setEnabled.isPending || requiresUpgrade}
+            disabled={setEnabled.isPending}
             className="rounded-pill p-0.5"
-            style={{ backgroundColor: enabled.data ? colors.accent : "rgba(128,128,128,0.25)", opacity: requiresUpgrade ? 0.5 : 1 }}
+            style={{ backgroundColor: enabled.data ? colors.accent : "rgba(128,128,128,0.25)" }}
           >
             <View className="h-[22px] w-[38px] justify-center">
               <View
@@ -95,16 +88,6 @@ export function McpConnectionsCard() {
         Let Claude, ChatGPT, or any other MCP-capable AI read and manage your Salli account — the
         same access Salli AI has in-app, authorized the same way you sign in anywhere else.
       </Text>
-
-      {requiresUpgrade ? (
-        <Pressable
-          onPress={() => router.push("/(tabs)/more/billing")}
-          className="mt-3 flex-row items-center gap-2 rounded-control bg-[#FEF3C7] px-3 py-2"
-        >
-          <TriangleAlert size={14} color="#B45309" strokeWidth={2} />
-          <Text className="flex-1 text-[12px] text-[#B45309]">Connecting an AI assistant requires a paid plan · Upgrade</Text>
-        </Pressable>
-      ) : null}
 
       {enabled.data ? (
         <>

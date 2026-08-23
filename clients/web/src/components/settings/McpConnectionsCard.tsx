@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { toast } from "sonner";
-import { Bot, Copy, Loader2, ShieldOff, TriangleAlert } from "lucide-react";
+import { Bot, Copy, Loader2, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
@@ -13,8 +12,6 @@ import {
   useMcpConnections,
   useRevokeMcpConnection,
 } from "@/hooks/useMcp";
-import { useSubscription } from "@/hooks/useBilling";
-import { ApiError } from "@/lib/api-fetch";
 import { API_URL } from "@/lib/api-client";
 import { formatDate } from "@/lib/format";
 
@@ -29,22 +26,14 @@ export function McpConnectionsCard() {
   const setEnabled = useSetMcpEnabled();
   const connections = useMcpConnections();
   const revoke = useRevokeMcpConnection();
-  const subscription = useSubscription();
   const [revokingId, setRevokingId] = useState<string | null>(null);
-
-  // undefined while still loading — don't disable the toggle prematurely.
-  const requiresUpgrade = subscription.data ? !subscription.data.paid : undefined;
 
   async function toggle(next: boolean) {
     try {
       await setEnabled.mutateAsync(next);
       toast.success(next ? "MCP access enabled" : "MCP access disabled — all connections revoked");
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 402) {
-        toast.error("MCP requires a paid plan — upgrade in Settings to connect an AI assistant.");
-      } else {
-        toast.error("Couldn't update MCP access — try again shortly.");
-      }
+    } catch {
+      toast.error("Couldn't update MCP access — try again shortly.");
     }
   }
 
@@ -72,13 +61,13 @@ export function McpConnectionsCard() {
           <Bot className="size-4 text-muted-foreground" />
           <h2 className="text-[15px] font-semibold">Connect an AI assistant</h2>
         </div>
-        {enabled.isLoading || requiresUpgrade === undefined ? (
+        {enabled.isLoading ? (
           <Skeleton className="h-5 w-9 rounded-full" />
         ) : (
           <Switch
             checked={enabled.data ?? false}
             onCheckedChange={toggle}
-            disabled={setEnabled.isPending || requiresUpgrade}
+            disabled={setEnabled.isPending}
             aria-label="Enable MCP access"
           />
         )}
@@ -90,17 +79,6 @@ export function McpConnectionsCard() {
         sign in anywhere else.
       </p>
 
-      {requiresUpgrade && (
-        <div className="mt-3 flex items-center gap-2 rounded-md bg-[var(--status-warning-bg)] px-3 py-2 text-[13px] text-[var(--status-warning-text)]">
-          <TriangleAlert className="size-4 shrink-0" />
-          <span>
-            Connecting an AI assistant requires a paid plan ·{" "}
-            <Link href="/settings?upgrade=plus" className="font-semibold underline underline-offset-2">
-              Upgrade
-            </Link>
-          </span>
-        </div>
-      )}
 
       {enabled.data && (
         <>

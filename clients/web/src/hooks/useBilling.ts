@@ -28,6 +28,11 @@ export type Subscription = {
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   usage: UsageMetric[];
+  /** True when the user supplied their own LLM key, so metering is lifted. The
+   *  `limit` values in `usage` then reflect a safety ceiling rather than an
+   *  allowance, and shouldn't be presented as one. Hand-typed because
+   *  /billing/subscription returns an untyped dict, so codegen can't see it. */
+  byok: boolean;
 };
 
 export type Plan = {

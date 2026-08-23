@@ -6,12 +6,19 @@ import { useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 
 import { BugReportDrawer } from "@/components/settings/BugReportDrawer";
+import { LlmKeysCard } from "@/components/settings/LlmKeysCard";
 import { McpConnectionsCard } from "@/components/settings/McpConnectionsCard";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { useDeleteAccount, useEntitlements, useExportData } from "@/hooks/useSettings";
+import {
+  useDailyBriefing,
+  useDeleteAccount,
+  useEntitlements,
+  useExportData,
+  useSetDailyBriefing,
+} from "@/hooks/useSettings";
 import { useMore } from "@/hooks/useMore";
 import { logout } from "@/lib/auth";
 import { confirmDestructive } from "@/lib/confirm";
@@ -32,6 +39,8 @@ export default function SettingsScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const { mode, setMode } = useThemeMode();
+  const dailyBriefing = useDailyBriefing();
+  const setDailyBriefing = useSetDailyBriefing();
   const { profile } = useMore();
   const entitlements = useEntitlements();
   const exportData = useExportData();
@@ -184,6 +193,37 @@ export default function SettingsScreen() {
             <Text className="font-sans-medium text-[14px] text-foreground">Report a bug</Text>
             <Bug size={14} color={colors.mutedForeground} strokeWidth={2} />
           </AnimatedPressable>
+          <View className="flex-row items-center justify-between border-b border-foreground/[0.06] px-4 py-3.5">
+            <View className="flex-1 pr-3">
+              <Text className="font-sans-medium text-[14px] text-foreground">Daily briefing</Text>
+              <Text className="mt-0.5 text-[11px] leading-4 text-foreground/35">
+                A wealth-advisor run each morning. Uses one of your monthly advisor runs.
+              </Text>
+            </View>
+            {dailyBriefing.isLoading ? (
+              <ActivityIndicator size="small" color={colors.mutedForeground} />
+            ) : (
+              <Pressable
+                onPress={() => {
+                  if (!setDailyBriefing.isPending) {
+                    setDailyBriefing.mutate(!(dailyBriefing.data ?? false));
+                  }
+                }}
+                disabled={setDailyBriefing.isPending}
+                className="rounded-pill p-0.5"
+                style={{
+                  backgroundColor: dailyBriefing.data ? colors.accent : "rgba(128,128,128,0.25)",
+                }}
+              >
+                <View className="h-[22px] w-[38px] justify-center">
+                  <View
+                    className="h-[18px] w-[18px] rounded-full bg-white"
+                    style={{ marginLeft: dailyBriefing.data ? 18 : 2 }}
+                  />
+                </View>
+              </Pressable>
+            )}
+          </View>
           <View className="flex-row items-center justify-between px-4 py-3.5">
             <Text className="font-sans-medium text-[14px] text-foreground">Appearance</Text>
             <View className="flex-row rounded-pill bg-foreground/[0.08] p-0.5">
@@ -215,6 +255,8 @@ export default function SettingsScreen() {
             </View>
           </View>
         </Card>
+
+        <LlmKeysCard />
 
         <McpConnectionsCard />
 

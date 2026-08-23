@@ -78,6 +78,12 @@ async def _emit_events(
                 yield _sse({"type": "approval_required", "action": payload})
             elif event_type == "interrupt":
                 yield _sse({"type": "interrupt", "data": payload})
+            elif event_type == "error":
+                # The service emits this for a provider failure instead of
+                # raising, because raising past its `finally` would discard the
+                # exception. Without this branch the event would fall through
+                # every elif and vanish just as silently.
+                yield _sse({"type": "error", "message": payload["message"]})  # type: ignore[index]
             elif event_type == "done":
                 yield _sse({"type": "done"})
                 return

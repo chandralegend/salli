@@ -19,6 +19,30 @@ from typing import Any
 _WORKER_NODES = {"tax_specialist", "finance_specialist"}
 
 
+def _provider_error_message(exc: BaseException) -> str:
+    """A user-facing sentence for a failure that came from the LLM provider.
+
+    Auth failures get their own wording because they're the one case the user can
+    actually fix, and with BYOK they're expected rather than exotic: a key can be
+    revoked, run out of credit, or be pasted wrong at any time.
+
+    Never interpolates the provider's own message — an SDK error can quote the
+    key it rejected. (`_sse` redacts as a second line of defence, but the right
+    answer is not to put it there in the first place.)
+    """
+    text = f"{type(exc).__name__}: {exc}"
+    if "401" in text or "authentication_error" in text or "invalid x-api-key" in text.lower():
+        return (
+            "The Anthropic API key was rejected. If you're using your own key, "
+            "check it in Settings — otherwise this is on our side."
+        )
+    if "429" in text or "rate_limit" in text:
+        return "The AI provider is rate-limiting this key. Please try again shortly."
+    if "credit" in text.lower() or "quota" in text.lower():
+        return "The AI provider reported this key is out of credit."
+    return "Something went wrong reaching the AI provider. Please try again."
+
+
 async def _pending_interrupt(agent: Any, config: dict[str, Any]) -> Any | None:
     """
     Return the value of a pending interrupt() gate, or None.
@@ -376,7 +400,13 @@ class AgentService:
                 else:
                     yield ("interrupt", {"message": str(exc)})
             else:
-                raise
+                # Emit rather than re-raise. The `finally` below yields, and a
+                # yield inside a finally while an exception is propagating
+                # discards that exception — so `raise` here never reached the
+                # router's handler, and the client got a clean `done` with no
+                # reply and no explanation. A provider 401 looked identical to
+                # a successful empty answer.
+                yield ("error", {"message": _provider_error_message(exc)})
         finally:
             if active_worker:
                 yield ("subagent_end", {"agent": active_worker})

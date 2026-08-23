@@ -757,3 +757,104 @@ async def test_past_due_reports_free_limits_but_is_not_offered_a_new_purchase(se
     assert out["plan"] == "free"
     assert out["change_mode"] == "blocked"
     assert out["change_blocked_reason"] == "past_due"
+
+
+# ── BYOK lifts the quota to a safety ceiling ─────────────────────────────────
+
+
+class FakeByokCredentials:
+    """Stands in for LlmCredentialService's view of "does this user have a key"."""
+
+    def __init__(self, users_with_keys: set[str] | None = None) -> None:
+        self._users = users_with_keys or set()
+
+    async def has_byok(self, user_id: str) -> bool:
+        return user_id in self._users
+
+
+def _byok_service(uow_factory, billing_port, *, byok_users: set[str]):
+    return BillingService(
+        uow_factory,
+        billing_port=billing_port,
+        credentials=FakeByokCredentials(byok_users),
+    )
+
+
+async def test_byok_lifts_the_metric_limit_to_the_ceiling(uow_factory, billing_port):
+    """A Free user on their own key must not hit Free's 150-message limit."""
+    from salli.domain.billing.plans import BYOK_LIMITS
+
+    svc = _byok_service(uow_factory, billing_port, byok_users={USER})
+    ent = await svc.get_entitlements(USER)
+    agent = next(u for u in ent["usage"] if u["metric"] == METRIC_AGENT_MESSAGES)
+
+    assert ent["byok"] is True
+    assert agent["limit"] == BYOK_LIMITS[METRIC_AGENT_MESSAGES]
+    assert agent["limit"] > get_plan("pro").limits[METRIC_AGENT_MESSAGES], (
+        "the ceiling must sit clear of Pro, or a Pro subscriber gains nothing from BYOK"
+    )
+
+
+async def test_a_user_without_a_key_keeps_their_plan_limit(uow_factory, billing_port):
+    svc = _byok_service(uow_factory, billing_port, byok_users=set())
+    ent = await svc.get_entitlements(USER)
+    agent = next(u for u in ent["usage"] if u["metric"] == METRIC_AGENT_MESSAGES)
+
+    assert ent["byok"] is False
+    assert agent["limit"] == get_plan("free").limits[METRIC_AGENT_MESSAGES]
+
+
+async def test_byok_still_counts_usage(uow_factory, billing_port, repos):
+    """The counter is the only usage record we have — skipping it for BYOK users
+    would go blind on the most engaged ones."""
+    _, usage, _ = repos
+    svc = _byok_service(uow_factory, billing_port, byok_users={USER})
+    await svc.check_and_increment(USER, METRIC_AGENT_MESSAGES)
+    await svc.check_and_increment(USER, METRIC_AGENT_MESSAGES)
+
+    ent = await svc.get_entitlements(USER)
+    assert next(u for u in ent["usage"] if u["metric"] == METRIC_AGENT_MESSAGES)["used"] == 2
+
+
+async def test_byok_sails_past_the_free_limit(uow_factory, billing_port):
+    """Free allows 150 agent messages; a BYOK user must get well past that."""
+    svc = _byok_service(uow_factory, billing_port, byok_users={USER})
+    free_limit = get_plan("free").limits[METRIC_AGENT_MESSAGES]
+    for _ in range(free_limit + 5):
+        await svc.check_and_increment(USER, METRIC_AGENT_MESSAGES)  # must not raise
+
+
+async def test_the_ceiling_is_still_enforced(uow_factory, billing_port, repos):
+    """ "Quota lifted" is not "unmetered" — the backstop has to actually stop a
+    runaway client, or a loop could pin the server indefinitely."""
+    from salli.application.services.billing_service import _period
+    from salli.domain.billing.plans import BYOK_LIMITS
+
+    _, usage, _ = repos
+    svc = _byok_service(uow_factory, billing_port, byok_users={USER})
+    # Jump the counter to the ceiling rather than looping 50k times.
+    usage.seed(USER, _period(), METRIC_AGENT_MESSAGES, BYOK_LIMITS[METRIC_AGENT_MESSAGES])
+
+    with pytest.raises(QuotaExceeded) as exc:
+        await svc.check_and_increment(USER, METRIC_AGENT_MESSAGES)
+    assert exc.value.plan_key == "byok", (
+        "the 402 must say which ceiling was hit — a BYOK user needs a different "
+        "message from a Free user who should be shown an upgrade"
+    )
+
+
+async def test_one_users_key_does_not_lift_anothers_quota(uow_factory, billing_port):
+    svc = _byok_service(uow_factory, billing_port, byok_users={"someone-else"})
+    ent = await svc.get_entitlements(USER)
+    assert ent["byok"] is False
+    assert (
+        next(u for u in ent["usage"] if u["metric"] == METRIC_AGENT_MESSAGES)["limit"]
+        == (get_plan("free").limits[METRIC_AGENT_MESSAGES])
+    )
+
+
+async def test_no_credential_source_behaves_exactly_as_before(service):
+    """BillingService is constructed without `credentials` in plenty of places
+    (and in older tests); that must degrade to plain plan limits, not crash."""
+    ent = await service.get_entitlements(USER)
+    assert ent["byok"] is False

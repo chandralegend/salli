@@ -122,6 +122,21 @@ PLANS: dict[str, Plan] = {
 
 DEFAULT_PLAN = "free"
 
+# Ceiling applied instead of the plan's limits when a user supplies their own
+# LLM API key. They pay for their own inference, so metering them serves no
+# commercial purpose — but the requests still run on our server, so this is a
+# runaway-loop backstop, not a product limit.
+#
+# Deliberately an order of magnitude above Pro (5000/500/150). BYOK applies to
+# every tier, so a ceiling level with Pro's limits would mean a Pro subscriber
+# who supplies a key gains nothing at all. No legitimate user should ever reach
+# these; only a buggy client or a script should.
+BYOK_LIMITS: dict[str, int] = {
+    METRIC_AGENT_MESSAGES: 50_000,
+    METRIC_STATEMENT_UPLOADS: 5_000,
+    METRIC_ADVISOR_RUNS: 3_000,
+}
+
 
 def get_plan(key: str | None) -> Plan:
     """Return the plan for a key, falling back to Free for unknown/None."""

@@ -12,7 +12,7 @@ import datetime
 from typing import Any
 
 from salli.domain.billing import plans as plan_registry
-from salli.domain.billing.plans import METRICS, Plan, get_plan
+from salli.domain.billing.plans import BYOK_LIMITS, METRICS, Plan, get_plan
 
 
 class QuotaExceeded(Exception):
@@ -120,9 +120,10 @@ def _change_mode(sub: dict[str, Any]) -> tuple[str, str | None]:
 
 
 class BillingService:
-    def __init__(self, uow_factory: Any, billing_port: Any = None) -> None:
+    def __init__(self, uow_factory: Any, billing_port: Any = None, credentials: Any = None) -> None:
         self._uow_factory = uow_factory
         self._billing = billing_port
+        self._credentials = credentials
 
     # ── Provisioning ──────────────────────────────────────────────────────────
 
@@ -160,10 +161,12 @@ class BillingService:
         # From the raw row, not `plan` — see _change_mode on why the effective plan
         # would mislabel a past_due subscriber as free and offer them a second purchase.
         mode, blocked_reason = _change_mode(sub)
+        byok = await self._has_byok(user_id)
         usage = []
         for metric in METRICS:
             used = counts.get(metric, 0)
-            limit = plan.limits.get(metric, 0)
+            # The limit actually in force, so "remaining" stays truthful.
+            limit = BYOK_LIMITS.get(metric, 0) if byok else plan.limits.get(metric, 0)
             usage.append(
                 {
                     "metric": metric,
@@ -177,6 +180,10 @@ class BillingService:
             "plan": plan.key,
             "plan_name": plan.name,
             "paid": plan.paid,
+            # Whether this user is on their own LLM key. Clients branch on this
+            # to show "your own key" rather than a plan allowance — the `limit`
+            # values below are a safety ceiling, not something to advertise.
+            "byok": byok,
             # Gated on the *effective* plan: a canceled paid row keeps its stored
             # cycle, and surfacing it would render as "Free · Annual".
             "billing_cycle": sub.get("billing_cycle") if plan.paid else None,
@@ -193,16 +200,34 @@ class BillingService:
     async def check_and_increment(
         self, user_id: str, metric: str, email: str | None = None
     ) -> None:
-        """Raise QuotaExceeded if over the monthly limit, else increment the counter."""
+        """Raise QuotaExceeded if over the monthly limit, else increment the counter.
+
+        A user on their own LLM key gets BYOK_LIMITS instead of their plan's —
+        a runaway-loop backstop rather than a product limit, since they're paying
+        for the inference themselves.
+
+        The counter still increments either way. This is the only usage record in
+        the system, so skipping it for BYOK users would go blind on exactly the
+        most engaged ones: no abuse signal, and nothing to show them in the UI.
+        """
         sub = await self._ensure_user(user_id, email)
         plan = _effective_plan(sub)
-        limit = plan.limits.get(metric, 0)
+        byok = await self._has_byok(user_id)
+        limit = BYOK_LIMITS.get(metric, 0) if byok else plan.limits.get(metric, 0)
         period = _period()
         async with self._uow_factory() as uow:
             current = await uow.usage.get_count(user_id, period, metric)
             if current >= limit:
-                raise QuotaExceeded(metric, limit, plan.key)
+                # plan_key reads "byok" so the 402 tells the client which ceiling
+                # was hit — a BYOK user hitting this needs a very different
+                # message from a Free user who should be shown an upgrade.
+                raise QuotaExceeded(metric, limit, "byok" if byok else plan.key)
             await uow.usage.increment(user_id, period, metric)
+
+    async def _has_byok(self, user_id: str) -> bool:
+        if self._credentials is None:
+            return False
+        return await self._credentials.has_byok(user_id)
 
     def get_plans(self) -> list[dict[str, Any]]:
         out = []

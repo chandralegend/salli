@@ -100,7 +100,9 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     subscription = SubscriptionService(uow_factory)
     insurance = InsuranceService(uow_factory)
     fx = CBSLFxRateAdapter()
-    billing = BillingService(uow_factory, billing_port=_build_billing(settings))
+    billing = BillingService(
+        uow_factory, billing_port=_build_billing(settings), credentials=llm_credentials
+    )
     advisor = AdvisorService(
         uow_factory, fi, billing, doc_service=documents, credentials=llm_credentials
     )

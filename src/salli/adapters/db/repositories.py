@@ -293,11 +293,21 @@ class SQLTaxComputationRepository(TaxComputationRepository):
         import uuid
 
         result_dict = self._serialize(computation)
+        # Every input the engine actually consumes. Hashing only gross+relief
+        # meant two computations with completely different credits, FSI or
+        # qualifying payments collided, so the hash could not do the one job it
+        # exists for — telling you whether a stored result is still current.
         inputs_hash = hashlib.sha256(
             json.dumps(
                 {
+                    "pack_version": computation.pack_version,
                     "gross": str(computation.gross_income),
+                    "fsi": str(computation.foreign_service_income),
                     "relief": str(computation.personal_relief_applied),
+                    "qp": str(computation.qp_deduction),
+                    "apit": str(computation.apit_credit),
+                    "ait": str(computation.ait_credit),
+                    "ftc": str(computation.foreign_tax_credit),
                 },
                 sort_keys=True,
             ).encode()
@@ -330,6 +340,11 @@ class SQLTaxComputationRepository(TaxComputationRepository):
             return None
         # Deserialize back — used only for display/reporting, not recomputation.
         return row.result_json  # type: ignore[return-value]
+
+    async def list_computation_keys(self) -> list[tuple[str, str]]:
+        stmt = select(TaxComputationORM.user_id, TaxComputationORM.year).distinct()
+        result = await self._session.execute(stmt)
+        return [(r[0], r[1]) for r in result.all()]
 
 
 # ── StatementRepository ───────────────────────────────────────────────────────

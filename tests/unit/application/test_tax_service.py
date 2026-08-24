@@ -50,6 +50,9 @@ class FakeTaxComputationRepo:
     async def get_latest(self, user_id: str, year: str) -> TaxComputation | None:
         return self._store.get((user_id, year))
 
+    async def list_computation_keys(self) -> list[tuple[str, str]]:
+        return list(self._store.keys())
+
 
 class FakeUoW:
     def __init__(self, ledger_repo, tax_repo):
@@ -500,3 +503,125 @@ def test_buckets_never_go_negative():
 
     view = _build_ledger_view([orphan_reversal], accounts)
     assert view.apit_withheld == Decimal(0)
+
+
+# ── Backfill: re-running stored computations after an engine fix ──────────────
+
+
+def _service_with_seeded_ledger(apit: Decimal):
+    """A TaxService whose ledger has salary plus APIT withheld against the
+    seeded (asset) 4110 account."""
+    accounts = _seeded_accounts("u1")
+    salary = _by_code(accounts, "4100")
+    apit_acc = _by_code(accounts, "4110")
+    bank = _by_code(accounts, "1200")
+    income = Decimal("3_000_000")
+
+    entry = _make_entry(
+        "u1",
+        "2025-04-01",
+        [
+            Posting(
+                account_id=bank.id, direction=Direction.DEBIT, amount=income - apit, currency="LKR"
+            ),
+            Posting(account_id=apit_acc.id, direction=Direction.DEBIT, amount=apit, currency="LKR"),
+            Posting(
+                account_id=salary.id, direction=Direction.CREDIT, amount=income, currency="LKR"
+            ),
+        ],
+    )
+    ledger = FakeLedgerRepo(entries=[entry], accounts=accounts)
+    tax_repo = FakeTaxComputationRepo()
+
+    @asynccontextmanager
+    async def uow_factory():
+        yield FakeUoW(ledger, tax_repo)
+
+    return TaxService(uow_factory), tax_repo
+
+
+@pytest.mark.asyncio
+async def test_compute_tax_persist_false_does_not_record():
+    svc, repo = _service_with_seeded_ledger(Decimal("50_000"))
+    result = await svc.compute_tax("u1", "2025/26", persist=False)
+    assert result.apit_credit == Decimal("50_000")
+    assert await repo.get_latest("u1", "2025/26") is None, "preview must not write"
+
+
+@pytest.mark.asyncio
+async def test_recompute_stored_reports_the_correction_without_applying():
+    """A computation stored by the old engine credited no APIT. A dry run must
+    surface the difference and change nothing."""
+    svc, repo = _service_with_seeded_ledger(Decimal("50_000"))
+
+    # Simulate a pre-fix stored row: same income, but no credit recognised.
+    stale = await svc.compute_tax("u1", "2025/26", persist=False)
+    repo._store[("u1", "2025/26")] = {
+        **{k: str(v) for k, v in (("tax_payable", stale.tax_payable + Decimal("50_000")),)},
+        "total_credits": "0",
+    }
+
+    report = await svc.recompute_stored(apply=False)
+    assert len(report) == 1
+    row = report[0]
+    assert row["changed"] is True
+    assert row["applied"] is False
+    assert row["old_credits"] == "0"
+    assert row["new_credits"] == "50000"
+    # Still the stale dict — a dry run writes nothing.
+    assert isinstance(await repo.get_latest("u1", "2025/26"), dict)
+
+
+@pytest.mark.asyncio
+async def test_recompute_stored_applies_the_correction():
+    svc, repo = _service_with_seeded_ledger(Decimal("50_000"))
+    fresh = await svc.compute_tax("u1", "2025/26", persist=False)
+    repo._store[("u1", "2025/26")] = {"tax_payable": "999999", "total_credits": "0"}
+
+    report = await svc.recompute_stored(apply=True)
+    assert report[0]["applied"] is True
+
+    stored = await repo.get_latest("u1", "2025/26")
+    assert not isinstance(stored, dict), "the corrected result replaced the stale row"
+    assert stored.tax_payable == fresh.tax_payable
+    assert stored.apit_credit == Decimal("50_000")
+
+
+@pytest.mark.asyncio
+async def test_recompute_stored_skips_rows_that_do_not_move():
+    """Re-running must not pile up identical history entries."""
+    svc, repo = _service_with_seeded_ledger(Decimal("50_000"))
+    await svc.compute_tax("u1", "2025/26", persist=True)
+
+    report = await svc.recompute_stored(apply=True)
+    assert report[0]["changed"] is False
+    assert report[0]["applied"] is False
+
+
+@pytest.mark.asyncio
+async def test_recompute_ignores_a_pure_scale_difference():
+    """Credit totals carry the fx_rate's Numeric(20,8) scale, so the same amount
+    can be written "250000" or "250000.00000000". That must not count as a
+    change, or every sweep would rewrite every row forever."""
+    svc, repo = _service_with_seeded_ledger(Decimal("50_000"))
+    fresh = await svc.compute_tax("u1", "2025/26", persist=False)
+    # Same numbers, written with the 8-dp scale the fx_rate column imposes.
+    scaled = Decimal("0.00000001")
+    repo._store[("u1", "2025/26")] = {
+        "tax_payable": str(fresh.tax_payable.quantize(scaled)),
+        "total_credits": str(fresh.total_credits.quantize(scaled)),
+    }
+
+    report = await svc.recompute_stored(apply=True)
+    assert report[0]["changed"] is False
+    assert report[0]["applied"] is False
+
+
+def test_money_report_strings_are_trimmed():
+    from salli.application.services.tax_service import _fmt_money
+
+    assert _fmt_money("250000.00000000") == "250000"
+    assert _fmt_money(Decimal("0")) == "0"
+    assert _fmt_money("1234.50") == "1234.5"
+    # A value that was never recorded passes through untouched.
+    assert _fmt_money("—") == "—"

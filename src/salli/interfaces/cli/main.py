@@ -527,6 +527,82 @@ def tax_packs():
     console.print(table)
 
 
+@tax_app.command("recompute-stored")
+def tax_recompute_stored(
+    apply: bool = typer.Option(
+        False,
+        "--apply",
+        help="Actually write the corrected results. Without this, only reports what would change.",
+    ),
+):
+    """
+    Re-run every stored tax computation against the current engine.
+
+    `/tax/latest` serves the most recently *saved* result, so after an engine
+    fix a user keeps seeing the old figure until they happen to press
+    Recompute — and a wrong tax number is exactly what they would act on.
+
+    Dry-run by default: inspect the report, then re-run with --apply.
+    """
+    report = asyncio.run(_services().tax.recompute_stored(apply=apply))
+
+    if not report:
+        console.print("[yellow]No stored tax computations found.[/yellow]")
+        return
+
+    table = Table(
+        title=("Recomputed stored tax" if apply else "Dry run — nothing written"),
+        show_header=True,
+    )
+    table.add_column("User")
+    table.add_column("Year")
+    table.add_column("Credits was")
+    table.add_column("Credits now")
+    table.add_column("Payable was")
+    table.add_column("Payable now")
+    table.add_column("Refund")
+    table.add_column("Status")
+
+    changed = 0
+    errored = 0
+    for row in report:
+        if "error" in row:
+            errored += 1
+            table.add_row(
+                row["user_id"][:8],
+                row["year"],
+                "—",
+                "—",
+                "—",
+                "—",
+                "—",
+                f"[red]{row['error']}[/red]",
+            )
+            continue
+        if row["changed"]:
+            changed += 1
+            status = "[green]applied[/green]" if row["applied"] else "[yellow]would change[/yellow]"
+        else:
+            status = "[dim]unchanged[/dim]"
+        table.add_row(
+            row["user_id"][:8],
+            row["year"],
+            row["old_credits"],
+            row["new_credits"],
+            row["old_tax_payable"],
+            row["new_tax_payable"],
+            row["new_refund_due"],
+            status,
+        )
+
+    console.print(table)
+    console.print(
+        f"{len(report)} stored · [bold]{changed} changed[/bold]"
+        + (f" · [red]{errored} errored[/red]" if errored else "")
+        + ("" if apply else "  —  re-run with [bold]--apply[/bold] to write")
+    )
+
+
 # ── parse ─────────────────────────────────────────────────────────────────────
 
 

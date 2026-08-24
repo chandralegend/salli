@@ -85,6 +85,15 @@ class TaxComputationRepository(ABC):
     @abstractmethod
     async def get_latest(self, user_id: str, year: str) -> Any | None: ...
 
+    @abstractmethod
+    async def list_computation_keys(self) -> list[tuple[str, str]]:
+        """Every (user_id, year) that has at least one stored computation.
+
+        Admin-only. Used to re-run stored computations after an engine fix, so
+        users are not left looking at a number the engine no longer agrees with.
+        """
+        ...
+
 
 class ReminderRepository(ABC):
     @abstractmethod

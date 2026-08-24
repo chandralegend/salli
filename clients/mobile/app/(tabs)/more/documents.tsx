@@ -26,10 +26,15 @@ export default function DocumentsScreen() {
     .filter((d) => !q || d.title.toLowerCase().includes(q) || d.content.toLowerCase().includes(q));
 
   return (
-    <PageShell>
-      <ScreenHeader title="Documents" back />
-
-      <Tabs items={TABS} value={tab} onChange={setTab} className="mt-3" />
+    <PageShell
+      animateOn={tab}
+      header={
+        <>
+          <ScreenHeader title="Documents" back />
+          <Tabs items={TABS} value={tab} onChange={setTab} className="mt-3" />
+        </>
+      }
+    >
 
       <View className="mt-3 flex-row items-center gap-2 px-4">
         <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
@@ -55,7 +60,7 @@ export default function DocumentsScreen() {
           filtered.map((d) => (
             <Pressable key={d.id} onPress={() => setViewing(d)}>
               <Card className="flex-row items-center gap-2.5 p-3.5">
-                <View className="h-9 w-9 items-center justify-center rounded-[11px] bg-foreground/[0.06]">
+                <View className="h-9 w-9 items-center justify-center rounded-[8px] bg-foreground/[0.06]">
                   {tab === "Memories" ? (
                     <Book size={14} color={colors.mutedForeground} strokeWidth={2} />
                   ) : (

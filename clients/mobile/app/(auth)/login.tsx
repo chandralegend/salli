@@ -55,7 +55,7 @@ export default function LoginScreen() {
         {supabaseReady ? <SocialAuthButtons onError={setError} /> : null}
 
         <TextField
-          className="rounded-[16px] px-[18px] py-[14px]"
+          className="rounded-[10px] px-[18px] py-[14px]"
           label="Email"
           value={email}
           onChangeText={setEmail}
@@ -65,7 +65,7 @@ export default function LoginScreen() {
           placeholder="you@example.com"
         />
         <TextField
-          className="rounded-[16px] px-[18px] py-[14px]"
+          className="rounded-[10px] px-[18px] py-[14px]"
           label="Password"
           value={password}
           onChangeText={setPassword}

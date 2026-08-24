@@ -154,21 +154,33 @@ export default function LedgerScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <SalliBackground intensity="subtle" />
-      <PageShell transparent refreshControl={refreshControl}>
-      <View className="flex-row items-center px-5 pt-2.5">
-        <Text className="flex-1 font-sans-bold text-[22px] text-foreground">Ledger</Text>
-        <AnimatedPressable
-          onPress={() => (tab === "Accounts" ? setAddAccountOpen(true) : setModalVisible(true))}
-          haptic="light"
-          className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
-        >
-          <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
-        </AnimatedPressable>
-      </View>
+      <PageShell
+        animateOn={tab}
+        transparent
+        refreshControl={refreshControl}
+        // The tab strip pins with the title rather than scrolling away on its
+        // own: it is the primary control on this screen, and a pinned title
+        // above a vanished Accounts/Journal switcher is worse than pinning
+        // neither.
+        header={
+          <>
+            <View className="flex-row items-center px-5 pt-2.5">
+              <Text className="flex-1 font-sans-bold text-[22px] text-foreground">Ledger</Text>
+              <AnimatedPressable
+                onPress={() => (tab === "Accounts" ? setAddAccountOpen(true) : setModalVisible(true))}
+                haptic="light"
+                className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
+              >
+                <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+              </AnimatedPressable>
+            </View>
 
-      <TourTarget id="ledger-tabs">
-        <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
-      </TourTarget>
+            <TourTarget id="ledger-tabs">
+              <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
+            </TourTarget>
+          </>
+        }
+      >
 
       {tab === "Journal" ? (
         <>
@@ -226,7 +238,7 @@ export default function LedgerScreen() {
                         <AnimatedPressable
                           key={entry.id}
                           onPress={() => setSelectedEntry(entry)}
-                          className={cn("flex-row gap-2.5 rounded-[14px] border border-foreground/[0.08] bg-card p-3", reversed && "opacity-40")}
+                          className={cn("flex-row gap-2.5 rounded-[10px] border border-foreground/[0.08] bg-card p-3", reversed && "opacity-40")}
                         >
                           <View className={cn("mt-0.5 h-9 w-[3px] rounded-pill", isIncome ? "bg-salli-accent" : "bg-foreground/15")} />
                           <View className="flex-1">
@@ -299,7 +311,7 @@ export default function LedgerScreen() {
                           <AnimatedPressable
                             key={a.id}
                             onPress={() => setSelectedAccountId(a.id)}
-                            className={cn("flex-row items-center gap-2.5 rounded-[14px] border border-foreground/[0.08] bg-card p-3", !a.is_active && "opacity-45")}
+                            className={cn("flex-row items-center gap-2.5 rounded-[10px] border border-foreground/[0.08] bg-card p-3", !a.is_active && "opacity-45")}
                           >
                             <View className={cn("h-10 w-[3px] rounded-pill", isAsset && a.is_active ? "bg-salli-accent" : "bg-foreground/12")} />
                             <View

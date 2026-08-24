@@ -138,25 +138,28 @@ export default function PortfolioScreen() {
 
   return (
     <View className="flex-1">
-      <PageShell>
-        <ScreenHeader
-          title="Portfolio"
-          back
-          trailing={
-            <View className="flex-row items-center gap-2">
-              <View className="rounded-pill border border-foreground/[0.08] bg-card px-3 py-1.5">
-                <Text className="text-[11px] text-foreground/40">Manual values only</Text>
+      <PageShell
+        animateOn={tab}
+        header={
+          <ScreenHeader
+            title="Portfolio"
+            back
+            trailing={
+              <View className="flex-row items-center gap-2">
+                <View className="rounded-pill border border-foreground/[0.08] bg-card px-3 py-1.5">
+                  <Text className="text-[11px] text-foreground/40">Manual values only</Text>
+                </View>
+                <Pressable
+                  onPress={() => setAddOpen(true)}
+                  className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
+                >
+                  <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
+                </Pressable>
               </View>
-              <Pressable
-                onPress={() => setAddOpen(true)}
-                className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
-              >
-                <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
-              </Pressable>
-            </View>
-          }
-        />
-
+            }
+          />
+        }
+      >
         {empty ? (
           <View className="items-center gap-2 px-8 pt-16">
             <Text className="text-center font-sans-semibold text-[15px] text-foreground">No holdings yet</Text>
@@ -251,7 +254,7 @@ export default function PortfolioScreen() {
                               <Card className="flex-row items-center gap-2.5 p-3">
                                 <View className="h-[42px] w-[3px] rounded-pill" style={{ backgroundColor: color }} />
                                 <View
-                                  className="h-[38px] w-[38px] items-center justify-center rounded-[12px]"
+                                  className="h-[38px] w-[38px] items-center justify-center rounded-[8px]"
                                   style={{ backgroundColor: `${color}1F`, borderWidth: 0.5, borderColor: `${color}33` }}
                                 >
                                   <Text className="font-sans-bold text-[10px]" style={{ color }}>
@@ -371,7 +374,7 @@ export default function PortfolioScreen() {
 
                 {/* Concentration note — only when one class dominates */}
                 {concentrated ? (
-                  <View className="mt-3 flex-row items-start gap-2 rounded-[12px] border border-salli-accent/20 bg-salli-accent/[0.08] px-3.5 py-2.5">
+                  <View className="mt-3 flex-row items-start gap-2 rounded-[8px] border border-salli-accent/20 bg-salli-accent/[0.08] px-3.5 py-2.5">
                     <TriangleAlert size={14} color={colors.accent} strokeWidth={2} style={{ marginTop: 1 }} />
                     <Text className="flex-1 text-[11px] leading-4 text-foreground/55">
                       <Text className="font-sans-semibold text-salli-accent">
@@ -383,7 +386,7 @@ export default function PortfolioScreen() {
                 ) : null}
 
                 {/* Disclaimer */}
-                <View className="mt-2.5 flex-row items-start gap-2 rounded-[12px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
+                <View className="mt-2.5 flex-row items-start gap-2 rounded-[8px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
                   <Info size={13} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
                   <Text className="flex-1 text-[11px] leading-4 text-foreground/30">
                     Values are manually entered · no live market feed
@@ -661,7 +664,7 @@ function HoldingDrawer({
               {cost && value ? (
                 <View
                   className={cn(
-                    "mb-4 flex-row items-center justify-between rounded-[12px] border px-3.5 py-2.5",
+                    "mb-4 flex-row items-center justify-between rounded-[8px] border px-3.5 py-2.5",
                     gain >= 0 ? "border-salli-accent/20 bg-salli-accent/[0.08]" : "border-destructive/20 bg-destructive/[0.08]",
                   )}
                 >

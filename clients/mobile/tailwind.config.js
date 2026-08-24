@@ -59,8 +59,8 @@ module.exports = {
         "mono-bold": ["JetBrainsMono_700Bold"],
       },
       borderRadius: {
-        card: "20px",
-        control: "14px",
+        card: "14px",
+        control: "10px",
         pill: "50px",
       },
     },

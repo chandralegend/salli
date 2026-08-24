@@ -176,32 +176,34 @@ export default function RemindersScreen() {
     );
 
   return (
-    <PageShell>
-      <ScreenHeader
-        title="Reminders"
-        back
-        trailing={
-          <Pressable
-            onPress={() => setDrawerOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel="New reminder"
-            className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
-          >
-            <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
-          </Pressable>
-        }
-      />
-
+    <PageShell
+      header={
+        <ScreenHeader
+          title="Reminders"
+          back
+          trailing={
+            <Pressable
+              onPress={() => setDrawerOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="New reminder"
+              className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
+            >
+              <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
+            </Pressable>
+          }
+        />
+      }
+    >
       <View className="my-3 flex-row gap-2 px-4">
-        <View className="flex-1 items-center rounded-[16px] border border-foreground/15 bg-card px-2.5 py-3">
+        <View className="flex-1 items-center rounded-[10px] border border-foreground/15 bg-card px-2.5 py-3">
           <Text className="font-sans-bold text-[22px] leading-none text-foreground">{overdue.length}</Text>
           <Text className="mt-1 text-[10px] font-sans-medium text-foreground/40">Overdue</Text>
         </View>
-        <View className="flex-1 items-center rounded-[16px] border border-foreground/[0.08] bg-card px-2.5 py-3">
+        <View className="flex-1 items-center rounded-[10px] border border-foreground/[0.08] bg-card px-2.5 py-3">
           <Text className="font-sans-bold text-[22px] leading-none text-foreground">{dueSoon.length}</Text>
           <Text className="mt-1 text-[10px] font-sans-medium text-foreground/40">Due Soon</Text>
         </View>
-        <View className="flex-1 items-center rounded-[16px] border border-foreground/[0.08] bg-card px-2.5 py-3">
+        <View className="flex-1 items-center rounded-[10px] border border-foreground/[0.08] bg-card px-2.5 py-3">
           <Text className="font-sans-bold text-[22px] leading-none text-foreground">{upcoming.length}</Text>
           <Text className="mt-1 text-[10px] font-sans-medium text-foreground/30">Upcoming</Text>
         </View>

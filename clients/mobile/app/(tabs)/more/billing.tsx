@@ -48,9 +48,7 @@ export default function BillingScreen() {
   };
 
   return (
-    <PageShell>
-      <ScreenHeader title="Billing" back />
-
+    <PageShell header={<ScreenHeader title="Billing" back />}>
       <View className="px-4 pt-3">
         <View className="overflow-hidden rounded-card border border-foreground/10">
           <View className="bg-salli-navy-card px-4 pb-4 pt-3.5">

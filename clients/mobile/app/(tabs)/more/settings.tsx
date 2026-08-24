@@ -107,9 +107,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <PageShell>
-      <ScreenHeader title="Settings" back />
-
+    <PageShell header={<ScreenHeader title="Settings" back />}>
       <View className="gap-2.5 px-4 pt-3">
         <Card className="flex-row items-center gap-3 p-4">
           <View className="h-12 w-12 items-center justify-center rounded-full bg-salli-accent">

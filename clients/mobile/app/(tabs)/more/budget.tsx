@@ -126,27 +126,29 @@ export default function BudgetScreen() {
   const saving = createBudget.isPending || updateBudget.isPending;
 
   return (
-    <PageShell>
-      <ScreenHeader
-        title={latestBudget && !editing ? "Budget" : "Budget Setup"}
-        back
-        trailing={
-          <View className="flex-row items-center gap-2">
-            {latestBudget && summary.data && !editing ? (
-              <Pressable
-                onPress={enterEdit}
-                className="h-[30px] w-[30px] items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.07]"
-              >
-                <Pencil size={13} color="rgba(128,128,128,0.8)" strokeWidth={2} />
-              </Pressable>
-            ) : null}
-            <View className="rounded-pill border border-foreground/10 bg-foreground/[0.07] px-3 py-1">
-              <Text className="text-[12px] font-sans-medium text-foreground/45">{currentMonthLabel()}</Text>
+    <PageShell
+      header={
+        <ScreenHeader
+          title={latestBudget && !editing ? "Budget" : "Budget Setup"}
+          back
+          trailing={
+            <View className="flex-row items-center gap-2">
+              {latestBudget && summary.data && !editing ? (
+                <Pressable
+                  onPress={enterEdit}
+                  className="h-[30px] w-[30px] items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.07]"
+                >
+                  <Pencil size={13} color="rgba(128,128,128,0.8)" strokeWidth={2} />
+                </Pressable>
+              ) : null}
+              <View className="rounded-pill border border-foreground/10 bg-foreground/[0.07] px-3 py-1">
+                <Text className="text-[12px] font-sans-medium text-foreground/45">{currentMonthLabel()}</Text>
+              </View>
             </View>
-          </View>
-        }
-      />
-
+          }
+        />
+      }
+    >
       {latestBudget && summary.data && !editing ? (
         (() => {
           const spent = Number(summary.data.total_actual);

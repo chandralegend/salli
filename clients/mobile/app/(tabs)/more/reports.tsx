@@ -148,29 +148,32 @@ export default function ReportsScreen() {
   }
 
   return (
-    <PageShell>
-      <ScreenHeader
-        title="Reports"
-        back
-        trailing={
-          <Pressable
-            onPress={handleExport}
-            disabled={!exportType || exporting}
-            className={cn(
-              "flex-row items-center gap-1.5 rounded-pill border border-foreground/10 bg-foreground/[0.06] px-3.5 py-1.5",
-              !exportType && "opacity-40",
-            )}
-          >
-            {exporting ? (
-              <ActivityIndicator size="small" color={colors.mutedForeground} />
-            ) : (
-              <Download size={13} color={colors.mutedForeground} strokeWidth={2} />
-            )}
-            <Text className="font-sans-medium text-[12px] text-foreground/50">Export</Text>
-          </Pressable>
-        }
-      />
-
+    <PageShell
+      animateOn={tab}
+      header={
+        <ScreenHeader
+          title="Reports"
+          back
+          trailing={
+            <Pressable
+              onPress={handleExport}
+              disabled={!exportType || exporting}
+              className={cn(
+                "flex-row items-center gap-1.5 rounded-pill border border-foreground/10 bg-foreground/[0.06] px-3.5 py-1.5",
+                !exportType && "opacity-40",
+              )}
+            >
+              {exporting ? (
+                <ActivityIndicator size="small" color={colors.mutedForeground} />
+              ) : (
+                <Download size={13} color={colors.mutedForeground} strokeWidth={2} />
+              )}
+              <Text className="font-sans-medium text-[12px] text-foreground/50">Export</Text>
+            </Pressable>
+          }
+        />
+      }
+    >
       <View className="mt-2.5 flex-row gap-1.5 px-4">
         {PERIODS.map((p) => (
           <FilterChip key={p} label={p} active={period === p} onPress={() => setPeriod(p)} />

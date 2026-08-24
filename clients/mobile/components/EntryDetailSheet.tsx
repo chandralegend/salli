@@ -123,7 +123,7 @@ export function EntryDetailSheet({
       </View>
 
       {/* amount hero */}
-      <View className="mb-3 rounded-[18px] border border-foreground/[0.08] bg-salli-navy-card p-[18px]">
+      <View className="mb-3 rounded-[12px] border border-foreground/[0.08] bg-salli-navy-card p-[18px]">
         <Text className="mb-1.5 text-[10px] font-sans-medium uppercase tracking-wide text-white/40" numberOfLines={1}>
           {entry?.description}
         </Text>
@@ -147,7 +147,7 @@ export function EntryDetailSheet({
         <Posting kind="Credit" posting={credit} />
       </View>
 
-      <View className="flex-row items-start gap-2 rounded-[12px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
+      <View className="flex-row items-start gap-2 rounded-[8px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
         <Lock size={13} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
         <Text className="flex-1 text-[11px] leading-4 text-foreground/30">
           Posted entries are immutable · correct via a reversing entry

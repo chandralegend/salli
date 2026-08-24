@@ -231,23 +231,29 @@ export default function FinancialIndependenceScreen() {
   const activeGoals = allGoals.filter((g) => g.progress < 1);
 
   return (
-    <PageShell>
-      <TourTarget id="freedom-header">
-        <View className="flex-row items-center px-5 pb-1 pt-2.5">
-          <Text className="flex-1 font-sans-bold text-[20px] text-foreground">Freedom</Text>
-          <InfoButton
-            size={18}
-            title="Freedom"
-            description={
-              "Freedom is the point where your investments can cover your living costs, so working becomes a choice.\n\n" +
-              "Everything here is computed from your own ledger — your real income, spending, and net worth — not from estimates. " +
-              "As those change, so do these numbers."
-            }
-          />
-        </View>
-      </TourTarget>
+    <PageShell
+      animateOn={tab}
+      header={
+        <>
+          <TourTarget id="freedom-header">
+            <View className="flex-row items-center px-5 pb-1 pt-2.5">
+              <Text className="flex-1 font-sans-bold text-[20px] text-foreground">Freedom</Text>
+              <InfoButton
+                size={18}
+                title="Freedom"
+                description={
+                  "Freedom is the point where your investments can cover your living costs, so working becomes a choice.\n\n" +
+                  "Everything here is computed from your own ledger — your real income, spending, and net worth — not from estimates. " +
+                  "As those change, so do these numbers."
+                }
+              />
+            </View>
+          </TourTarget>
 
-      <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
+          <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
+        </>
+      }
+    >
 
       {tab === "Overview" && fiScore.isLoading ? (
         <View className="items-center pt-16">
@@ -533,7 +539,7 @@ export default function FinancialIndependenceScreen() {
                   full rationale OR a locked preview (Free tier) — never just
                   vanishes for a locked user the way `ai_rationale` alone would. */}
               {strategy.data.ai_rationale || strategy.data.rationale_locked ? (
-                <View className="rounded-[16px] border border-salli-accent/20 bg-card">
+                <View className="rounded-[10px] border border-salli-accent/20 bg-card">
                   <Pressable
                     onPress={() => setStrategyOpen((o) => !o)}
                     className="flex-row items-center gap-2 p-3.5"

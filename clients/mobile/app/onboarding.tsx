@@ -541,7 +541,7 @@ export default function OnboardingScreen() {
                         key={o.value}
                         onPress={() => setDrawdown(o.value)}
                         className={cn(
-                          "flex-row items-center gap-2.5 rounded-[12px] border px-3.5 py-[11px]",
+                          "flex-row items-center gap-2.5 rounded-[8px] border px-3.5 py-[11px]",
                           active ? "border-salli-accent bg-card" : "border-foreground/[0.08] bg-card",
                         )}
                       >
@@ -591,7 +591,7 @@ export default function OnboardingScreen() {
               </View>
 
               {riskResult ? (
-                <View className="flex-row items-center justify-between rounded-[14px] border border-salli-accent/20 bg-salli-accent/[0.08] px-4 py-3.5">
+                <View className="flex-row items-center justify-between rounded-[10px] border border-salli-accent/20 bg-salli-accent/[0.08] px-4 py-3.5">
                   <View>
                     <Text className="mb-0.5 text-[11px] text-foreground/40">Your risk category</Text>
                     <Text className="font-sans-bold text-[15px] capitalize text-foreground">{riskResult.category}</Text>

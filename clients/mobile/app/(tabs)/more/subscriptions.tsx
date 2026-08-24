@@ -59,20 +59,22 @@ export default function SubscriptionsScreen() {
 
   return (
     <View className="flex-1">
-      <PageShell>
-        <ScreenHeader
-          title="Subscriptions"
-          back
-          trailing={
-            <Pressable
-              onPress={openAdd}
-              className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
-            >
-              <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
-            </Pressable>
-          }
-        />
-
+      <PageShell
+        header={
+          <ScreenHeader
+            title="Subscriptions"
+            back
+            trailing={
+              <Pressable
+                onPress={openAdd}
+                className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
+              >
+                <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
+              </Pressable>
+            }
+          />
+        }
+      >
         {/* hero — monthly recurring cost */}
         <View className="px-4 pt-3">
           <Card className="bg-salli-navy-card p-[18px]">
@@ -139,7 +141,7 @@ export default function SubscriptionsScreen() {
                 <Pressable key={s.id} onPress={() => openEdit(s)}>
                 <Card className="p-3.5">
                   <View className="flex-row items-center gap-2.5">
-                    <View className="h-9 w-9 items-center justify-center rounded-[11px] bg-foreground/[0.06]">
+                    <View className="h-9 w-9 items-center justify-center rounded-[8px] bg-foreground/[0.06]">
                       <RefreshCw size={14} color={colors.mutedForeground} strokeWidth={2} />
                     </View>
                     <View className="flex-1">

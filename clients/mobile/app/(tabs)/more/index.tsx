@@ -47,7 +47,7 @@ const FEATURES: {
 function QuickStatCard({ label, value, hint, onPress }: { label: string; value: string; hint: string; onPress: () => void }) {
   const colors = useThemeColors();
   return (
-    <AnimatedPressable onPress={onPress} className="w-[48%] rounded-[16px] border border-foreground/[0.08] bg-card p-3.5">
+    <AnimatedPressable onPress={onPress} className="w-[48%] rounded-[10px] border border-foreground/[0.08] bg-card p-3.5">
       <View className="mb-1.5 flex-row items-center justify-between">
         <Text className="text-[11px] font-sans-medium text-foreground/40">{label}</Text>
         <ChevronRight size={12} color={colors.mutedForeground} strokeWidth={2} />
@@ -65,18 +65,21 @@ export default function MoreScreen() {
     useMore();
 
   return (
-    <PageShell>
-      <View className="flex-row items-center px-5 pb-3 pt-2.5">
-        <Text className="flex-1 font-sans-bold text-[22px] text-foreground">More</Text>
-        <AnimatedPressable
-          onPress={() => router.push("/(tabs)/more/settings")}
-          className="h-[34px] w-[34px] items-center justify-center rounded-full border border-foreground/[0.08] bg-foreground/[0.07]"
-        >
-          <Settings size={15} color={colors.mutedForeground} strokeWidth={2} />
-        </AnimatedPressable>
-      </View>
+    <PageShell
+      header={
+        <View className="flex-row items-center px-5 pt-2.5">
+          <Text className="flex-1 font-sans-bold text-[22px] text-foreground">More</Text>
+          <AnimatedPressable
+            onPress={() => router.push("/(tabs)/more/settings")}
+            className="h-[34px] w-[34px] items-center justify-center rounded-full border border-foreground/[0.08] bg-foreground/[0.07]"
+          >
+            <Settings size={15} color={colors.mutedForeground} strokeWidth={2} />
+          </AnimatedPressable>
+        </View>
+      }
+    >
 
-      <Card className="mx-4 mb-3 flex-row items-center gap-3 rounded-[18px] border-foreground/[0.08] p-3.5">
+      <Card className="mx-4 mb-3 flex-row items-center gap-3 rounded-[12px] border-foreground/[0.08] p-3.5">
         <View className="h-11 w-11 items-center justify-center rounded-full bg-salli-accent">
           <Text className="font-sans-bold text-[17px] text-white">
             {(profile?.display_name ?? "?").charAt(0).toUpperCase()}
@@ -147,7 +150,7 @@ export default function MoreScreen() {
         <Text className="mb-1 pl-0.5 text-[10px] font-sans-semibold uppercase tracking-wide text-foreground/25">
           All Features
         </Text>
-        <Card className="overflow-hidden rounded-[16px] border-foreground/[0.08]">
+        <Card className="overflow-hidden rounded-[10px] border-foreground/[0.08]">
           {FEATURES.map((f, i) => (
             <AnimatedPressable
               key={f.key}

@@ -115,7 +115,7 @@ export function SocialAuthButtons({ onError }: { onError: (message: string) => v
           {busyProvider === "apple" ? (
             <View
               pointerEvents="none"
-              className="absolute inset-0 items-center justify-center rounded-[16px] bg-white"
+              className="absolute inset-0 items-center justify-center rounded-[10px] bg-white"
             >
               <ActivityIndicator color="#000000" />
             </View>
@@ -126,7 +126,7 @@ export function SocialAuthButtons({ onError }: { onError: (message: string) => v
       <Pressable
         onPress={handleGoogle}
         disabled={busyProvider !== null}
-        className="h-[54px] flex-row items-center justify-center gap-2.5 rounded-[16px] border border-foreground/15 bg-foreground/[0.04]"
+        className="h-[54px] flex-row items-center justify-center gap-2.5 rounded-[10px] border border-foreground/15 bg-foreground/[0.04]"
         style={{ opacity: busyProvider && busyProvider !== "google" ? 0.5 : 1 }}
       >
         {busyProvider === "google" ? (

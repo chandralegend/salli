@@ -92,7 +92,7 @@ export function ApprovalGateCard({
   }
 
   return (
-    <View className="rounded-[18px] border border-foreground/[0.12] bg-card p-3.5">
+    <View className="rounded-[12px] border border-foreground/[0.12] bg-card p-3.5">
       <View className="mb-2.5 flex-row items-start gap-2.5">
         <View className="h-8 w-8 items-center justify-center rounded-full bg-foreground/[0.08]">
           <ShieldCheck size={15} color={colors.accent} strokeWidth={2} />
@@ -106,7 +106,7 @@ export function ApprovalGateCard({
       </View>
 
       {fields.length ? (
-        <View className="mb-3 gap-2 rounded-[12px] bg-foreground/[0.04] px-3 py-2.5">
+        <View className="mb-3 gap-2 rounded-[8px] bg-foreground/[0.04] px-3 py-2.5">
           {fields.map((f) => (
             <View key={f.label} className="flex-row items-center justify-between gap-3">
               <View className="flex-row items-center gap-1.5">

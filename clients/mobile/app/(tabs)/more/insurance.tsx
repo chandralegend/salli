@@ -70,20 +70,23 @@ export default function InsuranceScreen() {
 
   return (
     <View className="flex-1">
-      <PageShell>
-        <ScreenHeader
-          title="Insurance"
-          back
-          trailing={
-            <Pressable
-              onPress={openAdd}
-              className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
-            >
-              <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
-            </Pressable>
-          }
-        />
-
+      <PageShell
+        animateOn={tab}
+        header={
+          <ScreenHeader
+            title="Insurance"
+            back
+            trailing={
+              <Pressable
+                onPress={openAdd}
+                className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
+              >
+                <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
+              </Pressable>
+            }
+          />
+        }
+      >
         {/* hero — coverage vs gap */}
         <View className="px-4 pt-3">
           <Card className="bg-salli-navy-card p-[18px]">
@@ -150,7 +153,7 @@ export default function InsuranceScreen() {
               activePolicies.map((p) => (
                 <Pressable key={p.id} onPress={() => openEdit(p)}>
                   <Card className="flex-row items-center gap-2.5 p-3.5">
-                    <View className="h-9 w-9 items-center justify-center rounded-[11px] border border-salli-accent/20 bg-salli-accent/[0.12]">
+                    <View className="h-9 w-9 items-center justify-center rounded-[8px] border border-salli-accent/20 bg-salli-accent/[0.12]">
                       <Shield size={15} color={colors.accent} strokeWidth={2} />
                     </View>
                     <View className="flex-1">

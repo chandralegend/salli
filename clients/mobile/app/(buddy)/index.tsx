@@ -96,7 +96,7 @@ export default function BuddyScreen() {
         {messages.length === 0 ? (
           <View className="flex-1 justify-end px-4 pb-3">
             <View style={chatColumnStyle}>
-              <View className="max-w-[78%] rounded-[20px] rounded-bl-[6px] px-4 py-3" style={{ backgroundColor: colors.bubbleAgent }}>
+              <View className="max-w-[78%] rounded-[14px] rounded-bl-[6px] px-4 py-3" style={{ backgroundColor: colors.bubbleAgent }}>
                 <Text className="text-[14px] leading-5 text-foreground">{WELCOME_MESSAGE}</Text>
               </View>
             </View>
@@ -111,7 +111,7 @@ export default function BuddyScreen() {
               item.role === "user" ? (
                 <View className="flex-row justify-end">
                   <View
-                    className="max-w-[78%] rounded-[20px] rounded-br-[6px] px-4 py-3"
+                    className="max-w-[78%] rounded-[14px] rounded-br-[6px] px-4 py-3"
                     style={{ backgroundColor: colors.bubbleUser }}
                   >
                     <Text className="text-[14px] leading-5 text-foreground">{item.content}</Text>
@@ -132,7 +132,7 @@ export default function BuddyScreen() {
                       ) : (
                         <View
                           key={i}
-                          className="max-w-[78%] rounded-[20px] rounded-bl-[6px] px-4 py-3"
+                          className="max-w-[78%] rounded-[14px] rounded-bl-[6px] px-4 py-3"
                           style={{ backgroundColor: colors.bubbleAgent }}
                         >
                           <AssistantMarkdown content={part.content} />
@@ -159,7 +159,7 @@ export default function BuddyScreen() {
 
         <View className="px-3.5 pt-2" style={{ paddingBottom: insets.bottom + 16 }}>
           <View
-            className="flex-row items-center gap-2 rounded-[24px] border border-foreground/10 bg-card py-1.5 pl-2 pr-1.5"
+            className="flex-row items-center gap-2 rounded-[16px] border border-foreground/10 bg-card py-1.5 pl-2 pr-1.5"
             style={chatColumnStyle}
           >
             <Pressable className="h-9 w-9 items-center justify-center" accessibilityLabel="Attach a file">

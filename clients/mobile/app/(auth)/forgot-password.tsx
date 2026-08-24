@@ -61,7 +61,7 @@ export default function ForgotPasswordScreen() {
       ) : (
         <View className="gap-2.5">
           <TextField
-            className="rounded-[16px] px-[18px] py-[14px]"
+            className="rounded-[10px] px-[18px] py-[14px]"
             label="Email"
             value={email}
             onChangeText={setEmail}

@@ -60,7 +60,7 @@ export function ModeChoiceStep({
           >
             <View
               className={cn(
-                "h-10 w-10 items-center justify-center rounded-[12px]",
+                "h-10 w-10 items-center justify-center rounded-[8px]",
                 active ? "bg-salli-accent" : "bg-foreground/[0.08]",
               )}
             >

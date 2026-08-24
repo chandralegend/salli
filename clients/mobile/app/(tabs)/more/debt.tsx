@@ -166,18 +166,24 @@ export default function DebtScreen() {
 
   return (
     <View className="flex-1">
-      <PageShell>
-        <ScreenHeader
-          title="Debt"
-          back
-          trailing={
-            <Pressable onPress={openAdd} className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent">
-              <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
-            </Pressable>
-          }
-        />
+      <PageShell
+        animateOn={tab}
+        header={
+          <>
+            <ScreenHeader
+              title="Debt"
+              back
+              trailing={
+                <Pressable onPress={openAdd} className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent">
+                  <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
+                </Pressable>
+              }
+            />
 
-        <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
+            <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
+          </>
+        }
+      >
 
         {allDebts.length === 0 ? (
           <View className="items-center gap-2 px-8 pt-16">
@@ -685,7 +691,7 @@ function AddEditDebtDrawer({
       </View>
 
       {principal && aprPct ? (
-        <View className="mb-4 flex-row items-center justify-between rounded-[12px] border border-foreground/[0.08] bg-card px-3.5 py-2.5">
+        <View className="mb-4 flex-row items-center justify-between rounded-[8px] border border-foreground/[0.08] bg-card px-3.5 py-2.5">
           <Text className="text-[12px] text-foreground/50">Interest / mo (approx)</Text>
           <Text className="font-sans-bold text-[14px] text-foreground">
             Rs. {formatLKR((principalNum * (aprNum / 100)) / 12, 0)}

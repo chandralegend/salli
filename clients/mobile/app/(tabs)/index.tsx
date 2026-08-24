@@ -86,33 +86,39 @@ export default function DashboardScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <SalliBackground intensity="subtle" />
-      <PageShell transparent refreshControl={refreshControl}>
-        <View className="flex-row items-center px-4 pt-1">
-          {/* Fixed-width gutters (matching the icon group's width) so the
-              centered date is centered on the whole row, not just the
-              leftover space next to the single avatar button. */}
-          <View style={{ width: 80 }} className="items-start">
-            <TourTarget id="dashboard-avatar">
-              <AvatarMoreButton initial="D" />
-            </TourTarget>
+      <PageShell
+        transparent
+        refreshControl={refreshControl}
+        header={
+          <View className="flex-row items-center px-4 pt-1">
+            {/* Fixed-width gutters (matching the icon group's width) so the
+                centered date is centered on the whole row, not just the
+                leftover space next to the single avatar button. */}
+            <View style={{ width: 80 }} className="items-start">
+              {/* The TourTarget rides along with the button it spotlights — the
+                  tour measures this element's on-screen position. */}
+              <TourTarget id="dashboard-avatar">
+                <AvatarMoreButton initial="D" />
+              </TourTarget>
+            </View>
+            <View className="flex-1 flex-row items-center justify-center gap-2.5">
+              <Text className="font-sans-semibold text-[14px] text-foreground">{currentPeriodLabel}</Text>
+            </View>
+            <View className="flex-row gap-2">
+              <IconButton
+                icon={Bell}
+                onPress={() => router.push("/(tabs)/more/reminders")}
+                accessibilityLabel="Reminders"
+              />
+              <IconButton
+                icon={Settings}
+                onPress={() => router.push("/(tabs)/more/settings")}
+                accessibilityLabel="Settings"
+              />
+            </View>
           </View>
-          <View className="flex-1 flex-row items-center justify-center gap-2.5">
-            <Text className="font-sans-semibold text-[14px] text-foreground">{currentPeriodLabel}</Text>
-          </View>
-          <View className="flex-row gap-2">
-            <IconButton
-              icon={Bell}
-              onPress={() => router.push("/(tabs)/more/reminders")}
-              accessibilityLabel="Reminders"
-            />
-            <IconButton
-              icon={Settings}
-              onPress={() => router.push("/(tabs)/more/settings")}
-              accessibilityLabel="Settings"
-            />
-          </View>
-        </View>
-
+        }
+      >
         <View className="items-center px-6 pb-5 pt-4">
           <Text className="mb-1.5 text-[12px] font-sans-medium uppercase tracking-wide text-foreground/45">
             Net Worth
@@ -139,7 +145,7 @@ export default function DashboardScreen() {
             hairline-background container with 1px gaps between flat cells,
             rather than four individually-bordered tiles. */}
         <View className="px-4 pb-3.5">
-          <View className="overflow-hidden rounded-[14px] bg-foreground/[0.06]" style={{ gap: 1 }}>
+          <View className="overflow-hidden rounded-[10px] bg-foreground/[0.06]" style={{ gap: 1 }}>
             <View className="flex-row" style={{ gap: 1 }}>
               <View className="flex-1 bg-card p-4">
                 <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">
@@ -224,7 +230,7 @@ export default function DashboardScreen() {
                   <ChevronRight size={14} color={colors.mutedForeground} strokeWidth={2} />
                 </View>
               </View>
-            <View className="flex-row overflow-hidden rounded-[12px] bg-foreground/[0.06]" style={{ gap: 1 }}>
+            <View className="flex-row overflow-hidden rounded-[8px] bg-foreground/[0.06]" style={{ gap: 1 }}>
               <View className="flex-1 bg-muted px-3 py-2.5">
                 <Text className="mb-1 text-[10px] font-sans-medium tracking-wide text-foreground/35">SPENT</Text>
                 <Text className="font-sans-bold text-[15px] tracking-tight text-foreground">
@@ -260,8 +266,8 @@ export default function DashboardScreen() {
             <View className="gap-2">
               {topAccounts.map((acc) => (
                 <AnimatedPressable key={acc.id} onPress={() => setSelectedAccountId(acc.id)}>
-                  <Card className="flex-row items-center gap-3 rounded-[16px] border-foreground/[0.08] p-3.5">
-                    <View className="h-10 w-10 items-center justify-center rounded-[12px] bg-salli-accent">
+                  <Card className="flex-row items-center gap-3 rounded-[10px] border-foreground/[0.08] p-3.5">
+                    <View className="h-10 w-10 items-center justify-center rounded-[8px] bg-salli-accent">
                       <Text className="font-sans-bold text-[16px] text-white">{acc.name.charAt(0)}</Text>
                     </View>
                     <View className="flex-1">
@@ -312,9 +318,9 @@ export default function DashboardScreen() {
                 return (
                   <AnimatedPressable key={entry.id} onPress={() => setSelectedEntry(entry)}>
                   <Card
-                    className="flex-row items-center gap-2.5 rounded-[16px] border-foreground/[0.08] p-3"
+                    className="flex-row items-center gap-2.5 rounded-[10px] border-foreground/[0.08] p-3"
                   >
-                    <View className="h-[38px] w-[38px] items-center justify-center rounded-[12px] bg-foreground/[0.06]">
+                    <View className="h-[38px] w-[38px] items-center justify-center rounded-[8px] bg-foreground/[0.06]">
                       <EntryIcon
                         size={17}
                         color={isIncome ? colors.accent : colors.mutedForeground}

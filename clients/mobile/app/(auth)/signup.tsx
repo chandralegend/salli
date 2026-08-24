@@ -70,7 +70,7 @@ export default function SignupScreen() {
           {isSupabaseConfigured() ? <SocialAuthButtons onError={setError} /> : null}
 
           <TextField
-            className="rounded-[16px] px-[18px] py-[14px]"
+            className="rounded-[10px] px-[18px] py-[14px]"
             label="Email"
             value={email}
             onChangeText={setEmail}
@@ -80,7 +80,7 @@ export default function SignupScreen() {
             placeholder="you@example.com"
           />
           <TextField
-            className="rounded-[16px] px-[18px] py-[14px]"
+            className="rounded-[10px] px-[18px] py-[14px]"
             label="Password"
             optionalHint="min 8 characters"
             value={password}

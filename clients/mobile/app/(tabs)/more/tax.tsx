@@ -71,7 +71,7 @@ function bandUsage(band: string, taxableInBand: string): { status: BandStatus; d
 function Disclaimer({ text }: { text: string }) {
   const colors = useThemeColors();
   return (
-    <View className="mt-2.5 flex-row items-start gap-2 rounded-[12px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
+    <View className="mt-2.5 flex-row items-start gap-2 rounded-[8px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
       <Info size={13} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
       <Text className="flex-1 text-[11px] leading-4 text-foreground/30">{text}</Text>
     </View>
@@ -88,14 +88,20 @@ export default function TaxScreen() {
   const currentPack = packs.data?.find((p) => p.year === CURRENT_YEAR);
 
   return (
-    <PageShell>
-      <View className="px-5 pt-2.5">
-        <TourTarget id="tax-header">
-          <ScreenHeader title="Tax" back />
-        </TourTarget>
-      </View>
-
-      <Tabs items={TABS} value={tab} onChange={setTab} className="mt-3" />
+    <PageShell
+      animateOn={tab}
+      header={
+        // The TourTarget travels with the header — the onboarding tour measures
+        // this element's position on screen, so leaving it behind in the scroll
+        // area would spotlight an empty rectangle.
+        <>
+          <TourTarget id="tax-header">
+            <ScreenHeader title="Tax" back />
+          </TourTarget>
+          <Tabs items={TABS} value={tab} onChange={setTab} className="mt-3" />
+        </>
+      }
+    >
 
       {!tax.data ? (
         <View className="items-center gap-3 px-8 pt-10">

@@ -136,11 +136,11 @@ export function AccountDetailModal({
                 </Pressable>
               </View>
               <View className="flex-row gap-2">
-                <View className="flex-1 rounded-[11px] bg-white/[0.06] px-3 py-2.5">
+                <View className="flex-1 rounded-[8px] bg-white/[0.06] px-3 py-2.5">
                   <Text className="mb-0.5 text-[10px] text-white/35">Money in ({period})</Text>
                   <Text className="font-sans-bold text-[14px] text-white">Rs. {formatLKRAbbrev(moneyIn)}</Text>
                 </View>
-                <View className="flex-1 rounded-[11px] bg-white/[0.06] px-3 py-2.5">
+                <View className="flex-1 rounded-[8px] bg-white/[0.06] px-3 py-2.5">
                   <Text className="mb-0.5 text-[10px] text-white/35">Money out ({period})</Text>
                   <Text className="font-sans-bold text-[14px] text-white/60">Rs. {formatLKRAbbrev(moneyOut)}</Text>
                 </View>

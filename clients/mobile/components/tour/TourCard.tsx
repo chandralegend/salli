@@ -36,7 +36,7 @@ export function TourCard({
 
   return (
     <View
-      className="absolute inset-x-3 rounded-[20px] border border-foreground/10 bg-card p-4"
+      className="absolute inset-x-3 rounded-[14px] border border-foreground/10 bg-card p-4"
       style={placement === "top" ? { top: insets.top + 12 } : { bottom: insets.bottom + 12 }}
     >
       <View className="mb-2 flex-row items-center justify-between">

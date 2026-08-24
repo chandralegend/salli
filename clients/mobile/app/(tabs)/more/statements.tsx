@@ -125,23 +125,29 @@ export default function StatementsScreen() {
 
   return (
     <View className="flex-1">
-      <PageShell contentContainerStyle={showPostBar ? { paddingBottom: 180 } : undefined}>
-        <ScreenHeader
-          title="Statements"
-          back
-          trailing={
-            <Pressable
-              onPress={() => setMenuOpen(true)}
-              accessibilityRole="button"
-              accessibilityLabel="Options"
-              className="h-[34px] w-[34px] items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.07]"
-            >
-              <MoreVertical size={15} color={colors.mutedForeground} strokeWidth={2} />
-            </Pressable>
-          }
-        />
-
-        <Tabs items={TABS} value={tab} onChange={setTab} className="mt-3" />
+      <PageShell
+        animateOn={tab}
+        contentContainerStyle={showPostBar ? { paddingBottom: 180 } : undefined}
+        header={
+          <>
+            <ScreenHeader
+              title="Statements"
+              back
+              trailing={
+                <Pressable
+                  onPress={() => setMenuOpen(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Options"
+                  className="h-[34px] w-[34px] items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.07]"
+                >
+                  <MoreVertical size={15} color={colors.mutedForeground} strokeWidth={2} />
+                </Pressable>
+              }
+            />
+            <Tabs items={TABS} value={tab} onChange={setTab} className="mt-3" />
+          </>
+        }
+      >
 
         {quotaHit ? <QuotaBanner metric="statement_uploads" className="mx-4 mt-3" /> : null}
 
@@ -401,7 +407,7 @@ function ReviewTab({
                         matchedRow && !isApproved ? "bg-foreground/15" : "bg-salli-accent",
                       )}
                     />
-                    <View className="h-9 w-9 items-center justify-center rounded-[11px] border border-salli-accent/20 bg-salli-accent/[0.12]">
+                    <View className="h-9 w-9 items-center justify-center rounded-[8px] border border-salli-accent/20 bg-salli-accent/[0.12]">
                       <CreditCard size={15} color={colors.accent} strokeWidth={2} />
                     </View>
                     <View className="flex-1">
@@ -547,7 +553,7 @@ function HistoryTab({
         </View>
       </Card>
 
-      <View className="mt-2.5 flex-row items-start gap-2 rounded-[12px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
+      <View className="mt-2.5 flex-row items-start gap-2 rounded-[8px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
         <Info size={13} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
         <Text className="flex-1 text-[11px] leading-4 text-foreground/30">
           Posted entries live in your Ledger. A persistent statement history isn't tracked by the server yet.
@@ -607,7 +613,7 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
               <View className={cn("h-11 w-[3px] rounded-pill", active ? "bg-salli-accent" : "bg-foreground/12")} />
               <View
                 className={cn(
-                  "h-10 w-10 items-center justify-center rounded-[11px]",
+                  "h-10 w-10 items-center justify-center rounded-[8px]",
                   active ? "border border-salli-accent/15 bg-salli-accent/10" : "bg-foreground/[0.06]",
                 )}
               >
@@ -652,7 +658,7 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
         })}
       </View>
 
-      <View className="mt-3 flex-row items-start gap-2 rounded-[12px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
+      <View className="mt-3 flex-row items-start gap-2 rounded-[8px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
         <Info size={13} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
         <Text className="flex-1 text-[11px] leading-4 text-foreground/30">
           Each account maps to a ledger asset code so imported transactions post automatically.
@@ -691,7 +697,7 @@ function OptionsMenu({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable className="flex-1 bg-black/50" onPress={onClose}>
         <View
-          className="absolute right-4 top-[104px] w-[236px] overflow-hidden rounded-[16px] border border-foreground/12 bg-card"
+          className="absolute right-4 top-[104px] w-[236px] overflow-hidden rounded-[10px] border border-foreground/12 bg-card"
           style={{ shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 12 }}
         >
           {items.map((item, i) => (

@@ -42,20 +42,18 @@ export default function AuditLogScreen() {
   );
 
   return (
-    <PageShell>
-      <ScreenHeader title="Audit Log" back />
-
+    <PageShell header={<ScreenHeader title="Audit Log" back />}>
       {/* summary strip */}
       <View className="mt-3 flex-row gap-2 px-4">
-        <View className="flex-1 items-center rounded-[16px] border border-foreground/[0.08] bg-card px-2.5 py-3">
+        <View className="flex-1 items-center rounded-[10px] border border-foreground/[0.08] bg-card px-2.5 py-3">
           <Text className="font-sans-bold text-[22px] leading-none text-foreground">{all.length}</Text>
           <Text className="mt-1 text-[10px] font-sans-medium text-foreground/40">Total</Text>
         </View>
-        <View className="flex-1 items-center rounded-[16px] border border-foreground/[0.08] bg-card px-2.5 py-3">
+        <View className="flex-1 items-center rounded-[10px] border border-foreground/[0.08] bg-card px-2.5 py-3">
           <Text className="font-sans-bold text-[22px] leading-none text-salli-accent">{approved}</Text>
           <Text className="mt-1 text-[10px] font-sans-medium text-foreground/40">Approved</Text>
         </View>
-        <View className="flex-1 items-center rounded-[16px] border border-foreground/[0.08] bg-card px-2.5 py-3">
+        <View className="flex-1 items-center rounded-[10px] border border-foreground/[0.08] bg-card px-2.5 py-3">
           <Text className={cn("font-sans-bold text-[22px] leading-none", denied > 0 ? "text-destructive" : "text-foreground")}>
             {denied}
           </Text>
@@ -93,7 +91,7 @@ export default function AuditLogScreen() {
             <Card key={i} className="flex-row gap-2.5 p-3.5">
               <View
                 className={cn(
-                  "mt-0.5 h-9 w-9 items-center justify-center rounded-[11px]",
+                  "mt-0.5 h-9 w-9 items-center justify-center rounded-[8px]",
                   e.decision === "approved" ? "bg-salli-accent/[0.12]" : "bg-destructive/[0.12]",
                 )}
               >

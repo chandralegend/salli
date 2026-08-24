@@ -1,7 +1,7 @@
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { LayoutGrid, PiggyBank, Plus, Table, TrendingUp } from "lucide-react-native";
+import { LayoutGrid, Plus, Sparkles, Table, TrendingUp } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,7 +17,9 @@ import { useAppTheme, useThemeColors } from "../../lib/theme";
 const ROUTE_META: Record<string, { Icon: typeof LayoutGrid; label: string }> = {
   index: { Icon: LayoutGrid, label: "Home" },
   ledger: { Icon: Table, label: "Ledger" },
-  agent: { Icon: PiggyBank, label: "Salli AI" },
+  // Sparkles, not PiggyBank: a piggy bank reads as "savings", which is a
+  // different feature entirely — this tab opens the AI assistant.
+  agent: { Icon: Sparkles, label: "Salli AI" },
   "financial-independence": { Icon: TrendingUp, label: "Freedom" },
 };
 

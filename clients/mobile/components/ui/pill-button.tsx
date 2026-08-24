@@ -36,7 +36,12 @@ export function PillButton({
       disabled={disabled || loading}
       haptic={variant === "secondary" ? "none" : "light"}
       className={cn(
-        "h-[50px] flex-row items-center justify-center gap-2 rounded-pill",
+        // px-7 so the pill has breathing room even when its parent doesn't
+        // stretch it. Most usages sit in a full-width container and look fine
+        // without it, but under a shrink-to-fit parent (`items-center`) the pill
+        // collapsed onto the text with no side padding — see the Tax empty
+        // state. Invisible in the stretched case, correct in both.
+        "h-[50px] flex-row items-center justify-center gap-2 rounded-pill px-7",
         variant === "secondary" && "border border-foreground/10 bg-foreground/5",
         (disabled || loading) && "opacity-50",
         className,

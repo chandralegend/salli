@@ -4,8 +4,8 @@ import {
   ArrowUpRight,
   Bell,
   ChevronRight,
-  PiggyBank,
   Settings,
+  Sparkles,
   Upload,
 } from "lucide-react-native";
 import { useEffect, useState } from "react";
@@ -207,7 +207,7 @@ export default function DashboardScreen() {
             haptic="light"
             className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control bg-salli-accent"
           >
-            <PiggyBank size={13} color="rgba(255,255,255,0.8)" strokeWidth={1.8} />
+            <Sparkles size={13} color="rgba(255,255,255,0.8)" strokeWidth={1.8} />
             <Text className="font-sans-semibold text-[11px] text-white">Ask Salli AI</Text>
           </AnimatedPressable>
         </View>

@@ -28,6 +28,7 @@ from salli.adapters.db.models import (
     DocumentORM,
     FireStrategyORM,
     FiScoreORM,
+    GoalAllocationORM,
     GoalORM,
     HoldingORM,
     InsuranceTargetORM,
@@ -1274,6 +1275,79 @@ class SQLGoalRepository(GoalRepository):
         if r:
             await self._s.delete(r)
 
+    # ── allocations ──────────────────────────────────────────────────────────
+
+    async def list_allocations(
+        self, user_id: str, goal_id: str | None = None
+    ) -> list[dict[str, Any]]:
+        stmt = select(GoalAllocationORM).where(GoalAllocationORM.user_id == user_id)
+        if goal_id:
+            stmt = stmt.where(GoalAllocationORM.goal_id == goal_id)
+        rows = (await self._s.execute(stmt)).scalars().all()
+        return [
+            {
+                "id": r.id,
+                "goal_id": r.goal_id,
+                "account_id": r.account_id,
+                "allocated_minor": r.allocated_minor,
+            }
+            for r in rows
+        ]
+
+    async def set_allocation(
+        self, user_id: str, goal_id: str, account_id: str, allocated_minor: int
+    ) -> None:
+        """Create, update, or clear one goal's claim on one account.
+
+        An allocation of zero removes the claim rather than storing a row that
+        means nothing — otherwise "un-earmark this account" would leave a
+        phantom entry in every listing.
+        """
+        owns = (
+            await self._s.execute(
+                select(GoalORM.id).where(GoalORM.id == goal_id, GoalORM.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+        if owns is None:
+            raise ValueError("Goal not found")
+
+        account = (
+            await self._s.execute(
+                select(AccountORM.id).where(
+                    AccountORM.id == account_id, AccountORM.user_id == user_id
+                )
+            )
+        ).scalar_one_or_none()
+        if account is None:
+            raise ValueError("Account not found")
+
+        existing = (
+            await self._s.execute(
+                select(GoalAllocationORM).where(
+                    GoalAllocationORM.goal_id == goal_id,
+                    GoalAllocationORM.account_id == account_id,
+                )
+            )
+        ).scalar_one_or_none()
+
+        if allocated_minor <= 0:
+            if existing:
+                await self._s.delete(existing)
+            return
+
+        if existing:
+            existing.allocated_minor = allocated_minor
+        else:
+            self._s.add(
+                GoalAllocationORM(
+                    id=str(uuid.uuid4()),
+                    user_id=user_id,
+                    goal_id=goal_id,
+                    account_id=account_id,
+                    allocated_minor=allocated_minor,
+                )
+            )
+
 
 class SQLFiScoreRepository(FiScoreRepository):
     def __init__(self, session: AsyncSession) -> None:
@@ -2152,6 +2226,11 @@ class SQLDataPortabilityRepository(DataPortabilityRepository):
         await _delete(SubscriptionORM, SubscriptionORM.user_id)
         await _delete(UsageCounterORM, UsageCounterORM.user_id)
         await _delete(UserLlmCredentialORM, UserLlmCredentialORM.user_id)
+        # Allocations cascade from both fi_goals and accounts, but both of
+        # those are deleted in this same sweep and a cascade only fires if the
+        # parent row is still there to cascade from — so delete them explicitly
+        # and first.
+        await _delete(GoalAllocationORM, GoalAllocationORM.user_id)
         await _delete(GoalORM, GoalORM.user_id)
         await _delete(FiScoreORM, FiScoreORM.user_id)
         await _delete(FireStrategyORM, FireStrategyORM.user_id)

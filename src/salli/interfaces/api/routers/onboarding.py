@@ -311,8 +311,9 @@ async def submit_risk_questionnaire(
 class OnboardingGoalItem(BaseModel):
     name: str
     kind: str = "custom"
-    target_amount: float = 0
-    current_amount: float = 0
+    # Decimal, not float — money. `current_amount` is gone: goal progress is
+    # derived from allocations against real accounts, never declared up front.
+    target_amount: Decimal = Decimal(0)
     target_date: str | None = None
     priority: int = 2
 

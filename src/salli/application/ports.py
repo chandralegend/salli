@@ -516,6 +516,13 @@ class BillingPort(ABC):
 
 
 class GoalRepository(ABC):
+    """Goals and their claims on real accounts.
+
+    Allocation methods live here rather than on their own repository because a
+    claim has no meaning apart from the goal that makes it, and both are written
+    inside the same unit of work.
+    """
+
     @abstractmethod
     async def save(self, user_id: str, goal: dict[str, Any]) -> str: ...
 
@@ -531,6 +538,18 @@ class GoalRepository(ABC):
     @abstractmethod
     async def delete(self, user_id: str, goal_id: str) -> None: ...
 
+
+    @abstractmethod
+    async def list_allocations(self, user_id: str, goal_id: str | None = None) -> list[Any]:
+        """Every claim this user's goals make on their accounts."""
+        ...
+
+    @abstractmethod
+    async def set_allocation(
+        self, user_id: str, goal_id: str, account_id: str, allocated_minor: int
+    ) -> None:
+        """Create, update, or (with zero) clear one goal's claim on one account."""
+        ...
 
 class FiScoreRepository(ABC):
     @abstractmethod

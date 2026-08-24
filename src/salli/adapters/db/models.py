@@ -543,6 +543,47 @@ class GoalORM(Base):
     __table_args__ = (Index("ix_fi_goals_user_active", "user_id", "is_active"),)
 
 
+class GoalAllocationORM(Base):
+    """One goal's claim on one account.
+
+    A goal used to carry `current_amount`, a number the user typed and had to
+    maintain by hand — nothing tied it to the ledger, so it drifted immediately.
+    An allocation is a claim on a *live* balance instead, so progress moves when
+    money moves and only when money moves.
+
+    Claims across one account may exceed its balance. That is a normal
+    unfunded plan rather than an error, so it is recorded and the shortfall
+    surfaced; `domain/fi/allocation.py` apportions the real balance by the
+    goal's priority.
+    """
+
+    __tablename__ = "goal_allocations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    goal_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("fi_goals.id", ondelete="CASCADE"), nullable=False
+    )
+    account_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False
+    )
+    allocated_minor: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+
+    __table_args__ = (
+        # One claim per (goal, account) — a second claim on the same pair is an
+        # edit of the first, not an addition.
+        UniqueConstraint("goal_id", "account_id", name="uq_goal_allocations_goal_account"),
+        CheckConstraint("allocated_minor >= 0", name="ck_goal_allocations_non_negative"),
+        Index("ix_goal_allocations_goal", "goal_id"),
+    )
+
+
 class FiScoreORM(Base):
     """Snapshot of a computed FI score (history for trend lines)."""
 

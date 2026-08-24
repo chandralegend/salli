@@ -66,17 +66,20 @@ async def score_history(user_id: CurrentUser, svc: AppServices):
 class GoalRequest(BaseModel):
     name: str
     kind: str = "custom"
-    target_amount: float = 0
-    current_amount: float = 0
+    # Decimal, not float — this is money, and the project's own invariant says
+    # so. `current_amount` is gone: progress is derived from allocations against
+    # real accounts, never typed in.
+    target_amount: Decimal = Decimal(0)
     target_date: str | None = None
+    # 1 high … 3 low. Decides which goal stays funded when one account is
+    # claimed by several.
     priority: int = 2
 
 
 class GoalUpdateRequest(BaseModel):
     name: str | None = None
     kind: str | None = None
-    target_amount: float | None = None
-    current_amount: float | None = None
+    target_amount: Decimal | None = None
     target_date: str | None = None
     priority: int | None = None
     is_active: bool | None = None
@@ -210,3 +213,37 @@ async def simulate_purchase(body: PurchaseRequest, user_id: CurrentUser, svc: Ap
         term_months=body.term_months,
         annual_interest_rate=body.annual_interest_rate,
     )
+
+
+# ── goal allocations ──────────────────────────────────────────────────────────
+#
+# An allocation earmarks part of a real account for a goal. Progress is derived
+# from what that account actually holds, so it moves when money moves — unlike
+# the old `current_amount`, which was a number the user typed and then had to
+# maintain by hand.
+#
+# One account can back several goals. When their claims exceed the balance the
+# shortfall is reported rather than rejected, and the balance is apportioned by
+# the goals' `priority`.
+
+
+class AllocationRequest(BaseModel):
+    account_id: str
+    allocated_amount: Decimal
+
+
+@router.get("/goals/{goal_id}/allocations")
+async def list_goal_allocations(goal_id: str, user_id: CurrentUser, svc: AppServices):
+    return {"allocations": await svc.fi.list_allocations(user_id, goal_id)}
+
+
+@router.put("/goals/{goal_id}/allocations")
+async def set_goal_allocation(
+    goal_id: str, body: AllocationRequest, user_id: CurrentUser, svc: AppServices
+):
+    """Earmark part of an account for this goal. An amount of 0 clears it."""
+    try:
+        await svc.fi.set_allocation(user_id, goal_id, body.account_id, body.allocated_amount)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+    return {"updated": True}

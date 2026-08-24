@@ -992,15 +992,21 @@ def fi_goals_list():
     table.add_column("Name")
     table.add_column("Kind")
     table.add_column("Target", justify="right")
-    table.add_column("Current", justify="right")
+    table.add_column("Earmarked", justify="right")
+    table.add_column("Funded", justify="right")
     table.add_column("Progress", justify="right")
     table.add_column("Target Date")
     for g in goals:
+        shortfall = g.get("shortfall", "0")
+        earmarked = g.get("allocated_amount", "0")
         table.add_row(
             str(g.get("id", ""))[:8],
             g.get("name", ""),
             g.get("kind", ""),
             g.get("target_amount", ""),
+            # A gap between earmarked and funded means the accounts backing this
+            # goal do not hold what was claimed against them.
+            f"[yellow]{earmarked}[/yellow]" if shortfall not in ("0", "") else earmarked,
             g.get("current_amount", ""),
             f"{g.get('progress', 0) * 100:.0f}%",
             str(g.get("target_date", "")),
@@ -1013,7 +1019,6 @@ def fi_goals_add(
     name: str = typer.Argument(..., help="Goal name"),
     kind: str = typer.Option("custom", "--kind"),
     target_amount: str = typer.Option(None, "--target-amount"),
-    current_amount: str = typer.Option(None, "--current-amount"),
     target_date: str = typer.Option(None, "--target-date", help="YYYY-MM-DD"),
     priority: int = typer.Option(2, "--priority"),
 ):
@@ -1022,8 +1027,6 @@ def fi_goals_add(
     data = {"name": name, "kind": kind, "priority": priority}
     if target_amount is not None:
         data["target_amount"] = target_amount
-    if current_amount is not None:
-        data["current_amount"] = current_amount
     if target_date is not None:
         data["target_date"] = target_date
     goal_id = asyncio.run(_services().fi.create_goal(user_id, data))
@@ -1035,7 +1038,6 @@ def fi_goals_update(
     goal_id: str = typer.Argument(...),
     name: str = typer.Option(None, "--name"),
     target_amount: str = typer.Option(None, "--target-amount"),
-    current_amount: str = typer.Option(None, "--current-amount"),
     target_date: str = typer.Option(None, "--target-date"),
     priority: int = typer.Option(None, "--priority"),
     is_active: bool = typer.Option(None, "--is-active/--is-inactive"),
@@ -1047,8 +1049,6 @@ def fi_goals_update(
         data["name"] = name
     if target_amount is not None:
         data["target_amount"] = target_amount
-    if current_amount is not None:
-        data["current_amount"] = current_amount
     if target_date is not None:
         data["target_date"] = target_date
     if priority is not None:
@@ -1074,6 +1074,54 @@ def fi_goals_delete(
     goal_id = _resolve_id(goals, goal_id, "goal")
     asyncio.run(_services().fi.delete_goal(user_id, goal_id))
     console.print(f"[green]Goal deleted:[/green] {goal_id}")
+
+
+@fi_goals_app.command("allocate")
+def fi_goals_allocate(
+    goal_id: str = typer.Argument(..., help="Goal id or unique prefix"),
+    account: str = typer.Argument(..., help="Account id, code, or unique name prefix"),
+    amount: str = typer.Argument(..., help="How much of that account is for this goal; 0 clears"),
+):
+    """
+    Earmark part of an account for a goal.
+
+    Progress is derived from what the account actually holds, so it moves when
+    money moves. One account can back several goals — if their claims exceed the
+    balance, the goals' priority decides who stays funded.
+    """
+    from decimal import Decimal
+
+    user_id = _require_user()
+    goals = asyncio.run(_services().fi.list_goals(user_id))
+    goal_id = _resolve_id(goals, goal_id, "goal")
+
+    accounts = asyncio.run(_services().ledger.list_accounts(user_id))
+    match = next(
+        (a for a in accounts if a.id == account or a.code == account),
+        None,
+    ) or next((a for a in accounts if a.name.lower().startswith(account.lower())), None)
+    if match is None:
+        console.print(f"[red]No account matching '{account}'.[/red]")
+        raise typer.Exit(1)
+
+    asyncio.run(_services().fi.set_allocation(user_id, goal_id, match.id, Decimal(amount)))
+    if Decimal(amount) <= 0:
+        console.print(f"[green]Cleared[/green] {match.name} from this goal.")
+    else:
+        console.print(f"[green]Earmarked[/green] {amount} of {match.name} for this goal.")
+
+    for g in asyncio.run(_services().fi.list_goals(user_id)):
+        if g["id"] == goal_id:
+            console.print(
+                f"  {g['name']}: earmarked {g['allocated_amount']}, "
+                f"actually funded {g['current_amount']} "
+                f"({g['progress'] * 100:.0f}% of {g['target_amount']})"
+            )
+            if g["shortfall"] not in ("0", ""):
+                console.print(
+                    f"  [yellow]Shortfall {g['shortfall']}[/yellow] — the accounts "
+                    "backing this goal do not hold what has been claimed against them."
+                )
 
 
 @fi_strategy_app.command("show")

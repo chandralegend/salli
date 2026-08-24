@@ -19,6 +19,7 @@ from typing import Any
 from salli.domain.accounting import ledger as ledger_ops
 from salli.domain.accounting.models import Account, Direction, StoredJournalEntry
 from salli.domain.fi import engine
+from salli.domain.fi.allocation import Claim, GoalFunding, compute_goal_funding
 from salli.domain.fi.models import AllocationBucket, FinancialSnapshot, FireStrategy, FiScore
 from salli.domain.fi.packs import registry
 from salli.domain.money import to_minor
@@ -150,6 +151,15 @@ def _score_to_dict(score: FiScore, projected_fi_date: str | None) -> dict[str, A
     return d
 
 
+
+def _money(value: Decimal) -> str:
+    """Money as a fixed 2-decimal string.
+
+    Apportioned amounts are quantized to cents while exact ones are not, so
+    without this a goal could report "500000.00" alongside a bare "0".
+    """
+    return str(value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
 class FiService:
     def __init__(self, uow_factory: Callable[[], Any], credentials: Any = None) -> None:
         self._uow_factory = uow_factory
@@ -180,6 +190,7 @@ class FiService:
                 user_id, from_date=_months_ago_iso(12)
             )
             goals = await uow.goals.list(user_id, active_only=True)
+            funding = await self._goal_funding(uow, user_id)
 
         acc_map = {a.id: a for a in accounts}
         balances = ledger_ops.trial_balance(all_entries)  # {account_id: signed}
@@ -233,23 +244,23 @@ class FiService:
         monthly_income = income / months_observed
         monthly_expenses = expenses / months_observed
 
-        # Weighted goal progress (current/target), active goals with a target.
+        # Weighted goal progress, from what the goal's accounts actually hold.
         #
-        # Goals with no funding recorded at all are excluded rather than scored
-        # zero. Goal progress carries 15% of the Freedom Score, and neither
-        # client currently exposes any way to record funding against a goal — so
-        # scoring an unfunded goal as 0% meant that merely *creating* a goal cost
-        # the user up to 15 points with no in-product way to recover them.
-        # Punishing someone for setting a goal is precisely backwards.
+        # Goals with nothing allocated are excluded rather than scored zero.
+        # Goal progress carries 15% of the Freedom Score, so scoring an
+        # unearmarked goal as 0% would mean merely *creating* a goal cost up to
+        # 15 points — punishing someone for setting a goal, which is backwards.
         #
-        # `engine.compute` already drops the goals component and renormalises the
-        # remaining weights when `goal_progress` is None, so an all-unfunded set
-        # scores exactly as it would with no goals at all.
+        # `engine.compute` drops the goals component and renormalises the
+        # remaining weights when `goal_progress` is None, so a set of goals with
+        # no allocations scores exactly as having no goals at all.
         goal_progress: Decimal | None = None
         prog = [
-            min(Decimal(1), Decimal(g["current_amount_minor"]) / Decimal(g["target_amount_minor"]))
+            min(Decimal(1), funding[g["id"]].funded / (Decimal(g["target_amount_minor"]) / 100))
             for g in goals
-            if g.get("target_amount_minor", 0) > 0 and g.get("current_amount_minor", 0) > 0
+            if g.get("target_amount_minor", 0) > 0
+            and g["id"] in funding
+            and funding[g["id"]].funded > 0
         ]
         if prog:
             goal_progress = sum(prog, Decimal(0)) / Decimal(len(prog))
@@ -399,38 +410,104 @@ class FiService:
     # ── Goals ───────────────────────────────────────────────────────────────────
 
     @staticmethod
-    def _goal_view(g: dict[str, Any]) -> dict[str, Any]:
+    def _goal_view(g: dict[str, Any], funding: GoalFunding | None) -> dict[str, Any]:
+        """One goal, with progress derived from what its accounts actually hold.
+
+        `current_amount` is no longer the stored number. It is the sum of the
+        live balances earmarked to this goal, apportioned by priority where an
+        account is over-claimed — so it moves when money moves and only then.
+        """
         target = g.get("target_amount_minor", 0)
+        current = funding.funded if funding else Decimal(0)
+        claimed = funding.claimed if funding else Decimal(0)
         # Computed in Decimal (the score path already did); float only at the
         # JSON boundary, where this is a display ratio and not money.
         progress = (
-            min(Decimal(1), Decimal(g["current_amount_minor"]) / Decimal(target))
-            if target > 0
-            else Decimal(0)
+            min(Decimal(1), current / (Decimal(target) / 100)) if target > 0 else Decimal(0)
         )
         return {
             "id": g["id"],
             "name": g["name"],
             "kind": g["kind"],
-            "target_amount": str(Decimal(g["target_amount_minor"]) / 100),
-            "current_amount": str(Decimal(g["current_amount_minor"]) / 100),
+            "target_amount": _money(Decimal(g["target_amount_minor"]) / 100),
+            "current_amount": _money(current),
+            # What the user earmarked, vs what is actually behind it. A gap
+            # means the accounts backing this goal do not hold what was claimed
+            # — a normal unfunded plan, and something to show rather than hide.
+            "allocated_amount": _money(claimed),
+            "shortfall": _money(funding.shortfall if funding else Decimal(0)),
             "target_date": g.get("target_date"),
             "priority": g["priority"],
             "progress": float(progress.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)),
             "created_at": g.get("created_at"),
         }
 
+    async def _goal_funding(self, uow: Any, user_id: str) -> dict[str, GoalFunding]:
+        """Apportion live account balances across the claims made on them."""
+        goals = await uow.goals.list(user_id, active_only=True)
+        allocations = await uow.goals.list_allocations(user_id)
+        if not allocations:
+            return {}
+
+        entries = await uow.ledger.get_entries(user_id)
+        balances = ledger_ops.trial_balance(entries)
+        priority = {g["id"]: int(g.get("priority", 2)) for g in goals}
+        targets = {
+            g["id"]: Decimal(g.get("target_amount_minor", 0)) / 100
+            for g in goals
+            if g.get("target_amount_minor", 0) > 0
+        }
+        claims = [
+            Claim(
+                goal_id=a["goal_id"],
+                account_id=a["account_id"],
+                allocated=Decimal(a["allocated_minor"]) / 100,
+                priority=priority.get(a["goal_id"], 2),
+            )
+            for a in allocations
+            # A claim from a goal that is gone or archived should not consume
+            # balance that an active goal could be using.
+            if a["goal_id"] in priority
+        ]
+        return compute_goal_funding(claims, balances, targets)
+
     async def list_goals(self, user_id: str) -> list[dict[str, Any]]:
         async with self._uow_factory() as uow:
             goals = await uow.goals.list(user_id, active_only=True)
-        return [self._goal_view(g) for g in goals]
+            funding = await self._goal_funding(uow, user_id)
+        return [self._goal_view(g, funding.get(g["id"])) for g in goals]
+
+    async def list_allocations(
+        self, user_id: str, goal_id: str | None = None
+    ) -> list[dict[str, Any]]:
+        async with self._uow_factory() as uow:
+            rows = await uow.goals.list_allocations(user_id, goal_id)
+        return [
+            {
+                "goal_id": r["goal_id"],
+                "account_id": r["account_id"],
+                "allocated_amount": _money(Decimal(r["allocated_minor"]) / 100),
+            }
+            for r in rows
+        ]
+
+    async def set_allocation(
+        self, user_id: str, goal_id: str, account_id: str, allocated_amount: Decimal
+    ) -> None:
+        """Earmark part of an account for a goal. Zero clears the claim."""
+        async with self._uow_factory() as uow:
+            await uow.goals.set_allocation(
+                user_id, goal_id, account_id, to_minor(allocated_amount)
+            )
 
     async def create_goal(self, user_id: str, data: dict[str, Any]) -> str:
         goal = {
             "name": data["name"],
             "kind": data.get("kind", "custom"),
             "target_amount_minor": to_minor(Decimal(str(data.get("target_amount", 0)))),
-            "current_amount_minor": to_minor(Decimal(str(data.get("current_amount", 0)))),
+            # Progress is derived from allocations against real accounts, never
+            # typed in. The column stays at zero and is no longer read.
+            "current_amount_minor": 0,
             "target_date": data.get("target_date"),
             "priority": int(data.get("priority", 2)),
         }
@@ -444,8 +521,6 @@ class FiService:
                 updates[k] = data[k]
         if "target_amount" in data:
             updates["target_amount_minor"] = to_minor(Decimal(str(data["target_amount"])))
-        if "current_amount" in data:
-            updates["current_amount_minor"] = to_minor(Decimal(str(data["current_amount"])))
         async with self._uow_factory() as uow:
             await uow.goals.update(user_id, goal_id, updates)
 

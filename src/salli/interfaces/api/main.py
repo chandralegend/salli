@@ -41,6 +41,7 @@ from salli.interfaces.api.routers import (
     reports,
     statements,
     subscriptions,
+    tags,
     tax,
 )
 
@@ -147,6 +148,7 @@ def create_app() -> FastAPI:
     app.include_router(accounts.router)
     app.include_router(entries.router)
     app.include_router(ledger.router)
+    app.include_router(tags.router)
     app.include_router(tax.router)
     app.include_router(agent.router)
     app.include_router(documents.router)

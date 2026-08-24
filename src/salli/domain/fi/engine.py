@@ -502,29 +502,49 @@ def compute_surplus_breakdown(
     accounts: list[Any],
     months: int = 12,
 ) -> SurplusBreakdown:
-    """Group income and expenses by account name from trailing-N-month entries."""
-    from salli.domain.accounting.models import Direction
+    """Group income and expenses from trailing-N-month entries.
 
+    Expenses group by their `category` tag where one exists, falling back to the
+    account name. That fallback matters: onboarding seeds a single personal
+    expense account, so grouping by account alone gave every default user a
+    one-bar breakdown. Tags give the detail without forcing anyone to build a
+    chart of accounts before their spending is legible.
+
+    Amounts are netted signed rather than filtered by direction, so a reversing
+    entry cancels the original. Filtering on `Direction` counted the original and
+    ignored its reversal, permanently overstating whatever was reversed.
+    """
     acc_map = {a.id: a for a in accounts}
     income_by_source: dict[str, Decimal] = {}
     expense_by_category: dict[str, Decimal] = {}
+    expense_by_need: dict[str, Decimal] = {}
 
     for entry in entries:
         for p in entry.postings:
             acc = acc_map.get(p.account_id)
             if acc is None:
                 continue
-            amount = abs(p.base_signed)
-            if acc.type == "income" and p.direction == Direction.CREDIT:
-                income_by_source[acc.name] = income_by_source.get(acc.name, Decimal(0)) + amount
-            elif acc.type == "expense" and p.direction == Direction.DEBIT:
-                expense_by_category[acc.name] = (
-                    expense_by_category.get(acc.name, Decimal(0)) + amount
+            tags = getattr(p, "tags", {}) or {}
+            if acc.type == "income":
+                # CR increases income, so a reversing DR subtracts.
+                income_by_source[acc.name] = (
+                    income_by_source.get(acc.name, Decimal(0)) - p.base_signed
                 )
+            elif acc.type == "expense":
+                label = tags.get("category") or acc.name
+                expense_by_category[label] = (
+                    expense_by_category.get(label, Decimal(0)) + p.base_signed
+                )
+                need = tags.get("need")
+                if need:
+                    expense_by_need[need] = expense_by_need.get(need, Decimal(0)) + p.base_signed
 
     m = Decimal(months)
-    income_monthly = {k: _q2(v / m) for k, v in income_by_source.items()}
-    expense_monthly = {k: _q2(v / m) for k, v in expense_by_category.items()}
+    # Drop anything that nets to zero or below — a fully reversed category is
+    # not a category the user spent in.
+    income_monthly = {k: _q2(v / m) for k, v in income_by_source.items() if v > 0}
+    expense_monthly = {k: _q2(v / m) for k, v in expense_by_category.items() if v > 0}
+    need_monthly = {k: _q2(v / m) for k, v in expense_by_need.items() if v > 0}
 
     gross_income = sum(income_monthly.values(), Decimal(0))
     gross_expenses = sum(expense_monthly.values(), Decimal(0))
@@ -537,6 +557,7 @@ def compute_surplus_breakdown(
     return SurplusBreakdown(
         income_by_source=income_monthly,
         expense_by_category=top_expenses,
+        expense_by_need=need_monthly,
         gross_monthly_income=_q2(gross_income),
         gross_monthly_expenses=_q2(gross_expenses),
         monthly_surplus=_q2(surplus),

@@ -39,10 +39,12 @@ from salli.adapters.db.models import (
     ParsedTransactionORM,
     PolicyORM,
     PostingORM,
+    PostingTagORM,
     RecurringSubscriptionORM,
     ReminderORM,
     StatementORM,
     SubscriptionORM,
+    TagORM,
     TaxComputationORM,
     UsageCounterORM,
     UserLlmCredentialORM,
@@ -81,6 +83,7 @@ from salli.domain.accounting.models import (
     JournalEntry,
     Posting,
     StoredJournalEntry,
+    Tag,
 )
 from salli.domain.money import to_minor
 from salli.domain.tax.models import TaxComputation
@@ -118,6 +121,7 @@ def _posting_from_orm(row: PostingORM) -> Posting:
         currency=row.currency,
         fx_rate=Decimal(str(row.fx_rate)),
         fx_rate_source=row.fx_rate_source,
+        tags={link.kind: link.tag.slug for link in row.tag_links},
     )
 
 
@@ -131,6 +135,18 @@ def _entry_from_orm(row: JournalEntryORM) -> StoredJournalEntry:
         external_ref=row.external_ref,
         reversed_by=row.reversed_by,
         postings=[_posting_from_orm(p) for p in row.postings],
+    )
+
+
+def _tag_from_orm(row: TagORM) -> Tag:
+    return Tag(
+        id=row.id,
+        user_id=row.user_id,
+        slug=row.slug,
+        name=row.name,
+        kind=row.kind,  # type: ignore[arg-type]
+        color=row.color,
+        is_system=row.is_system,
     )
 
 
@@ -155,9 +171,100 @@ class SQLLedgerRepository(LedgerRepository):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def save_entry(self, user_id: str, entry: JournalEntry) -> str:
-        import uuid
+    async def _resolve_tags(
+        self, user_id: str, wanted: set[tuple[str, str]]
+    ) -> dict[tuple[str, str], TagORM]:
+        """(kind, slug) pairs → tag rows for this user, creating any that are missing.
 
+        Auto-creating keeps the write path honest: a client can tag a posting
+        "groceries" without a separate round-trip to define the tag first, and
+        two postings tagged the same way always land on the same row thanks to
+        the (user_id, kind, slug) unique constraint.
+
+        The caller supplies the axis, so nothing here has to guess which one a
+        slug belongs to.
+        """
+        if not wanted:
+            return {}
+        slugs = {slug for _, slug in wanted}
+        stmt = select(TagORM).where(TagORM.user_id == user_id, TagORM.slug.in_(slugs))
+        result = await self._session.execute(stmt)
+        found = {(row.kind, row.slug): row for row in result.scalars().all()}
+
+        for kind, slug in sorted(wanted):
+            if (kind, slug) in found:
+                continue
+            tag = TagORM(
+                id=str(uuid.uuid4()),
+                user_id=user_id,
+                slug=slug,
+                name=slug.replace("-", " ").replace("_", " ").title(),
+                kind=kind,
+                is_system=False,
+            )
+            self._session.add(tag)
+            found[(kind, slug)] = tag
+        return found
+
+    async def ensure_system_tags(
+        self, user_id: str, tags: list[tuple[str, str, str]]
+    ) -> None:
+        """Create the closed `need` axis for a user if it is not already there.
+
+        Idempotent: existing slugs are left untouched, including their names, so
+        a user who renamed "Wants" keeps that name across re-onboarding.
+        """
+        stmt = select(TagORM.slug).where(TagORM.user_id == user_id, TagORM.kind == "need")
+        result = await self._session.execute(stmt)
+        existing = set(result.scalars().all())
+        for slug, name, color in tags:
+            if slug in existing:
+                continue
+            self._session.add(
+                TagORM(
+                    id=str(uuid.uuid4()),
+                    user_id=user_id,
+                    slug=slug,
+                    name=name,
+                    kind="need",
+                    color=color,
+                    is_system=True,
+                )
+            )
+
+    async def list_tags(self, user_id: str, kind: str | None = None) -> list[Tag]:
+        stmt = select(TagORM).where(TagORM.user_id == user_id)
+        if kind:
+            stmt = stmt.where(TagORM.kind == kind)
+        result = await self._session.execute(stmt.order_by(TagORM.kind, TagORM.name))
+        return [_tag_from_orm(r) for r in result.scalars().all()]
+
+    async def set_posting_tags(self, user_id: str, posting_id: str, tags: dict[str, str]) -> None:
+        """Replace a posting's tags.
+
+        Retagging is the one thing about a posted entry that *is* mutable. The
+        money is immutable and corrections go through reversing entries, but a
+        miscategorised expense has to be fixable without rewriting history —
+        which is exactly why tags live in their own table.
+        """
+        owns = await self._session.execute(
+            select(PostingORM.id)
+            .join(JournalEntryORM, PostingORM.entry_id == JournalEntryORM.id)
+            .where(PostingORM.id == posting_id, JournalEntryORM.user_id == user_id)
+        )
+        if owns.scalar_one_or_none() is None:
+            raise ValueError("Posting not found")
+
+        await self._session.execute(
+            delete(PostingTagORM).where(PostingTagORM.posting_id == posting_id)
+        )
+        resolved = await self._resolve_tags(user_id, set(tags.items()))
+        for kind, slug in tags.items():
+            self._session.add(
+                PostingTagORM(posting_id=posting_id, kind=kind, tag_id=resolved[(kind, slug)].id)
+            )
+
+    async def save_entry(self, user_id: str, entry: JournalEntry) -> str:
         entry_id = str(uuid.uuid4())
         orm_entry = JournalEntryORM(
             id=entry_id,
@@ -167,7 +274,22 @@ class SQLLedgerRepository(LedgerRepository):
             source=entry.source,
             external_ref=entry.external_ref,
         )
-        orm_entry.postings = [_posting_to_orm(p, entry_id) for p in entry.postings]
+
+        wanted = {(kind, slug) for p in entry.postings for kind, slug in p.tags.items()}
+        tags = await self._resolve_tags(user_id, wanted)
+
+        orm_postings: list[PostingORM] = []
+        for p in entry.postings:
+            orm_p = _posting_to_orm(p, entry_id)
+            # `posting_id` is left to the relationship: the posting's own id
+            # comes from a column default and is still None until flush.
+            orm_p.tag_links = [
+                PostingTagORM(kind=kind, tag_id=tags[(kind, slug)].id)
+                for kind, slug in p.tags.items()
+            ]
+            orm_postings.append(orm_p)
+
+        orm_entry.postings = orm_postings
         self._session.add(orm_entry)
         return entry_id
 
@@ -2016,6 +2138,11 @@ class SQLDataPortabilityRepository(DataPortabilityRepository):
         await _delete(JournalEntryORM, JournalEntryORM.user_id)
         await _delete(StatementORM, StatementORM.user_id)
         await _delete(AccountORM, AccountORM.user_id)
+
+        # posting_tags has no user_id of its own — it cascades from postings,
+        # which cascade from journal_entries above. `tags` does carry a user_id
+        # and would otherwise survive account deletion, so it is deleted here.
+        await _delete(TagORM, TagORM.user_id)
 
         # Everything else has no FK ordering dependency on the tables above.
         await _delete(DocumentORM, DocumentORM.user_id)

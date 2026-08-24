@@ -131,6 +131,11 @@ class PostingORM(Base):
     base_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
     entry: Mapped[JournalEntryORM] = relationship("JournalEntryORM", back_populates="postings")
+    tag_links: Mapped[list[PostingTagORM]] = relationship(
+        "PostingTagORM",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
     __table_args__ = (
         CheckConstraint("direction IN (1, -1)", name="ck_postings_direction"),
@@ -138,6 +143,58 @@ class PostingORM(Base):
         Index("ix_postings_entry", "entry_id"),
         Index("ix_postings_account", "account_id"),
     )
+
+
+# ── Tags: a second classification axis, orthogonal to the chart of accounts ───
+#
+# The account tree answers "which ledger account did this hit". It cannot also
+# answer "was this essential" without duplicating the entire tree beneath every
+# answer, which is why a separate dimension exists.
+#
+# Tags are metadata *about* an immutable posting rather than part of it: the
+# money record is never edited, but a miscategorised expense must be fixable.
+
+
+class TagORM(Base):
+    __tablename__ = "tags"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    slug: Mapped[str] = mapped_column(String(60), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    # "category" (what it was for) | "need" (how necessary — the 50/30/20 split)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    color: Mapped[str] = mapped_column(String(20), nullable=False, default="")
+    # Seeded tags the reports reference by slug. Renameable, not deletable.
+    is_system: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "kind", "slug", name="uq_tags_user_kind_slug"),
+        CheckConstraint("kind IN ('category','need')", name="ck_tags_kind"),
+    )
+
+
+class PostingTagORM(Base):
+    __tablename__ = "posting_tags"
+
+    posting_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("postings.id", ondelete="CASCADE"), primary_key=True
+    )
+    # `kind` is denormalised from the tag so it can sit in the primary key.
+    # That is what enforces at most one tag per axis per posting — without it a
+    # posting could carry both "essential" and "discretionary" and its amount
+    # would be counted twice in any needs-vs-wants breakdown.
+    kind: Mapped[str] = mapped_column(String(20), primary_key=True)
+    tag_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("tags.id", ondelete="CASCADE"), nullable=False
+    )
+
+    tag: Mapped[TagORM] = relationship("TagORM", lazy="joined")
+
+    __table_args__ = (Index("ix_posting_tags_tag", "tag_id"),)
 
 
 # ── Statement parsing ─────────────────────────────────────────────────────────

@@ -73,6 +73,23 @@ class LedgerRepository(ABC):
         ...
 
     @abstractmethod
+    async def ensure_system_tags(self, user_id: str, tags: list[tuple[str, str, str]]) -> None:
+        """Create the closed `need` tag axis for a user. Idempotent."""
+        ...
+
+    @abstractmethod
+    async def list_tags(self, user_id: str, kind: str | None = None) -> list[Any]:
+        """This user's tags, optionally filtered to one axis."""
+        ...
+
+    @abstractmethod
+    async def set_posting_tags(
+        self, user_id: str, posting_id: str, tags: dict[str, str]
+    ) -> None:
+        """Replace a posting's tags. Tags are mutable; the posting is not."""
+        ...
+
+    @abstractmethod
     async def reactivate_account(self, user_id: str, account_id: str) -> None:
         """Reverse a soft-delete by setting is_active=True."""
         ...

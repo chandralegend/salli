@@ -20,6 +20,10 @@ class PostingRequest(BaseModel):
     currency: str = "LKR"
     fx_rate: str = "1"
     fx_rate_source: str | None = None
+    # Axis → tag slug, e.g. {"category": "groceries", "need": "essential"}.
+    # Tags that do not exist yet are created on the axis named here, so a client
+    # can tag freely without a separate call to define the tag first.
+    tags: dict[str, str] = {}
 
 
 class AddEntryRequest(BaseModel):
@@ -96,6 +100,7 @@ async def add_entry(body: AddEntryRequest, user_id: CurrentUser, svc: AppService
             "currency": p.currency,
             "fx_rate": Decimal(p.fx_rate),
             "fx_rate_source": p.fx_rate_source,
+            "tags": p.tags,
         }
         for p in body.postings
     ]
@@ -182,3 +187,25 @@ async def reverse_entry(entry_id: str, user_id: CurrentUser, svc: AppServices):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return {"id": reversing_id}
+
+
+# ── tags ──────────────────────────────────────────────────────────────────────
+#
+# A second classification axis, orthogonal to the chart of accounts. Tags are
+# metadata *about* an immutable posting: the money record never changes, but a
+# miscategorised expense has to be fixable.
+
+
+class SetPostingTagsRequest(BaseModel):
+    tags: dict[str, str]
+
+
+@router.put("/postings/{posting_id}/tags", status_code=status.HTTP_204_NO_CONTENT)
+async def set_posting_tags(
+    posting_id: str, body: SetPostingTagsRequest, user_id: CurrentUser, svc: AppServices
+):
+    """Replace a posting's tags. Retagging never touches the posted amounts."""
+    try:
+        await svc.ledger.set_posting_tags(user_id, posting_id, body.tags)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc

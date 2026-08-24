@@ -686,6 +686,10 @@ class FiService:
         return {
             "income_by_source": {k: str(v) for k, v in breakdown.income_by_source.items()},
             "expense_by_category": {k: str(v) for k, v in breakdown.expense_by_category.items()},
+            # The needs/wants/savings split. Empty until spending carries `need`
+            # tags, so clients must treat an empty object as "not classified
+            # yet" rather than "nothing spent".
+            "expense_by_need": {k: str(v) for k, v in breakdown.expense_by_need.items()},
             "gross_monthly_income": str(breakdown.gross_monthly_income),
             "gross_monthly_expenses": str(breakdown.gross_monthly_expenses),
             "monthly_surplus": str(breakdown.monthly_surplus),

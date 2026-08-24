@@ -108,11 +108,15 @@ class SurplusBreakdown:
     """Ledger-derived income and expense breakdown for the surplus flow chart."""
 
     income_by_source: dict[str, Decimal]  # account name → monthly avg
-    expense_by_category: dict[str, Decimal]  # account name → monthly avg
+    expense_by_category: dict[str, Decimal]  # category tag (or account name) → monthly avg
     gross_monthly_income: Decimal
     gross_monthly_expenses: Decimal
     monthly_surplus: Decimal
     savings_rate: Decimal
+    # need tag slug → monthly avg. Empty until spending is tagged on the `need`
+    # axis; the 50/30/20 split is built from this. Defaulted and last so older
+    # callers constructing this positionally keep working.
+    expense_by_need: dict[str, Decimal] = field(default_factory=dict[str, Decimal])
 
 
 @dataclass(frozen=True)

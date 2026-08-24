@@ -14,6 +14,7 @@ from salli.domain.accounting.models import (
     Posting,
     Source,
     StoredJournalEntry,
+    Tag,
     TaxRole,
 )
 from salli.domain.subscription import engine as subscription_engine
@@ -215,6 +216,22 @@ class LedgerService:
                 tax_role=tax_role,
             )
 
+    async def ensure_system_tags(self, user_id: str, tags: list[tuple[str, str, str]]) -> None:
+        """Seed the closed `need` tag axis. Idempotent."""
+        async with self._uow_factory() as uow:
+            await uow.ledger.ensure_system_tags(user_id, tags)
+
+    async def list_tags(self, user_id: str, kind: str | None = None) -> list[Tag]:
+        async with self._uow_factory() as uow:
+            return await uow.ledger.list_tags(user_id, kind)
+
+    async def set_posting_tags(
+        self, user_id: str, posting_id: str, tags: dict[str, str]
+    ) -> None:
+        """Retag a posting. The money is immutable; how it is classified is not."""
+        async with self._uow_factory() as uow:
+            await uow.ledger.set_posting_tags(user_id, posting_id, tags)
+
     async def deactivate_account(self, user_id: str, account_id: str) -> None:
         async with self._uow_factory() as uow:
             await uow.ledger.deactivate_account(user_id, account_id)
@@ -287,6 +304,11 @@ class LedgerService:
                     currency=p.currency,
                     fx_rate=p.fx_rate,
                     fx_rate_source=p.fx_rate_source,
+                    # The reversal carries the original's tags. Without them a
+                    # spend-by-category report would count the original and miss
+                    # its reversal, overstating that category forever — the same
+                    # failure the tax view had before it netted reversals out.
+                    tags=dict(p.tags),
                 )
                 for p in original.postings
             ]

@@ -16,6 +16,7 @@ Flow:
 
 from __future__ import annotations
 
+import re
 import uuid
 from collections.abc import Callable
 from typing import Any
@@ -30,6 +31,11 @@ from salli.domain.dedup.matcher import (
 from salli.domain.money import to_minor
 from salli.domain.parsing.models import ParsedTransaction, ParseResult, RawRow
 
+
+def _slugify(label: str) -> str:
+    """LLM category label → tag slug ("Bank Charge" → "bank-charge")."""
+    cleaned = re.sub(r"[^a-z0-9]+", "-", label.strip().lower())
+    return cleaned.strip("-")[:60]
 
 class ParsingService:
     def __init__(
@@ -212,12 +218,20 @@ class ParsingService:
                 if not txn.debit_account_id or not txn.credit_account_id:
                     continue
 
+                # The classifier already produced a plain-language label for
+                # this row, which was shown during review and then thrown away
+                # at posting time. Carry it onto the debit side as a category
+                # tag so the work is not wasted and spending is classified from
+                # the moment a statement is imported.
+                category_tags = {"category": _slugify(txn.category)} if txn.category else {}
+
                 postings = [
                     Posting(
                         account_id=txn.debit_account_id,
                         direction=Direction.DEBIT,
                         amount=txn.raw.amount,
                         currency=txn.raw.currency,
+                        tags=category_tags,
                     ),
                     Posting(
                         account_id=txn.credit_account_id,

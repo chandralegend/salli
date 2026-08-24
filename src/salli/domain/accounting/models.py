@@ -51,6 +51,31 @@ class Account(BaseModel):
     tax_role: TaxRole | None = None
 
 
+# The axis a tag belongs to. One tag per axis per posting, so a spending
+# breakdown along any single axis sums to the total without double counting.
+#
+# `category` is what the money was for (groceries, rent, transport).
+# `need` is how necessary it was — the 50/30/20 split.
+#
+# This is a second classification dimension, orthogonal to the chart of
+# accounts. The account tree answers "which ledger account did this hit"; it
+# cannot also answer "was this essential" without duplicating the whole tree
+# under each answer.
+TagKind = Literal["category", "need"]
+
+
+class Tag(BaseModel):
+    id: str
+    user_id: str
+    slug: str
+    name: str
+    kind: TagKind
+    color: str = ""
+    # Seeded tags the product relies on (the `need` axis). Users can rename
+    # these but not delete them, since reports reference them by slug.
+    is_system: bool = False
+
+
 class Posting(BaseModel):
     account_id: str
     direction: Direction
@@ -58,6 +83,19 @@ class Posting(BaseModel):
     currency: str
     fx_rate: Decimal = Decimal(1)
     fx_rate_source: str | None = None
+    # Axis → tag slug, e.g. {"category": "groceries", "need": "essential"}.
+    #
+    # A mapping rather than a list because a posting carries at most one tag per
+    # axis — expressing that in the type means a breakdown along any axis sums
+    # to the total without double counting, and it tells the repository which
+    # axis a slug belongs to instead of making it guess.
+    #
+    # Slugs rather than ids so the domain and the API can talk about tags
+    # without knowing their storage identity. Tags are metadata *about* an
+    # immutable posting, not part of it: the money record never changes, but a
+    # miscategorised expense has to be fixable, so tags live in their own table
+    # and stay editable after the fact.
+    tags: dict[str, str] = Field(default_factory=dict)
 
     @field_validator("amount", mode="before")
     @classmethod

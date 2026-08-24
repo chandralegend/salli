@@ -69,6 +69,18 @@ _SOURCE_ACCOUNTS: dict[str, list[_AccountSeed]] = {
     ],
 }
 
+# The `need` axis — a closed, seeded set the reports reference by slug. Users
+# can rename these but not delete them. Category tags are open and are created
+# on demand as people tag things.
+#
+# Kept in sync by hand with `_NEED_TAGS` in the f5c93a71d84e migration, which
+# seeds the same rows for users who onboarded before tags existed.
+SYSTEM_NEED_TAGS = [
+    ("essential", "Needs", "#2E7D6B"),
+    ("discretionary", "Wants", "#C77D3A"),
+    ("savings", "Savings & Debt", "#3A5FC7"),
+]
+
 _MEMORIES = {
     "onboarding_complete": "true",
 }
@@ -196,6 +208,10 @@ async def complete_onboarding(body: OnboardingRequest, user_id: CurrentUser, svc
             created.append(f"{code} {name}")
         except Exception:
             skipped.append(code)
+
+    # Seed the need axis. Idempotent — `ensure_system_tags` is a no-op when the
+    # rows already exist, so re-running onboarding does not duplicate them.
+    await svc.ledger.ensure_system_tags(user_id, SYSTEM_NEED_TAGS)
 
     return {
         "memories_saved": list(memories.keys()),

@@ -144,6 +144,7 @@ def _account_from_orm(row: AccountORM) -> Account:
         currency=row.currency,
         parent_id=row.parent_id,
         is_active=row.is_active,
+        tax_role=row.tax_role,  # type: ignore[arg-type]
     )
 
 
@@ -212,6 +213,7 @@ class SQLLedgerRepository(LedgerRepository):
             currency=account.currency,
             parent_id=account.parent_id,
             is_active=account.is_active,
+            tax_role=account.tax_role,
         )
         self._session.add(orm)
         return account_id
@@ -234,7 +236,15 @@ class SQLLedgerRepository(LedgerRepository):
             row.reversed_by = reversing_id
 
     async def update_account(
-        self, user_id: str, account_id: str, *, code: str, name: str, type: str, currency: str
+        self,
+        user_id: str,
+        account_id: str,
+        *,
+        code: str,
+        name: str,
+        type: str,
+        currency: str,
+        tax_role: str | None = None,
     ) -> None:
         stmt = select(AccountORM).where(AccountORM.id == account_id, AccountORM.user_id == user_id)
         result = await self._session.execute(stmt)
@@ -244,6 +254,7 @@ class SQLLedgerRepository(LedgerRepository):
             row.name = name
             row.type = type
             row.currency = currency
+            row.tax_role = tax_role
 
     async def deactivate_account(self, user_id: str, account_id: str) -> None:
         stmt = select(AccountORM).where(AccountORM.id == account_id, AccountORM.user_id == user_id)

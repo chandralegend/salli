@@ -372,7 +372,7 @@ export default function FinancialIndependenceScreen() {
                   title="Goals"
                   description={
                     "Specific things you're saving toward — a deposit, a fund, a purchase — each with a target amount and date.\n\n" +
-                    "Progress is measured against real balances, so it only moves when money actually does."
+                    "Set how much you've put aside for each one to track how close you are."
                   }
                 />
               </View>

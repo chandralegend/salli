@@ -4,7 +4,7 @@ from collections.abc import Callable
 from decimal import Decimal
 from typing import Any
 
-from salli.domain.accounting.models import Account, Direction, StoredJournalEntry
+from salli.domain.accounting.models import Account, StoredJournalEntry
 from salli.domain.tax import engine
 from salli.domain.tax.models import LedgerView, TaxComputation, TaxPack
 from salli.domain.tax.packs import registry
@@ -16,7 +16,28 @@ def _build_ledger_view(
 ) -> LedgerView:
     """
     Aggregate posting data into the LedgerView the tax engine expects.
-    Account classification is based on account type and name/code conventions.
+
+    Two things here are load-bearing.
+
+    **Classification is by `Account.tax_role`, never by name.** The previous
+    version matched substrings against `Account.name` and required the credit
+    accounts to be typed `liability`, but onboarding seeds them as assets
+    ("4110 APIT Receivable", `asset`) — which is the correct accounting for tax
+    you may reclaim. The two disagreed, so `apit_withheld` was zero for every
+    user who onboarded through the product and their tax payable was overstated
+    by the whole amount already withheld from their salary.
+
+    **Amounts are accumulated signed, not by direction.** Each bucket adds
+    `base_signed` in its own natural direction, so a reversing entry cancels the
+    original arithmetically. Filtering on `Direction` instead — the old
+    behaviour — put the reversal on the ignored side while the original still
+    counted, so reversed income stayed taxable forever and reversed donations
+    stayed deducted. `reverse_entry` is the only sanctioned way to correct a
+    posted entry (entries are immutable), so tax has to honour it.
+
+    Buckets are clamped at zero: a net-negative income or credit total means the
+    ledger is mid-correction or malformed, and a negative figure would silently
+    *increase* someone's refund rather than fail visibly.
     """
     acc_map = {a.id: a for a in accounts}
 
@@ -33,41 +54,33 @@ def _build_ledger_view(
             if acc is None:
                 continue
 
-            name_lower = acc.name.lower()
-            code_upper = acc.code.upper()
-            base = abs(posting.base_signed)
+            # Income and the credits/deductions accrue in opposite directions,
+            # so each is normalised to "positive means more of this bucket".
+            credit_positive = -posting.base_signed  # CR increases income
+            debit_positive = posting.base_signed  # DR increases a credit/deduction
 
             if acc.type == "income":
-                if posting.direction == Direction.CREDIT:
-                    total_income += base
-                    if "foreign service" in name_lower or code_upper.startswith("FSI"):
-                        foreign_service_income += base
+                total_income += credit_positive
+                if acc.tax_role == "fsi_income":
+                    foreign_service_income += credit_positive
 
-            elif acc.type == "liability":
-                # DR to a tax-payable liability = employer remitting to IRD on
-                # the employee's behalf (reduces the payable, records withheld tax)
-                if "apit" in name_lower:
-                    if posting.direction == Direction.DEBIT:
-                        apit_withheld += base
-                elif "ait" in name_lower:
-                    if posting.direction == Direction.DEBIT:
-                        ait_withheld += base
-                elif "foreign tax" in name_lower:
-                    if posting.direction == Direction.DEBIT:
-                        foreign_tax_paid += base
+            if acc.tax_role == "apit_credit":
+                apit_withheld += debit_positive
+            elif acc.tax_role == "ait_credit":
+                ait_withheld += debit_positive
+            elif acc.tax_role == "foreign_tax_credit":
+                foreign_tax_paid += debit_positive
+            elif acc.tax_role == "qualifying_payment":
+                qualifying_payments += debit_positive
 
-            elif acc.type == "expense":
-                if "qualifying" in name_lower or "donation" in name_lower:
-                    if posting.direction == Direction.DEBIT:
-                        qualifying_payments += base
-
+    zero = Decimal(0)
     return LedgerView(
-        total_income=total_income,
-        foreign_service_income=foreign_service_income,
-        apit_withheld=apit_withheld,
-        ait_withheld=ait_withheld,
-        foreign_tax_paid=foreign_tax_paid,
-        qualifying_payments=qualifying_payments,
+        total_income=max(zero, total_income),
+        foreign_service_income=max(zero, foreign_service_income),
+        apit_withheld=max(zero, apit_withheld),
+        ait_withheld=max(zero, ait_withheld),
+        foreign_tax_paid=max(zero, foreign_tax_paid),
+        qualifying_payments=max(zero, qualifying_payments),
     )
 
 

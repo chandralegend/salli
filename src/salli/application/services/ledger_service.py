@@ -14,6 +14,7 @@ from salli.domain.accounting.models import (
     Posting,
     Source,
     StoredJournalEntry,
+    TaxRole,
 )
 from salli.domain.subscription import engine as subscription_engine
 from salli.domain.subscription.models import Subscription
@@ -35,6 +36,7 @@ class LedgerService:
         type: AccountType,
         currency: str = "LKR",
         parent_id: str | None = None,
+        tax_role: TaxRole | None = None,
     ) -> str:
         account = Account(
             id=str(uuid.uuid4()),
@@ -44,6 +46,7 @@ class LedgerService:
             type=type,
             currency=currency,
             parent_id=parent_id,
+            tax_role=tax_role,
         )
         async with self._uow_factory() as uow:
             return await uow.ledger.save_account(user_id, account)
@@ -199,10 +202,17 @@ class LedgerService:
         name: str,
         type: str,
         currency: str,
+        tax_role: str | None = None,
     ) -> None:
         async with self._uow_factory() as uow:
             await uow.ledger.update_account(
-                user_id, account_id, code=code, name=name, type=type, currency=currency
+                user_id,
+                account_id,
+                code=code,
+                name=name,
+                type=type,
+                currency=currency,
+                tax_role=tax_role,
             )
 
     async def deactivate_account(self, user_id: str, account_id: str) -> None:

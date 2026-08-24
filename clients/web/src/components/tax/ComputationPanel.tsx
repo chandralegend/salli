@@ -36,6 +36,7 @@ function Row({
 /** Statement-style line list — top to bottom, exactly as the engine ran it. */
 export function ComputationPanel({ tax }: { tax: TaxResult }) {
   const hasFsi = tax.foreign_service_income !== "0.00";
+  const isRefund = Number(tax.refund_due) > 0;
   // `total_tax` is tax BEFORE credits — progressive bands PLUS the FSI final tax.
   // Labelling it "Tax on progressive bands" made an FSI-heavy return show the same
   // figure twice under two headings, reading as double the real liability while
@@ -67,10 +68,15 @@ export function ComputationPanel({ tax }: { tax: TaxResult }) {
         <Row label="Less: AIT Credit" value={`(${tax.credits.ait})`} muted />
         <Row label="Less: Foreign Tax Credit" value={tax.credits.ftc === "0.00" ? "—" : `(${tax.credits.ftc})`} muted />
       </div>
+      {/* Credits can exceed the liability, in which case the bill is zero and
+          the taxpayer is owed the difference. Reporting only "Net Tax Payable:
+          0.00" made that money disappear from the statement. */}
       <div className="mt-3 flex items-center justify-between rounded-md bg-[var(--status-success-bg)] px-4 py-3">
-        <span className="text-[15px] font-semibold">Net Tax Payable</span>
+        <span className="text-[15px] font-semibold">
+          {isRefund ? "Refund Due" : "Net Tax Payable"}
+        </span>
         <span className="money text-[15px] font-semibold">
-          {tax.tax_payable} {tax.currency}
+          {isRefund ? tax.refund_due : tax.tax_payable} {tax.currency}
         </span>
       </div>
     </div>

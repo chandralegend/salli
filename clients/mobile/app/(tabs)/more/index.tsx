@@ -22,6 +22,8 @@ import { PageShell } from "@/components/ui/page-shell";
 import { formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useThemeColors } from "@/lib/theme";
 import { useMore } from "@/hooks/useMore";
+import { useTaxPacks } from "@/hooks/useTax";
+import { dueDateShort } from "@/lib/taxDates";
 
 const FEATURES: {
   key: string;
@@ -63,6 +65,10 @@ export default function MoreScreen() {
   const colors = useThemeColors();
   const { profile, budgetSummary, portfolio, debtPlan, hasDebts, totalDebt, tax, overdueCount } =
     useMore();
+  // The filing deadline comes from the tax pack, never from a literal in this
+  // file — see lib/taxDates.ts.
+  const packs = useTaxPacks();
+  const currentPack = packs.data?.find((p) => p.year === tax?.pack_year);
 
   return (
     <PageShell
@@ -128,7 +134,7 @@ export default function MoreScreen() {
         <QuickStatCard
           label="Tax Payable"
           value={tax ? `Rs. ${formatLKRAbbrev(tax.tax_payable)}` : "—"}
-          hint={tax ? `${tax.pack_year} · Sep 30` : "Not computed"}
+          hint={tax ? `${tax.pack_year} · ${dueDateShort(currentPack)}` : "Not computed"}
           onPress={() => router.push("/(tabs)/more/tax")}
         />
       </View>

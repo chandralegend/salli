@@ -112,6 +112,9 @@ export default function TaxPage() {
 }
 
 function OverviewTab({ tax, pack }: { tax: TaxResult; pack: TaxPack | undefined }) {
+  // Withheld credits can exceed the liability, leaving the taxpayer owed money
+  // rather than owing it.
+  const isRefund = Number(tax.refund_due) > 0;
   const setReminder = useMutation({
     mutationFn: async () => {
       const dueDate = filingDueDate(pack, tax.year);
@@ -140,8 +143,8 @@ function OverviewTab({ tax, pack }: { tax: TaxResult; pack: TaxPack | undefined 
         <StatCard label="Personal Relief" value={`(${tax.personal_relief})`} caption="Statutory deduction · YA 2025/26" />
         <StatCard label="Taxable Income" value={tax.taxable_income} caption="After all reliefs" />
         <StatCard
-          label="Tax Payable"
-          value={tax.tax_payable}
+          label={isRefund ? "Refund Due" : "Tax Payable"}
+          value={isRefund ? tax.refund_due : tax.tax_payable}
           className="border-2 border-foreground"
           badge={
             effectiveRate(tax.tax_payable, tax.gross_income) ? (

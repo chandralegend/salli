@@ -46,6 +46,12 @@ class TaxPack:
     credits: list[str]  # ["APIT", "AIT_INTEREST_10", "FOREIGN_TAX_CREDIT"]
     rounding: str  # "nearest_rupee" | "truncate_rupee"
     filing: FilingCalendar
+    # Qualifying-payment relief caps. These were hardcoded in the engine as
+    # `min(taxable / 3, 75_000)` — Sri Lankan rules that any future country pack
+    # would have silently inherited. Rates and limits belong to the pack; the
+    # engine only applies them.
+    qualifying_payment_cap: Decimal = Decimal("75000")
+    qualifying_payment_fraction: Decimal = Decimal("1") / Decimal("3")
 
 
 # ── computation output ─────────────────────────────────────────────────────────
@@ -89,6 +95,10 @@ class TaxComputation:
 
     # Final
     tax_payable: Decimal
+    # Credits in excess of the liability. `tax_payable` floors at zero, so
+    # without this a user who overpaid saw "0.00" and no indication they are
+    # owed a refund — the money simply disappeared from the report.
+    refund_due: Decimal
     rounding: str
 
 

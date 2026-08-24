@@ -74,13 +74,16 @@ def _make_entry(user_id: str, date: str, postings: list[Posting]) -> StoredJourn
     )
 
 
-def _make_account(user_id: str, code: str, name: str, acc_type: str) -> Account:
+def _make_account(
+    user_id: str, code: str, name: str, acc_type: str, tax_role: str | None = None
+) -> Account:
     return Account(
         id=str(uuid.uuid4()),
         user_id=user_id,
         code=code,
         name=name,
         type=acc_type,
+        tax_role=tax_role,  # type: ignore[arg-type]
     )
 
 
@@ -114,7 +117,7 @@ def test_build_ledger_view_income_credit():
 
 
 def test_build_ledger_view_foreign_service_income():
-    fsi_acc = _make_account("u1", "FSI001", "Foreign Service Income", "income")
+    fsi_acc = _make_account("u1", "4500", "Foreign Service Income (FSI)", "income", "fsi_income")
     entry = _make_entry(
         "u1",
         "2025-04-01",
@@ -139,8 +142,8 @@ def test_build_ledger_view_foreign_service_income():
 
 
 def test_build_ledger_view_apit_credit():
-    apit_acc = _make_account("u1", "2100", "APIT Payable", "liability")
-    # DR APIT Payable = employer has remitted this amount to IRD on our behalf.
+    apit_acc = _make_account("u1", "4110", "APIT Receivable", "asset", "apit_credit")
+    # DR APIT Receivable = employer has remitted this amount to IRD on our behalf.
     # The offsetting CR is to bank/income (unknown to view → skipped by _build_ledger_view).
     entry = _make_entry(
         "u1",
@@ -176,7 +179,7 @@ def test_build_ledger_view_empty():
 
 def _make_tax_service_with_income(income: Decimal, apit: Decimal = Decimal(0)):
     salary_acc = _make_account("u1", "4001", "Employment Income", "income")
-    apit_acc = _make_account("u1", "2100", "APIT Payable", "liability")
+    apit_acc = _make_account("u1", "4110", "APIT Receivable", "asset", "apit_credit")
 
     # Entry 1: salary received (bank unknown to view → skipped on DR side)
     salary_entry = _make_entry(
@@ -191,7 +194,7 @@ def _make_tax_service_with_income(income: Decimal, apit: Decimal = Decimal(0)):
     )
     entries = [salary_entry]
 
-    # Entry 2: APIT withheld — DR APIT Payable (remitted to IRD), CR clearing
+    # Entry 2: APIT withheld — DR APIT Receivable (remitted to IRD), CR clearing
     if apit > 0:
         apit_entry = _make_entry(
             "u1",
@@ -292,3 +295,208 @@ def test_list_packs_includes_lk_2025_26():
     packs = svc.list_packs()
     keys = {(p.country, p.year) for p in packs}
     assert ("LK", "2025/26") in keys
+
+
+# ── Regression: the seeded chart of accounts ──────────────────────────────────
+#
+# These tests exist because the previous suite hand-built "APIT Payable" as a
+# `liability`, which no real user ever has. Onboarding seeds "4110 APIT
+# Receivable" as an `asset`, and the old mapping only inspected liabilities — so
+# every onboarded user's withheld tax was silently ignored and the tests passed
+# anyway. Anything asserting on tax credits must be built from the same seed
+# data the product actually creates.
+
+
+def _seeded_accounts(user_id: str) -> list[Account]:
+    """The accounts `/onboarding/complete` creates for an employed user with
+    interest and foreign income, mirroring _BASE_ACCOUNTS / _SOURCE_ACCOUNTS."""
+    from salli.interfaces.api.routers.onboarding import _BASE_ACCOUNTS, _SOURCE_ACCOUNTS
+
+    seeds = list(_BASE_ACCOUNTS)
+    for source in ("employment", "interest", "foreign"):
+        seeds.extend(_SOURCE_ACCOUNTS[source])
+    return [
+        _make_account(user_id, code, name, acc_type, role) for code, name, acc_type, role in seeds
+    ]
+
+
+def _by_code(accounts: list[Account], code: str) -> Account:
+    return next(a for a in accounts if a.code == code)
+
+
+def test_seeded_apit_account_produces_a_credit():
+    """The exact bug: APIT withheld against the seeded (asset) account."""
+    accounts = _seeded_accounts("u1")
+    salary = _by_code(accounts, "4100")
+    apit = _by_code(accounts, "4110")
+    bank = _by_code(accounts, "1200")
+
+    entry = _make_entry(
+        "u1",
+        "2025-04-01",
+        [
+            Posting(
+                account_id=bank.id,
+                direction=Direction.DEBIT,
+                amount=Decimal("450_000"),
+                currency="LKR",
+            ),
+            Posting(
+                account_id=apit.id,
+                direction=Direction.DEBIT,
+                amount=Decimal("50_000"),
+                currency="LKR",
+            ),
+            Posting(
+                account_id=salary.id,
+                direction=Direction.CREDIT,
+                amount=Decimal("500_000"),
+                currency="LKR",
+            ),
+        ],
+    )
+
+    view = _build_ledger_view([entry], accounts)
+    assert view.total_income == Decimal("500_000")
+    assert view.apit_withheld == Decimal("50_000"), (
+        "APIT withheld against the seeded 4110 account must be credited; "
+        "this is the defect that overstated every onboarded user's tax."
+    )
+
+
+def test_seeded_qualifying_payment_account_produces_a_deduction():
+    accounts = _seeded_accounts("u1")
+    donations = _by_code(accounts, "5900")
+    bank = _by_code(accounts, "1200")
+
+    entry = _make_entry(
+        "u1",
+        "2025-06-01",
+        [
+            Posting(
+                account_id=donations.id,
+                direction=Direction.DEBIT,
+                amount=Decimal("25_000"),
+                currency="LKR",
+            ),
+            Posting(
+                account_id=bank.id,
+                direction=Direction.CREDIT,
+                amount=Decimal("25_000"),
+                currency="LKR",
+            ),
+        ],
+    )
+
+    view = _build_ledger_view([entry], accounts)
+    assert view.qualifying_payments == Decimal("25_000")
+
+
+# ── Regression: reversing entries must net out ────────────────────────────────
+
+
+def _reverse(entry: StoredJournalEntry) -> StoredJournalEntry:
+    """Mirror of LedgerService.reverse_entry — flips every posting's direction."""
+    return _make_entry(
+        entry.user_id,
+        entry.entry_date,
+        [
+            Posting(
+                account_id=p.account_id,
+                direction=Direction(-p.direction.value),
+                amount=p.amount,
+                currency=p.currency,
+            )
+            for p in entry.postings
+        ],
+    )
+
+
+def test_reversing_an_income_entry_removes_it_from_the_tax_base():
+    """Entries are immutable, so a reversal is the only way to correct one.
+    The tax view has to honour that or a mistaken income entry stays taxable
+    forever."""
+    accounts = _seeded_accounts("u1")
+    salary = _by_code(accounts, "4100")
+    bank = _by_code(accounts, "1200")
+
+    entry = _make_entry(
+        "u1",
+        "2025-04-01",
+        [
+            Posting(
+                account_id=bank.id,
+                direction=Direction.DEBIT,
+                amount=Decimal("500_000"),
+                currency="LKR",
+            ),
+            Posting(
+                account_id=salary.id,
+                direction=Direction.CREDIT,
+                amount=Decimal("500_000"),
+                currency="LKR",
+            ),
+        ],
+    )
+
+    assert _build_ledger_view([entry], accounts).total_income == Decimal("500_000")
+
+    view = _build_ledger_view([entry, _reverse(entry)], accounts)
+    assert view.total_income == Decimal(0), "a reversed income entry must leave the tax base"
+
+
+def test_reversing_a_donation_removes_the_deduction():
+    accounts = _seeded_accounts("u1")
+    donations = _by_code(accounts, "5900")
+    bank = _by_code(accounts, "1200")
+
+    entry = _make_entry(
+        "u1",
+        "2025-06-01",
+        [
+            Posting(
+                account_id=donations.id,
+                direction=Direction.DEBIT,
+                amount=Decimal("25_000"),
+                currency="LKR",
+            ),
+            Posting(
+                account_id=bank.id,
+                direction=Direction.CREDIT,
+                amount=Decimal("25_000"),
+                currency="LKR",
+            ),
+        ],
+    )
+
+    view = _build_ledger_view([entry, _reverse(entry)], accounts)
+    assert view.qualifying_payments == Decimal(0)
+
+
+def test_buckets_never_go_negative():
+    """A stray reversal with no original must not manufacture a refund."""
+    accounts = _seeded_accounts("u1")
+    apit = _by_code(accounts, "4110")
+    bank = _by_code(accounts, "1200")
+
+    orphan_reversal = _make_entry(
+        "u1",
+        "2025-04-01",
+        [
+            Posting(
+                account_id=apit.id,
+                direction=Direction.CREDIT,
+                amount=Decimal("50_000"),
+                currency="LKR",
+            ),
+            Posting(
+                account_id=bank.id,
+                direction=Direction.DEBIT,
+                amount=Decimal("50_000"),
+                currency="LKR",
+            ),
+        ],
+    )
+
+    view = _build_ledger_view([orphan_reversal], accounts)
+    assert view.apit_withheld == Decimal(0)

@@ -26,8 +26,9 @@ import { StatusChip } from "@/components/shared/StatusChip";
 import { useState } from "react";
 import { StatementUploadDialog } from "@/components/statements/StatementUploadDialog";
 import { useDashboard } from "@/hooks/useDashboard";
-import { useTax } from "@/hooks/useTax";
+import { useTax, useTaxPacks } from "@/hooks/useTax";
 import { useFiScore } from "@/hooks/useFi";
+import { dueDateLabel } from "@/components/tax/taxDates";
 import { useSalliStore, useScroogePanel } from "@/lib/store";
 import {
   assessmentYearRange,
@@ -65,6 +66,10 @@ export default function DashboardPage() {
   const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
   const tax = latest.data;
+  // Deadline comes from the tax pack, not a literal — this card used to say
+  // "due Jul 31" while the pack said 30 November.
+  const packs = useTaxPacks();
+  const currentPack = packs.data?.find((p) => p.year === tax?.year);
   const fi = fiScore.data;
   const savingsRate = fi ? Number(fi.savings_rate) : null;
 
@@ -137,7 +142,7 @@ export default function DashboardPage() {
         <div id="tour-dash-tax-card" className="lg:col-span-3 rounded-lg border bg-card p-5 flex flex-col">
           <div className="flex items-start justify-between">
             <p className="eyebrow">Tax Payable · YA {tax?.year ?? "2025/26"}</p>
-            {tax && <StatusChip tone="warning">due Jul 31</StatusChip>}
+            {tax && <StatusChip tone="warning">{dueDateLabel(currentPack, tax.year)}</StatusChip>}
           </div>
           {latest.isLoading ? (
             <Skeleton className="h-10 w-56 mt-4" />

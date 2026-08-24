@@ -233,12 +233,23 @@ class FiService:
         monthly_income = income / months_observed
         monthly_expenses = expenses / months_observed
 
-        # Weighted goal progress (current/target), active goals with a target
+        # Weighted goal progress (current/target), active goals with a target.
+        #
+        # Goals with no funding recorded at all are excluded rather than scored
+        # zero. Goal progress carries 15% of the Freedom Score, and neither
+        # client currently exposes any way to record funding against a goal — so
+        # scoring an unfunded goal as 0% meant that merely *creating* a goal cost
+        # the user up to 15 points with no in-product way to recover them.
+        # Punishing someone for setting a goal is precisely backwards.
+        #
+        # `engine.compute` already drops the goals component and renormalises the
+        # remaining weights when `goal_progress` is None, so an all-unfunded set
+        # scores exactly as it would with no goals at all.
         goal_progress: Decimal | None = None
         prog = [
             min(Decimal(1), Decimal(g["current_amount_minor"]) / Decimal(g["target_amount_minor"]))
             for g in goals
-            if g.get("target_amount_minor", 0) > 0
+            if g.get("target_amount_minor", 0) > 0 and g.get("current_amount_minor", 0) > 0
         ]
         if prog:
             goal_progress = sum(prog, Decimal(0)) / Decimal(len(prog))

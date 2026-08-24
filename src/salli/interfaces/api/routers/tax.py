@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from fastapi import APIRouter
 
+from salli.domain.tax.models import TaxComputation
 from salli.interfaces.api.deps import AppServices, CurrentUser
 
 router = APIRouter(prefix="/tax", tags=["tax"])
@@ -21,6 +22,14 @@ async def list_packs(svc: AppServices):
             "period_end": p.period_end,
             "personal_relief": str(p.personal_relief),
             "return_due": p.filing.return_due,
+            # The rest of the filing calendar was declared in the pack but never
+            # exposed, so clients hardcoded deadlines instead — and drifted. The
+            # dashboard said "due Jul 31" and mobile's hub said "Sep 30" while
+            # the pack said 30 November. Serve the whole calendar so there is
+            # one source of truth to read.
+            "set_due": p.filing.set_due,
+            "installments": p.filing.installments,
+            "final_installment_due": p.filing.final_installment_due,
         }
         for p in packs
     ]
@@ -29,12 +38,15 @@ async def list_packs(svc: AppServices):
 # ── shared formatter ────────────────────────────────────────────────────────
 
 
-def _fmt_computation(result) -> dict:  # type: ignore[no-untyped-def]
+def _fmt_computation(result: TaxComputation | dict) -> dict:
     """Format a TaxComputation object (dataclass) or raw stored dict into a
-    consistent API response shape."""
-    import dataclasses
+    consistent API response shape.
 
-    if dataclasses.is_dataclass(result) and not isinstance(result, type):
+    Two input shapes exist because `get_latest` returns the stored JSONB blob
+    rather than re-hydrating it, so historical rows arrive as plain dicts whose
+    field set is whatever the engine wrote at the time.
+    """
+    if isinstance(result, TaxComputation):
         # Live TaxComputation dataclass from the engine
         bws = result.band_workings
 
@@ -72,6 +84,7 @@ def _fmt_computation(result) -> dict:  # type: ignore[no-untyped-def]
             "foreign_tax_credit": str(result.foreign_tax_credit),
             "total_credits": str(result.total_credits),
             "tax_payable": str(result.tax_payable),
+            "refund_due": str(result.refund_due),
             "rounding": result.rounding,
             "band_workings": band_workings,
         }
@@ -118,6 +131,10 @@ def _fmt_computation(result) -> dict:  # type: ignore[no-untyped-def]
             "foreign_tax_credit": _s("foreign_tax_credit"),
             "total_credits": _s("total_credits"),
             "tax_payable": _s("tax_payable"),
+            # Rows stored before `refund_due` existed have no such key; "0" is
+            # the correct reading for them, since the old engine floored at zero
+            # and never recorded an overpayment either way.
+            "refund_due": _s("refund_due"),
             "rounding": _s("rounding", "nearest_rupee"),
             "band_workings": band_workings,
         }

@@ -106,6 +106,23 @@ def test_excess_credits_floor_at_zero():
     assert result.tax_payable == Decimal(0)
 
 
+# Withheld tax in excess of the liability is money the taxpayer is owed, and it
+# used to vanish: `tax_payable` floors at zero and nothing else recorded it.
+# Gross 2,300,000 → taxable 500,000 → tax 30,000; APIT 50,000 → refund 20,000.
+
+
+def test_excess_apit_is_reported_as_a_refund():
+    result = compute(ledger("2_300_000", apit="50_000"), LK_2025_26)
+    assert result.tax_payable == Decimal(0)
+    assert result.refund_due == Decimal("20_000")
+
+
+def test_no_refund_when_credits_match_liability():
+    result = compute(ledger("2_300_000", apit="30_000"), LK_2025_26)
+    assert result.tax_payable == Decimal(0)
+    assert result.refund_due == Decimal(0)
+
+
 # ── Case 7: Qualifying payments deduction ─────────────────────────────────────
 # Gross = 2,800,000; taxable before QP = 1,000,000
 # QP = 100,000; cap = min(1,000,000/3, 75,000) = 75,000
@@ -137,3 +154,63 @@ def test_pack_version_recorded():
     assert result.pack_country == "LK"
     assert result.pack_year == "2025/26"
     assert result.pack_version == "1.0.0"
+
+
+# ── Foreign Service Income ────────────────────────────────────────────────────
+# The pack has carried an FSI regime since day one with no golden coverage at
+# all, in either direction — neither the flat 15% nor its interaction with
+# relief. These pin both.
+
+
+def test_fsi_taxed_flat_and_excluded_from_the_bands():
+    """FSI is taxed at 15% outside the progressive bands, and personal relief
+    applies only to the regular income that remains."""
+    # 5,000,000 gross of which 3,000,000 is FSI.
+    # FSI tax = 3,000,000 × 15% = 450,000
+    # Regular = 2,000,000; relief 1,800,000 → taxable 200,000 → 6% = 12,000
+    result = compute(ledger("5_000_000", fsi="3_000_000"), LK_2025_26)
+    assert result.foreign_service_income == Decimal("3_000_000")
+    assert result.regular_income == Decimal("2_000_000")
+    assert result.fsi_tax == Decimal("450_000")
+    assert result.taxable_income == Decimal("200_000")
+    assert result.tax_before_credits == Decimal("462_000")
+    assert result.tax_payable == Decimal("462_000")
+
+
+def test_relief_does_not_shelter_fsi():
+    """All income is FSI: relief has no regular income to apply to, so the whole
+    amount stays taxed at the flat rate rather than being sheltered."""
+    result = compute(ledger("3_000_000", fsi="3_000_000"), LK_2025_26)
+    assert result.regular_income == Decimal(0)
+    assert result.personal_relief_applied == Decimal(0)
+    assert result.taxable_income == Decimal(0)
+    assert result.tax_payable == Decimal("450_000")
+
+
+def test_foreign_tax_credit_offsets_the_liability():
+    """FSI 3,000,000 → 450,000 LK tax; 200,000 already paid abroad leaves
+    250,000 to pay here."""
+    result = compute(ledger("3_000_000", fsi="3_000_000", ftc="200_000"), LK_2025_26)
+    assert result.foreign_tax_credit == Decimal("200_000")
+    assert result.tax_payable == Decimal("250_000")
+
+
+def test_foreign_tax_credit_cannot_create_a_refund():
+    """A foreign tax credit relieves double taxation; it must not hand back tax
+    paid to another government. Uncapped, this would report a refund."""
+    result = compute(ledger("3_000_000", fsi="3_000_000", ftc="900_000"), LK_2025_26)
+    assert result.foreign_tax_credit == Decimal("450_000"), "FTC capped at the liability"
+    assert result.tax_payable == Decimal(0)
+    assert result.refund_due == Decimal(0)
+
+
+def test_qualifying_payment_cap_comes_from_the_pack():
+    """The cap used to be a constant inside the engine, so any future country
+    pack would have silently inherited Sri Lankan QP rules."""
+    from dataclasses import replace
+
+    generous = replace(LK_2025_26, qualifying_payment_cap=Decimal("150_000"))
+    result = compute(ledger("2_800_000", qp="150_000"), generous)
+    assert result.qp_deduction == Decimal("150_000")
+    # And the stock pack still enforces its own 75,000 limit.
+    assert compute(ledger("2_800_000", qp="150_000"), LK_2025_26).qp_deduction == Decimal("75_000")

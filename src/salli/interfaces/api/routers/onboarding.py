@@ -14,6 +14,8 @@ a new frontend wizard is a follow-up once these are in place.
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
@@ -23,37 +25,47 @@ router = APIRouter(prefix="/onboarding", tags=["onboarding"])
 
 # ── Account templates per income source ───────────────────────────────────────
 
-_BASE_ACCOUNTS = [
-    ("1100", "Cash", "asset"),
-    ("1200", "Bank Account — LKR", "asset"),
-    ("3000", "Opening Equity", "equity"),
-    ("5000", "General Expenses", "expense"),
+# (code, name, account_type, tax_role). `tax_role` is what the tax engine reads
+# — see `domain.accounting.models.TaxRole`. It must be declared here rather than
+# inferred downstream from the name: these credit accounts are correctly typed
+# `asset` (withheld tax is a receivable), and the engine used to look for them
+# among liabilities, so every seeded credit account was silently ignored.
+_AccountSeed = tuple[str, str, str, "str | None"]
+
+_BASE_ACCOUNTS: list[_AccountSeed] = [
+    ("1100", "Cash", "asset", None),
+    ("1200", "Bank Account — LKR", "asset", None),
+    ("3000", "Opening Equity", "equity", None),
+    ("5000", "General Expenses", "expense", None),
+    # Without this account there is nowhere to post a donation, so the
+    # qualifying-payment deduction was unreachable for every default user.
+    ("5900", "Donations & Qualifying Payments", "expense", "qualifying_payment"),
 ]
 
-_SOURCE_ACCOUNTS: dict[str, list[tuple[str, str, str]]] = {
+_SOURCE_ACCOUNTS: dict[str, list[_AccountSeed]] = {
     "employment": [
-        ("4100", "Employment Income", "income"),
-        ("4110", "APIT Receivable", "asset"),
+        ("4100", "Employment Income", "income", None),
+        ("4110", "APIT Receivable", "asset", "apit_credit"),
     ],
     "freelance": [
-        ("4200", "Freelance / Business Income", "income"),
-        ("5100", "Business Expenses", "expense"),
+        ("4200", "Freelance / Business Income", "income", None),
+        ("5100", "Business Expenses", "expense", None),
     ],
     "rental": [
-        ("4300", "Rental Income", "income"),
-        ("5200", "Property & Maintenance Expenses", "expense"),
+        ("4300", "Rental Income", "income", None),
+        ("5200", "Property & Maintenance Expenses", "expense", None),
     ],
     "interest": [
-        ("4400", "Interest Income", "income"),
-        ("4410", "AIT Receivable", "asset"),
+        ("4400", "Interest Income", "income", None),
+        ("4410", "AIT Receivable", "asset", "ait_credit"),
     ],
     "foreign": [
-        ("1300", "Foreign Currency Account", "asset"),
-        ("4500", "Foreign Service Income (FSI)", "income"),
-        ("4510", "Foreign Tax Credit Receivable", "asset"),
+        ("1300", "Foreign Currency Account", "asset", None),
+        ("4500", "Foreign Service Income (FSI)", "income", "fsi_income"),
+        ("4510", "Foreign Tax Credit Receivable", "asset", "foreign_tax_credit"),
     ],
     "dividends": [
-        ("4600", "Dividend Income", "income"),
+        ("4600", "Dividend Income", "income", None),
     ],
 }
 
@@ -167,7 +179,7 @@ async def complete_onboarding(body: OnboardingRequest, user_id: CurrentUser, svc
     existing = await svc.ledger.list_accounts(user_id)
     existing_codes = {a.code for a in existing}
 
-    for code, name, acct_type in accounts_to_create:
+    for code, name, acct_type, tax_role in accounts_to_create:
         if code in seen_codes or code in existing_codes:
             skipped.append(code)
             continue
@@ -179,6 +191,7 @@ async def complete_onboarding(body: OnboardingRequest, user_id: CurrentUser, svc
                 name=name,
                 type=acct_type,  # type: ignore[arg-type]
                 currency="LKR",
+                tax_role=tax_role,  # type: ignore[arg-type]
             )
             created.append(f"{code} {name}")
         except Exception:
@@ -221,7 +234,12 @@ class OpeningBalanceItem(BaseModel):
     code: str
     name: str
     type: str  # asset|liability
-    amount: float
+    # Decimal, not float: these post straight into the ledger, and that ledger
+    # is the tax base. The service already converts defensively via
+    # Decimal(str(...)), so this is not a live bug — but a client that sends an
+    # exact decimal string should have it stay exact, and the contract should
+    # say what the project's own money invariant requires.
+    amount: Decimal
 
 
 class BalanceSheetRequest(BaseModel):
@@ -240,7 +258,7 @@ async def declare_balance_sheet(body: BalanceSheetRequest, user_id: CurrentUser,
 class IncomeItem(BaseModel):
     code: str
     name: str
-    amount: float
+    amount: Decimal
     deposit_account_code: str | None = None
     deposit_account_name: str | None = None
 

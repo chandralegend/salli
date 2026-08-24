@@ -44,8 +44,9 @@ def compute(ledger: LedgerView, pack: TaxPack) -> TaxComputation:
     relief_applied = min(pack.personal_relief, regular_income)
     taxable = max(Decimal(0), regular_income - relief_applied)
 
-    # Qualifying payments / donations: capped at min(⅓ of taxable, LKR 75,000)
-    qp_cap = min(taxable / Decimal(3), Decimal("75000"))
+    # Qualifying payments / donations, capped by the pack's own limits rather
+    # than by constants baked into the engine.
+    qp_cap = min(taxable * pack.qualifying_payment_fraction, pack.qualifying_payment_cap)
     qp_deduction = min(ledger.qualifying_payments, qp_cap)
     taxable = max(Decimal(0), taxable - qp_deduction)
 
@@ -82,13 +83,31 @@ def compute(ledger: LedgerView, pack: TaxPack) -> TaxComputation:
     # ── Credits ───────────────────────────────────────────────────────────────
     apit = ledger.apit_withheld
     ait = ledger.ait_withheld
-    ftc = ledger.foreign_tax_paid
-    total_credits = apit + ait + ftc
 
-    tax_payable = max(
-        Decimal(0),
-        _round(tax_before_credits - total_credits, pack.rounding),
-    )
+    # Non-refundable vs refundable credits, applied in that order.
+    #
+    # A foreign tax credit relieves double taxation — it should never hand back
+    # more than this country charged. Left uncapped it now not only zeroed the
+    # bill but, with `refund_due` below, would manufacture a refund of tax paid
+    # to another government.
+    #
+    # The cap here is the total liability, deliberately *not* `fsi_tax`. Capping
+    # per-source would be the stricter and probably more correct treatment, but
+    # the ledger cannot currently attribute foreign tax to the income it was
+    # paid on (only FSI is distinguished), so a tighter cap would under-credit
+    # anyone with non-FSI foreign income. Choosing between those is a revenue
+    # ruling, not an implementation detail — flagged for the chartered-accountant
+    # review this pack is still pending.
+    ftc = min(ledger.foreign_tax_paid, tax_before_credits)
+
+    # APIT and AIT are tax already withheld from this taxpayer's own income, so
+    # an excess genuinely is refundable to them.
+    refundable = apit + ait
+    total_credits = ftc + refundable
+
+    net = _round(tax_before_credits - total_credits, pack.rounding)
+    tax_payable = max(Decimal(0), net)
+    refund_due = max(Decimal(0), -net)
 
     return TaxComputation(
         pack_country=pack.country,
@@ -108,5 +127,6 @@ def compute(ledger: LedgerView, pack: TaxPack) -> TaxComputation:
         foreign_tax_credit=ftc,
         total_credits=total_credits,
         tax_payable=tax_payable,
+        refund_due=refund_due,
         rounding=pack.rounding,
     )

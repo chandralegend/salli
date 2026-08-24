@@ -123,6 +123,7 @@ async def test_compute_tax(client, mock_services):
         foreign_tax_credit=Decimal("0"),
         total_credits=Decimal("0"),
         tax_payable=Decimal("114000"),
+        refund_due=Decimal("0"),
         rounding="none",
     )
     mock_services.tax.compute_tax.return_value = result

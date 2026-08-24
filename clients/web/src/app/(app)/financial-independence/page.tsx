@@ -73,7 +73,9 @@ function AddGoalDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>New goal</DialogTitle>
-          <DialogDescription>Salli tracks progress from your ledger.</DialogDescription>
+          <DialogDescription>
+            Set a target and record what you&rsquo;ve saved toward it.
+          </DialogDescription>
         </DialogHeader>
         {open && <GoalForm onSubmit={onSubmit} onCancel={() => onOpenChange(false)} pending={pending} />}
       </DialogContent>
@@ -416,7 +418,7 @@ export default function FinancialIndependencePage() {
               <EmptyState
                 icon={Target}
                 title="No goals yet"
-                body="Set one and Salli tracks it from your ledger."
+                body="Set a target and track how close you are to it."
               />
             ) : (
               <div className="space-y-4">

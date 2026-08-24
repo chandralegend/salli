@@ -13,6 +13,7 @@ import type { TaxComputationFull, TaxPack } from "@/hooks/useTax";
 import { useComputeTax, useLatestTax, useTaxHistory, useTaxPacks } from "@/hooks/useTax";
 import { useReminderMutations } from "@/hooks/useReminders";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
+import { dueDateLabel, filingDueDate } from "@/lib/taxDates";
 import { useThemeColors } from "@/lib/theme";
 import { useToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -20,30 +21,6 @@ import { cn } from "@/lib/utils";
 const CURRENT_YEAR = "2025/26";
 const TABS = ["Overview", "Deductions", "History"] as const;
 type Tab = (typeof TABS)[number];
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-/** Return is due on the pack's declared return_due ("MM-DD") in the calendar year
- * after the year of assessment starts — e.g. AY 2025/26, return_due "11-30" → 30 Nov 2026. */
-function dueDateLabel(pack: TaxPack | undefined, packYear: string): string {
-  const startYear = Number(packYear.split("/")[0]);
-  const filingYear = startYear + 1;
-  if (!Number.isFinite(filingYear)) return "";
-  if (pack?.return_due) {
-    const [mm, dd] = pack.return_due.split("-").map(Number);
-    if (Number.isFinite(mm) && Number.isFinite(dd) && mm >= 1 && mm <= 12) {
-      return `Due ${dd} ${MONTHS[mm - 1]} ${filingYear}`;
-    }
-  }
-  return `Due 30 Nov ${filingYear}`;
-}
-
-/** The filing deadline as YYYY-MM-DD, for creating a reminder. */
-function filingDueDate(pack: TaxPack | undefined, packYear: string): string {
-  const filingYear = Number(packYear.split("/")[0]) + 1;
-  const md = pack?.return_due && /^\d{2}-\d{2}$/.test(pack.return_due) ? pack.return_due : "11-30";
-  return `${filingYear}-${md}`;
-}
 
 function effRate(r: TaxComputationFull): number {
   return Number(r.tax_payable) / Number(r.gross_income || 1);
@@ -152,16 +129,25 @@ function OverviewTab({
     );
   };
 
+  // When withheld tax exceeds the liability the bill is zero and the taxpayer
+  // is owed money. Showing only "Rs. 0" hid that entirely.
+  const isRefund = Number(data.refund_due ?? 0) > 0;
+
   return (
     <View className="px-4 pt-3">
       <Card className="bg-salli-navy-card p-[18px]">
         <Text className="mb-2 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
-          Net Tax Payable · AY {data.pack_year}
+          {isRefund ? "Refund Due" : "Net Tax Payable"} · AY {data.pack_year}
         </Text>
         <View className="mb-1 flex-row items-baseline gap-1">
           <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
-          <Text className="font-sans-extrabold text-[44px] tracking-tighter text-white">
-            {formatLKR(data.tax_payable, 0)}
+          <Text
+            className={cn(
+              "font-sans-extrabold text-[44px] tracking-tighter",
+              isRefund ? "text-salli-accent" : "text-white",
+            )}
+          >
+            {formatLKR(isRefund ? data.refund_due : data.tax_payable, 0)}
           </Text>
         </View>
         <Text className="mb-3.5 text-[11px] text-white/30">

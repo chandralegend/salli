@@ -16,6 +16,28 @@ AccountType = Literal["asset", "liability", "equity", "income", "expense"]
 
 Source = Literal["manual", "statement", "sms", "system"]
 
+# What an account means to the tax engine, declared explicitly rather than
+# guessed from its name.
+#
+# This replaces substring matching on `Account.name` ("apit" in name.lower(),
+# "qualifying" or "donation", code.startswith("FSI")), which was wrong in two
+# directions at once: it silently missed the accounts onboarding actually seeds
+# — "APIT Receivable" is an *asset*, while the old mapping only inspected
+# liabilities, so every onboarded user's withheld tax was ignored and their tax
+# payable overstated by that amount — and it could fire on unrelated accounts
+# that merely contained the letters (a liability named "Waiting Clearing"
+# counted as AIT withheld).
+#
+# `AccountType` stays the accounting classification; `TaxRole` is the tax
+# treatment. They answer different questions and an account needs both.
+TaxRole = Literal[
+    "apit_credit",
+    "ait_credit",
+    "foreign_tax_credit",
+    "qualifying_payment",
+    "fsi_income",
+]
+
 
 class Account(BaseModel):
     id: str
@@ -26,6 +48,7 @@ class Account(BaseModel):
     currency: str = "LKR"
     parent_id: str | None = None
     is_active: bool = True
+    tax_role: TaxRole | None = None
 
 
 class Posting(BaseModel):

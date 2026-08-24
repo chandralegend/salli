@@ -54,7 +54,15 @@ class LedgerRepository(ABC):
 
     @abstractmethod
     async def update_account(
-        self, user_id: str, account_id: str, *, code: str, name: str, type: str, currency: str
+        self,
+        user_id: str,
+        account_id: str,
+        *,
+        code: str,
+        name: str,
+        type: str,
+        currency: str,
+        tax_role: str | None = None,
     ) -> None:
         """Update mutable fields of an existing account."""
         ...

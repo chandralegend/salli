@@ -26,6 +26,8 @@ export type TaxResult = {
   total_tax: string;
   credits: { apit: string; ait: string; ftc: string };
   tax_payable: string;
+  /** Credits in excess of the liability — money owed back to the taxpayer. */
+  refund_due: string;
   bands: TaxBand[];
   currency: string;
   pack_country: string;
@@ -81,6 +83,7 @@ function normalize(raw: Record<string, any>): TaxResult {
       ftc: fmt(raw.foreign_tax_credit),
     },
     tax_payable: fmt(raw.tax_payable),
+    refund_due: fmt(raw.refund_due),
     bands,
     currency: "LKR",
     pack_country: raw.pack_country ?? "LK",

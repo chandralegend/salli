@@ -20,13 +20,23 @@ export type TaxComputationFull = {
   pack_year: string;
   pack_version: string;
   gross_income: string;
+  // Foreign Service Income is taxed at a flat rate outside the progressive
+  // bands. These fields were omitted here, so a mobile user with foreign income
+  // saw a headline figure their visible bands could not add up to.
+  foreign_service_income: string;
+  regular_income: string;
+  fsi_tax: string;
   personal_relief_applied: string;
+  qp_deduction: string;
   taxable_income: string;
   tax_before_credits: string;
   apit_credit: string;
   ait_credit: string;
   foreign_tax_credit: string;
+  total_credits: string;
   tax_payable: string;
+  /** Credits in excess of the liability — money owed back to the taxpayer. */
+  refund_due: string;
   band_workings: BandWorking[];
 };
 

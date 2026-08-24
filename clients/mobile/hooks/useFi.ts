@@ -3,6 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createGoalFiGoalsPost,
   deleteGoalFiGoalsGoalIdDelete,
+  listGoalAllocationsFiGoalsGoalIdAllocationsGet,
+  setGoalAllocationFiGoalsGoalIdAllocationsPut,
+  updateGoalFiGoalsGoalIdPatch,
   generateStrategyFiStrategyGeneratePost,
   getProjectionsFiProjectionsGet,
   getScoreFiScoreGet,
@@ -105,9 +108,24 @@ export type FiGoal = {
   name: string;
   kind: string;
   target_amount: string;
+  /** Money actually behind this goal — the live balance of the accounts
+   *  earmarked to it, apportioned by priority. Not a number anyone types. */
   current_amount: string;
+  /** What the user earmarked. A gap to `current_amount` means the accounts
+   *  backing this goal do not hold what has been claimed against them. */
+  allocated_amount: string;
+  shortfall: string;
   progress: number;
   target_date: string | null;
+  /** 1 high … 3 low. Decides who stays funded when one account backs several
+   *  goals and cannot cover them all. */
+  priority: number;
+};
+
+export type GoalAllocation = {
+  goal_id: string;
+  account_id: string;
+  allocated_amount: string;
 };
 
 export type AdvisorRecommendation = {
@@ -215,6 +233,22 @@ export function useFiGoalMutations() {
     onSuccess: invalidate,
   });
 
+  // The backend has had PATCH /fi/goals/{id} all along; nothing ever called it,
+  // so changing a goal meant deleting and recreating it and losing its history.
+  const updateGoal = useMutation({
+    mutationFn: async (input: {
+      id: string;
+      name?: string;
+      target_amount?: number;
+      target_date?: string | null;
+      priority?: number;
+    }) => {
+      const { id, ...body } = input;
+      await updateGoalFiGoalsGoalIdPatch({ path: { goal_id: id }, body, throwOnError: true });
+    },
+    onSuccess: invalidate,
+  });
+
   const deleteGoal = useMutation({
     mutationFn: async (goalId: string) => {
       await deleteGoalFiGoalsGoalIdDelete({ path: { goal_id: goalId }, throwOnError: true });
@@ -222,7 +256,42 @@ export function useFiGoalMutations() {
     onSuccess: invalidate,
   });
 
-  return { createGoal, deleteGoal };
+  const setAllocation = useMutation({
+    mutationFn: async (input: {
+      goalId: string;
+      account_id: string;
+      allocated_amount: number;
+    }) => {
+      await setGoalAllocationFiGoalsGoalIdAllocationsPut({
+        path: { goal_id: input.goalId },
+        body: { account_id: input.account_id, allocated_amount: input.allocated_amount },
+        throwOnError: true,
+      });
+    },
+    onSuccess: () => {
+      invalidate();
+      // Earmarking changes the goals component of the Freedom Score.
+      qc.invalidateQueries({ queryKey: ["fi-score"] });
+      qc.invalidateQueries({ queryKey: ["fi-allocations"] });
+    },
+  });
+
+  return { createGoal, updateGoal, deleteGoal, setAllocation };
+}
+
+/** Which accounts are earmarked for one goal, and how much of each. */
+export function useGoalAllocations(goalId: string | null) {
+  return useQuery({
+    queryKey: ["fi-allocations", goalId],
+    enabled: !!goalId,
+    queryFn: async () => {
+      const { data } = await listGoalAllocationsFiGoalsGoalIdAllocationsGet({
+        path: { goal_id: goalId as string },
+        throwOnError: true,
+      });
+      return (data as unknown as { allocations: GoalAllocation[] }).allocations;
+    },
+  });
 }
 
 export function useLatestAdvisorReport() {

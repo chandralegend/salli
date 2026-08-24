@@ -649,6 +649,57 @@
         }
       }
     },
+    "/entries/postings/{posting_id}/tags": {
+      "put": {
+        "tags": [
+          "entries"
+        ],
+        "summary": "Set Posting Tags",
+        "description": "Replace a posting's tags. Retagging never touches the posted amounts.",
+        "operationId": "set_posting_tags_entries_postings__posting_id__tags_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "posting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Posting Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPostingTagsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ledger/trial-balance": {
       "get": {
         "tags": [
@@ -746,6 +797,62 @@
             "schema": {
               "type": "string",
               "title": "To Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tags/": {
+      "get": {
+        "tags": [
+          "tags"
+        ],
+        "summary": "List Tags",
+        "operationId": "list_tags_tags__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "category",
+                    "need"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
             }
           }
         ],
@@ -2874,6 +2981,105 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/fi/goals/{goal_id}/allocations": {
+      "get": {
+        "tags": [
+          "financial-independence"
+        ],
+        "summary": "List Goal Allocations",
+        "operationId": "list_goal_allocations_fi_goals__goal_id__allocations_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "goal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Goal Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "financial-independence"
+        ],
+        "summary": "Set Goal Allocation",
+        "description": "Earmark part of an account for this goal. An amount of 0 clears it.",
+        "operationId": "set_goal_allocation_fi_goals__goal_id__allocations_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "goal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Goal Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AllocationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/advisor/daily-briefing": {
@@ -5720,6 +5926,32 @@
         ],
         "title": "AddEntryRequest"
       },
+      "AllocationRequest": {
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "title": "Account Id"
+          },
+          "allocated_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Allocated Amount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "account_id",
+          "allocated_amount"
+        ],
+        "title": "AllocationRequest"
+      },
       "BalanceSheetRequest": {
         "properties": {
           "balances": {
@@ -6482,14 +6714,17 @@
             "default": "custom"
           },
           "target_amount": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
             "title": "Target Amount",
-            "default": 0
-          },
-          "current_amount": {
-            "type": "number",
-            "title": "Current Amount",
-            "default": 0
+            "default": "0"
           },
           "target_date": {
             "anyOf": [
@@ -6544,21 +6779,14 @@
                 "type": "number"
               },
               {
-                "type": "null"
-              }
-            ],
-            "title": "Target Amount"
-          },
-          "current_amount": {
-            "anyOf": [
-              {
-                "type": "number"
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Current Amount"
+            "title": "Target Amount"
           },
           "target_date": {
             "anyOf": [
@@ -6758,7 +6986,15 @@
             "title": "Name"
           },
           "amount": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
             "title": "Amount"
           },
           "deposit_account_code": {
@@ -6817,14 +7053,17 @@
             "default": "custom"
           },
           "target_amount": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
             "title": "Target Amount",
-            "default": 0
-          },
-          "current_amount": {
-            "type": "number",
-            "title": "Current Amount",
-            "default": 0
+            "default": "0"
           },
           "target_date": {
             "anyOf": [
@@ -6948,7 +7187,15 @@
             "title": "Type"
           },
           "amount": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
             "title": "Amount"
           }
         },
@@ -7267,6 +7514,14 @@
               }
             ],
             "title": "Fx Rate Source"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags",
+            "default": {}
           }
         },
         "type": "object",
@@ -7620,6 +7875,22 @@
           "key"
         ],
         "title": "SaveKeyRequest"
+      },
+      "SetPostingTagsRequest": {
+        "properties": {
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tags"
+        ],
+        "title": "SetPostingTagsRequest"
       },
       "SubscriptionRequest": {
         "properties": {

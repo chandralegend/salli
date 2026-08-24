@@ -12,7 +12,6 @@ import {
   Shield,
   Sparkles,
   Target,
-  Trash2,
   TrendingUp,
   Wallet,
 } from "lucide-react-native";
@@ -23,6 +22,8 @@ import Svg, { Circle, Line, Path, Polyline } from "react-native-svg";
 
 import { QuotaBanner } from "@/components/shared/QuotaBanner";
 import { TourTarget } from "@/components/tour/TourTarget";
+import { GoalDetailDrawer } from "@/components/fi/GoalDetailDrawer";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { InfoButton } from "@/components/ui/info-button";
@@ -42,6 +43,7 @@ import {
   useLatestAdvisorReport,
   useRunAdvisor,
   type FiProjections,
+  type FiGoal,
 } from "@/hooks/useFi";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useThemeColors } from "@/lib/theme";
@@ -182,6 +184,7 @@ export default function FinancialIndependenceScreen() {
   const [strategyOpen, setStrategyOpen] = useState(true);
   const [selectedBucket, setSelectedBucket] = useState<number | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [detailGoal, setDetailGoal] = useState<FiGoal | null>(null);
   const [newName, setNewName] = useState("");
   const [newAmount, setNewAmount] = useState("");
   const [newYear, setNewYear] = useState("");
@@ -192,7 +195,7 @@ export default function FinancialIndependenceScreen() {
   const strategy = useFiStrategy();
   const generateStrategy = useGenerateStrategy();
   const goals = useFiGoals();
-  const { createGoal, deleteGoal } = useFiGoalMutations();
+  const { createGoal } = useFiGoalMutations();
   const advisorReport = useLatestAdvisorReport();
   const runAdvisor = useRunAdvisor();
 
@@ -372,7 +375,7 @@ export default function FinancialIndependenceScreen() {
                   title="Goals"
                   description={
                     "Specific things you're saving toward — a deposit, a fund, a purchase — each with a target amount and date.\n\n" +
-                    "Set how much you've put aside for each one to track how close you are."
+                    "Tap a goal to earmark the accounts saving for it. Progress then comes from those accounts' real balances, so it only moves when your money does."
                   }
                 />
               </View>
@@ -717,7 +720,8 @@ export default function FinancialIndependenceScreen() {
                   const Icon = GOAL_ICON[goal.kind] ?? Target;
                   const year = goal.target_date ? new Date(goal.target_date).getFullYear() : null;
                   return (
-                    <Card key={goal.id} className={cn("p-3.5", done && "opacity-60")}>
+                    <AnimatedPressable key={goal.id} onPress={() => setDetailGoal(goal)}>
+                    <Card className={cn("p-3.5", done && "opacity-60")}>
                       <View className={cn("flex-row items-start justify-between", !done && "mb-2")}>
                         <View className="flex-1 flex-row items-center gap-2.5">
                           <View
@@ -741,17 +745,16 @@ export default function FinancialIndependenceScreen() {
                             </Text>
                           </View>
                         </View>
+                        {/* Edit and delete live in the detail drawer, which is
+                            reachable from every goal — the delete button used to
+                            sit inside this `!done` branch, so a completed goal
+                            could never be removed. */}
                         {done ? (
                           <View className="rounded-[4px] bg-salli-accent/15 px-2 py-0.5">
                             <Text className="text-[10px] font-sans-semibold text-salli-accent">Done</Text>
                           </View>
                         ) : (
-                          <View className="flex-row items-center gap-2.5">
-                            <Text className="font-sans-bold text-[13px] text-salli-accent">{(goal.progress * 100).toFixed(0)}%</Text>
-                            <Pressable onPress={() => deleteGoal.mutate(goal.id)}>
-                              <Trash2 size={13} color={colors.mutedForeground} strokeWidth={2} />
-                            </Pressable>
-                          </View>
+                          <Text className="font-sans-bold text-[13px] text-salli-accent">{(goal.progress * 100).toFixed(0)}%</Text>
                         )}
                       </View>
                       {!done ? (
@@ -761,9 +764,19 @@ export default function FinancialIndependenceScreen() {
                             <Text className="text-[11px] text-foreground/40">Rs. {formatLKRAbbrev(goal.current_amount)} saved</Text>
                             <Text className="text-[11px] text-foreground/40">of Rs. {formatLKRAbbrev(goal.target_amount)}</Text>
                           </View>
+                          {Number(goal.allocated_amount) === 0 ? (
+                            <Text className="mt-1.5 text-[11px] text-foreground/30">
+                              Tap to choose which account is saving for this.
+                            </Text>
+                          ) : Number(goal.shortfall) > 0 ? (
+                            <Text className="mt-1.5 text-[11px] text-[#B45309]">
+                              Rs. {formatLKRAbbrev(goal.shortfall)} short of what you earmarked.
+                            </Text>
+                          ) : null}
                         </>
                       ) : null}
                     </Card>
+                    </AnimatedPressable>
                   );
                 })
               )}
@@ -785,6 +798,15 @@ export default function FinancialIndependenceScreen() {
       <Text className="mt-4 px-8 text-center text-[11px] leading-4 text-foreground/25">
         Planning estimates only · Not financial advice · Numbers from deterministic engine
       </Text>
+
+      {/* Keyed on the goal so switching goals remounts the form rather than
+          re-seeding it in an effect. */}
+      <GoalDetailDrawer
+        key={detailGoal?.id}
+        goal={detailGoal}
+        visible={detailGoal !== null}
+        onClose={() => setDetailGoal(null)}
+      />
 
       <Drawer
         visible={addOpen}

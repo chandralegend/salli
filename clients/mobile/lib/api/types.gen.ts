@@ -74,6 +74,20 @@ export type AddEntryRequest = {
 };
 
 /**
+ * AllocationRequest
+ */
+export type AllocationRequest = {
+    /**
+     * Account Id
+     */
+    account_id: string;
+    /**
+     * Allocated Amount
+     */
+    allocated_amount: number | string;
+};
+
+/**
  * BalanceSheetRequest
  */
 export type BalanceSheetRequest = {
@@ -481,11 +495,7 @@ export type GoalRequest = {
     /**
      * Target Amount
      */
-    target_amount?: number;
-    /**
-     * Current Amount
-     */
-    current_amount?: number;
+    target_amount?: number | string;
     /**
      * Target Date
      */
@@ -511,11 +521,7 @@ export type GoalUpdateRequest = {
     /**
      * Target Amount
      */
-    target_amount?: number | null;
-    /**
-     * Current Amount
-     */
-    current_amount?: number | null;
+    target_amount?: number | string | null;
     /**
      * Target Date
      */
@@ -631,7 +637,7 @@ export type IncomeItem = {
     /**
      * Amount
      */
-    amount: number;
+    amount: number | string;
     /**
      * Deposit Account Code
      */
@@ -667,11 +673,7 @@ export type OnboardingGoalItem = {
     /**
      * Target Amount
      */
-    target_amount?: number;
-    /**
-     * Current Amount
-     */
-    current_amount?: number;
+    target_amount?: number | string;
     /**
      * Target Date
      */
@@ -765,7 +767,7 @@ export type OpeningBalanceItem = {
     /**
      * Amount
      */
-    amount: number;
+    amount: number | string;
 };
 
 /**
@@ -938,6 +940,12 @@ export type PostingRequest = {
      * Fx Rate Source
      */
     fx_rate_source?: string | null;
+    /**
+     * Tags
+     */
+    tags?: {
+        [key: string]: string;
+    };
 };
 
 /**
@@ -1113,6 +1121,18 @@ export type SaveKeyRequest = {
      * Key
      */
     key: string;
+};
+
+/**
+ * SetPostingTagsRequest
+ */
+export type SetPostingTagsRequest = {
+    /**
+     * Tags
+     */
+    tags: {
+        [key: string]: string;
+    };
 };
 
 /**
@@ -1635,6 +1655,36 @@ export type ReverseEntryEntriesEntryIdReversePostResponses = {
     201: unknown;
 };
 
+export type SetPostingTagsEntriesPostingsPostingIdTagsPutData = {
+    body: SetPostingTagsRequest;
+    path: {
+        /**
+         * Posting Id
+         */
+        posting_id: string;
+    };
+    query?: never;
+    url: '/entries/postings/{posting_id}/tags';
+};
+
+export type SetPostingTagsEntriesPostingsPostingIdTagsPutErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SetPostingTagsEntriesPostingsPostingIdTagsPutError = SetPostingTagsEntriesPostingsPostingIdTagsPutErrors[keyof SetPostingTagsEntriesPostingsPostingIdTagsPutErrors];
+
+export type SetPostingTagsEntriesPostingsPostingIdTagsPutResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type SetPostingTagsEntriesPostingsPostingIdTagsPutResponse = SetPostingTagsEntriesPostingsPostingIdTagsPutResponses[keyof SetPostingTagsEntriesPostingsPostingIdTagsPutResponses];
+
 export type TrialBalanceLedgerTrialBalanceGetData = {
     body?: never;
     path?: never;
@@ -1693,6 +1743,34 @@ export type IncomeStatementLedgerIncomeStatementGetErrors = {
 export type IncomeStatementLedgerIncomeStatementGetError = IncomeStatementLedgerIncomeStatementGetErrors[keyof IncomeStatementLedgerIncomeStatementGetErrors];
 
 export type IncomeStatementLedgerIncomeStatementGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListTagsTagsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Kind
+         */
+        kind?: 'category' | 'need' | null;
+    };
+    url: '/tags/';
+};
+
+export type ListTagsTagsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListTagsTagsGetError = ListTagsTagsGetErrors[keyof ListTagsTagsGetErrors];
+
+export type ListTagsTagsGetResponses = {
     /**
      * Successful Response
      */
@@ -2879,6 +2957,62 @@ export type SimulatePurchaseFiSimulatePurchasePostErrors = {
 export type SimulatePurchaseFiSimulatePurchasePostError = SimulatePurchaseFiSimulatePurchasePostErrors[keyof SimulatePurchaseFiSimulatePurchasePostErrors];
 
 export type SimulatePurchaseFiSimulatePurchasePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListGoalAllocationsFiGoalsGoalIdAllocationsGetData = {
+    body?: never;
+    path: {
+        /**
+         * Goal Id
+         */
+        goal_id: string;
+    };
+    query?: never;
+    url: '/fi/goals/{goal_id}/allocations';
+};
+
+export type ListGoalAllocationsFiGoalsGoalIdAllocationsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListGoalAllocationsFiGoalsGoalIdAllocationsGetError = ListGoalAllocationsFiGoalsGoalIdAllocationsGetErrors[keyof ListGoalAllocationsFiGoalsGoalIdAllocationsGetErrors];
+
+export type ListGoalAllocationsFiGoalsGoalIdAllocationsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SetGoalAllocationFiGoalsGoalIdAllocationsPutData = {
+    body: AllocationRequest;
+    path: {
+        /**
+         * Goal Id
+         */
+        goal_id: string;
+    };
+    query?: never;
+    url: '/fi/goals/{goal_id}/allocations';
+};
+
+export type SetGoalAllocationFiGoalsGoalIdAllocationsPutErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SetGoalAllocationFiGoalsGoalIdAllocationsPutError = SetGoalAllocationFiGoalsGoalIdAllocationsPutErrors[keyof SetGoalAllocationFiGoalsGoalIdAllocationsPutErrors];
+
+export type SetGoalAllocationFiGoalsGoalIdAllocationsPutResponses = {
     /**
      * Successful Response
      */

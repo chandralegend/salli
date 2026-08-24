@@ -41,6 +41,7 @@ import { QuotaBanner } from "@/components/shared/QuotaBanner";
 import { ProjectionChart } from "@/components/fi/ProjectionChart";
 import { AllocationDonut } from "@/components/fi/AllocationDonut";
 import { StrategySetup } from "@/components/fi/StrategySetup";
+import { GoalDetailDialog } from "@/components/fi/GoalDetailDialog";
 import {
   useApplyRecommendation,
   useCreateGoal,
@@ -53,6 +54,7 @@ import {
   useLatestAdvisory,
   useRecomputeScore,
   useRunAdvisor,
+  type Goal,
 } from "@/hooks/useFi";
 import { formatCompact, formatMoney, formatPct, pctValue } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -74,7 +76,8 @@ function AddGoalDialog({
         <DialogHeader>
           <DialogTitle>New goal</DialogTitle>
           <DialogDescription>
-            Set a target and record what you&rsquo;ve saved toward it.
+            Set a target, then earmark the account saving for it — Salli tracks the rest from
+            your ledger.
           </DialogDescription>
         </DialogHeader>
         {open && <GoalForm onSubmit={onSubmit} onCancel={() => onOpenChange(false)} pending={pending} />}
@@ -160,6 +163,7 @@ export default function FinancialIndependencePage() {
   const applyRec = useApplyRecommendation();
   const dismissRec = useDismissRecommendation();
   const createGoal = useCreateGoal();
+  const [detailGoal, setDetailGoal] = useState<Goal | null>(null);
   const deleteGoal = useDeleteGoal();
 
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
@@ -418,32 +422,43 @@ export default function FinancialIndependencePage() {
               <EmptyState
                 icon={Target}
                 title="No goals yet"
-                body="Set a target and track how close you are to it."
+                body="Set a target, then earmark the account saving for it."
               />
             ) : (
               <div className="space-y-4">
                 {goals.data.map((g) => {
                   const pct = Math.min(100, Math.round((g.progress ?? 0) * 100) / 1);
+                  const short = Number(g.shortfall ?? 0) > 0;
                   return (
-                    <div key={g.id} className="group">
+                    // The whole row opens the detail dialog — editing and
+                    // earmarking both live there. Delete moved in with them, so
+                    // it is no longer hidden behind a hover-only icon.
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => setDetailGoal(g)}
+                      className="block w-full text-left rounded-md -m-1.5 p-1.5 hover:bg-muted/50 transition-colors"
+                    >
                       <div className="flex items-center justify-between mb-1.5">
                         <p className="text-sm font-medium">{g.name}</p>
-                        <button
-                          type="button"
-                          aria-label={`Delete ${g.name}`}
-                          onClick={() => deleteGoal.mutate(g.id)}
-                          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
+                        <span className="text-xs text-muted-foreground">{pct}%</span>
                       </div>
                       <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                         <div className="h-full rounded-full bg-foreground" style={{ width: `${pct}%` }} />
                       </div>
                       <p className="money text-xs text-muted-foreground mt-1.5">
-                        LKR {formatMoney(g.current_amount, 0)} / {formatMoney(g.target_amount, 0)} · {pct}%
+                        LKR {formatMoney(g.current_amount, 0)} / {formatMoney(g.target_amount, 0)}
                       </p>
-                    </div>
+                      {Number(g.allocated_amount ?? 0) === 0 ? (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Choose which account is saving for this.
+                        </p>
+                      ) : short ? (
+                        <p className="text-xs text-amber-700 mt-1">
+                          LKR {formatMoney(g.shortfall, 0)} short of what you earmarked.
+                        </p>
+                      ) : null}
+                    </button>
                   );
                 })}
               </div>
@@ -534,6 +549,15 @@ export default function FinancialIndependencePage() {
           </div>
         </div>
       </section>
+
+      {/* Keyed on the goal so switching goals remounts the form rather than
+          re-seeding it in an effect. */}
+      <GoalDetailDialog
+        key={detailGoal?.id}
+        goal={detailGoal}
+        open={detailGoal !== null}
+        onOpenChange={(v) => !v && setDetailGoal(null)}
+      />
 
       <AddGoalDialog
         open={goalDialogOpen}

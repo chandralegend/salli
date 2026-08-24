@@ -77,10 +77,24 @@ export type Goal = {
   name: string;
   kind: string;
   target_amount: string;
+  /** Money actually behind this goal — the live balance of the accounts
+   *  earmarked to it, apportioned by priority. Not a number anyone types. */
   current_amount: string;
+  /** What the user earmarked. A gap to `current_amount` means those accounts
+   *  do not currently hold what has been claimed against them. */
+  allocated_amount: string;
+  shortfall: string;
   target_date: string | null;
+  /** 1 high … 3 low. Decides who stays funded when one account backs several
+   *  goals and cannot cover them all. */
   priority: number;
   progress: number;
+};
+
+export type GoalAllocation = {
+  goal_id: string;
+  account_id: string;
+  allocated_amount: string;
 };
 
 export type Recommendation = {
@@ -149,6 +163,35 @@ export function useUpdateGoal() {
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
       apiFetch("PATCH", `/fi/goals/${id}`, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["fi"] }),
+  });
+}
+
+/** Which accounts are earmarked for one goal, and how much of each. */
+export function useGoalAllocations(goalId: string | null) {
+  return useQuery({
+    queryKey: ["fi", "allocations", goalId],
+    enabled: !!goalId,
+    queryFn: () =>
+      apiFetch<{ allocations: GoalAllocation[] }>("GET", `/fi/goals/${goalId}/allocations`).then(
+        (r) => r.allocations,
+      ),
+  });
+}
+
+export function useSetGoalAllocation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      goalId,
+      account_id,
+      allocated_amount,
+    }: {
+      goalId: string;
+      account_id: string;
+      allocated_amount: number;
+    }) => apiFetch("PUT", `/fi/goals/${goalId}/allocations`, { account_id, allocated_amount }),
+    // Earmarking changes the goals component of the Freedom Score too.
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fi"] }),
   });
 }

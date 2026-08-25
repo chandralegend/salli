@@ -298,6 +298,9 @@ vercelEnv("web-supabase-anon", web.id, "NEXT_PUBLIC_SUPABASE_ANON_KEY", supabase
 // Outputs
 // ─────────────────────────────────────────────────────────────────────────────
 export const supabaseProjectRef = projectRef;
+// Exported so the advisor-cron setup workflow can build a psql connection
+// without hardcoding a host that would drift from `supabaseRegion`.
+export const supabasePoolerHostOut = poolerHost;
 export const supabaseApiUrl = supabaseUrl;
 export const renderApiUrl = apiUrl;
 export const renderServiceId = api.id;

@@ -1,0 +1,148 @@
+name: Daily advisor cron (setup)
+
+# The daily advisor has never run. Three things were missing, and this wires up
+# the two that can be automated:
+#
+#   1. CRON_SECRET was not set as a repo secret, so Pulumi never put it on the
+#      API, so `settings.cron_secret` was "" — and the endpoint's first check is
+#      `if not secret: 401`. Every call was rejected unconditionally, and pg_net
+#      ignores the response, so it would have failed silently every morning.
+#      YOU must add that secret; this workflow fails fast if it is missing.
+#
+#   2. supabase/migrations/…_advisor_daily_cron.sql defines the schedule but
+#      nothing ever applied it — no workflow, and Pulumi doesn't run SQL.
+#
+#   3. The job reads its URL and secret from database settings that were never
+#      set, and no-ops when they're absent.
+#
+# Manual only, and separate from `deploy.yml` on purpose: this touches database
+# settings and should never ride along with an ordinary code deploy.
+#
+# Safe to re-run. The migration unschedules before rescheduling, and the
+# settings are overwritten rather than appended.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "check = report current state only; apply = install the schedule"
+        type: choice
+        options:
+          - check
+          - apply
+        default: check
+
+concurrency:
+  group: advisor-cron-setup
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    env:
+      PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require CRON_SECRET
+        run: |
+          if [ -z "${CRON_SECRET}" ]; then
+            echo "::error::CRON_SECRET is not set as a repository secret."
+            echo "Without it the API's cron_secret is empty and /advisor/cron/run-due"
+            echo "returns 401 to every caller, including this schedule."
+            echo ""
+            echo "Generate one and add it, then re-run:"
+            echo "  openssl rand -base64 32"
+            echo "  gh secret set CRON_SECRET"
+            echo ""
+            echo "Then re-run the Deploy workflow so Pulumi puts it on the API."
+            exit 1
+          fi
+          echo "CRON_SECRET is present."
+
+      - name: Install Pulumi CLI
+        run: |
+          curl -fsSL https://get.pulumi.com | sh
+          echo "$HOME/.pulumi/bin" >> "$GITHUB_PATH"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: infra/pnpm-lock.yaml
+
+      - name: Install infra deps
+        working-directory: infra
+        run: pnpm install --frozen-lockfile
+
+      # The connection details are Pulumi outputs rather than more secrets, so
+      # they can't drift from what was actually provisioned.
+      - name: Read stack outputs
+        working-directory: infra
+        run: |
+          pulumi stack select prod
+          echo "PROJECT_REF=$(pulumi stack output supabaseProjectRef)" >> "$GITHUB_ENV"
+          echo "API_URL=$(pulumi stack output renderApiUrl)" >> "$GITHUB_ENV"
+          echo "POOLER_HOST=$(pulumi stack output supabasePoolerHostOut)" >> "$GITHUB_ENV"
+
+      - name: Report current state
+        run: |
+          export PGPASSWORD="$SUPABASE_DB_PASSWORD"
+          PSQL="psql -h ${POOLER_HOST} -p 5432 \
+                -U postgres.${PROJECT_REF} -d postgres -tA"
+          echo "### Daily advisor cron" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          $PSQL -c "select coalesce((select 'scheduled: ' || schedule from cron.job
+                      where jobname = 'salli-daily-advisor'), 'NOT SCHEDULED');" \
+            >> "$GITHUB_STEP_SUMMARY" 2>&1 || echo "pg_cron not installed yet" >> "$GITHUB_STEP_SUMMARY"
+          $PSQL -c "select 'advisor_url: ' ||
+                      coalesce(current_setting('app.salli_advisor_url', true), '(unset)');" \
+            >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
+          $PSQL -c "select 'cron_secret: ' ||
+                      case when coalesce(current_setting('app.salli_cron_secret', true), '') = ''
+                           then '(unset)' else '(set)' end;" \
+            >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install the schedule
+        if: inputs.mode == 'apply'
+        run: |
+          export PGPASSWORD="$SUPABASE_DB_PASSWORD"
+          PSQL="psql -h ${POOLER_HOST} -p 5432 \
+                -U postgres.${PROJECT_REF} -d postgres -v ON_ERROR_STOP=1"
+
+          # Settings first — the job no-ops without them, so ordering this way
+          # means the schedule is never live-but-misconfigured.
+          #
+          # Via -f, not -c: psql only interpolates `:'url'` for commands read
+          # from a file, and passing the secret as a variable keeps it out of
+          # the process command line.
+          $PSQL -v url="$API_URL/advisor/cron/run-due" -v secret="$CRON_SECRET" \
+            -f supabase/scripts/set_advisor_cron_settings.sql
+
+          $PSQL -f supabase/migrations/20260621090000_advisor_daily_cron.sql
+
+          echo "Installed. Verifying:" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          $PSQL -tA -c "select jobname || ' @ ' || schedule || ' active=' || active
+                        from cron.job where jobname = 'salli-daily-advisor';" \
+            >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Next steps
+        if: inputs.mode == 'apply'
+        run: |
+          {
+            echo ""
+            echo "The job fires at 06:00 UTC daily and only runs for users who"
+            echo "switched the daily briefing on — it spends their own advisor_runs"
+            echo "allowance, so it is opt-in rather than automatic."
+            echo ""
+            echo "To confirm it ran, check \`cron.job_run_details\` tomorrow, or"
+            echo "watch for advisory reports with trigger='scheduled'."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -41,10 +41,11 @@ export default function InsuranceScreen() {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Policies");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Policy | null>(null);
+  const [targetOpen, setTargetOpen] = useState(false);
   const policies = usePolicies();
   const targets = useTargets();
   const report = useCoverageReport();
-  const { deletePolicy, deleteTarget } = useInsuranceMutations();
+  const { deletePolicy, deleteTarget, setTarget } = useInsuranceMutations();
 
   const openAdd = () => {
     setEditing(null);
@@ -183,8 +184,14 @@ export default function InsuranceScreen() {
         {tab === "Targets" ? (
           <View className="gap-1.5 px-4 pt-3">
             {(targets.data ?? []).length === 0 ? (
-              <Card className="items-center p-6">
-                <Text className="text-[13px] text-foreground/35">No coverage targets declared.</Text>
+              <Card className="items-center gap-1.5 p-6">
+                <Text className="text-center text-[13px] text-foreground/45">
+                  No coverage targets yet
+                </Text>
+                <Text className="text-center text-[12px] leading-4 text-foreground/30">
+                  Declare how much cover you think you need, and the Coverage Report will show
+                  where you fall short.
+                </Text>
               </Card>
             ) : (
               (targets.data ?? []).map((t) => (
@@ -199,6 +206,22 @@ export default function InsuranceScreen() {
                 </Card>
               ))
             )}
+
+            {/* Without this the tab was delete-only: `setTarget` existed in the
+                hook and nothing rendered it, so a mobile-only user could never
+                declare a target — which left the whole coverage-gap engine
+                unreachable, since it only reports a gap where one is declared. */}
+            <Pressable
+              onPress={() => setTargetOpen(true)}
+              className="mt-1 flex-row items-center gap-2.5 rounded-control border border-dashed border-foreground/[0.12] bg-card px-3.5 py-[11px]"
+            >
+              <View className="h-8 w-8 items-center justify-center rounded-[9px] bg-foreground/[0.04]">
+                <Plus size={13} color={colors.mutedForeground} strokeWidth={2.5} />
+              </View>
+              <Text className="font-sans-medium text-[13px] text-foreground/45">
+                Set a coverage target
+              </Text>
+            </Pressable>
           </View>
         ) : null}
 
@@ -272,6 +295,17 @@ export default function InsuranceScreen() {
           </View>
         ) : null}
       </PageShell>
+
+      <SetTargetDrawer
+        visible={targetOpen}
+        onClose={() => setTargetOpen(false)}
+        existing={(targets.data ?? []).map((t) => t.policy_type)}
+        pending={setTarget.isPending}
+        onSubmit={async (policy_type, target_amount) => {
+          await setTarget.mutateAsync({ policy_type, target_amount });
+          setTargetOpen(false);
+        }}
+      />
 
       <AddEditPolicyDrawer
         visible={drawerOpen}
@@ -437,6 +471,98 @@ function AddEditPolicyDrawer({
         autoCapitalize="none"
         placeholder="YYYY-MM-DD"
       />
+    </Drawer>
+  );
+}
+
+
+/**
+ * Declare how much cover you think you need for one policy type.
+ *
+ * The coverage-gap engine only reports a gap where a target exists, so without
+ * this the Coverage Report stayed permanently empty for anyone who never opened
+ * the web app.
+ */
+function SetTargetDrawer({
+  visible,
+  onClose,
+  existing,
+  pending,
+  onSubmit,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  existing: string[];
+  pending: boolean;
+  onSubmit: (policyType: string, amount: number) => Promise<void>;
+}) {
+  const [policyType, setPolicyType] = useState<string>("life");
+  const [amount, setAmount] = useState("");
+
+  const value = Number(amount);
+  const valid = Number.isFinite(value) && value > 0;
+  // `PUT` upserts, so choosing a type that already has a target replaces it.
+  const replacing = existing.includes(policyType);
+
+  return (
+    <Drawer
+      visible={visible}
+      onClose={onClose}
+      title="Coverage target"
+      footer={
+        <PillButton
+          loading={pending}
+          disabled={!valid}
+          onPress={() => onSubmit(policyType, value)}
+        >
+          {replacing ? "Update target" : "Set target"}
+        </PillButton>
+      }
+    >
+      <View className="gap-3 pb-2">
+        <View>
+          <Text className="mb-1.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
+            Policy type
+          </Text>
+          <View className="flex-row flex-wrap gap-1.5">
+            {POLICY_TYPES.map((t) => (
+              <Pressable
+                key={t}
+                onPress={() => setPolicyType(t)}
+                className={cn(
+                  "rounded-pill px-3 py-1.5",
+                  policyType === t ? "bg-salli-accent" : "border border-foreground/10 bg-card",
+                )}
+              >
+                <Text
+                  className={cn(
+                    "text-[12px] capitalize",
+                    policyType === t
+                      ? "font-sans-semibold text-white"
+                      : "font-sans-medium text-foreground/55",
+                  )}
+                >
+                  {t}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        <TextField
+          label="Target cover"
+          value={amount}
+          onChangeText={setAmount}
+          keyboardType="numeric"
+          placeholder="e.g. 5000000"
+        />
+
+        <Text className="text-[11px] leading-4 text-foreground/30">
+          {replacing
+            ? "You already have a target for this type — saving replaces it."
+            : "The Coverage Report compares this against the policies you hold and shows the shortfall."}
+        </Text>
+      </View>
     </Drawer>
   );
 }

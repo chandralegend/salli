@@ -17,6 +17,35 @@ export type Reminder = {
   status: string;
 };
 
+/**
+ * Turn current budget-overspend, missed-charge and policy-expiry conditions
+ * into reminder rows, then refresh the list.
+ *
+ * `POST /reminders/sync-alerts` is the whole cross-domain alerting engine, and
+ * it had no caller anywhere and no scheduler — so these alerts had never fired
+ * for anyone. Running it when the page opens makes them appear without
+ * depending on infrastructure that doesn't exist yet.
+ *
+ * It's a write on a read-shaped action, which is only acceptable because the
+ * endpoint is explicitly idempotent: it upserts the conditions that are true
+ * right now rather than appending.
+ */
+export function useSyncAlertsOnOpen() {
+  const qc = useQueryClient();
+  return useQuery({
+    queryKey: ["reminders-sync"],
+    queryFn: async () => {
+      const r = await apiFetch<{ total: number }>("POST", "/reminders/sync-alerts");
+      await qc.invalidateQueries({ queryKey: ["reminders"] });
+      return r.total;
+    },
+    // Once per page visit is plenty — the conditions change with the ledger.
+    staleTime: 60 * 1000,
+    // An alert sweep failing must never blank the reminders list.
+    retry: false,
+  });
+}
+
 export function useReminders() {
   const qc = useQueryClient();
 

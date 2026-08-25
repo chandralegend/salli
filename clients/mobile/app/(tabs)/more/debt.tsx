@@ -189,7 +189,7 @@ export default function DebtScreen() {
           <View className="items-center gap-2 px-8 pt-16">
             <Text className="text-center font-sans-semibold text-[15px] text-foreground">No debts tracked</Text>
             <Text className="text-center text-[13px] text-foreground/35">
-              Add a loan from the web app to see a payoff plan here.
+              Add a loan with the ＋ above to see a payoff plan here.
             </Text>
           </View>
         ) : tab === "Overview" ? (

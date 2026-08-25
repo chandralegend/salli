@@ -187,15 +187,44 @@ export default function FinancialIndependencePage() {
     );
   }
 
-  // First run — no strategy yet (404 → null)
+  // First run — no strategy yet (404 → null).
+  //
+  // Goals and the spending breakdown come with it, because neither depends on a
+  // strategy. Returning only StrategySetup here meant a user who had not run the
+  // AI generator could not see or manage their goals at all — while on mobile
+  // Goals is its own tab and works regardless.
   if (!s) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Freedom"
-          subtitle="Design a FIRE strategy from your real numbers"
-        />
+      <div className="space-y-8">
+        <PageHeader title="Freedom" subtitle="Design a FIRE strategy from your real numbers" />
         <StrategySetup />
+
+        <section>
+          <SectionLabel className="mb-3">Spending</SectionLabel>
+          <SpendingBreakdown />
+        </section>
+
+        <section>
+          <SectionLabel className="mb-3">Goals</SectionLabel>
+          <GoalsPanel
+            goals={goals}
+            onOpen={setDetailGoal}
+            onAdd={() => setGoalDialogOpen(true)}
+          />
+        </section>
+
+        <GoalDetailDialog
+          key={detailGoal?.id}
+          goal={detailGoal}
+          open={detailGoal !== null}
+          onOpenChange={(v) => !v && setDetailGoal(null)}
+        />
+        <AddGoalDialog
+          open={goalDialogOpen}
+          onOpenChange={setGoalDialogOpen}
+          pending={createGoal.isPending}
+          onSubmit={(data) => createGoal.mutate(data, { onSuccess: () => setGoalDialogOpen(false) })}
+        />
       </div>
     );
   }
@@ -418,61 +447,7 @@ export default function FinancialIndependencePage() {
       <section>
         <SectionLabel className="mb-3">Goals &amp; Mentoring</SectionLabel>
         <div className="grid lg:grid-cols-2 gap-4 items-stretch">
-          <div className="rounded-lg border bg-card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[15px] font-semibold">Goals</h2>
-              <Button variant="outline" size="sm" onClick={() => setGoalDialogOpen(true)}>
-                <Plus className="size-3.5" /> Add goal
-              </Button>
-            </div>
-            {goals.isLoading ? (
-              <Skeleton className="h-24" />
-            ) : !goals.data || goals.data.length === 0 ? (
-              <EmptyState
-                icon={Target}
-                title="No goals yet"
-                body="Set a target, then earmark the account saving for it."
-              />
-            ) : (
-              <div className="space-y-4">
-                {goals.data.map((g) => {
-                  const pct = Math.min(100, Math.round((g.progress ?? 0) * 100) / 1);
-                  const short = Number(g.shortfall ?? 0) > 0;
-                  return (
-                    // The whole row opens the detail dialog — editing and
-                    // earmarking both live there. Delete moved in with them, so
-                    // it is no longer hidden behind a hover-only icon.
-                    <button
-                      key={g.id}
-                      type="button"
-                      onClick={() => setDetailGoal(g)}
-                      className="block w-full text-left rounded-md -m-1.5 p-1.5 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <p className="text-sm font-medium">{g.name}</p>
-                        <span className="text-xs text-muted-foreground">{pct}%</span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div className="h-full rounded-full bg-foreground" style={{ width: `${pct}%` }} />
-                      </div>
-                      <p className="money text-xs text-muted-foreground mt-1.5">
-                        LKR {formatMoney(g.current_amount, 0)} / {formatMoney(g.target_amount, 0)}
-                      </p>
-                      {Number(g.allocated_amount ?? 0) === 0 ? (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Choose which account is saving for this.
-                        </p>
-                      ) : short ? (
-                        <p className="text-xs text-amber-700 mt-1">
-                          LKR {formatMoney(g.shortfall, 0)} short of what you earmarked.
-                        </p>
-                      ) : null}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <GoalsPanel goals={goals} onOpen={setDetailGoal} onAdd={() => setGoalDialogOpen(true)} />
 
           <div className="rounded-lg bg-[var(--emphasis)] text-white p-5">
             <div className="flex items-center justify-between mb-3">
@@ -575,5 +550,78 @@ export default function FinancialIndependencePage() {
         onSubmit={(data) => createGoal.mutate(data, { onSuccess: () => setGoalDialogOpen(false) })}
       />
     </div>
+  );
+}
+
+/**
+ * The goals card. Extracted so the first-run path can render it too — goals do
+ * not depend on a FIRE strategy, but the page used to return only StrategySetup
+ * when none existed, which left them unreachable.
+ */
+function GoalsPanel({
+  goals,
+  onOpen,
+  onAdd,
+}: {
+  goals: ReturnType<typeof useGoals>;
+  onOpen: (g: Goal) => void;
+  onAdd: () => void;
+}) {
+  return (
+          <div className="rounded-lg border bg-card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-[15px] font-semibold">Goals</h2>
+              <Button variant="outline" size="sm" onClick={onAdd}>
+                <Plus className="size-3.5" /> Add goal
+              </Button>
+            </div>
+            {goals.isLoading ? (
+              <Skeleton className="h-24" />
+            ) : !goals.data || goals.data.length === 0 ? (
+              <EmptyState
+                icon={Target}
+                title="No goals yet"
+                body="Set a target, then earmark the account saving for it."
+              />
+            ) : (
+              <div className="space-y-4">
+                {goals.data.map((g) => {
+                  const pct = Math.min(100, Math.round((g.progress ?? 0) * 100) / 1);
+                  const short = Number(g.shortfall ?? 0) > 0;
+                  return (
+                    // The whole row opens the detail dialog — editing and
+                    // earmarking both live there. Delete moved in with them, so
+                    // it is no longer hidden behind a hover-only icon.
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => onOpen(g)}
+                      className="block w-full text-left rounded-md -m-1.5 p-1.5 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <p className="text-sm font-medium">{g.name}</p>
+                        <span className="text-xs text-muted-foreground">{pct}%</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-foreground" style={{ width: `${pct}%` }} />
+                      </div>
+                      <p className="money text-xs text-muted-foreground mt-1.5">
+                        LKR {formatMoney(g.current_amount, 0)} / {formatMoney(g.target_amount, 0)}
+                      </p>
+                      {Number(g.allocated_amount ?? 0) === 0 ? (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Choose which account is saving for this.
+                        </p>
+                      ) : short ? (
+                        <p className="text-xs text-amber-700 mt-1">
+                          LKR {formatMoney(g.shortfall, 0)} short of what you earmarked.
+                        </p>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
   );
 }

@@ -28,7 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StatusChip } from "@/components/shared/StatusChip";
-import { useReminders, type Reminder } from "@/hooks/useReminders";
+import { useReminders, type Reminder, useSyncAlertsOnOpen } from "@/hooks/useReminders";
 import { daysUntil, deadlineLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -118,6 +118,8 @@ function CreateForm({
 
 export default function RemindersPage() {
   const { reminders, markDone, deleteReminder, seedCalendar, createReminder } = useReminders();
+  // Surfaces budget/subscription/insurance alerts that would otherwise never appear.
+  useSyncAlertsOnOpen();
   const [createOpen, setCreateOpen] = useState(false);
   const [deleting, setDeleting] = useState<Reminder | null>(null);
   const [filter, setFilter] = useState<Bucket | null>(null);

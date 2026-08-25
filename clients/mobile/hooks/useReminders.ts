@@ -6,6 +6,7 @@ import {
   listRemindersRemindersGet,
   markDoneRemindersReminderIdDonePatch,
   seedFilingCalendarRemindersSeedPost,
+  syncAlertsRemindersSyncAlertsPost,
 } from "@/lib/api/sdk.gen";
 
 export type Reminder = {
@@ -24,6 +25,36 @@ export function useReminders() {
       const { data } = await listRemindersRemindersGet({ throwOnError: true });
       return (data as unknown as { reminders: Reminder[] }).reminders;
     },
+  });
+}
+
+/**
+ * Turn current budget-overspend, missed-charge and policy-expiry conditions
+ * into reminder rows, then list them.
+ *
+ * `POST /reminders/sync-alerts` is the whole cross-domain alerting engine, and
+ * it had no caller anywhere and no scheduler — so these alerts had never fired
+ * for anyone. Running it when the screen opens makes them appear without
+ * depending on infrastructure that doesn't exist yet.
+ *
+ * It's a write on a read-shaped action, which is only acceptable because the
+ * endpoint is explicitly idempotent: it upserts the conditions that are true
+ * right now rather than appending.
+ */
+export function useSyncAlertsOnOpen() {
+  const qc = useQueryClient();
+  return useQuery({
+    queryKey: ["reminders-sync"],
+    queryFn: async () => {
+      const { data } = await syncAlertsRemindersSyncAlertsPost({ throwOnError: true });
+      await qc.invalidateQueries({ queryKey: ["reminders"] });
+      return (data as unknown as { total: number }).total;
+    },
+    // Once per screen visit is plenty — the conditions change with the ledger,
+    // not by the second.
+    staleTime: 60 * 1000,
+    // An alert sweep failing must never blank the reminders list.
+    retry: false,
   });
 }
 

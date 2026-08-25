@@ -1,6 +1,7 @@
 import {
   Calendar,
   Check,
+  Trash2,
   ChevronRight,
   Plus,
   Search,
@@ -14,7 +15,8 @@ import { PageShell } from "@/components/ui/page-shell";
 import { PillButton } from "@/components/ui/pill-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { TextField } from "@/components/ui/text-field";
-import { useReminderMutations, useReminders, type Reminder } from "@/hooks/useReminders";
+import { useReminderMutations, useReminders, type Reminder, useSyncAlertsOnOpen } from "@/hooks/useReminders";
+import { confirmDestructive } from "@/lib/confirm";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -45,7 +47,9 @@ function statusMeta(r: Reminder) {
 export default function RemindersScreen() {
   const colors = useThemeColors();
   const reminders = useReminders();
-  const { create, markDone, seed } = useReminderMutations();
+  const { create, markDone, remove, seed } = useReminderMutations();
+  // Surfaces budget/subscription/insurance alerts that would otherwise never appear.
+  useSyncAlertsOnOpen();
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
   const [search, setSearch] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -141,22 +145,44 @@ export default function RemindersScreen() {
             </View>
           ) : null}
         </View>
-        {kind === "overdue" ? (
-          <Pressable onPress={() => markDone.mutate(r.id)} className="rounded-[8px] bg-primary px-2.5 py-1.5">
-            <Text className="font-sans-semibold text-[11px] text-primary-foreground">Done</Text>
-          </Pressable>
-        ) : kind === "dueSoon" ? (
+        <View className="flex-row items-center gap-2.5">
+          {kind === "overdue" ? (
+            <Pressable onPress={() => markDone.mutate(r.id)} className="rounded-[8px] bg-primary px-2.5 py-1.5">
+              <Text className="font-sans-semibold text-[11px] text-primary-foreground">Done</Text>
+            </Pressable>
+          ) : kind === "dueSoon" ? (
+            <Pressable
+              onPress={() => markDone.mutate(r.id)}
+              className="rounded-[8px] border border-foreground/10 bg-foreground/[0.06] px-2.5 py-1.5"
+            >
+              <Text className="font-sans-semibold text-[11px] text-foreground/50">Done</Text>
+            </Pressable>
+          ) : kind === "upcoming" ? (
+            <ChevronRight size={13} color={colors.mutedForeground} strokeWidth={2} />
+          ) : (
+            <Check size={16} color={colors.mutedForeground} strokeWidth={2.5} />
+          )}
+          {/* Web has had delete all along; mobile's `remove` mutation existed
+              and nothing rendered it, so a reminder created by mistake was
+              permanent. Marking done and deleting are different intents —
+              "I did this" versus "this shouldn't be here". */}
           <Pressable
-            onPress={() => markDone.mutate(r.id)}
-            className="rounded-[8px] border border-foreground/10 bg-foreground/[0.06] px-2.5 py-1.5"
+            onPress={() =>
+              confirmDestructive({
+                title: "Delete reminder",
+                message: `"${r.kind}" will be removed. This can't be undone.`,
+                onConfirm: async () => {
+                  await remove.mutateAsync(r.id);
+                },
+              })
+            }
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${r.kind}`}
           >
-            <Text className="font-sans-semibold text-[11px] text-foreground/50">Done</Text>
+            <Trash2 size={13} color={colors.mutedForeground} strokeWidth={2} />
           </Pressable>
-        ) : kind === "upcoming" ? (
-          <ChevronRight size={13} color={colors.mutedForeground} strokeWidth={2} />
-        ) : (
-          <Check size={16} color={colors.mutedForeground} strokeWidth={2.5} />
-        )}
+        </View>
       </View>
     );
   };

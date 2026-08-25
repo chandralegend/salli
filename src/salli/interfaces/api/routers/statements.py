@@ -2,6 +2,7 @@
 Statement parsing router.
 
 POST /statements/upload     — upload a bank statement (PDF/XLSX/CSV), returns ParseResult
+GET  /statements/            — statements uploaded so far, newest first
 GET  /statements/{id}       — fetch pending transactions for a statement
 POST /statements/{id}/post  — approve and post selected transactions as journal entries
 """
@@ -72,6 +73,17 @@ async def upload_statement(
         "errors": result.errors,
         "transactions": [_txn_dict(t) for t in result.transactions],
     }
+
+
+@router.get("/")
+async def list_statements(user_id: CurrentUser, svc: AppServices, limit: int = 50):
+    """
+    Statements this user has uploaded, newest first.
+
+    These rows were always persisted — nothing exposed them, so the mobile app
+    told users a statement history "isn't tracked by the server yet".
+    """
+    return {"statements": await svc.parsing.list_statements(user_id, limit)}
 
 
 @router.get("/{statement_id}")

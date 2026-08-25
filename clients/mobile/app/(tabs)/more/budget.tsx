@@ -11,6 +11,7 @@ import {
   Wifi,
   Zap,
 } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
@@ -60,6 +61,7 @@ function currentMonthLabel() {
 }
 
 export default function BudgetScreen() {
+  const router = useRouter();
   const colors = useThemeColors();
   const budgets = useBudgets();
   const accounts = useAccounts();
@@ -370,11 +372,25 @@ export default function BudgetScreen() {
                 );
               })
             )}
-            <Pressable className="flex-row items-center gap-2.5 rounded-control border border-dashed border-foreground/10 bg-card px-3.5 py-[11px]">
+            {/* A budget line is an expense account, so "add a category" means
+                creating one — which happens in the Ledger. This used to be a
+                Pressable with no onPress at all: it looked like a control and
+                did nothing. */}
+            <Pressable
+              onPress={() => router.push("/(tabs)/ledger")}
+              className="flex-row items-center gap-2.5 rounded-control border border-dashed border-foreground/10 bg-card px-3.5 py-[11px]"
+            >
               <View className="h-8 w-8 items-center justify-center rounded-[9px] bg-foreground/[0.04]">
                 <Plus size={13} color="rgba(128,128,128,0.4)" strokeWidth={2.5} />
               </View>
-              <Text className="font-sans-medium text-[13px] text-foreground/30">Add category</Text>
+              <View className="flex-1">
+                <Text className="font-sans-medium text-[13px] text-foreground/45">
+                  Add a spending category
+                </Text>
+                <Text className="mt-0.5 text-[11px] text-foreground/30">
+                  Categories come from your expense accounts — add one in the Ledger
+                </Text>
+              </View>
             </Pressable>
           </View>
 

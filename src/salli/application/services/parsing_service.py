@@ -192,6 +192,11 @@ class ParsingService:
             raw_rows=raw_rows,
         )
 
+    async def list_statements(self, user_id: str, limit: int = 50) -> list[dict[str, Any]]:
+        """Every statement this user has uploaded, newest first."""
+        async with self._uow_factory() as uow:
+            return await uow.statements.list_statements(user_id, limit)
+
     async def get_pending(self, user_id: str) -> list[ParsedTransaction]:
         """Return all unposted transactions across all statements for this user."""
         async with self._uow_factory() as uow:

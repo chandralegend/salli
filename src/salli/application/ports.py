@@ -169,6 +169,15 @@ class StatementRepository(ABC):
     async def get_by_ids(self, user_id: str, ids: list[str]) -> list[Any]: ...
 
     @abstractmethod
+    async def list_statements(self, user_id: str, limit: int = 50) -> list[Any]:
+        """Every statement this user has uploaded, newest first.
+
+        The rows were always persisted; nothing exposed them, so the mobile app
+        told users a statement history "isn't tracked by the server yet".
+        """
+        ...
+
+    @abstractmethod
     async def mark_posted(self, transaction_id: str, entry_id: str) -> None: ...
 
     @abstractmethod

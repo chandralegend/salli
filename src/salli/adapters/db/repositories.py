@@ -478,6 +478,31 @@ class SQLStatementRepository(StatementRepository):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    async def list_statements(self, user_id: str, limit: int = 50) -> list[dict[str, Any]]:
+        rows = (
+            (
+                await self._session.execute(
+                    select(StatementORM)
+                    .where(StatementORM.user_id == user_id)
+                    .order_by(StatementORM.created_at.desc())
+                    .limit(limit)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        return [
+            {
+                "id": r.id,
+                "bank": r.bank,
+                "period_start": r.period_start,
+                "period_end": r.period_end,
+                "status": r.status,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in rows
+        ]
+
     async def save_statement(
         self,
         user_id: str,

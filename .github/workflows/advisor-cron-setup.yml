@@ -93,20 +93,38 @@ jobs:
       - name: Report current state
         run: |
           export PGPASSWORD="$SUPABASE_DB_PASSWORD"
-          PSQL="psql -h ${POOLER_HOST} -p 5432 \
-                -U postgres.${PROJECT_REF} -d postgres -tA"
+          PSQL="psql -h ${POOLER_HOST} -p 5432 -U postgres.${PROJECT_REF} -d postgres -tA"
+
+          # Connectivity is checked on its own and allowed to fail the step. The
+          # per-query calls below tolerate errors (a missing cron schema is a
+          # legitimate "not installed yet"), so without this a run that could not
+          # reach the database at all would report nothing and still pass.
+          if ! $PSQL -c "select 1" >/dev/null 2>db_err.txt; then
+            echo "::error::Could not connect to the database."
+            sed -e "s/${SUPABASE_DB_PASSWORD}/***/g" db_err.txt || true
+            exit 1
+          fi
+          echo "Connected to ${POOLER_HOST} as postgres.${PROJECT_REF}"
+
+          # Written to stdout as well as the job summary — `gh run view --log`
+          # does not show step summaries, so summary-only output is invisible to
+          # anyone driving this from the CLI.
+          report() {
+            echo "$1"
+            echo "$1" >> "$GITHUB_STEP_SUMMARY"
+          }
+
           echo "### Daily advisor cron" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          $PSQL -c "select coalesce((select 'scheduled: ' || schedule from cron.job
-                      where jobname = 'salli-daily-advisor'), 'NOT SCHEDULED');" \
-            >> "$GITHUB_STEP_SUMMARY" 2>&1 || echo "pg_cron not installed yet" >> "$GITHUB_STEP_SUMMARY"
-          $PSQL -c "select 'advisor_url: ' ||
-                      coalesce(current_setting('app.salli_advisor_url', true), '(unset)');" \
-            >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
-          $PSQL -c "select 'cron_secret: ' ||
-                      case when coalesce(current_setting('app.salli_cron_secret', true), '') = ''
-                           then '(unset)' else '(set)' end;" \
-            >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
+          report "schedule:    $($PSQL -c "select coalesce((select schedule from cron.job
+                                  where jobname = 'salli-daily-advisor'), 'NOT SCHEDULED');" \
+                                2>/dev/null || echo 'NOT SCHEDULED (pg_cron absent)')"
+          report "advisor_url: $($PSQL -c "select coalesce(
+                                  current_setting('app.salli_advisor_url', true), '(unset)');" \
+                                2>/dev/null || echo '(unknown)')"
+          report "cron_secret: $($PSQL -c "select case when coalesce(
+                                  current_setting('app.salli_cron_secret', true), '') = ''
+                                  then '(unset)' else '(set)' end;" 2>/dev/null || echo '(unknown)')"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install the schedule

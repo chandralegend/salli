@@ -12,8 +12,8 @@ name: Daily advisor cron (setup)
 #   2. supabase/migrations/…_advisor_daily_cron.sql defines the schedule but
 #      nothing ever applied it — no workflow, and Pulumi doesn't run SQL.
 #
-#   3. The job reads its URL and secret from database settings that were never
-#      set, and no-ops when they're absent.
+#   3. The job reads its URL and secret from Supabase Vault, which were never
+#      stored, and no-ops when they're absent.
 #
 # Manual only, and separate from `deploy.yml` on purpose: this touches database
 # settings and should never ride along with an ordinary code deploy.
@@ -119,12 +119,16 @@ jobs:
           report "schedule:    $($PSQL -c "select coalesce((select schedule from cron.job
                                   where jobname = 'salli-daily-advisor'), 'NOT SCHEDULED');" \
                                 2>/dev/null || echo 'NOT SCHEDULED (pg_cron absent)')"
-          report "advisor_url: $($PSQL -c "select coalesce(
-                                  current_setting('app.salli_advisor_url', true), '(unset)');" \
-                                2>/dev/null || echo '(unknown)')"
-          report "cron_secret: $($PSQL -c "select case when coalesce(
-                                  current_setting('app.salli_cron_secret', true), '') = ''
-                                  then '(unset)' else '(set)' end;" 2>/dev/null || echo '(unknown)')"
+          # Read from Vault, not database settings: Supabase denies
+          # `ALTER DATABASE … SET` to its non-superuser `postgres` role.
+          report "advisor_url: $($PSQL -c "select coalesce((select decrypted_secret
+                                  from vault.decrypted_secrets where name = 'salli_advisor_url'),
+                                  '(unset)');" 2>/dev/null || echo '(unknown — vault absent)')"
+          # Never print the secret itself, only whether it is there.
+          report "cron_secret: $($PSQL -c "select case when (select decrypted_secret
+                                  from vault.decrypted_secrets where name = 'salli_cron_secret')
+                                  is null then '(unset)' else '(set)' end;" \
+                                2>/dev/null || echo '(unknown — vault absent)')"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install the schedule

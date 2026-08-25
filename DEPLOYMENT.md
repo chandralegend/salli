@@ -103,9 +103,14 @@ them were:
 2. **The schedule is installed.** `supabase/migrations/…_advisor_daily_cron.sql`
    defines it, but nothing applies Supabase migrations automatically.
 
-3. **The two database settings are set.** The job reads its URL and secret from
-   `app.salli_advisor_url` / `app.salli_cron_secret` at run time and no-ops
-   safely when they are absent.
+3. **The two values are in Supabase Vault.** The job reads them at run time and
+   no-ops safely when they are absent, so installing the schedule first is
+   harmless.
+
+   This originally used `ALTER DATABASE … SET`, which Supabase denies — its
+   `postgres` role is not a superuser ("permission denied to set parameter").
+   Vault is the supported way to hold a secret a scheduled job needs, and keeps
+   it encrypted at rest.
 
 Steps 2 and 3 are handled by the **Daily advisor cron (setup)** workflow:
 

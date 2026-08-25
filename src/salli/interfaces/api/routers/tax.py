@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Any
 
 from fastapi import APIRouter
 
@@ -38,7 +39,7 @@ async def list_packs(svc: AppServices):
 # ── shared formatter ────────────────────────────────────────────────────────
 
 
-def _fmt_computation(result: TaxComputation | dict) -> dict:
+def _fmt_computation(result: TaxComputation | dict[str, Any]) -> dict[str, Any]:
     """Format a TaxComputation object (dataclass) or raw stored dict into a
     consistent API response shape.
 
@@ -60,8 +61,15 @@ def _fmt_computation(result: TaxComputation | dict) -> dict:
 
         band_workings = [
             {
+                # `band` and `rate` are pre-rendered for display. The numeric
+                # bounds below exist because mobile used to regex the label back
+                # into numbers to decide how much of a band was consumed — any
+                # change to the label's format silently broke those chips.
                 "band": _band_label(bw),
                 "rate": f"{bw.rate * 100:.0f}%",
+                "from_amount": str(bw.from_amount),
+                "to_amount": None if bw.to_amount is None else str(bw.to_amount),
+                "rate_fraction": str(bw.rate),
                 "taxable_in_band": str(bw.taxable_in_band),
                 "tax": str(bw.tax),
             }
@@ -106,6 +114,9 @@ def _fmt_computation(result: TaxComputation | dict) -> dict:
                 {
                     "band": label,
                     "rate": f"{rate_raw * 100:.0f}%",
+                    "from_amount": str(fr_raw),
+                    "to_amount": None if to_raw is None else str(to_raw),
+                    "rate_fraction": str(rate_raw),
                     "taxable_in_band": str(bw.get("taxable_in_band", "0")),
                     "tax": str(bw.get("tax", "0")),
                 }

@@ -2,7 +2,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { computeTaxTaxComputePost, getLatestTaxLatestGet, listPacksTaxPacksGet } from "@/lib/api/sdk.gen";
 
-export type BandWorking = { band: string; rate: string; taxable_in_band: string; tax: string };
+export type BandWorking = {
+  /** Pre-rendered for display, e.g. "LKR 0 – LKR 1,000,000". */
+  band: string;
+  /** Pre-rendered, e.g. "6%". */
+  rate: string;
+  taxable_in_band: string;
+  tax: string;
+  /** Numeric bounds. Optional because `/tax/latest` replays stored rows, and
+   *  ones written before these fields existed don't carry them. `to_amount` is
+   *  null for the open-ended top band. */
+  from_amount?: string;
+  to_amount?: string | null;
+  rate_fraction?: string;
+};
 
 export type TaxPack = {
   country: string;

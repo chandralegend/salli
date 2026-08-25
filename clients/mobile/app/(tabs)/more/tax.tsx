@@ -28,16 +28,43 @@ function effRate(r: TaxComputationFull): number {
 
 type BandStatus = "full" | "partial" | "unused";
 
-/** Derives how much of a progressive band was consumed, from its label + amount. */
-function bandUsage(band: string, taxableInBand: string): { status: BandStatus; detail: string } {
-  const taxable = Number(taxableInBand);
+/**
+ * How much of a progressive band was consumed.
+ *
+ * Reads the numeric bounds the server sends. It used to regex them back out of
+ * the display label ("LKR 0 – LKR 1,000,000"), which meant any change to that
+ * string — the currency prefix, the separator, the dash character — silently
+ * turned every band into "Applied to top band".
+ *
+ * The label is still parsed as a fallback, because `/tax/latest` replays stored
+ * rows and ones written before the numeric fields existed don't carry them.
+ */
+function bandUsage(
+  band: { band: string; taxable_in_band: string; from_amount?: string; to_amount?: string | null },
+): { status: BandStatus; detail: string } {
+  const taxable = Number(band.taxable_in_band);
   if (!(taxable > 0)) return { status: "unused", detail: "Not reached" };
-  const nums = (band.match(/[\d,]+/g) ?? [])
-    .map((n) => Number(n.replace(/,/g, "")))
-    .filter((n) => Number.isFinite(n));
-  const open = /balance/i.test(band);
-  if (open || nums.length < 2) return { status: "full", detail: "Applied to top band" };
-  const width = nums[1] - nums[0];
+
+  let from: number | undefined;
+  let to: number | null | undefined;
+
+  if (band.from_amount !== undefined) {
+    from = Number(band.from_amount);
+    to = band.to_amount == null ? null : Number(band.to_amount);
+  } else {
+    const nums = (band.band.match(/[\d,]+/g) ?? [])
+      .map((n) => Number(n.replace(/,/g, "")))
+      .filter((n) => Number.isFinite(n));
+    from = nums[0];
+    to = /balance/i.test(band.band) ? null : nums[1];
+  }
+
+  // The open-ended top band has no width to fill.
+  if (to == null || from === undefined || !Number.isFinite(from)) {
+    return { status: "full", detail: "Applied to top band" };
+  }
+
+  const width = to - from;
   if (width > 0 && taxable >= width - 1) return { status: "full", detail: "Full band applied" };
   return {
     status: "partial",
@@ -181,7 +208,7 @@ function OverviewTab({
         </View>
         <View className="px-4">
           {data.band_workings.map((band, i) => {
-            const { status, detail } = bandUsage(band.band, band.taxable_in_band);
+            const { status, detail } = bandUsage(band);
             const used = status !== "unused";
             return (
               <View

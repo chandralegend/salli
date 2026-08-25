@@ -43,7 +43,13 @@ select cron.schedule(
             (select decrypted_secret from vault.decrypted_secrets
              where name = 'salli_cron_secret'), '')
         ),
-        body    := '{}'::jsonb
+        body    := '{}'::jsonb,
+        -- Explicit, because pg_net's default is a few seconds and the API is on
+        -- a Render plan that sleeps: a cold start takes far longer than that, so
+        -- the request would time out before the service ever woke. The endpoint
+        -- itself returns 202 immediately and runs the advisor in a background
+        -- task, so this budget only has to cover waking up and one query.
+        timeout_milliseconds := 90000
       )
     end;
   $job$

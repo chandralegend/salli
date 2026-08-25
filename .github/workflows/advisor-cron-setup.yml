@@ -54,10 +54,12 @@ jobs:
             echo "returns 401 to every caller, including this schedule."
             echo ""
             echo "Generate one and add it, then re-run:"
-            echo "  openssl rand -base64 32"
-            echo "  gh secret set CRON_SECRET"
+            echo "  openssl rand -base64 32 | gh secret set CRON_SECRET"
             echo ""
-            echo "Then re-run the Deploy workflow so Pulumi puts it on the API."
+            echo "Then set the SAME value on the Render service directly —"
+            echo "Dashboard -> salli-api -> Environment. Re-running Pulumi will"
+            echo "not do it: the WebService has ignoreChanges:[\"envVars\"], so"
+            echo "pulumi up reports everything unchanged."
             exit 1
           fi
           echo "CRON_SECRET is present."

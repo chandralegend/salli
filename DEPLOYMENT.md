@@ -98,7 +98,18 @@ them were:
    openssl rand -base64 32 | gh secret set CRON_SECRET
    ```
 
-   Then re-run **Deploy infra (Pulumi)** so the API picks it up.
+   **Re-running Pulumi will not push it to the API.** The Render `WebService`
+   carries `ignoreChanges: ["envVars"]`, so `pulumi up` reports "15 unchanged"
+   and the service keeps its old environment. Set the same value on the Render
+   service directly — Dashboard → `salli-api` → Environment — which also
+   triggers a redeploy.
+
+   Prefer the dashboard over the **Sync Render env vars** workflow for this one:
+   that workflow takes the value as a `workflow_dispatch` input, and inputs are
+   recorded permanently in the run history, so a secret passed there is exposed.
+
+   The value on Render must match the repo secret exactly — the endpoint
+   compares them with `hmac.compare_digest`.
 
 2. **The schedule is installed.** `supabase/migrations/…_advisor_daily_cron.sql`
    defines it, but nothing applies Supabase migrations automatically.

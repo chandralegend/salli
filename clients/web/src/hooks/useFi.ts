@@ -264,7 +264,11 @@ export type ProjectionsData = {
 
 export type SurplusBreakdown = {
   income_by_source: Record<string, string>;
+  /** Category tag — or the account name where spending is untagged. */
   expense_by_category: Record<string, string>;
+  /** Need tag slug → monthly average. Empty until spending carries `need`
+   *  tags, which means "not classified yet" rather than "spent nothing". */
+  expense_by_need: Record<string, string>;
   gross_monthly_income: string;
   gross_monthly_expenses: string;
   monthly_surplus: string;

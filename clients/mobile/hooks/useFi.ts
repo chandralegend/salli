@@ -37,6 +37,14 @@ export type FiSurplus = {
   gross_monthly_expenses: string;
   monthly_surplus: string;
   savings_rate: string;
+  /** Income source (account name) → monthly average. */
+  income_by_source: Record<string, string>;
+  /** Category tag — or the account name where spending is untagged → monthly
+   *  average. Server returns the top few by size. */
+  expense_by_category: Record<string, string>;
+  /** Need tag slug → monthly average. Empty until spending carries `need`
+   *  tags, which means "not classified yet" rather than "spent nothing". */
+  expense_by_need: Record<string, string>;
 };
 
 /**

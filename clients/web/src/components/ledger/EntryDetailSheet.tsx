@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TagPicker } from "@/components/ledger/TagPicker";
 import { Lock, RotateCcw } from "lucide-react";
 import {
   Sheet,
@@ -48,6 +49,14 @@ export function EntryDetailSheet({
   const acct = (id?: string) => accounts.find((a) => a.id === id);
   const debit = entry?.postings.find((p) => p.direction === 1);
   const credit = entry?.postings.find((p) => p.direction === -1);
+
+  // Tags describe what the money was for, so they belong on the expense or
+  // income side — not the bank account the money moved through. A transfer
+  // between two asset accounts has no such side and simply isn't classifiable.
+  const classifiable = entry?.postings.find((p) => {
+    const t = accounts.find((a) => a.id === p.account_id)?.type;
+    return t === "expense" || t === "income";
+  });
   const reversed = Boolean(entry?.reversed_by);
   const amount = debit?.amount ?? "0";
 
@@ -124,10 +133,22 @@ export function EntryDetailSheet({
                 <Posting kind="Credit" posting={credit} />
               </div>
 
+              {classifiable?.id && !reversed && (
+                <div className="rounded-lg border p-3.5">
+                  <TagPicker
+                    key={classifiable.id}
+                    postingId={classifiable.id}
+                    value={classifiable.tags ?? {}}
+                  />
+                </div>
+              )}
+
               <div className="flex items-start gap-2 rounded-lg border bg-muted/40 px-3.5 py-2.5">
                 <Lock className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
                 <p className="text-[11px] leading-4 text-muted-foreground">
-                  Posted entries are immutable · correct via a reversing entry
+                  {/* Tags are the exception, and deliberately so: the amounts
+                      never change, but a miscategorised expense must be fixable. */}
+                  Amounts are immutable · correct via a reversing entry · tags stay editable
                 </p>
               </div>
             </div>

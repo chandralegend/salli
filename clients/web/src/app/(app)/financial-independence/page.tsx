@@ -42,6 +42,7 @@ import { ProjectionChart } from "@/components/fi/ProjectionChart";
 import { AllocationDonut } from "@/components/fi/AllocationDonut";
 import { StrategySetup } from "@/components/fi/StrategySetup";
 import { GoalDetailDialog } from "@/components/fi/GoalDetailDialog";
+import { SpendingBreakdown } from "@/components/fi/SpendingBreakdown";
 import {
   useApplyRecommendation,
   useCreateGoal,
@@ -403,6 +404,14 @@ export default function FinancialIndependencePage() {
             </CollapsibleContent>
           </div>
         </Collapsible>
+      </section>
+
+      {/* Where the money actually goes — by category tag, and split needs vs
+          wants. Sits above Goals because it answers the question people open
+          this screen with. */}
+      <section>
+        <SectionLabel className="mb-3">Spending</SectionLabel>
+        <SpendingBreakdown />
       </section>
 
       {/* ── Goals & mentoring ── */}

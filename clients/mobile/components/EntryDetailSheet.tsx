@@ -2,6 +2,7 @@ import { Lock, RotateCcw, Share2 } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, Share, Text, View } from "react-native";
 
+import { TagPicker } from "@/components/ledger/TagPicker";
 import { Drawer } from "@/components/ui/drawer";
 import type { Account, JournalEntry } from "@/hooks/useDashboard";
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
@@ -29,6 +30,14 @@ export function EntryDetailSheet({
   const credit = entry?.postings.find((p) => p.direction === -1);
   const reversed = Boolean(entry?.reversed_by);
   const amount = debit?.amount ?? "0";
+
+  // Tags describe what the money was for, so they belong on the expense or
+  // income side — not the bank account the money moved through. A transfer
+  // between two asset accounts has no such side and simply isn't classifiable.
+  const classifiable = entry?.postings.find((p) => {
+    const t = acct(p.account_id)?.type;
+    return t === "expense" || t === "income";
+  });
 
   const handleReverse = async () => {
     if (!entry) return;
@@ -147,10 +156,22 @@ export function EntryDetailSheet({
         <Posting kind="Credit" posting={credit} />
       </View>
 
+      {classifiable?.id && !reversed ? (
+        <View className="mb-3 rounded-[12px] border border-foreground/[0.08] bg-card p-3.5">
+          <TagPicker
+            key={classifiable.id}
+            postingId={classifiable.id}
+            value={classifiable.tags ?? {}}
+          />
+        </View>
+      ) : null}
+
       <View className="flex-row items-start gap-2 rounded-[8px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
         <Lock size={13} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
         <Text className="flex-1 text-[11px] leading-4 text-foreground/30">
-          Posted entries are immutable · correct via a reversing entry
+          {/* Tags are the exception, and deliberately so: the amounts never
+              change, but a miscategorised expense has to be fixable. */}
+          Amounts are immutable · correct via a reversing entry · tags stay editable
         </Text>
       </View>
     </Drawer>

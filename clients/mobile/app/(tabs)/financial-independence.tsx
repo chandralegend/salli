@@ -23,6 +23,7 @@ import Svg, { Circle, Line, Path, Polyline } from "react-native-svg";
 import { QuotaBanner } from "@/components/shared/QuotaBanner";
 import { TourTarget } from "@/components/tour/TourTarget";
 import { GoalDetailDrawer } from "@/components/fi/GoalDetailDrawer";
+import { SpendingBreakdown } from "@/components/fi/SpendingBreakdown";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
@@ -363,6 +364,11 @@ export default function FinancialIndependenceScreen() {
               <Text className="text-[10px] text-foreground/20">% of income saved · aim 40%+</Text>
             </Card>
           </View>
+
+          {/* Where the money actually goes — by category tag, and split needs
+              vs wants. Sits above Goals because it answers the question people
+              open this screen with. */}
+          <SpendingBreakdown surplus={surplus.data} />
 
           {/* TIER 3 — Goals status, from the same /fi/goals data the Goals tab
               renders in full (never invented client-side milestones). */}

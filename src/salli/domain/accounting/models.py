@@ -77,6 +77,10 @@ class Tag(BaseModel):
 
 
 class Posting(BaseModel):
+    # Set when read back from storage, None on the write path — the same
+    # split `StoredJournalEntry` makes for entries. Needed because tags are
+    # edited per posting, so a client has to be able to name one.
+    id: str | None = None
     account_id: str
     direction: Direction
     amount: Decimal = Field(gt=Decimal(0))

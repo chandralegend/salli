@@ -32,6 +32,10 @@ export type JournalEntry = {
   external_ref?: string | null;
   reversed_by?: string | null;
   postings: Array<{
+    /** Present on read, absent when constructing an entry to post. */
+    id?: string;
+    /** Axis → tag slug, e.g. {"category": "groceries", "need": "essential"}. */
+    tags?: Record<string, string>;
     account_id: string;
     direction: number;
     amount: string;

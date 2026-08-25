@@ -133,6 +133,9 @@ async def list_entries(
             "reversed_by": e.reversed_by,
             "postings": [
                 {
+                    # Needed to retag: tags are edited per posting.
+                    "id": p.id,
+                    "tags": p.tags,
                     "account_id": p.account_id,
                     "direction": p.direction.value,
                     "amount": str(p.amount),
@@ -160,6 +163,9 @@ async def get_entry(entry_id: str, user_id: CurrentUser, svc: AppServices):
         "reversed_by": entry.reversed_by,
         "postings": [
             {
+                # Needed to retag: tags are edited per posting.
+                "id": p.id,
+                "tags": p.tags,
                 "account_id": p.account_id,
                 "direction": p.direction.value,
                 "amount": str(p.amount),

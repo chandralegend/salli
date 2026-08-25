@@ -116,6 +116,7 @@ def _posting_to_orm(p: Posting, entry_id: str) -> PostingORM:
 
 def _posting_from_orm(row: PostingORM) -> Posting:
     return Posting(
+        id=row.id,
         account_id=row.account_id,
         direction=Direction(row.direction),
         amount=Decimal(row.amount_minor) / _MINOR_FACTOR,

@@ -35,6 +35,7 @@ async def get_document(doc_id: str, user_id: CurrentUser, svc: AppServices):
     doc = await svc.documents.get_document(user_id, doc_id)
     if not doc:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Document not found")
     return doc
 

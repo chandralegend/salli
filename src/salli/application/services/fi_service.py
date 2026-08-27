@@ -151,7 +151,6 @@ def _score_to_dict(score: FiScore, projected_fi_date: str | None) -> dict[str, A
     return d
 
 
-
 def _money(value: Decimal) -> str:
     """Money as a fixed 2-decimal string.
 
@@ -159,6 +158,7 @@ def _money(value: Decimal) -> str:
     without this a goal could report "500000.00" alongside a bare "0".
     """
     return str(value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
 
 class FiService:
     def __init__(self, uow_factory: Callable[[], Any], credentials: Any = None) -> None:
@@ -422,9 +422,7 @@ class FiService:
         claimed = funding.claimed if funding else Decimal(0)
         # Computed in Decimal (the score path already did); float only at the
         # JSON boundary, where this is a display ratio and not money.
-        progress = (
-            min(Decimal(1), current / (Decimal(target) / 100)) if target > 0 else Decimal(0)
-        )
+        progress = min(Decimal(1), current / (Decimal(target) / 100)) if target > 0 else Decimal(0)
         return {
             "id": g["id"],
             "name": g["name"],
@@ -496,9 +494,7 @@ class FiService:
     ) -> None:
         """Earmark part of an account for a goal. Zero clears the claim."""
         async with self._uow_factory() as uow:
-            await uow.goals.set_allocation(
-                user_id, goal_id, account_id, to_minor(allocated_amount)
-            )
+            await uow.goals.set_allocation(user_id, goal_id, account_id, to_minor(allocated_amount))
 
     async def create_goal(self, user_id: str, data: dict[str, Any]) -> str:
         goal = {

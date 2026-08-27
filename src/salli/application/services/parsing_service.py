@@ -37,6 +37,7 @@ def _slugify(label: str) -> str:
     cleaned = re.sub(r"[^a-z0-9]+", "-", label.strip().lower())
     return cleaned.strip("-")[:60]
 
+
 class ParsingService:
     def __init__(
         self,

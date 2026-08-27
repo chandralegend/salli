@@ -225,9 +225,7 @@ class LedgerService:
         async with self._uow_factory() as uow:
             return await uow.ledger.list_tags(user_id, kind)
 
-    async def set_posting_tags(
-        self, user_id: str, posting_id: str, tags: dict[str, str]
-    ) -> None:
+    async def set_posting_tags(self, user_id: str, posting_id: str, tags: dict[str, str]) -> None:
         """Retag a posting. The money is immutable; how it is classified is not."""
         async with self._uow_factory() as uow:
             await uow.ledger.set_posting_tags(user_id, posting_id, tags)

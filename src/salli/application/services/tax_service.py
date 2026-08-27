@@ -124,9 +124,7 @@ class TaxService:
     def __init__(self, uow_factory: Callable[[], Any]) -> None:
         self._uow_factory = uow_factory
 
-    async def compute_tax(
-        self, user_id: str, year: str, *, persist: bool = True
-    ) -> TaxComputation:
+    async def compute_tax(self, user_id: str, year: str, *, persist: bool = True) -> TaxComputation:
         """Compute this user's tax for `year` from their current ledger.
 
         `persist=False` computes without recording the result — used to preview

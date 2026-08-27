@@ -62,7 +62,9 @@ def _check_register_rate_limit(client_ip: str) -> None:
     now = time.time()
     hits = [t for t in _register_hits.get(client_ip, []) if now - t < _REGISTER_WINDOW_SECONDS]
     if len(hits) >= _REGISTER_MAX_PER_WINDOW:
-        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many registration attempts")
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many registration attempts"
+        )
     hits.append(now)
     _register_hits[client_ip] = hits
 
@@ -97,7 +99,9 @@ async def authorize(
     state: str | None = None,
 ):
     if response_type != "code":
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="only response_type=code is supported")
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, detail="only response_type=code is supported"
+        )
     try:
         consent_url = await svc.mcp_oauth.build_consent_redirect(
             client_id=client_id,
@@ -163,7 +167,10 @@ async def token(
                     "invalid_request", "code, redirect_uri, and code_verifier are required"
                 )
             result = await svc.mcp_oauth.exchange_authorization_code(
-                code=code, redirect_uri=redirect_uri, client_id=client_id, code_verifier=code_verifier
+                code=code,
+                redirect_uri=redirect_uri,
+                client_id=client_id,
+                code_verifier=code_verifier,
             )
         elif grant_type == "refresh_token":
             if not refresh_token:

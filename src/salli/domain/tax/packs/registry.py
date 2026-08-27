@@ -45,8 +45,7 @@ def validate_pack(pack: TaxPack) -> None:
         assert band.upto is not None  # guarded above
         if band.upto <= previous:
             raise InvalidTaxPack(
-                f"{where}: band thresholds must strictly ascend "
-                f"(saw {band.upto} after {previous})"
+                f"{where}: band thresholds must strictly ascend (saw {band.upto} after {previous})"
             )
         previous = band.upto
 

@@ -413,7 +413,12 @@ def build_mcp_server(services: Any, issuer_url: str) -> FastMCP:
         mem = await documents_svc.get_memory(user_id, slug=slug)
         if not mem:
             return {"slug": slug, "found": False}
-        return {"slug": slug, "found": True, "value": mem.get("content"), "updated_at": mem.get("updated_at")}
+        return {
+            "slug": slug,
+            "found": True,
+            "value": mem.get("content"),
+            "updated_at": mem.get("updated_at"),
+        }
 
     @mcp.tool()
     async def list_memories() -> dict[str, Any]:
@@ -423,7 +428,11 @@ def build_mcp_server(services: Any, issuer_url: str) -> FastMCP:
         return {
             "count": len(memories),
             "memories": [
-                {"slug": m.get("title"), "value": m.get("content"), "updated_at": m.get("updated_at")}
+                {
+                    "slug": m.get("title"),
+                    "value": m.get("content"),
+                    "updated_at": m.get("updated_at"),
+                }
                 for m in memories
             ],
         }
@@ -492,7 +501,9 @@ def build_mcp_server(services: Any, issuer_url: str) -> FastMCP:
             },
         ]
         try:
-            entry_id = await ledger_svc.add_entry(user_id, entry_date, description, "manual", postings_data)
+            entry_id = await ledger_svc.add_entry(
+                user_id, entry_date, description, "manual", postings_data
+            )
         except ValueError as exc:
             return {"error": f"Could not post entry: {exc}"}
         await _log_audit(ledger_svc, user_id, "post_journal_entry", params)

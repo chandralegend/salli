@@ -208,9 +208,7 @@ class SQLLedgerRepository(LedgerRepository):
             found[(kind, slug)] = tag
         return found
 
-    async def ensure_system_tags(
-        self, user_id: str, tags: list[tuple[str, str, str]]
-    ) -> None:
+    async def ensure_system_tags(self, user_id: str, tags: list[tuple[str, str, str]]) -> None:
         """Create the closed `need` axis for a user if it is not already there.
 
         Idempotent: existing slugs are left untouched, including their names, so
@@ -2289,7 +2287,9 @@ class SQLOAuthClientRepository(OAuthClientRepository):
 
     async def register(self, client_name: str | None, redirect_uris: list[str]) -> dict[str, Any]:
         client_id = str(uuid.uuid4())
-        row = OAuthClientORM(client_id=client_id, client_name=client_name, redirect_uris=redirect_uris)
+        row = OAuthClientORM(
+            client_id=client_id, client_name=client_name, redirect_uris=redirect_uris
+        )
         self._s.add(row)
         await self._s.flush()
         return {
@@ -2300,7 +2300,9 @@ class SQLOAuthClientRepository(OAuthClientRepository):
 
     async def get(self, client_id: str) -> dict[str, Any] | None:
         row = (
-            await self._s.execute(select(OAuthClientORM).where(OAuthClientORM.client_id == client_id))
+            await self._s.execute(
+                select(OAuthClientORM).where(OAuthClientORM.client_id == client_id)
+            )
         ).scalar_one_or_none()
         if row is None:
             return None
@@ -2362,7 +2364,9 @@ class SQLOAuthTokenRepository(OAuthTokenRepository):
         }
 
     async def delete_authorization_code(self, code: str) -> None:
-        await self._s.execute(delete(OAuthAuthorizationCodeORM).where(OAuthAuthorizationCodeORM.code == code))
+        await self._s.execute(
+            delete(OAuthAuthorizationCodeORM).where(OAuthAuthorizationCodeORM.code == code)
+        )
         await self._s.flush()
 
     async def save_access_token(

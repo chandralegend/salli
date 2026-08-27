@@ -141,8 +141,18 @@ def test_a_fully_reversed_category_disappears_rather_than_showing_zero():
 def test_reversed_income_leaves_the_breakdown_too():
     earn = _entry(
         [
-            Posting(account_id="bank", direction=Direction.DEBIT, amount=Decimal("100000"), currency="LKR"),
-            Posting(account_id="inc", direction=Direction.CREDIT, amount=Decimal("100000"), currency="LKR"),
+            Posting(
+                account_id="bank",
+                direction=Direction.DEBIT,
+                amount=Decimal("100000"),
+                currency="LKR",
+            ),
+            Posting(
+                account_id="inc",
+                direction=Direction.CREDIT,
+                amount=Decimal("100000"),
+                currency="LKR",
+            ),
         ]
     )
     result = compute_surplus_breakdown([earn, _reverse(earn)], ACCOUNTS, months=1)

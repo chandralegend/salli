@@ -48,9 +48,9 @@ async def income_statement(
             continue
         name = account_names.get(acct_id, acct_id)
         if acct_id in income_ids:
-            income_breakdown[name] = str(-balance)   # income is credit-normal → negate
+            income_breakdown[name] = str(-balance)  # income is credit-normal → negate
         elif acct_id in expense_ids:
-            expense_breakdown[name] = str(balance)   # expenses are debit-normal → positive
+            expense_breakdown[name] = str(balance)  # expenses are debit-normal → positive
 
     net = sum(Decimal(v) for v in income_breakdown.values()) - sum(
         Decimal(v) for v in expense_breakdown.values()

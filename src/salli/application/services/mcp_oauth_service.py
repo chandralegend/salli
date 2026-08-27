@@ -111,7 +111,9 @@ class McpOAuthService:
 
     # ── Dynamic Client Registration (RFC 7591) ──────────────────────────────
 
-    async def register_client(self, client_name: str | None, redirect_uris: list[str]) -> dict[str, Any]:
+    async def register_client(
+        self, client_name: str | None, redirect_uris: list[str]
+    ) -> dict[str, Any]:
         if not redirect_uris:
             raise OAuthError("redirect_uris must be a non-empty list")
         for uri in redirect_uris:
@@ -175,15 +177,21 @@ class McpOAuthService:
 
     def _decode_art(self, art: str) -> dict[str, Any]:
         try:
-            payload = jwt.decode(art, self._signing_secret, algorithms=["HS256"], issuer=_ART_ISSUER)
+            payload = jwt.decode(
+                art, self._signing_secret, algorithms=["HS256"], issuer=_ART_ISSUER
+            )
         except ExpiredSignatureError as exc:
-            raise ConsentError("This authorization request has expired — please try connecting again.") from exc
+            raise ConsentError(
+                "This authorization request has expired — please try connecting again."
+            ) from exc
         except JWTError as exc:
             # Logged distinctly from genuine expiry — a signature/issuer
             # mismatch here means signing_secret changed between mint and
             # verify (e.g. an env var rotation), not that time ran out.
             _log.warning("MCP consent: ART failed to decode (%s: %s)", type(exc).__name__, exc)
-            raise ConsentError("This connection link is no longer valid — please try connecting again.") from exc
+            raise ConsentError(
+                "This connection link is no longer valid — please try connecting again."
+            ) from exc
         return payload
 
     async def get_consent_info(self, art: str, user_id: str) -> dict[str, Any]:
@@ -210,7 +218,9 @@ class McpOAuthService:
         state = payload.get("state")
 
         if not approve:
-            return _append_query(redirect_uri, {"error": "access_denied", **({"state": state} if state else {})})
+            return _append_query(
+                redirect_uri, {"error": "access_denied", **({"state": state} if state else {})}
+            )
 
         if not await self.is_mcp_enabled(user_id):
             raise ConsentError("MCP access isn't available for this account — check Settings.")

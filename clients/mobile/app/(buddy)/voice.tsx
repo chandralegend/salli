@@ -13,10 +13,11 @@ import { useIsTablet } from "@/lib/responsive";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
+// No "Transcribing…" any more — recognition happens on the phone while you
+// speak, so there is nothing to wait for after releasing.
 const STATE_LABEL: Record<string, string> = {
   idle: "Hold to talk",
   listening: "Listening…",
-  transcribing: "Transcribing…",
   thinking: "Salli is thinking",
   speaking: "Salli is speaking",
 };
@@ -59,12 +60,14 @@ export default function VoiceScreen() {
     state,
     error,
     liveText,
+    heardText,
     approval,
     quotaBanner,
     startListening,
     stopAndSend,
     resolveApproval,
     stop,
+    level,
   } = useVoiceSession();
   const [muted, setMuted] = useState(false);
   const [speakerOn, setSpeakerOn] = useState(true);
@@ -83,7 +86,18 @@ export default function VoiceScreen() {
     router.back();
   };
 
-  const caption = error ?? quotaBanner ?? (state === "thinking" || state === "speaking" ? liveText : "");
+  // While listening, show what the phone is actually hearing. On-device
+  // recognition streams a transcript as you speak, which the old upload-then-
+  // transcribe flow could never do — and seeing a wrong word land is what lets
+  // someone stop and repeat before it reaches an entry.
+  const caption =
+    error ??
+    quotaBanner ??
+    (state === "listening"
+      ? heardText
+      : state === "thinking" || state === "speaking"
+        ? liveText
+        : "");
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
@@ -108,7 +122,7 @@ export default function VoiceScreen() {
               accessibilityRole="button"
               accessibilityLabel="Hold to talk to Salli"
             >
-              <VoiceOrb state={state} />
+              <VoiceOrb state={state} level={level} />
             </Pressable>
             <Text className="mt-8 font-sans-semibold text-[17px] text-foreground">
               {muted && state === "idle" ? "Mic is muted" : STATE_LABEL[state]}

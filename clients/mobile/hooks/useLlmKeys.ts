@@ -6,7 +6,7 @@ import {
   saveLlmKeyLlmKeysProviderPut,
 } from "@/lib/api/sdk.gen";
 
-export type LlmProvider = "anthropic" | "openai";
+export type LlmProvider = "anthropic";
 
 export type StoredLlmKey = {
   provider: LlmProvider;

@@ -1,10 +1,9 @@
 """
-LLM keys router — a user's own Anthropic/OpenAI credentials (BYOK).
+LLM keys router — a user's own Anthropic credentials (BYOK).
 
 Supplying a key lifts AI usage metering: the user pays for their own inference,
-so there is nothing left for Salli to ration. An OpenAI key additionally enables
-Voice Mode transcription, which is the only way it works where no platform
-OpenAI key is configured.
+so there is nothing left for Salli to ration. The key powers every AI surface —
+the agent, statement parsing and advisor runs.
 
 The key is write-only over HTTP. Nothing here ever returns it — the only
 readback is the last four characters, enough for the UI to show which key is
@@ -23,9 +22,9 @@ from salli.interfaces.api.deps import AppServices, CurrentUser
 
 router = APIRouter(prefix="/llm-keys", tags=["llm-keys"])
 
-Provider = Literal["anthropic", "openai"]
+Provider = Literal["anthropic"]
 
-_PROVIDER_LABEL = {"anthropic": "Anthropic", "openai": "OpenAI"}
+_PROVIDER_LABEL = {"anthropic": "Anthropic"}
 
 
 class SaveKeyRequest(BaseModel):

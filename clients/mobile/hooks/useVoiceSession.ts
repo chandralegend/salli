@@ -2,11 +2,12 @@ import * as Speech from "expo-speech";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { type AssistantPart, useAgentChat } from "@/hooks/useAgentChat";
-import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
-import { API_URL } from "@/lib/api-client";
-import { useSalliStore } from "@/lib/store";
+import { digitsAreAmbiguous, useOnDeviceSpeech } from "@/hooks/useOnDeviceSpeech";
+import { speakable } from "@/lib/speakable";
 
-export type VoiceState = "idle" | "listening" | "transcribing" | "thinking" | "speaking";
+// `transcribing` is gone: recognition happens on the phone as you speak, so
+// there is no upload to wait on and no round trip to show a state for.
+export type VoiceState = "idle" | "listening" | "thinking" | "speaking";
 
 type ApprovalPart = Extract<AssistantPart, { kind: "approval" }>;
 
@@ -21,37 +22,18 @@ function pendingApproval(parts: AssistantPart[]): ApprovalPart | undefined {
   return parts.find((p): p is ApprovalPart => p.kind === "approval" && !p.resolved);
 }
 
-/** Uploads a recorded turn for transcription — bypasses the generated SDK the
- * same way statement/attachment uploads do (its body serializer expects a DOM
- * Blob/File; expo-audio's recording result is a {uri,name,type} object that
- * only React Native's native FormData/fetch handle correctly). */
-async function transcribeVoiceMessage(fileUri: string): Promise<string> {
-  const token = useSalliStore.getState().token;
-  const form = new FormData();
-  form.append("file", { uri: fileUri, name: "voice.m4a", type: "audio/m4a" } as unknown as Blob);
-
-  const res = await fetch(`${API_URL}/agent/transcribe`, {
-    method: "POST",
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: form,
-  });
-  if (!res.ok) {
-    const detail = await res.json().catch(() => null);
-    throw new Error(typeof detail?.detail === "string" ? detail.detail : `Transcription failed (${res.status})`);
-  }
-  const data = (await res.json()) as { text: string };
-  return data.text;
-}
-
 /**
- * Real push-to-talk Voice Mode: hold the orb to record, release to transcribe
- * and send through the same useAgentChat("buddy") pipeline the text Buddy
- * screen uses — identical tool activity, approval gate, and quota handling —
- * then speaks Salli's final reply aloud with on-device TTS.
+ * Push-to-talk Voice Mode, entirely on the device.
+ *
+ * Hold the orb to speak — recognition runs locally and streams a live
+ * transcript — release to send it through the same `useAgentChat("buddy")`
+ * pipeline the text Buddy screen uses, so tool activity, the approval gate and
+ * quota handling are identical. Salli's reply is spoken back with on-device
+ * TTS. No API key and no network are involved in either direction.
  */
 export function useVoiceSession() {
   const chat = useAgentChat({ persona: "buddy" });
-  const recorder = useVoiceRecorder();
+  const speech = useOnDeviceSpeech();
   const [state, setState] = useState<VoiceState>("idle");
   const [error, setError] = useState<string | null>(null);
   const spokenIdRef = useRef<string | null>(null);
@@ -68,7 +50,7 @@ export function useVoiceSession() {
   useEffect(() => {
     if (!lastAssistant || approval) return;
     if (chat.streaming) {
-      setState((s) => (s === "listening" || s === "transcribing" ? s : "thinking"));
+      setState((s) => (s === "listening" ? s : "thinking"));
       return;
     }
     if (lastAssistant.id === spokenIdRef.current) return;
@@ -78,7 +60,15 @@ export function useVoiceSession() {
       return;
     }
     setState("speaking");
-    Speech.speak(liveText, {
+    // `speak` queues rather than interrupts, so anything still playing would be
+    // followed by this rather than replaced.
+    Speech.stop();
+    Speech.speak(speakable(liveText), {
+      // en-IN matches the recognition locale and reads Sri Lankan names and
+      // "rupees" far more naturally than the US default.
+      language: "en-IN",
+      // The platform default is brisk for financial figures.
+      rate: 0.95,
       onDone: () => setState("idle"),
       onStopped: () => setState("idle"),
       onError: () => setState("idle"),
@@ -89,49 +79,63 @@ export function useVoiceSession() {
     if (chat.quotaBanner) setState("idle");
   }, [chat.quotaBanner]);
 
+  // Recognition failures (no model, permission revoked) surface through the
+  // same caption as everything else.
+  useEffect(() => {
+    if (speech.error) {
+      setError(speech.error);
+      setState("idle");
+    }
+  }, [speech.error]);
+
   const startListening = useCallback(async () => {
     if (state !== "idle") return;
     setError(null);
-    try {
-      await recorder.start();
-      setState("listening");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't access the microphone.");
-    }
-  }, [recorder, state]);
+    // Speaking and listening at once would feed Salli's own voice back into the
+    // recognizer.
+    Speech.stop();
+    const started = await speech.start();
+    if (started) setState("listening");
+  }, [speech, state]);
 
-  const stopAndSend = useCallback(async () => {
+  const stopAndSend = useCallback(() => {
     if (state !== "listening") return;
-    setState("transcribing");
-    try {
-      const uri = await recorder.stop();
-      if (!uri) {
-        setState("idle");
-        return;
-      }
-      const text = await transcribeVoiceMessage(uri);
-      if (!text.trim()) {
-        setError("Didn't catch that — try again.");
-        setState("idle");
-        return;
-      }
-      chat.send(text);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't hear that — try again.");
+    const { text, alternatives } = speech.stop();
+
+    if (!text) {
+      setError("Didn't catch that — try again.");
       setState("idle");
+      return;
     }
-  }, [recorder, chat, state]);
+
+    // Entries are immutable and corrections need a reversing entry, so a
+    // misheard amount is permanent. When the rival readings disagree on the
+    // digits, say so rather than sending the first guess — the user can repeat
+    // it in a second and that is far cheaper than reversing a wrong entry.
+    if (digitsAreAmbiguous(alternatives)) {
+      setError("Didn't catch the amount clearly — say that once more?");
+      setState("idle");
+      return;
+    }
+
+    chat.send(text);
+  }, [speech, chat, state]);
 
   const stop = useCallback(() => {
     Speech.stop();
-    recorder.cancel();
+    speech.cancel();
     setState("idle");
-  }, [recorder]);
+  }, [speech]);
 
   return {
     state,
     error,
+    /** What Salli is saying — drives the caption while speaking. */
     liveText,
+    /** What the user is saying, live, while the orb is held. */
+    heardText: speech.transcript,
+    /** Real 0..1 microphone level while listening — drives the orb. */
+    level: speech.level,
     approval,
     quotaBanner: chat.quotaBanner,
     startListening,

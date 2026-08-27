@@ -13,7 +13,7 @@ const SIZE_TABLET = 300;
  * continuous scale animation. Built with RN core Animated (react-native-svg
  * for the soft radial fill) — NOT react-native-reanimated, which is disabled
  * project-wide in babel.config.js. */
-export function VoiceOrb({ state }: { state: VoiceState }) {
+export function VoiceOrb({ state, level = 0 }: { state: VoiceState; level?: number }) {
   const scale = useRef(new Animated.Value(1)).current;
   const [reduceMotion, setReduceMotion] = useState(false);
   const isTablet = useIsTablet();
@@ -42,13 +42,9 @@ export function VoiceOrb({ state }: { state: VoiceState }) {
         ]),
       );
     } else if (state === "listening") {
-      loop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(scale, { toValue: 1.04, duration: 1250, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          Animated.timing(scale, { toValue: 1, duration: 1250, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        ]),
-      );
-    } else if (state === "thinking" || state === "transcribing") {
+      // Driven by the real microphone level in the effect below, not a loop.
+      return;
+    } else if (state === "thinking") {
       loop = Animated.loop(
         Animated.sequence([
           Animated.timing(scale, { toValue: 1.015, duration: 1750, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
@@ -56,8 +52,9 @@ export function VoiceOrb({ state }: { state: VoiceState }) {
         ]),
       );
     } else {
-      // Speaking — mock amplitude: no real output audio to follow, so a
-      // pseudo-random smoothed sequence gives a plausible "responding" look.
+      // Speaking — synthetic amplitude. Unlike `listening`, which now follows
+      // the real microphone, `expo-speech` exposes no output level, so a
+      // pseudo-random smoothed sequence stands in for the rhythm of talking.
       const steps = Array.from({ length: 6 }, () =>
         Animated.timing(scale, {
           toValue: 1 + Math.random() * 0.12,
@@ -71,6 +68,19 @@ export function VoiceOrb({ state }: { state: VoiceState }) {
     loop.start();
     return () => loop.stop();
   }, [state, reduceMotion, scale]);
+
+  // Real input metering: the orb swells with the user's actual voice. Each
+  // level tick eases over slightly longer than the 100ms emit interval, so
+  // successive targets overlap into continuous motion rather than stepping.
+  useEffect(() => {
+    if (state !== "listening" || reduceMotion) return;
+    Animated.timing(scale, {
+      toValue: 1 + Math.max(0, Math.min(1, level)) * 0.09,
+      duration: 140,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [level, state, reduceMotion, scale]);
 
   return (
     <Animated.View style={{ transform: [{ scale }] }}>

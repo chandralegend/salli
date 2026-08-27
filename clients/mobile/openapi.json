@@ -1079,51 +1079,6 @@
         ]
       }
     },
-    "/agent/transcribe": {
-      "post": {
-        "tags": [
-          "agent"
-        ],
-        "summary": "Transcribe",
-        "description": "Transcribe a recorded voice message to text (mobile Voice Mode).\n\nTurn-based, not streaming: the client records a whole push-to-talk\nutterance, uploads it here once released, and sends the returned text\nthrough the normal /agent/chat flow like any typed message.",
-        "operationId": "transcribe_agent_transcribe_post",
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_transcribe_agent_transcribe_post"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
     "/agent/resume": {
       "post": {
         "tags": [
@@ -1977,6 +1932,53 @@
         },
         "responses": {
           "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/statements/": {
+      "get": {
+        "tags": [
+          "statements"
+        ],
+        "summary": "List Statements",
+        "description": "Statements this user has uploaded, newest first.\n\nThese rows were always persisted \u2014 nothing exposed them, so the mobile app\ntold users a statement history \"isn't tracked by the server yet\".",
+        "operationId": "list_statements_statements__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
@@ -5212,10 +5214,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": [
-                "anthropic",
-                "openai"
-              ],
+              "const": "anthropic",
               "type": "string",
               "title": "Provider"
             }
@@ -5265,10 +5264,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": [
-                "anthropic",
-                "openai"
-              ],
+              "const": "anthropic",
               "type": "string",
               "title": "Provider"
             }
@@ -6029,20 +6025,6 @@
           "client_id"
         ],
         "title": "Body_token_mcp_oauth_token_post"
-      },
-      "Body_transcribe_agent_transcribe_post": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file"
-        ],
-        "title": "Body_transcribe_agent_transcribe_post"
       },
       "Body_upload_file_agent_files_post": {
         "properties": {

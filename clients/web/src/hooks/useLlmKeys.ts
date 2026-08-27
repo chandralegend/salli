@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, apiFetch } from "@/lib/api-fetch";
 
-export type LlmProvider = "anthropic" | "openai";
+export type LlmProvider = "anthropic";
 
 export type StoredLlmKey = {
   provider: LlmProvider;

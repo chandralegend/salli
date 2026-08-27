@@ -3,8 +3,12 @@ Live validation of a user-supplied provider key, before it is stored.
 
 Checked at save time so a bad key surfaces as "that key was rejected" on the
 settings screen, rather than as a mysterious failure mid-conversation hours
-later. Both providers expose a model-list endpoint that costs nothing, so this
-verifies the key without spending the user's tokens.
+later. The model-list endpoint costs nothing, so this verifies the key without
+spending the user's tokens.
+
+Anthropic is the only provider now that speech-to-text runs on the device. The
+table keeps its auth-style column so adding one back is a single line rather
+than a rewrite.
 """
 
 from __future__ import annotations
@@ -16,7 +20,6 @@ _TIMEOUT = 10.0
 _ENDPOINTS: dict[str, tuple[str, str]] = {
     # provider -> (url, auth style)
     "anthropic": ("https://api.anthropic.com/v1/models", "x-api-key"),
-    "openai": ("https://api.openai.com/v1/models", "bearer"),
 }
 
 

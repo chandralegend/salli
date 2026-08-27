@@ -18,7 +18,6 @@ from salli.application.services.llm_credential_service import (
 USER = "u1"
 USER_KEY = "sk-ant-api03-USERKEY0123456789"
 PLATFORM_ANTHROPIC = "sk-ant-api03-PLATFORM0123456789"
-PLATFORM_OPENAI = "sk-proj-PLATFORMOPENAI0123"
 
 K1 = base64.b64encode(os.urandom(32)).decode()
 K2 = base64.b64encode(os.urandom(32)).decode()
@@ -78,14 +77,12 @@ def _service(
     spec: str = f"1:{K1}",
     feature_enabled: bool = True,
     validator: Any = _accepting_validator,
-    platform_openai: str = PLATFORM_OPENAI,
 ) -> tuple[LlmCredentialService, FakeCredentialRepo]:
     repo = repo or FakeCredentialRepo()
     svc = LlmCredentialService(
         lambda: FakeUoW(repo),
         KeyRing(spec),
         platform_anthropic_key=PLATFORM_ANTHROPIC,
-        platform_openai_key=platform_openai,
         validator=validator,
         feature_enabled=feature_enabled,
     )
@@ -150,25 +147,6 @@ async def test_a_stored_key_wins_and_marks_the_request_byok():
 
 
 @pytest.mark.asyncio
-async def test_an_openai_key_alone_does_not_lift_the_agent_quota():
-    """Only the Anthropic credential funds metered paths. An OpenAI key unlocks
-    transcription, which isn't metered, so it must not read as BYOK."""
-    svc, _ = _service()
-    await svc.save(USER, "openai", "sk-proj-USEROPENAI01234")
-    creds = await svc.resolve(USER)
-    assert creds.openai_is_user_key is True
-    assert creds.byok is False
-    assert creds.anthropic.reveal() == PLATFORM_ANTHROPIC
-
-
-@pytest.mark.asyncio
-async def test_openai_is_none_when_neither_user_nor_platform_has_one():
-    svc, _ = _service(platform_openai="")
-    creds = await svc.resolve(USER)
-    assert creds.openai is None
-
-
-@pytest.mark.asyncio
 async def test_one_users_key_is_never_resolved_for_another():
     svc, _ = _service()
     await svc.save(USER, "anthropic", USER_KEY)
@@ -216,10 +194,12 @@ async def test_a_rotated_key_still_opens_rows_sealed_by_the_old_one():
 
 
 @pytest.mark.asyncio
-async def test_has_byok_tracks_the_anthropic_key_only():
+async def test_has_byok_tracks_the_anthropic_key():
+    """Anthropic is the only provider now — it powers every metered path, so a
+    user key there is exactly what lifts their quota. (This used to also assert
+    that an OpenAI key did *not* count; OpenAI is gone, since transcription
+    moved on-device.)"""
     svc, _ = _service()
-    assert await svc.has_byok(USER) is False
-    await svc.save(USER, "openai", "sk-proj-USEROPENAI01234")
     assert await svc.has_byok(USER) is False
     await svc.save(USER, "anthropic", USER_KEY)
     assert await svc.has_byok(USER) is True
@@ -345,16 +325,14 @@ def test_resolved_credentials_is_immutable():
 
     creds = ResolvedCredentials(
         anthropic=Secret("a"),
-        openai=None,
         anthropic_is_user_key=False,
-        openai_is_user_key=False,
     )
     with pytest.raises(Exception):
         creds.anthropic = Secret("b")  # type: ignore[misc]
 
 
 def test_aad_binds_both_user_and_provider():
-    assert aad_for("u1", "anthropic") != aad_for("u1", "openai")
+    assert aad_for("u1", "anthropic") != aad_for("u2", "anthropic")
     assert aad_for("u1", "anthropic") != aad_for("u2", "anthropic")
 
 

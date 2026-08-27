@@ -29,7 +29,6 @@ from pydantic import BaseModel
 from starlette.background import BackgroundTask
 
 from salli.application.services.billing_service import QuotaExceeded
-from salli.application.services.transcription_service import TranscriptionUnavailable
 from salli.domain.billing.plans import METRIC_AGENT_MESSAGES
 from salli.domain.secrets import redact_obj
 from salli.interfaces.api.deps import AppServices, Credentials, CurrentEmail, CurrentUser
@@ -191,41 +190,6 @@ async def upload_file(file: UploadFile, user_id: CurrentUser, svc: AppServices):
 
 # Generous cap for a single push-to-talk turn — Voice Mode records short
 # utterances, not long dictation, so this is well above any legitimate use.
-_MAX_VOICE_AUDIO_BYTES = 10 * 1024 * 1024
-
-
-@router.post("/transcribe")
-async def transcribe(file: UploadFile, user_id: CurrentUser, svc: AppServices):
-    """
-    Transcribe a recorded voice message to text (mobile Voice Mode).
-
-    Turn-based, not streaming: the client records a whole push-to-talk
-    utterance, uploads it here once released, and sends the returned text
-    through the normal /agent/chat flow like any typed message.
-    """
-    audio_bytes = await file.read()
-    if not audio_bytes:
-        raise HTTPException(status_code=400, detail="Empty audio file")
-    if len(audio_bytes) > _MAX_VOICE_AUDIO_BYTES:
-        raise HTTPException(status_code=413, detail="Recording too long")
-    # Availability is per-user now: a user with their own OpenAI key gets Voice
-    # Mode even where no platform key is configured, which is the case in
-    # production today.
-    try:
-        text = await svc.transcription.transcribe(
-            user_id,
-            audio_bytes,
-            filename=file.filename or "voice.m4a",
-            mime_type=file.content_type or "audio/m4a",
-        )
-    except TranscriptionUnavailable:
-        raise HTTPException(
-            status_code=503,
-            detail="Speech-to-text needs an OpenAI key — add one in Settings.",
-        ) from None
-    return {"text": text}
-
-
 class ResumeRequest(BaseModel):
     thread_id: str
     decision: str  # "approved"|"denied" (chat) or "approve"|"edit"|"reject" (return)

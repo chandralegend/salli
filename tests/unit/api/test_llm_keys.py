@@ -125,7 +125,7 @@ async def test_saving_requires_auth(client, creds):
     creds.save.assert_not_awaited()
 
 
-@pytest.mark.parametrize("provider", ["anthropic", "openai"])
+@pytest.mark.parametrize("provider", ["anthropic"])
 async def test_both_providers_are_accepted(client, creds, provider):
     assert (
         await client.put(f"/llm-keys/{provider}", json={"key": KEY}, headers=AUTH)

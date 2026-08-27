@@ -31,7 +31,6 @@ from salli.application.services.reminder_service import ReminderService
 from salli.application.services.report_service import ReportService
 from salli.application.services.subscription_service import SubscriptionService
 from salli.application.services.tax_service import TaxService
-from salli.application.services.transcription_service import TranscriptionService
 from salli.application.services.user_profile_service import UserProfileService
 from salli.application.unit_of_work import UnitOfWork
 from salli.config import Settings
@@ -63,7 +62,6 @@ class Services:
     llm_credentials: LlmCredentialService
     # Not optional any more: availability is per-user, decided at call time.
     entry_parse: EntryParseService
-    transcription: TranscriptionService
 
 
 def build_services(settings: Settings, checkpointer=None) -> Services:
@@ -129,14 +127,12 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     # where no platform key exists. Previously both were None unless a platform
     # key was configured, which 503'd exactly the users BYOK is for.
     from salli.adapters.llm.anthropic_adapter import AnthropicLLMAdapter
-    from salli.adapters.stt.openai_whisper import OpenAIWhisperAdapter
 
     entry_parse = EntryParseService(
         ledger,
         lambda key: AnthropicLLMAdapter(key, settings.langsmith_project),
         credentials=llm_credentials,
     )
-    transcription = TranscriptionService(OpenAIWhisperAdapter, llm_credentials)
 
     reminders = ReminderService(uow_factory, budget, subscription, insurance)
     bug_reports = BugReportService(
@@ -201,7 +197,6 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         mcp_oauth=mcp_oauth,
         llm_credentials=llm_credentials,
         entry_parse=entry_parse,
-        transcription=transcription,
     )
 
 
@@ -232,7 +227,6 @@ def _build_llm_credentials(settings: Settings, uow_factory) -> LlmCredentialServ
         uow_factory,
         KeyRing(settings.byok_encryption_keys),
         platform_anthropic_key=settings.anthropic_api_key,
-        platform_openai_key=settings.openai_api_key,
         validator=validate_provider_key,
         feature_enabled=auth_is_real,
     )

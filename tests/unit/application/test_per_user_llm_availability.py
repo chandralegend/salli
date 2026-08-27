@@ -1,10 +1,11 @@
-"""Quick-add parsing and Voice Mode transcription used to exist only when a
-*platform* key was configured, so they 503'd for exactly the users BYOK is for.
-These pin the new behaviour: the services always exist, and which key they run
-on — or whether they're usable at all — is decided per request.
+"""Quick-add parsing used to exist only when a *platform* key was configured,
+so it 503'd for exactly the users BYOK is for. These pin the new behaviour: the
+service always exists, and which key it runs on — or whether it is usable at
+all — is decided per request.
 
-This is not hypothetical for transcription: production has no platform OpenAI
-key, so a user's own key is currently the only way Voice Mode works.
+Voice Mode transcription used to be covered here too. It now runs on the phone
+via `expo-speech-recognition`, so there is no key to resolve and nothing on the
+server to test.
 """
 
 from __future__ import annotations
@@ -15,72 +16,20 @@ import pytest
 
 from salli.application.services.entry_parse_service import EntryParseService
 from salli.application.services.llm_credential_service import ResolvedCredentials
-from salli.application.services.transcription_service import (
-    TranscriptionService,
-    TranscriptionUnavailable,
-)
 from salli.domain.secrets import Secret
 
 
 class FakeCredentials:
-    def __init__(self, anthropic: str = "", openai: str | None = None) -> None:
+    def __init__(self, anthropic: str = "") -> None:
         self._anthropic = anthropic
-        self._openai = openai
         self.resolved_for: list[str] = []
 
     async def resolve(self, user_id: str) -> ResolvedCredentials:
         self.resolved_for.append(user_id)
         return ResolvedCredentials(
             anthropic=Secret(self._anthropic),
-            openai=Secret(self._openai) if self._openai else None,
             anthropic_is_user_key=bool(self._anthropic),
-            openai_is_user_key=bool(self._openai),
         )
-
-
-# ── Transcription ─────────────────────────────────────────────────────────────
-
-
-class FakeWhisper:
-    def __init__(self, api_key: Any) -> None:
-        self.api_key = api_key
-
-    async def transcribe(self, audio: bytes, *, filename: str, mime_type: str) -> str:
-        return "  hello there  "
-
-
-@pytest.mark.asyncio
-async def test_transcription_uses_the_users_key_with_no_platform_key():
-    creds = FakeCredentials(openai="sk-proj-USER")
-    built: list[FakeWhisper] = []
-
-    def factory(key: Any) -> FakeWhisper:
-        adapter = FakeWhisper(key)
-        built.append(adapter)
-        return adapter
-
-    svc = TranscriptionService(factory, creds)
-    assert await svc.transcribe("u1", b"audio", filename="v.m4a", mime_type="audio/m4a") == (
-        "hello there"
-    )
-    assert built[0].api_key.reveal() == "sk-proj-USER"
-
-
-@pytest.mark.asyncio
-async def test_transcription_raises_when_no_key_exists_anywhere():
-    svc = TranscriptionService(FakeWhisper, FakeCredentials(openai=None))
-    with pytest.raises(TranscriptionUnavailable):
-        await svc.transcribe("u1", b"audio", filename="v.m4a", mime_type="audio/m4a")
-
-
-@pytest.mark.asyncio
-async def test_transcription_resolves_per_user_not_once():
-    """Two users in one process must not share a resolution."""
-    creds = FakeCredentials(openai="sk-proj-X")
-    svc = TranscriptionService(FakeWhisper, creds)
-    await svc.transcribe("u1", b"a", filename="v.m4a", mime_type="audio/m4a")
-    await svc.transcribe("u2", b"a", filename="v.m4a", mime_type="audio/m4a")
-    assert creds.resolved_for == ["u1", "u2"]
 
 
 # ── Quick-add parsing ─────────────────────────────────────────────────────────

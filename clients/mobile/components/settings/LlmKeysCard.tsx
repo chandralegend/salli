@@ -22,12 +22,6 @@ const PROVIDERS: { id: LlmProvider; label: string; hint: string; placeholder: st
     hint: "Powers Salli AI, statement reading, and the wealth advisor.",
     placeholder: "sk-ant-…",
   },
-  {
-    id: "openai",
-    label: "OpenAI",
-    hint: "Powers Voice Mode speech-to-text.",
-    placeholder: "sk-…",
-  },
 ];
 
 /**

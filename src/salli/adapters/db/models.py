@@ -494,7 +494,7 @@ class UserLlmCredentialORM(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
-    provider: Mapped[str] = mapped_column(String(20), nullable=False)  # anthropic | openai
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)  # anthropic
     ciphertext: Mapped[str] = mapped_column(Text, nullable=False)
     # Which configured encryption key sealed this row. Present from day one:
     # rotation can't be retrofitted later, because by the time you need it the

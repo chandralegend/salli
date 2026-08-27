@@ -49,6 +49,14 @@
         {
           "microphonePermission": "Salli uses your microphone in Voice Mode so you can talk to Salli instead of typing."
         }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Salli uses your microphone in Voice Mode so you can talk to Salli instead of typing.",
+          "speechRecognitionPermission": "Salli turns your speech into text on your device, so what you say never leaves your phone.",
+          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+        }
       ]
     ],
     "extra": {

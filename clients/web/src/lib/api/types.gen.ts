@@ -128,16 +128,6 @@ export type BodyTokenMcpOauthTokenPost = {
 };
 
 /**
- * Body_transcribe_agent_transcribe_post
- */
-export type BodyTranscribeAgentTranscribePost = {
-    /**
-     * File
-     */
-    file: Blob | File;
-};
-
-/**
  * Body_upload_file_agent_files_post
  */
 export type BodyUploadFileAgentFilesPost = {
@@ -1893,29 +1883,6 @@ export type UploadFileAgentFilesPostResponses = {
     200: unknown;
 };
 
-export type TranscribeAgentTranscribePostData = {
-    body: BodyTranscribeAgentTranscribePost;
-    path?: never;
-    query?: never;
-    url: '/agent/transcribe';
-};
-
-export type TranscribeAgentTranscribePostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type TranscribeAgentTranscribePostError = TranscribeAgentTranscribePostErrors[keyof TranscribeAgentTranscribePostErrors];
-
-export type TranscribeAgentTranscribePostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
 export type ResumeAgentResumePostData = {
     body: ResumeRequest;
     path?: never;
@@ -2393,6 +2360,34 @@ export type UploadStatementStatementsUploadPostResponses = {
      * Successful Response
      */
     202: unknown;
+};
+
+export type ListStatementsStatementsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/statements/';
+};
+
+export type ListStatementsStatementsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListStatementsStatementsGetError = ListStatementsStatementsGetErrors[keyof ListStatementsStatementsGetErrors];
+
+export type ListStatementsStatementsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
 };
 
 export type GetPendingStatementsStatementIdGetData = {
@@ -4292,7 +4287,7 @@ export type DeleteLlmKeyLlmKeysProviderDeleteData = {
         /**
          * Provider
          */
-        provider: 'anthropic' | 'openai';
+        provider: 'anthropic';
     };
     query?: never;
     url: '/llm-keys/{provider}';
@@ -4322,7 +4317,7 @@ export type SaveLlmKeyLlmKeysProviderPutData = {
         /**
          * Provider
          */
-        provider: 'anthropic' | 'openai';
+        provider: 'anthropic';
     };
     query?: never;
     url: '/llm-keys/{provider}';

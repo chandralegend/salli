@@ -2,7 +2,7 @@
 LlmCredentialService — resolves which LLM API key a request runs on.
 
 The single choke point for that decision. Every LLM path (agent chat, statement
-classification, quick-add parsing, advisor runs, Whisper transcription) resolves
+classification, quick-add parsing, advisor runs) resolves
 here by user id, so the HTTP routes and the MCP server — which reaches the same
 services with a user id off its OAuth token — cannot diverge.
 
@@ -23,7 +23,7 @@ from salli.domain.secrets import Secret
 
 _log = logging.getLogger(__name__)
 
-PROVIDERS = ("anthropic", "openai")
+PROVIDERS = ("anthropic",)
 
 
 @dataclass(frozen=True)
@@ -36,17 +36,14 @@ class ResolvedCredentials:
     """
 
     anthropic: Secret
-    openai: Secret | None
     anthropic_is_user_key: bool
-    openai_is_user_key: bool
 
     @property
     def byok(self) -> bool:
         """Whether AI usage metering should be lifted.
 
         Keyed on the Anthropic credential specifically, because that is what
-        every metered path spends. An OpenAI key only unlocks transcription,
-        which is not metered, so it must not lift the agent-message limit.
+        every metered path spends.
         """
         return self.anthropic_is_user_key
 
@@ -58,14 +55,12 @@ class LlmCredentialService:
         keyring: Any,
         *,
         platform_anthropic_key: str = "",
-        platform_openai_key: str = "",
         validator: Any = None,
         feature_enabled: bool = True,
     ) -> None:
         self._uow_factory = uow_factory
         self._keyring = keyring
         self._platform_anthropic = platform_anthropic_key
-        self._platform_openai = platform_openai_key
         self._validator = validator
         self._feature_enabled = feature_enabled
 
@@ -87,13 +82,10 @@ class LlmCredentialService:
         user_keys = await self._user_keys(user_id)
 
         anthropic = user_keys.get("anthropic")
-        openai = user_keys.get("openai")
 
         return ResolvedCredentials(
             anthropic=anthropic or Secret(self._platform_anthropic),
-            openai=openai or (Secret(self._platform_openai) if self._platform_openai else None),
             anthropic_is_user_key=anthropic is not None,
-            openai_is_user_key=openai is not None,
         )
 
     async def has_byok(self, user_id: str) -> bool:

@@ -83,9 +83,7 @@ class LedgerRepository(ABC):
         ...
 
     @abstractmethod
-    async def set_posting_tags(
-        self, user_id: str, posting_id: str, tags: dict[str, str]
-    ) -> None:
+    async def set_posting_tags(self, user_id: str, posting_id: str, tags: dict[str, str]) -> None:
         """Replace a posting's tags. Tags are mutable; the posting is not."""
         ...
 
@@ -234,15 +232,6 @@ class KnowledgeBasePort(ABC):
     @abstractmethod
     async def search(self, query: str, *, top_k: int = 5) -> list[dict[str, Any]]:
         """Retrieve relevant chunks from the tax knowledge base with citations."""
-        ...
-
-
-class TranscriptionPort(ABC):
-    """Speech-to-text for a single recorded voice message (mobile Voice Mode)."""
-
-    @abstractmethod
-    async def transcribe(self, audio_bytes: bytes, *, filename: str, mime_type: str) -> str:
-        """Transcribe spoken audio to text."""
         ...
 
 
@@ -547,7 +536,6 @@ class GoalRepository(ABC):
     @abstractmethod
     async def delete(self, user_id: str, goal_id: str) -> None: ...
 
-
     @abstractmethod
     async def list_allocations(self, user_id: str, goal_id: str | None = None) -> list[Any]:
         """Every claim this user's goals make on their accounts."""
@@ -559,6 +547,7 @@ class GoalRepository(ABC):
     ) -> None:
         """Create, update, or (with zero) clear one goal's claim on one account."""
         ...
+
 
 class FiScoreRepository(ABC):
     @abstractmethod

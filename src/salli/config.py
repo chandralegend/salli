@@ -10,10 +10,6 @@ class Settings(BaseSettings):
     # Anthropic
     anthropic_api_key: str = ""
 
-    # OpenAI — used only for speech-to-text transcription (mobile Voice Mode).
-    # The agent itself never calls OpenAI; this key powers /agent/transcribe alone.
-    openai_api_key: str = ""
-
     # BYOK — encrypts users' own provider keys at rest with AES-GCM.
     # Comma-separated "version:base64key" entries so keys can be rotated: the
     # HIGHEST version encrypts, any listed version can decrypt (each row records

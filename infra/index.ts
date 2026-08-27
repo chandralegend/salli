@@ -94,7 +94,6 @@ const paddlePricePro = optEnv("PADDLE_PRICE_PRO");
 const paddlePricePlusYearly = optEnv("PADDLE_PRICE_PLUS_YEARLY");
 const paddlePriceProYearly = optEnv("PADDLE_PRICE_PRO_YEARLY");
 // Speech-to-text for the mobile app's Voice Mode; absent it, /agent/transcribe 503s.
-const openaiApiKey = optEnv("OPENAI_API_KEY");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Providers (auth via env: SUPABASE_ACCESS_TOKEN, VERCEL_API_TOKEN, RENDER_API_KEY)
@@ -210,7 +209,6 @@ if (paddlePricePlus) apiEnv.PADDLE_PRICE_PLUS = paddlePricePlus;
 if (paddlePricePro) apiEnv.PADDLE_PRICE_PRO = paddlePricePro;
 if (paddlePricePlusYearly) apiEnv.PADDLE_PRICE_PLUS_YEARLY = paddlePricePlusYearly;
 if (paddlePriceProYearly) apiEnv.PADDLE_PRICE_PRO_YEARLY = paddlePriceProYearly;
-if (openaiApiKey) apiEnv.OPENAI_API_KEY = pulumi.secret(openaiApiKey);
 
 const apiEnvVars = pulumi
   .output(apiEnv)

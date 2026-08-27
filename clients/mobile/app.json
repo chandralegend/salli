@@ -13,7 +13,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "lk.salli.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "Salli asks for this only when you attach a screenshot to a bug report. It never browses your photo library on its own."
       }
     },
     "android": {
@@ -55,7 +56,9 @@
         {
           "microphonePermission": "Salli uses your microphone in Voice Mode so you can talk to Salli instead of typing.",
           "speechRecognitionPermission": "Salli turns your speech into text on your device, so what you say never leaves your phone.",
-          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
         }
       ]
     ],

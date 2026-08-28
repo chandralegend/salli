@@ -51,6 +51,10 @@ class Plan:
     advisor_recommendation_limit: int | None = 2
     fire_rationale_visible: bool = False
     yearly_price_usd: float = 0.0  # display only; 0 = no annual price offered
+    # A plan that is still honoured for existing holders but never offered to
+    # anyone new. Excluded from the plan catalogue the clients render, and not
+    # purchasable — see the Literal on CheckoutRequest.
+    legacy: bool = False
 
 
 PLANS: dict[str, Plan] = {
@@ -85,6 +89,42 @@ PLANS: dict[str, Plan] = {
             "Full FIRE scenarios, AI rationale & all advisor recommendations",
             "Connect Claude/ChatGPT via MCP",
             "Top up any time, or bring your own API key",
+        ],
+        fi_scenario_limit=3,
+        advisor_recommendation_limit=None,
+        fire_rationale_visible=True,
+    ),
+    # Retired from sale, still honoured. Eight accounts carry this key with
+    # provider='manual' — deliberately comped users, granted through January
+    # 2027, seven of whom are actively using the agent. Deleting the key would
+    # have sent all eight to get_plan()'s Free fallback: an ~80% cut, five
+    # months early, to people who were given a comp.
+    #
+    # The allowance is a like-for-like translation of what Starter actually
+    # provided, priced at the default model:
+    #     500 agent messages   x 30 credits = 15,000
+    #      50 statement uploads x 30         =  1,500  (pinned Haiku, so x1)
+    #      45 advisor runs      x 60         =  2,700
+    #                                          -------
+    #                                          19,200 -> rounded up to 20,000
+    #
+    # Safe to delete once every row carrying it has passed its
+    # current_period_end (the last is 2027-01-31) — check before removing:
+    #     select count(*) from subscriptions
+    #     where plan = 'plus' and current_period_end > now();
+    "plus": Plan(
+        key="plus",
+        name="Starter",
+        description="Legacy plan. No longer offered.",
+        monthly_price_usd=9.0,
+        yearly_price_usd=100.0,
+        limits={METRIC_AI_CREDITS: 20_000},
+        paid=True,
+        legacy=True,
+        features=[
+            "20,000 AI credits / month",
+            "Every model — Haiku, Sonnet, Opus, Fable",
+            "Everything in Free",
         ],
         fi_scenario_limit=3,
         advisor_recommendation_limit=None,

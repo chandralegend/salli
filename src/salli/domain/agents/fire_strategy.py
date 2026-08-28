@@ -149,13 +149,18 @@ class FireStrategySchema(BaseModel):
         return self
 
 
-async def generate_strategy(context: dict[str, Any], *, api_key: Any) -> FireStrategySchema:
+async def generate_strategy(
+    context: dict[str, Any], *, api_key: Any, model: str | None = None
+) -> FireStrategySchema:
     from langchain_core.messages import HumanMessage, SystemMessage
 
-    from salli.domain.agents.model_factory import chat_model
+    from salli.domain.agents.model_factory import SONNET, chat_model
 
-    model = chat_model(api_key=api_key, temperature=0.3, max_tokens=8000)
-    structured = model.with_structured_output(FireStrategySchema)
+    # Named `llm`, not `model`: `model` is the parameter holding the model *id*,
+    # and rebinding it to the constructed client makes the two meanings of the
+    # same name overlap in one function.
+    llm = chat_model(api_key=api_key, model=model or SONNET, temperature=0.3, max_tokens=8000)
+    structured = llm.with_structured_output(FireStrategySchema)
     payload = json.dumps(context, indent=2, default=str)
 
     is_refresh = bool(context.get("previous_strategy"))

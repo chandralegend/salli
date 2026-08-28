@@ -182,11 +182,12 @@ class BillingService:
         sub = await self._ensure_user(user_id, email)
         plan = _effective_plan(sub)
         period = _period()
-        byok_ = await self._has_byok(user_id)
+        # Resolved once. Two lookups could disagree if the user removed their key
+        # mid-request, and the response would then contradict itself — `credits`
+        # computed against the BYOK ceiling while `usage` reported the plan's.
+        byok = await self._has_byok(user_id)
         allowance = (
-            BYOK_LIMITS.get(METRIC_AI_CREDITS, 0)
-            if byok_
-            else plan.limits.get(METRIC_AI_CREDITS, 0)
+            BYOK_LIMITS.get(METRIC_AI_CREDITS, 0) if byok else plan.limits.get(METRIC_AI_CREDITS, 0)
         )
         async with self._uow_factory() as uow:
             counts = await uow.usage.get_counts(user_id, period)
@@ -195,7 +196,6 @@ class BillingService:
         # From the raw row, not `plan` — see _change_mode on why the effective plan
         # would mislabel a past_due subscriber as free and offer them a second purchase.
         mode, blocked_reason = _change_mode(sub)
-        byok = await self._has_byok(user_id)
         usage = []
         for metric in METRICS:
             used = counts.get(metric, 0)

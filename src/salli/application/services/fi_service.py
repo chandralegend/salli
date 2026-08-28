@@ -535,7 +535,12 @@ class FiService:
             return await uow.fire_strategies.get_history(user_id)
 
     async def generate_strategy(
-        self, user_id: str, email: str | None = None, *, api_key: Any = None
+        self,
+        user_id: str,
+        email: str | None = None,
+        *,
+        api_key: Any = None,
+        model: str | None = None,
     ) -> AsyncGenerator[str, None]:
         """SSE generator: streams status events, then persists and yields the result."""
         from salli.domain.agents import fire_strategy as fs_llm
@@ -584,7 +589,12 @@ class FiService:
         yield _sse({"type": "status", "message": "Generating personalised FIRE configuration..."})
 
         result = await fs_llm.generate_strategy(
-            context, api_key=await self._key_for(user_id, api_key)
+            context,
+            api_key=await self._key_for(user_id, api_key),
+            # The model the credit charge was priced on. Charging the Opus
+            # multiplier and then running Sonnet would bill for an answer the
+            # user never got.
+            model=model,
         )
 
         yield _sse({"type": "status", "message": "Saving your FIRE strategy..."})

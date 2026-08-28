@@ -63,6 +63,12 @@ class AdvisorService:
         Raises QuotaExceeded → 402 for manual runs; cron and the briefing
         workflow both catch it and skip/surface gracefully rather than propagate.
         """
+        # Priced at the default model, and `advisor.generate_advice` runs on the
+        # default model, so the two agree. Deliberately not the user's chosen
+        # model: this path is also the scheduled 6am cron, and a background job
+        # silently spending at the Opus rate is not something anyone opted into.
+        # If that changes, change both together — charging one multiplier and
+        # running another is the bug this comment exists to prevent.
         await self._billing.spend_credits(user_id, ACTION_ADVISOR_RUN, None, email)
 
         from salli.domain.agents.tools import set_current_user

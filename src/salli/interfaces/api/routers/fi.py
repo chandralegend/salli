@@ -152,7 +152,7 @@ async def generate_strategy(user_id: CurrentUser, email: CurrentEmail, svc: AppS
         raise credit_error(exc) from exc
     plan = await svc.billing.get_current_plan(user_id, email)
     return StreamingResponse(
-        _gate_strategy_stream(svc.fi.generate_strategy(user_id, email), plan),
+        _gate_strategy_stream(svc.fi.generate_strategy(user_id, email, model=model_id), plan),
         media_type="text/event-stream",
         headers=_SSE_HEADERS,
     )

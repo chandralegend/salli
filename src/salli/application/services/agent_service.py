@@ -16,6 +16,8 @@ from collections import OrderedDict
 from collections.abc import AsyncIterator
 from typing import Any
 
+from salli.domain.ai_models import DEFAULT_MODEL
+
 _WORKER_NODES = {"tax_specialist", "finance_specialist"}
 
 
@@ -122,9 +124,9 @@ class AgentService:
         self._fi_svc = fi_svc
         self._checkpointer = checkpointer
         self._uow_factory = uow_factory
-        # Compiled graphs, keyed by (persona, date, key fingerprint) — see
+        # Compiled graphs, keyed by (persona, date, key fingerprint, model) — see
         # _get_agent. Bounded because the key dimension is per-user.
-        self._agents: OrderedDict[tuple[str, str, str], Any] = OrderedDict()
+        self._agents: OrderedDict[tuple[str, str, str, str], Any] = OrderedDict()
         self._tools_cache: dict[str, Any] = {}
         self._workflow: Any = None
         self._briefing_workflow: Any = None
@@ -135,12 +137,19 @@ class AgentService:
         "buddy": "salli.domain.agents.buddy_agent:build_buddy_agent",
     }
 
-    # A compiled graph is ~220 KB, so this caps the cache at a few MB. Platform-key
-    # users all collapse onto one entry per persona, so in practice this only fills
-    # up with distinct BYOK users, and evicting one is cheap: every ChatAnthropic
-    # shares a process-wide httpx connection pool (langchain_anthropic lru_caches
-    # it on base_url/timeout/proxy), so dropping a graph closes no sockets.
-    _AGENT_CACHE_MAX = 32
+    # A compiled graph is ~220 KB, so this caps the cache at ~28 MB. Platform-key
+    # users collapse onto one entry per (persona, model), so in practice this only
+    # fills up with distinct BYOK users, and evicting one is cheap: every
+    # ChatAnthropic shares a process-wide httpx connection pool
+    # (langchain_anthropic lru_caches it on base_url/timeout/proxy), so dropping a
+    # graph closes no sockets.
+    #
+    # Raised from 32 when `model` joined the key. The key is now four-dimensional
+    # (persona x date x credential x model), so with four selectable models the
+    # old bound held a quarter as many distinct users as it used to — a BYOK user
+    # switching models would evict everyone else's graph and pay the ~23 ms
+    # rebuild on the next turn.
+    _AGENT_CACHE_MAX = 128
 
     def _build_tools(self, persona: str) -> tuple[Any, Any]:
         """Manager + read tool lists, built once and shared across every graph.
@@ -170,13 +179,20 @@ class AgentService:
             self._tools_cache["read"] = make_read_tools(self._ledger_svc, self._tax_svc)
         return self._tools_cache["manager"], self._tools_cache["read"]
 
-    def _get_agent(self, persona: str = "scrooge", api_key: Any = None) -> Any:
-        """A compiled graph for this persona and this credential.
+    def _get_agent(
+        self, persona: str = "scrooge", api_key: Any = None, model: str | None = None
+    ) -> Any:
+        """A compiled graph for this persona, credential, and model.
 
         The key has to be part of the cache key: langchain binds tools eagerly, so
         a model's api_key is fixed at construction and cannot be overridden
         per-invocation via config — attempting that silently falls back to the
         platform key, which is the one outcome BYOK must never produce.
+
+        `model` is in the key for exactly the same reason. It is fixed at
+        construction too, so without it a user who switched to Opus would be
+        charged the Opus multiplier and then served the cached Sonnet graph —
+        billing for a model they never got.
 
         Fingerprinted, never keyed on the key itself, so the cache cannot be a
         place a credential leaks from. The date component preserves the existing
@@ -191,7 +207,8 @@ class AgentService:
 
         raw = api_key.reveal() if hasattr(api_key, "reveal") else (api_key or "")
         fingerprint = hashlib.sha256(raw.encode()).hexdigest()[:16] if raw else "none"
-        cache_key = (persona, datetime.date.today().isoformat(), fingerprint)
+        model = model or DEFAULT_MODEL
+        cache_key = (persona, datetime.date.today().isoformat(), fingerprint, model)
 
         cached = self._agents.get(cache_key)
         if cached is not None:
@@ -216,6 +233,7 @@ class AgentService:
             self._fi_svc,
             checkpointer=self._checkpointer,
             api_key=api_key,
+            model=model,
             tools=manager_tools,
             read_tools=read_tools,
         )
@@ -504,6 +522,7 @@ class AgentService:
         file_refs: list[str] | None = None,
         persona: str = "scrooge",
         api_key: Any = None,
+        model: str | None = None,
     ) -> AsyncIterator[tuple[str, Any]]:
         """
         Yield (event_type, payload) tuples for SSE:
@@ -525,7 +544,7 @@ class AgentService:
         set_current_user(user_id)  # tools read this, never the LLM-supplied id
         await self._ensure_session(user_id, thread_id, persona=persona)
 
-        agent = self._get_agent(persona, api_key)
+        agent = self._get_agent(persona, api_key, model)
         config = {"configurable": {"thread_id": f"{user_id}:{thread_id}", "user_id": user_id}}
         input_messages = await self._build_input_messages(user_id, message, file_refs)
 
@@ -539,6 +558,7 @@ class AgentService:
         decision: str,
         persona: str = "scrooge",
         api_key: Any = None,
+        model: str | None = None,
     ) -> AsyncIterator[tuple[str, Any]]:
         """
         Resume the manager agent after an interrupt (write-tool approval gate).
@@ -551,7 +571,7 @@ class AgentService:
         set_current_user(user_id)
         # Server-owned, not the request's `persona` — see _persona_for_thread.
         agent = self._get_agent(
-            await self._persona_for_thread(user_id, thread_id, persona), api_key
+            await self._persona_for_thread(user_id, thread_id, persona), api_key, model
         )
         config = {"configurable": {"thread_id": f"{user_id}:{thread_id}", "user_id": user_id}}
 

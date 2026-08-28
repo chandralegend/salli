@@ -104,6 +104,7 @@ def build_buddy_agent(
     checkpointer: Any = None,
     *,
     api_key: Any,
+    model: str | None = None,
     tools: Any = None,
     read_tools: Any = None,
 ) -> Any:
@@ -112,7 +113,7 @@ def build_buddy_agent(
     from langgraph_supervisor import create_supervisor
 
     from salli.domain.agents.finance_worker import build_finance_worker
-    from salli.domain.agents.model_factory import chat_model
+    from salli.domain.agents.model_factory import SONNET, chat_model
     from salli.domain.agents.tax_worker import build_tax_worker
     from salli.domain.agents.tools import make_manager_tools
 
@@ -121,8 +122,12 @@ def build_buddy_agent(
         from salli.domain.agents.tools import make_read_tools
 
         read_tools = make_read_tools(ledger_svc, tax_svc)
-    tax_worker = build_tax_worker(ledger_svc, tax_svc, api_key=api_key, tools=read_tools)
-    finance_worker = build_finance_worker(ledger_svc, tax_svc, api_key=api_key, tools=read_tools)
+    tax_worker = build_tax_worker(
+        ledger_svc, tax_svc, api_key=api_key, model=model, tools=read_tools
+    )
+    finance_worker = build_finance_worker(
+        ledger_svc, tax_svc, api_key=api_key, model=model, tools=read_tools
+    )
 
     manager_tools = (
         tools
@@ -151,7 +156,7 @@ def build_buddy_agent(
 
     graph = create_supervisor(
         agents=[tax_worker, finance_worker],
-        model=chat_model(api_key=api_key, temperature=0),
+        model=chat_model(api_key=api_key, model=model or SONNET, temperature=0),
         tools=manager_tools,
         prompt=dated_prompt,
         output_mode="full_history",

@@ -251,6 +251,12 @@ def _build_billing(settings: Settings):
             "pro:month": settings.paddle_price_pro,
             "pro:year": settings.paddle_price_pro_yearly,
         },
+        # pack name -> (price id, credits granted)
+        credit_packs={
+            "10k": (settings.paddle_price_credits_10k, 10_000),
+            "25k": (settings.paddle_price_credits_25k, 25_000),
+            "60k": (settings.paddle_price_credits_60k, 60_000),
+        },
     )
 
 

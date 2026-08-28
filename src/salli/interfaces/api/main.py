@@ -23,6 +23,7 @@ from salli.interfaces.api.routers import (
     accounts,
     advisor,
     agent,
+    ai_models,
     auth,
     billing,
     budget,
@@ -166,6 +167,7 @@ def create_app() -> FastAPI:
     app.include_router(insurance.router)
     app.include_router(reports.router)
     app.include_router(llm_keys.router)
+    app.include_router(ai_models.router)
     app.include_router(mcp_oauth.router)
     app.include_router(mcp_oauth.connections_router)
 

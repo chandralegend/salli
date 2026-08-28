@@ -81,6 +81,26 @@ async def create_checkout(
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
 
 
+class CreditPackRequest(BaseModel):
+    # Named packs rather than a raw price id: a client that could name the price
+    # would be choosing what it pays, and the mapping from pack to price lives
+    # in config for exactly that reason.
+    pack: Literal["10k", "25k", "60k"]
+
+
+@router.post("/credits/checkout")
+async def create_credit_checkout(
+    body: CreditPackRequest, user_id: CurrentUser, email: CurrentEmail, svc: AppServices
+):
+    """Data the client passes to Paddle.js to buy a one-time credit pack."""
+    try:
+        return await svc.billing.create_credit_checkout(user_id, email, body.pack)
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+        ) from exc
+
+
 class PlanChangeRequest(BaseModel):
     # Literal rather than the plain `str` CheckoutRequest uses: it rejects garbage with a
     # 422 for free, and makes the generated mobile SDK emit real enums.

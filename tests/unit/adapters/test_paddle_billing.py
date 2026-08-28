@@ -507,3 +507,87 @@ async def test_find_subscription_id_returns_first_live_subscription(adapter, mon
 async def test_find_subscription_id_returns_none_when_customer_has_none(adapter, monkeypatch):
     _capturing(monkeypatch, httpx.Response(200, json={"data": []}))
     assert await adapter.find_subscription_id("ctm_123") is None
+
+
+# ── One-time credit packs ────────────────────────────────────────────────────
+#
+# Top-ups arrive on `transaction.completed`, the same event that already
+# carried the customer id. They are deliberately NOT subscription items:
+# `_change_body` sends `items` as the complete list, so an add-on item would be
+# deleted the first time the user changed plan.
+
+CREDIT_PACKS = {
+    "10k": ("pri_credits_10k", 10_000),
+    "25k": ("pri_credits_25k", 25_000),
+    "60k": ("pri_credits_60k", 60_000),
+}
+
+
+@pytest.fixture
+def credit_adapter():
+    return PaddleBillingAdapter("k", SECRET, "sandbox", PRICE_MAP, credit_packs=CREDIT_PACKS)
+
+
+def _parse_txn(adapter, items: list[dict], txn_id: str = "txn_01") -> dict:
+    """Sign and parse a transaction.completed delivery, as Paddle would send it.
+
+    Goes through the real verify_and_parse_webhook rather than reaching for an
+    internal, so the signature path is exercised too — a mapping that only
+    works on unsigned input would prove nothing.
+    """
+    raw = json.dumps(
+        {
+            "event_type": "transaction.completed",
+            "data": {
+                "id": txn_id,
+                "customer_id": "ctm_1",
+                "custom_data": {"user_id": "user-1"},
+                "items": items,
+            },
+        }
+    ).encode()
+    return adapter.verify_and_parse_webhook(raw, _sign(raw))
+
+
+def test_a_credit_pack_purchase_reports_credits_and_the_transaction_id(credit_adapter):
+    event = _parse_txn(credit_adapter, [{"price": {"id": "pri_credits_25k"}}])
+    assert event["credits"] == 25_000
+    # The transaction id is what makes the grant idempotent against Paddle's
+    # webhook retries; without it a redelivery grants a second pack.
+    assert event["transaction_id"] == "txn_01"
+    assert event["user_id"] == "user-1"
+
+
+def test_quantity_multiplies_the_grant(credit_adapter):
+    """Paddle lets someone buy three packs in one checkout."""
+    event = _parse_txn(credit_adapter, [{"price": {"id": "pri_credits_10k"}, "quantity": 3}])
+    assert event["credits"] == 30_000
+
+
+def test_mixed_items_sum(credit_adapter):
+    event = _parse_txn(
+        credit_adapter,
+        [{"price": {"id": "pri_credits_10k"}}, {"price": {"id": "pri_credits_60k"}}],
+    )
+    assert event["credits"] == 70_000
+
+
+def test_an_ordinary_subscription_payment_grants_nothing(credit_adapter):
+    """The same event fires for every subscription charge. Reporting credits
+    there would hand out a free pack every billing cycle."""
+    event = _parse_txn(credit_adapter, [{"price": {"id": "pri_pro_m"}}])
+    assert "credits" not in event
+    assert event["provider_customer_id"] == "ctm_1"
+
+
+def test_unconfigured_packs_are_simply_absent(adapter):
+    """The default adapter has no packs configured, which must be inert rather
+    than an error — a deployment without top-ups still processes webhooks."""
+    event = _parse_txn(adapter, [{"price": {"id": "pri_credits_10k"}}])
+    assert "credits" not in event
+    assert adapter.credit_pack_price_id("10k") == ""
+
+
+def test_pack_name_resolves_to_its_price(credit_adapter):
+    assert credit_adapter.credit_pack_price_id("25k") == "pri_credits_25k"
+    assert credit_adapter.credit_pack_price_id("nonexistent") == ""

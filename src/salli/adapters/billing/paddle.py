@@ -107,11 +107,12 @@ class PaddleBillingAdapter(BillingPort):
         webhook_secret: str,
         environment: str,
         price_map: dict[str, str],
+        credit_packs: dict[str, tuple[str, int]] | None = None,
     ) -> None:
         self._api_key = api_key
         self._webhook_secret = webhook_secret
         self._env = environment if environment in _API_BASE else "sandbox"
-        # Keys are "<plan_key>:<cycle>" (e.g. "plus:month", "pro:year") -> price_id.
+        # Keys are "<plan_key>:<cycle>" (e.g. "pro:month", "pro:year") -> price_id.
         self._price_map = {k: v for k, v in price_map.items() if v}
         # Reverse lookup price_id -> plan_key (strip the cycle) for webhook mapping;
         # both the monthly and yearly price of a plan resolve to the same plan key.
@@ -120,6 +121,20 @@ class PaddleBillingAdapter(BillingPort):
         # Kept separate from _plan_by_price so a caller asks for exactly the fact it
         # needs — the plan drives entitlements, the cycle is display/checkout only.
         self._cycle_by_price = {v: k.split(":", 1)[1] for k, v in self._price_map.items()}
+        # One-time credit packs: pack name -> (price_id, credits). Kept apart from
+        # `_price_map` on purpose. Paddle treats a subscription's `items` as the
+        # complete list, so `_change_body` would delete any add-on item on the
+        # next plan change — modelling a top-up as a subscription item means it
+        # silently disappears the first time someone switches to annual billing.
+        # One-time transactions have no such interaction.
+        packs = {k: v for k, v in (credit_packs or {}).items() if v[0]}
+        self._credit_packs = {name: price_id for name, (price_id, _) in packs.items()}
+        self._credits_by_price = {price_id: credits for _, (price_id, credits) in packs.items()}
+
+    @property
+    def environment(self) -> str:
+        """ "sandbox" | "production" — the clients need it to point Paddle.js."""
+        return self._env
 
     @property
     def _base(self) -> str:
@@ -318,8 +333,8 @@ class PaddleBillingAdapter(BillingPort):
         # dict (a no-op the router turns into HTTP 200) rather than None, so Paddle
         # doesn't treat unhandled-but-legitimate deliveries as failures and retry.
         event_type = payload.get("event_type", "")
-        data = payload.get("data", {})
-        custom = data.get("custom_data") or {}
+        data: dict[str, Any] = payload.get("data", {})
+        custom: dict[str, Any] = data.get("custom_data") or {}
 
         if event_type.startswith("subscription."):
             return {"user_id": custom.get("user_id"), **_normalize_subscription(data)}
@@ -328,12 +343,42 @@ class PaddleBillingAdapter(BillingPort):
             # A completed transaction is the earliest reliable place to capture the
             # Paddle customer id (checkout is client-side and stores nothing), so the
             # customer portal is reachable even before the subscription webhook lands.
-            return {
+            event: dict[str, Any] = {
                 "user_id": custom.get("user_id"),
                 "provider_customer_id": data.get("customer_id"),
             }
+            # A one-time credit pack arrives on this same event. `transaction_id`
+            # is carried through so the grant can be made idempotent — Paddle
+            # retries webhooks, and without it a redelivery hands out a second
+            # pack for one payment.
+            credits = self._credits_for_transaction(data)
+            if credits:
+                event["credits"] = credits
+                event["transaction_id"] = data.get("id")
+            return event
 
         return {}
+
+    def _credits_for_transaction(self, data: dict[str, Any]) -> int:
+        """Credits bought in this transaction, summed over its line items.
+
+        Returns 0 for an ordinary subscription payment, which is every
+        transaction that does not carry a configured credit-pack price.
+        """
+        total = 0
+        items: list[dict[str, Any]] = data.get("items") or []
+        for item in items:
+            price: dict[str, Any] = (item or {}).get("price") or {}
+            price_id = str(price.get("id") or "")
+            per_pack = self._credits_by_price.get(price_id, 0)
+            if per_pack:
+                # Quantity matters: Paddle lets someone buy three packs in one go.
+                total += per_pack * int(item.get("quantity") or 1)
+        return total
+
+    def credit_pack_price_id(self, pack: str) -> str:
+        """The Paddle price id for a named credit pack, or "" if unconfigured."""
+        return self._credit_packs.get(pack, "")
 
     def plan_for_price_id(self, price_id: str) -> str:
         return self._plan_by_price.get(price_id, "free")

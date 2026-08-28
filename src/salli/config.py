@@ -42,6 +42,12 @@ class Settings(BaseSettings):
     # Paddle price IDs map a checkout/subscription back to a plan key + billing cycle.
     paddle_price_pro: str = ""  # Pro monthly
     paddle_price_pro_yearly: str = ""  # Pro yearly
+    # One-time credit packs. Prices are set in Paddle as one-off (not
+    # recurring) items — see PaddleBillingAdapter on why a top-up must not be
+    # modelled as a subscription add-on.
+    paddle_price_credits_10k: str = ""
+    paddle_price_credits_25k: str = ""
+    paddle_price_credits_60k: str = ""
 
     # Issue tracker — Jira Cloud. User-submitted bug reports are mirrored here.
     # Leave blank and reports are still stored in Salli, with push_status "skipped".

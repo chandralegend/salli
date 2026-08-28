@@ -344,6 +344,31 @@ class BillingService:
         customer_id = (sub or {}).get("provider_customer_id")
         return await self._billing.create_checkout(user_id, email, plan_key, cycle, customer_id)
 
+    async def create_credit_checkout(
+        self, user_id: str, email: str | None, pack: str
+    ) -> dict[str, Any]:
+        """Checkout data for a one-time credit pack.
+
+        Returns the same shape as a plan checkout, so the clients reuse their
+        existing Paddle.js overlay rather than growing a second purchase flow.
+        """
+        if self._billing is None:
+            raise RuntimeError("Billing provider not configured")
+        price_id = self._billing.credit_pack_price_id(pack)
+        if not price_id:
+            raise RuntimeError(f"Credit pack '{pack}' is not configured")
+        await self._ensure_user(user_id, email)
+        async with self._uow_factory() as uow:
+            sub = await uow.subscriptions.get(user_id)
+        return {
+            "provider": "paddle",
+            "environment": self._billing.environment,
+            "price_id": price_id,
+            "customer_id": (sub or {}).get("provider_customer_id"),
+            "customer_email": email,
+            "custom_data": {"user_id": user_id},
+        }
+
     async def get_portal_url(self, user_id: str, email: str | None = None) -> str:
         if self._billing is None:
             raise RuntimeError("Billing provider not configured")
@@ -461,6 +486,17 @@ class BillingService:
         user_id = event.get("user_id")
         if not user_id:
             return
+
+        # A one-time credit pack. Granted before the subscription fields below
+        # because it is independent of them — a top-up carries no plan or
+        # status, and must land even if everything after this is a no-op.
+        # `grant_credits` is keyed on the transaction id, so Paddle's webhook
+        # retries settle to one grant.
+        credits = int(event.get("credits") or 0)
+        transaction_id = event.get("transaction_id")
+        if credits and transaction_id:
+            await self.grant_credits(user_id, credits, str(transaction_id))
+
         fields: dict[str, Any] = {"provider": "paddle"}
         # Truthiness, not `in`: _normalize_subscription always emits a "price_id" key
         # and falls back to "" when the event carries no items[].price.id. An empty

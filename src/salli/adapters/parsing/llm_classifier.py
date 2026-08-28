@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from salli.domain.ai_models import EXTRACTION_MODEL
 from salli.domain.parsing.models import ParsedTransaction, RawRow
 
 _CLASSIFICATION_PROMPT = """\
@@ -91,7 +92,11 @@ async def classify_transactions(
         )
 
         message = await client.messages.create(
-            model="claude-haiku-4-5-20251001",  # fast + cheap for bulk classification
+            # Pinned to the extraction model: bulk classification is mechanical,
+            # and billing always charges it at x1 on that basis (see
+            # domain/billing/credits.py). Changing this without changing that
+            # would bill users for a model they did not get.
+            model=EXTRACTION_MODEL,
             max_tokens=4096,
             messages=[{"role": "user", "content": prompt}],
         )

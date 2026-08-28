@@ -11,10 +11,15 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 from salli.application.ports import LLMPort
+from salli.domain.ai_models import DEFAULT_MODEL, EXTRACTION_MODEL
 
+# Values come from the catalogue rather than being spelled out again here.
+# This table had already drifted from model_factory's constants — it still named
+# Sonnet 4.6 after the default moved — which is exactly the failure a second
+# copy invites.
 _MODEL_TIERS = {
-    "fast": "claude-haiku-4-5-20251001",
-    "strong": "claude-sonnet-4-6",
+    "fast": EXTRACTION_MODEL,
+    "strong": DEFAULT_MODEL,
 }
 
 

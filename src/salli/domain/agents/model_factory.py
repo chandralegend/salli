@@ -19,9 +19,15 @@ from __future__ import annotations
 
 from typing import Any
 
-# Model tiers, named rather than repeated as string literals across six files.
-SONNET = "claude-sonnet-4-6"
-HAIKU = "claude-haiku-4-5-20251001"
+from salli.domain.ai_models import DEFAULT_MODEL, EXTRACTION_MODEL
+
+# Re-exported from the catalogue so there is one list of models in the codebase
+# rather than three. These names are kept because a dozen call sites use them,
+# but the values now come from `domain.ai_models` alongside the credit
+# multipliers — a model and its price cannot drift apart if they are declared
+# in the same place.
+SONNET = DEFAULT_MODEL
+HAIKU = EXTRACTION_MODEL
 
 
 def reveal(api_key: Any) -> str:

@@ -27,7 +27,9 @@ Return clear, concise answers. If the user needs to take action (e.g. post an
 entry), explain what information you would need."""
 
 
-def build_finance_worker(ledger_svc: Any, tax_svc: Any, *, api_key: Any, tools: Any = None) -> Any:
+def build_finance_worker(
+    ledger_svc: Any, tax_svc: Any, *, api_key: Any, model: str | None = None, tools: Any = None
+) -> Any:
     """`api_key` is required and keyword-only on purpose: a missed call site
     must raise, not fall back to the ANTHROPIC_API_KEY environment variable.
 
@@ -40,7 +42,7 @@ def build_finance_worker(ledger_svc: Any, tax_svc: Any, *, api_key: Any, tools: 
 
     from langgraph.prebuilt import create_react_agent
 
-    from salli.domain.agents.model_factory import chat_model
+    from salli.domain.agents.model_factory import SONNET, chat_model
     from salli.domain.agents.tools import make_read_tools
 
     today = datetime.date.today().strftime("%A, %d %B %Y")
@@ -48,7 +50,7 @@ def build_finance_worker(ledger_svc: Any, tax_svc: Any, *, api_key: Any, tools: 
 
     tools = make_read_tools(ledger_svc, tax_svc) if tools is None else tools
     return create_react_agent(
-        model=chat_model(api_key=api_key, temperature=0),
+        model=chat_model(api_key=api_key, model=model or SONNET, temperature=0),
         tools=tools,
         name="finance_specialist",
         prompt=dated_prompt,

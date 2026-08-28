@@ -150,6 +150,10 @@ async def chat(
                     file_refs=body.file_refs or None,
                     persona=body.persona,
                     api_key=creds.anthropic,
+                    # The same id the credit charge above was priced on. If
+                    # these two ever diverge we bill for one model and run
+                    # another, so they are deliberately the one variable.
+                    model=model_id,
                 )
             )
         ),
@@ -212,6 +216,7 @@ async def resume(body: ResumeRequest, user_id: CurrentUser, svc: AppServices, cr
                 decision=body.decision,
                 persona=body.persona,
                 api_key=creds.anthropic,
+                model=await svc.profile.get_preferred_model(user_id),
             )
         ),
         media_type="text/event-stream",

@@ -133,3 +133,52 @@ async def test_cycle_defaults_to_monthly(client, mock_services):
 @pytest.mark.parametrize("path", [PREVIEW, CHANGE])
 async def test_plan_changes_require_authentication(client, path):
     assert (await client.post(path, json=BODY)).status_code == 401
+
+
+# ── Credit top-ups ───────────────────────────────────────────────────────────
+
+
+async def test_credit_checkout_returns_paddle_data(client, mock_services):
+    mock_services.billing.create_credit_checkout.return_value = {
+        "provider": "paddle",
+        "environment": "sandbox",
+        "price_id": "pri_credits_25k",
+        "custom_data": {"user_id": "test-user-1"},
+    }
+
+    resp = await client.post("/billing/credits/checkout", json={"pack": "25k"}, headers=AUTH)
+
+    assert resp.status_code == 200
+    assert resp.json()["price_id"] == "pri_credits_25k"
+    mock_services.billing.create_credit_checkout.assert_awaited_once_with(
+        "test-user-1", None, "25k"
+    )
+
+
+async def test_an_unknown_pack_is_rejected_before_reaching_the_provider(client, mock_services):
+    """A Literal, so FastAPI rejects it at the boundary. A client must not be
+    able to name an arbitrary pack — or, worse, an arbitrary price."""
+    resp = await client.post("/billing/credits/checkout", json={"pack": "1000k"}, headers=AUTH)
+
+    assert resp.status_code == 422
+    mock_services.billing.create_credit_checkout.assert_not_awaited()
+
+
+async def test_an_unconfigured_pack_returns_503_not_500(client, mock_services):
+    mock_services.billing.create_credit_checkout.side_effect = RuntimeError(
+        "Credit pack '60k' is not configured"
+    )
+
+    resp = await client.post("/billing/credits/checkout", json={"pack": "60k"}, headers=AUTH)
+
+    assert resp.status_code == 503
+
+
+async def test_the_retired_starter_plan_cannot_be_bought(client, mock_services):
+    """`plus` is gone from the registry, and a subscription still carrying it
+    resolves to Free limits — so a stale client must not be able to open a
+    checkout for it and pay for nothing."""
+    resp = await client.post("/billing/checkout", json={"plan": "plus"}, headers=AUTH)
+
+    assert resp.status_code == 422
+    mock_services.billing.create_checkout.assert_not_awaited()

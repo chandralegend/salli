@@ -16,6 +16,7 @@ from salli.adapters.db.repositories import (
     SQLAuditLogRepository,
     SQLBudgetRepository,
     SQLBugReportRepository,
+    SQLCreditRepository,
     SQLDataPortabilityRepository,
     SQLDebtRepository,
     SQLFireStrategyRepository,
@@ -43,6 +44,7 @@ from salli.application.ports import (
     AuditLogRepository,
     BudgetRepository,
     BugReportRepository,
+    CreditRepository,
     DataPortabilityRepository,
     DebtRepository,
     FireStrategyRepository,
@@ -77,6 +79,7 @@ class UnitOfWork:
     agent_sessions: AgentSessionRepository
     subscriptions: SubscriptionRepository
     usage: UsageRepository
+    credits: CreditRepository
     user_profiles: UserProfileRepository
     goals: GoalRepository
     fi_scores: FiScoreRepository
@@ -109,6 +112,7 @@ class UnitOfWork:
         self.agent_sessions = SQLAgentSessionRepository(self._session)
         self.subscriptions = SQLSubscriptionRepository(self._session)
         self.usage = SQLUsageRepository(self._session)
+        self.credits = SQLCreditRepository(self._session)
         self.user_profiles = SQLUserProfileRepository(self._session)
         self.goals = SQLGoalRepository(self._session)
         self.fi_scores = SQLFiScoreRepository(self._session)

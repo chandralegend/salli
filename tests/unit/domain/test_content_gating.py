@@ -6,17 +6,20 @@ import copy
 
 import pytest
 
+from salli.domain.ai_models import DEFAULT_MODEL
 from salli.domain.billing.content_gating import (
     truncate_projections,
     truncate_recommendations,
     truncate_strategy,
 )
-from salli.domain.billing.plans import PLANS
+from salli.domain.billing.credits import ACTION_AGENT_MESSAGE, cost
+from salli.domain.billing.plans import METRIC_AI_CREDITS, PLANS
 from tests.billing_fixtures import RESTRICTED_PLAN as RESTRICTED
 
 FREE = PLANS["free"]
-PLUS = PLANS["plus"]
-PRO = PLANS["pro"]
+# One paid tier now. The gating tests below only ever cared about "a paid
+# plan" versus "a restricted one", so there is nothing left to parametrize.
+PAID = PLANS["pro"]
 
 
 class TestFreeTierIntent:
@@ -33,18 +36,32 @@ class TestFreeTierIntent:
 
     def test_free_grants_full_content_depth(self):
         assert FREE.fire_rationale_visible is True
-        assert FREE.fi_scenario_limit == PLUS.fi_scenario_limit
+        assert FREE.fi_scenario_limit == PAID.fi_scenario_limit
         assert FREE.advisor_recommendation_limit is None
 
     def test_free_allowance_does_not_throttle_the_core_loop(self):
         # The affordability conversation is tool-heavy and multi-turn; a
         # single exploratory first session must not exhaust the month.
-        assert FREE.limits["agent_messages"] >= 100
+        #
+        # Expressed in credits since the move off per-message counters: a chat
+        # message costs ACTION_AGENT_MESSAGE credits at x1, so this asserts the
+        # same intent as the old ">= 100 messages" — enough headroom for a real
+        # first session — priced on the default model rather than on Haiku, so
+        # it stays honest about what a new user actually gets.
+        default_message = cost(ACTION_AGENT_MESSAGE, DEFAULT_MODEL)
+        assert FREE.limits[METRIC_AI_CREDITS] // default_message >= 100
 
-    def test_paid_plans_still_differentiated_by_volume(self):
-        for metric in ("agent_messages", "statement_uploads", "advisor_runs"):
-            assert PLUS.limits[metric] > FREE.limits[metric]
-            assert PRO.limits[metric] > PLUS.limits[metric]
+    def test_paid_plan_still_differentiated_by_volume(self):
+        # Two tiers now, and volume is the *only* axis they differ on — every
+        # feature and every model is available on both.
+        assert PAID.limits[METRIC_AI_CREDITS] > FREE.limits[METRIC_AI_CREDITS]
+
+    def test_every_model_is_available_on_every_tier(self):
+        # The tier no longer gates which model you may pick; the multiplier
+        # does the rationing instead. If someone reintroduces a per-plan model
+        # allowlist, this is where it should surface.
+        assert not hasattr(FREE, "allowed_models")
+        assert not hasattr(PAID, "allowed_models")
 
 
 def _projections() -> dict:
@@ -76,13 +93,12 @@ class TestTruncateProjections:
         assert out["scenario_access"] == {
             "visible": ["base"],
             "locked": ["conservative", "growth"],
-            "requires_plan": "plus",
+            "requires_plan": "pro",
         }
 
-    @pytest.mark.parametrize("plan", [PLUS, PRO])
-    def test_paid_plans_passthrough(self, plan):
+    def test_paid_plan_passthrough(self):
         data = _projections()
-        out = truncate_projections(data, plan)
+        out = truncate_projections(data, PAID)
 
         assert out["points"] == data["points"]
         assert out["fire_year_conservative"] == 14
@@ -136,10 +152,9 @@ class TestTruncateStrategy:
         # Core value invariant: buckets are never gated.
         assert out["buckets"] == strategy["buckets"]
 
-    @pytest.mark.parametrize("plan", [PLUS, PRO])
-    def test_paid_plans_full_visibility(self, plan):
+    def test_paid_plan_full_visibility(self):
         strategy = _strategy()
-        out = truncate_strategy(strategy, plan)
+        out = truncate_strategy(strategy, PAID)
 
         assert out["ai_rationale"] == strategy["ai_rationale"]
         assert out["theories_applied"] == strategy["theories_applied"]
@@ -211,7 +226,7 @@ class TestTruncateRecommendations:
         unlocked2 = [r["id"] for r in out2["recommendations"] if not r["locked"]]
         assert unlocked1 == unlocked2 == ["0", "1"]
 
-    @pytest.mark.parametrize("plan", [PLUS, PRO])
+    @pytest.mark.parametrize("plan", [PAID])
     def test_paid_plans_unlimited(self, plan):
         recs = [_recommendation(str(i), 2) for i in range(5)]
         out = truncate_recommendations(_report(recs), plan)

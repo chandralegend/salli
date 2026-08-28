@@ -23,15 +23,16 @@ import json
 from collections.abc import AsyncIterator
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException, UploadFile, status
+from fastapi import APIRouter, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
 
 from salli.application.services.billing_service import QuotaExceeded
-from salli.domain.billing.plans import METRIC_AGENT_MESSAGES
+from salli.domain.billing.credits import ACTION_AGENT_MESSAGE
 from salli.domain.secrets import redact_obj
 from salli.interfaces.api.deps import AppServices, Credentials, CurrentEmail, CurrentUser
+from salli.interfaces.api.quota import credit_error
 
 router = APIRouter(prefix="/agent", tags=["agent"])
 
@@ -119,18 +120,10 @@ async def chat(
     """
     # Quota gate — one increment per user message (not per LLM call)
     try:
-        await svc.billing.check_and_increment(user_id, METRIC_AGENT_MESSAGES, email)
+        model_id = await svc.profile.get_preferred_model(user_id)
+        await svc.billing.spend_credits(user_id, ACTION_AGENT_MESSAGE, model_id, email)
     except QuotaExceeded as exc:
-        raise HTTPException(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            detail={
-                "error": "quota_exceeded",
-                "metric": exc.metric,
-                "limit": exc.limit,
-                "plan": exc.plan_key,
-                "upgrade": True,
-            },
-        )
+        raise credit_error(exc) from exc
 
     ai_acc: list[str] = []
 

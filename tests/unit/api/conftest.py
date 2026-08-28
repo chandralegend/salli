@@ -16,6 +16,7 @@ from fastapi import HTTPException, Request, status
 from httpx import ASGITransport, AsyncClient
 
 from salli.domain.accounting.models import Direction
+from salli.domain.ai_models import DEFAULT_MODEL
 
 
 @pytest.fixture
@@ -30,6 +31,14 @@ def mock_services():
     svc.billing = AsyncMock()
     svc.advisor = AsyncMock()
     svc.bug_reports = AsyncMock()
+    # Routers that charge credits ask for the caller's chosen model first, so
+    # this has to be awaitable and return a real id — a MagicMock model would
+    # be looked up in the catalogue and silently priced as the default.
+    # Named `profile` to match composition.Services. A MagicMock would happily
+    # answer to any attribute, which is exactly how a wrong name reached the
+    # routers with a green suite behind it.
+    svc.profile = AsyncMock()
+    svc.profile.get_preferred_model.return_value = DEFAULT_MODEL
     return svc
 
 

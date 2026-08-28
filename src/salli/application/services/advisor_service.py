@@ -13,7 +13,7 @@ import uuid
 from typing import Any
 
 from salli.domain.agents import advisor as advisor_llm
-from salli.domain.billing.plans import METRIC_ADVISOR_RUNS
+from salli.domain.billing.credits import ACTION_ADVISOR_RUN
 
 
 class AdvisorService:
@@ -63,7 +63,7 @@ class AdvisorService:
         Raises QuotaExceeded → 402 for manual runs; cron and the briefing
         workflow both catch it and skip/surface gracefully rather than propagate.
         """
-        await self._billing.check_and_increment(user_id, METRIC_ADVISOR_RUNS, email)
+        await self._billing.spend_credits(user_id, ACTION_ADVISOR_RUN, None, email)
 
         from salli.domain.agents.tools import set_current_user
 

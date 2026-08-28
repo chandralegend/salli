@@ -405,6 +405,12 @@ class UserProfileORM(Base):
     # days — before they had ever asked for a briefing.
     daily_briefing_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
+    # Which Claude model this user's conversations run on. NULL means "no
+    # preference" and resolves to ai_models.DEFAULT_MODEL, so the column can be
+    # cleared rather than only ever set — see set_preference in the repository,
+    # which exists because upsert() cannot write NULL.
+    preferred_model: Mapped[str | None] = mapped_column(String(40), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
     )
@@ -455,7 +461,9 @@ class UsageCounterORM(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(String(64), nullable=False)
     period: Mapped[str] = mapped_column(String(7), nullable=False)  # YYYY-MM
-    # agent_messages | statement_uploads
+    # ai_credits. Rows carrying the retired agent_messages / statement_uploads /
+    # advisor_runs metrics predate the credit system and are never read again;
+    # they are kept as the record of a period billed under different rules.
     metric: Mapped[str] = mapped_column(String(40), nullable=False)
     count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     updated_at: Mapped[datetime] = mapped_column(
@@ -465,6 +473,40 @@ class UsageCounterORM(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "period", "metric", name="uq_usage_user_period_metric"),
         Index("ix_usage_user", "user_id"),
+    )
+
+
+class CreditPurchaseORM(Base):
+    """
+    A one-time credit top-up, and what is left of it.
+
+    Separate from `usage_counters` because the two have different lifetimes:
+    the monthly allowance is scoped to a `YYYY-MM` period and resets by simply
+    starting a new row, whereas purchased credits never expire and therefore
+    cannot be expressed in a period-keyed table at all.
+
+    Append-only in spirit: a purchase row is written once when Paddle confirms
+    the transaction and thereafter only `credits_remaining` moves, so the
+    purchase history stays auditable. Spend draws the oldest row first.
+    """
+
+    __tablename__ = "credit_purchases"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    credits: Mapped[int] = mapped_column(Integer, nullable=False)
+    credits_remaining: Mapped[int] = mapped_column(Integer, nullable=False)
+    # The provider's transaction id, and the reason this column is UNIQUE:
+    # Paddle retries webhooks, so without it a redelivery would grant the same
+    # pack twice. The insert failing is the idempotency check.
+    provider_transaction_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+
+    __table_args__ = (
+        UniqueConstraint("provider_transaction_id", name="uq_credit_purchase_txn"),
+        Index("ix_credit_purchase_user", "user_id"),
     )
 
 

@@ -7,8 +7,9 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
 from salli.application.services.billing_service import QuotaExceeded
-from salli.domain.billing.plans import METRIC_AGENT_MESSAGES
+from salli.domain.billing.credits import ACTION_ENTRY_PARSE
 from salli.interfaces.api.deps import AppServices, CurrentEmail, CurrentUser
+from salli.interfaces.api.quota import credit_error
 
 router = APIRouter(prefix="/entries", tags=["entries"])
 
@@ -74,18 +75,9 @@ async def parse_entry(
     if not body.text.strip():
         raise HTTPException(status_code=400, detail="text is required")
     try:
-        await svc.billing.check_and_increment(user_id, METRIC_AGENT_MESSAGES, email)
+        await svc.billing.spend_credits(user_id, ACTION_ENTRY_PARSE, None, email)
     except QuotaExceeded as exc:
-        raise HTTPException(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            detail={
-                "error": "quota_exceeded",
-                "metric": exc.metric,
-                "limit": exc.limit,
-                "plan": exc.plan_key,
-                "upgrade": True,
-            },
-        ) from exc
+        raise credit_error(exc) from exc
     draft = await svc.entry_parse.parse_draft(user_id, body.text)
     return ParsedEntryDraft(**draft)
 

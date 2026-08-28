@@ -11,18 +11,45 @@ from __future__ import annotations
 import datetime
 from typing import Any
 
+from salli.domain.billing import credits as credit_costs
 from salli.domain.billing import plans as plan_registry
-from salli.domain.billing.plans import BYOK_LIMITS, METRICS, Plan, get_plan
+from salli.domain.billing.plans import (
+    BYOK_LIMITS,
+    METRIC_AI_CREDITS,
+    METRICS,
+    Plan,
+    get_plan,
+)
 
 
 class QuotaExceeded(Exception):
-    """Raised when a metered action would exceed the user's monthly plan limit."""
+    """Raised when an AI action costs more credits than the user has left.
 
-    def __init__(self, metric: str, limit: int, plan_key: str) -> None:
+    Carries `cost` and `balance` as well as the limit, so the client can say
+    "this needs 30 credits and you have 12" rather than a bare "out of
+    credits" — the difference between a user who tops up and one who leaves.
+    """
+
+    def __init__(
+        self,
+        metric: str,
+        limit: int,
+        plan_key: str,
+        *,
+        cost: int = 0,
+        balance: int = 0,
+        action: str = "",
+    ) -> None:
         self.metric = metric
         self.limit = limit
         self.plan_key = plan_key
-        super().__init__(f"Quota exceeded for {metric} (limit {limit} on {plan_key})")
+        self.cost = cost
+        self.balance = balance
+        self.action = action
+        super().__init__(
+            f"Not enough credits for {action or metric}: "
+            f"needs {cost}, balance {balance} (limit {limit} on {plan_key})"
+        )
 
 
 class PlanRequiredError(Exception):
@@ -155,8 +182,15 @@ class BillingService:
         sub = await self._ensure_user(user_id, email)
         plan = _effective_plan(sub)
         period = _period()
+        byok_ = await self._has_byok(user_id)
+        allowance = (
+            BYOK_LIMITS.get(METRIC_AI_CREDITS, 0)
+            if byok_
+            else plan.limits.get(METRIC_AI_CREDITS, 0)
+        )
         async with self._uow_factory() as uow:
             counts = await uow.usage.get_counts(user_id, period)
+            credits = await uow.credits.balance(user_id, period, METRIC_AI_CREDITS, allowance)
         resets_at = _period_resets_at()
         # From the raw row, not `plan` — see _change_mode on why the effective plan
         # would mislabel a past_due subscriber as free and offer them a second purchase.
@@ -195,34 +229,85 @@ class BillingService:
             "current_period_end": sub.get("current_period_end"),
             "cancel_at_period_end": sub.get("cancel_at_period_end", False),
             "usage": usage,
+            # The number the UI actually shows. `usage` above reports only the
+            # resetting allowance, so a user who has topped up would otherwise
+            # read as empty while holding thousands of purchased credits.
+            "credits": {
+                **credits,
+                "resets_at": resets_at,
+            },
         }
 
-    async def check_and_increment(
-        self, user_id: str, metric: str, email: str | None = None
-    ) -> None:
-        """Raise QuotaExceeded if over the monthly limit, else increment the counter.
-
-        A user on their own LLM key gets BYOK_LIMITS instead of their plan's —
-        a runaway-loop backstop rather than a product limit, since they're paying
-        for the inference themselves.
-
-        The counter still increments either way. This is the only usage record in
-        the system, so skipping it for BYOK users would go blind on exactly the
-        most engaged ones: no abuse signal, and nothing to show them in the UI.
-        """
+    async def _allowance_for(self, user_id: str, email: str | None) -> tuple[int, Plan, bool]:
+        """The credit allowance in force for this user, plus how it was derived."""
         sub = await self._ensure_user(user_id, email)
         plan = _effective_plan(sub)
         byok = await self._has_byok(user_id)
-        limit = BYOK_LIMITS.get(metric, 0) if byok else plan.limits.get(metric, 0)
+        allowance = (
+            BYOK_LIMITS.get(METRIC_AI_CREDITS, 0) if byok else plan.limits.get(METRIC_AI_CREDITS, 0)
+        )
+        return allowance, plan, byok
+
+    async def get_balance(self, user_id: str, email: str | None = None) -> dict[str, Any]:
+        """Credit balance for display: allowance, purchases, and the total."""
+        allowance, plan, byok = await self._allowance_for(user_id, email)
+        async with self._uow_factory() as uow:
+            bal = await uow.credits.balance(user_id, _period(), METRIC_AI_CREDITS, allowance)
+        return {
+            **bal,
+            "resets_at": _period_resets_at(),
+            "plan": plan.key,
+            "byok": byok,
+        }
+
+    async def spend_credits(
+        self,
+        user_id: str,
+        action: str,
+        model_id: str | None = None,
+        email: str | None = None,
+    ) -> int:
+        """
+        Charge for one AI action, or raise QuotaExceeded.
+
+        The price is deterministic from (action, model), so the whole charge is
+        known before the model runs — which is what lets this stay a pre-flight
+        gate at the router, exactly where the old per-message counter sat.
+
+        A user on their own LLM key is charged against BYOK_LIMITS instead of
+        their plan's allowance — a runaway-loop backstop rather than a product
+        limit, since they pay for the inference themselves. They are still
+        charged, because this is the only usage record in the system and going
+        blind on the most engaged users would leave no abuse signal and nothing
+        to show them in the UI.
+        """
+        cost = credit_costs.cost(action, model_id)
+        if cost <= 0:
+            return 0
+
+        allowance, plan, byok = await self._allowance_for(user_id, email)
         period = _period()
         async with self._uow_factory() as uow:
-            current = await uow.usage.get_count(user_id, period, metric)
-            if current >= limit:
+            ok = await uow.credits.spend(user_id, period, METRIC_AI_CREDITS, cost, allowance)
+            if not ok:
+                bal = await uow.credits.balance(user_id, period, METRIC_AI_CREDITS, allowance)
                 # plan_key reads "byok" so the 402 tells the client which ceiling
                 # was hit — a BYOK user hitting this needs a very different
                 # message from a Free user who should be shown an upgrade.
-                raise QuotaExceeded(metric, limit, "byok" if byok else plan.key)
-            await uow.usage.increment(user_id, period, metric)
+                raise QuotaExceeded(
+                    METRIC_AI_CREDITS,
+                    allowance,
+                    "byok" if byok else plan.key,
+                    cost=cost,
+                    balance=bal["total"],
+                    action=action,
+                )
+        return cost
+
+    async def grant_credits(self, user_id: str, credits: int, provider_transaction_id: str) -> bool:
+        """Record a purchased top-up. False when this transaction already landed."""
+        async with self._uow_factory() as uow:
+            return await uow.credits.grant(user_id, credits, provider_transaction_id)
 
     async def _has_byok(self, user_id: str) -> bool:
         if self._credentials is None:

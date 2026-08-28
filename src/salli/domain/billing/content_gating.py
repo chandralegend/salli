@@ -48,7 +48,7 @@ def truncate_projections(data: dict[str, Any], plan: Plan) -> dict[str, Any]:
     out["scenario_access"] = {
         "visible": ["base"],
         "locked": list(_LOCKABLE_SCENARIOS),
-        "requires_plan": "plus",
+        "requires_plan": "pro",
     }
     return out
 

@@ -3,7 +3,8 @@ Plan registry — pure domain, no I/O.
 
 Plans and their limits live in code (versioned with the app), not the database, so
 they are reviewable and reproducible. A subscription row only stores which plan key
-a user is on; the limits are looked up here. Metered quotas reset monthly (UTC).
+a user is on; the limits are looked up here. The monthly allowance resets on the
+1st (UTC).
 
 Paddle price IDs are environment-specific and therefore NOT stored here — the
 billing service maps a Paddle price ID to a plan key using config.
@@ -11,14 +12,25 @@ billing service maps a Paddle price ID to a plan key using config.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 
-# Metric keys (must match UsageCounterORM.metric values)
-METRIC_AGENT_MESSAGES = "agent_messages"
-METRIC_STATEMENT_UPLOADS = "statement_uploads"
-METRIC_ADVISOR_RUNS = "advisor_runs"
+_log = logging.getLogger(__name__)
 
-METRICS = (METRIC_AGENT_MESSAGES, METRIC_STATEMENT_UPLOADS, METRIC_ADVISOR_RUNS)
+# The one metered thing. Everything a user can spend inference on — chat,
+# statement parsing, the advisor, FIRE strategies — draws down this single
+# balance, priced by domain/billing/credits.py.
+#
+# This replaced three separate counters (agent_messages, statement_uploads,
+# advisor_runs). Three numbers were harder to reason about than one, and,
+# worse, they were model-blind: a message cost the same whether it ran on
+# Haiku or Opus, so users of expensive models were subsidised by everyone
+# else. Old counter rows are simply never read again; they are left in place
+# rather than migrated, since they are a historical record of a period that
+# was billed under different rules.
+METRIC_AI_CREDITS = "ai_credits"
+
+METRICS = (METRIC_AI_CREDITS,)
 
 
 @dataclass(frozen=True)
@@ -33,8 +45,8 @@ class Plan:
     # Content-depth entitlements — distinct from `limits` above. `limits` are
     # usage counters that reset monthly; these govern how much of a single
     # response's payload is visible, enforced by domain/billing/content_gating.py
-    # from the interface layer. Defaults match Free, so a future plan added
-    # without specifying these degrades to "most restricted," not "unlocked."
+    # from the interface layer. Defaults match the most restricted case, so a
+    # future plan added without specifying these degrades closed, not open.
     fi_scenario_limit: int = 1
     advisor_recommendation_limit: int | None = 2
     fire_rationale_visible: bool = False
@@ -42,60 +54,37 @@ class Plan:
 
 
 PLANS: dict[str, Plan] = {
-    # Free is deliberately tuned for LEARNING, not gross margin.
+    # Two tiers, and they differ in exactly one thing: how many credits you get
+    # each month. Every feature and every model is available on both.
     #
-    # Salli's core loop is a conversation ("can I afford this?") whose persuasive
-    # power is the *explanation* — the reasoning, and what the purchase costs the
-    # user's Freedom date. Gating that depth makes the product land flat for
-    # exactly the people we most need feedback from, while gating *volume* costs
-    # us nothing pedagogically. So Free gets the full depth of an answer and a
-    # modest allowance of them.
+    # Free is deliberately tuned for LEARNING, not gross margin. Salli's core
+    # loop is a conversation ("can I afford this?") whose persuasive power is
+    # the *explanation*. Gating that depth makes the product land flat for
+    # exactly the people we most need feedback from, while gating *volume*
+    # costs us nothing pedagogically.
     #
-    # As of the BYOK work this is now the *whole* model: tiers differ ONLY in
-    # metered `limits`. Every feature — MCP clients, the daily advisor, web
-    # search, document management — is available on every plan, and a user who
-    # supplies their own LLM key has no meaningful limit at all (BYOK_LIMITS).
-    # What you pay Salli for is throughput on Salli's inference budget.
+    # Letting Free users run Opus looks expensive and is not: at x5 they spend
+    # their allowance five times faster, so the ceiling is the same. Making the
+    # price of the choice visible is what lets us offer the choice at all.
     #
-    # The content-depth entitlements below therefore match across all plans, and
-    # content_gating.py is a no-op in practice. Kept rather than deleted because
-    # this is a reversible commercial decision (plans live in code, no
+    # The content-depth entitlements below therefore match across both plans,
+    # and content_gating.py is a no-op in practice. Kept rather than deleted
+    # because this is a reversible commercial decision (plans live in code, no
     # migration), and re-adding the machinery later would be the expensive part.
     "free": Plan(
         key="free",
         name="Free",
-        description="The full Salli answer, with a monthly allowance.",
+        description="The full Salli answer, with a monthly credit allowance.",
         monthly_price_usd=0.0,
-        limits={METRIC_AGENT_MESSAGES: 150, METRIC_STATEMENT_UPLOADS: 10, METRIC_ADVISOR_RUNS: 10},
+        limits={METRIC_AI_CREDITS: 3_000},
         features=[
             "Ledger & double-entry bookkeeping",
             "Sri Lanka tax engine (unlimited)",
-            "150 AI agent messages / month",
-            "10 statement uploads / month",
-            "10 wealth-advisor runs / month",
+            "3,000 AI credits / month",
+            "Every model — Haiku, Sonnet, Opus, Fable",
             "Full FIRE scenarios, AI rationale & all advisor recommendations",
             "Connect Claude/ChatGPT via MCP",
-            "Unlimited AI with your own API key",
-        ],
-        fi_scenario_limit=3,
-        advisor_recommendation_limit=None,
-        fire_rationale_visible=True,
-    ),
-    "plus": Plan(
-        key="plus",
-        name="Starter",
-        description="For individuals actively managing their finances and tax.",
-        monthly_price_usd=9.0,
-        yearly_price_usd=100.0,
-        limits={METRIC_AGENT_MESSAGES: 500, METRIC_STATEMENT_UPLOADS: 50, METRIC_ADVISOR_RUNS: 45},
-        paid=True,
-        features=[
-            "Everything in Free",
-            "500 AI agent messages / month",
-            "50 statement uploads / month",
-            "Web search & document management",
-            "Daily wealth advisor (FI score + recommendations)",
-            "Connect Claude, ChatGPT, and other MCP clients",
+            "Top up any time, or bring your own API key",
         ],
         fi_scenario_limit=3,
         advisor_recommendation_limit=None,
@@ -104,22 +93,17 @@ PLANS: dict[str, Plan] = {
     "pro": Plan(
         key="pro",
         name="Pro",
-        description="For power users and professionals with heavy AI use.",
+        description="For people running their whole financial life through Salli.",
         monthly_price_usd=29.0,
         yearly_price_usd=200.0,
-        limits={
-            METRIC_AGENT_MESSAGES: 5000,
-            METRIC_STATEMENT_UPLOADS: 500,
-            METRIC_ADVISOR_RUNS: 150,
-        },
+        limits={METRIC_AI_CREDITS: 50_000},
         paid=True,
         features=[
-            "Everything in Plus",
-            "5,000 AI agent messages / month",
-            "500 statement uploads / month",
-            "Priority model access",
-            "Daily wealth advisor + more runs",
-            "Connect Claude, ChatGPT, and other MCP clients",
+            "Everything in Free",
+            "50,000 AI credits / month",
+            "Around 1,600 Sonnet or 1,000 Opus conversations",
+            "Daily wealth advisor",
+            "Priority support",
         ],
         fi_scenario_limit=3,
         advisor_recommendation_limit=None,
@@ -129,24 +113,33 @@ PLANS: dict[str, Plan] = {
 
 DEFAULT_PLAN = "free"
 
-# Ceiling applied instead of the plan's limits when a user supplies their own
-# LLM API key. They pay for their own inference, so metering them serves no
+# Ceiling applied instead of the plan's allowance when a user supplies their
+# own LLM API key. They pay for their own inference, so metering them serves no
 # commercial purpose — but the requests still run on our server, so this is a
-# runaway-loop backstop, not a product limit.
-#
-# Deliberately an order of magnitude above Pro (5000/500/150). BYOK applies to
-# every tier, so a ceiling level with Pro's limits would mean a Pro subscriber
-# who supplies a key gains nothing at all. No legitimate user should ever reach
-# these; only a buggy client or a script should.
+# runaway-loop backstop, not a product limit. An order of magnitude above Pro,
+# so a Pro subscriber who adds a key gains something real.
 BYOK_LIMITS: dict[str, int] = {
-    METRIC_AGENT_MESSAGES: 50_000,
-    METRIC_STATEMENT_UPLOADS: 5_000,
-    METRIC_ADVISOR_RUNS: 3_000,
+    METRIC_AI_CREDITS: 500_000,
 }
 
 
 def get_plan(key: str | None) -> Plan:
-    """Return the plan for a key, falling back to Free for unknown/None."""
+    """
+    Return the plan for a key, falling back to Free for unknown/None.
+
+    The fallback is deliberately noisy. A stored plan key that no longer exists
+    means a paying subscriber is about to be served Free limits, and the silent
+    version of that bug is invisible until someone complains that they paid for
+    nothing. `plus` (the retired Starter tier) is the live example: any row
+    still carrying it lands here.
+    """
+    if key and key not in PLANS:
+        _log.error(
+            "Unknown plan key %r on a subscription row — falling back to %s. "
+            "A paying subscriber may be receiving free limits.",
+            key,
+            DEFAULT_PLAN,
+        )
     return PLANS.get(key or DEFAULT_PLAN, PLANS[DEFAULT_PLAN])
 
 

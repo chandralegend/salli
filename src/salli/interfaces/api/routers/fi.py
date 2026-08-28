@@ -15,8 +15,10 @@ from pydantic import BaseModel, Field
 
 from salli.application.services.billing_service import QuotaExceeded
 from salli.domain.billing.content_gating import truncate_projections, truncate_strategy
-from salli.domain.billing.plans import METRIC_AGENT_MESSAGES, Plan
+from salli.domain.billing.credits import ACTION_FIRE_STRATEGY
+from salli.domain.billing.plans import Plan
 from salli.interfaces.api.deps import AppServices, CurrentEmail, CurrentUser
+from salli.interfaces.api.quota import credit_error
 
 router = APIRouter(prefix="/fi", tags=["financial-independence"])
 
@@ -144,18 +146,10 @@ async def generate_strategy(user_id: CurrentUser, email: CurrentEmail, svc: AppS
     before the stream opens, same as chat, rather than mid-stream.
     """
     try:
-        await svc.billing.check_and_increment(user_id, METRIC_AGENT_MESSAGES, email)
+        model_id = await svc.profile.get_preferred_model(user_id)
+        await svc.billing.spend_credits(user_id, ACTION_FIRE_STRATEGY, model_id, email)
     except QuotaExceeded as exc:
-        raise HTTPException(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            detail={
-                "error": "quota_exceeded",
-                "metric": exc.metric,
-                "limit": exc.limit,
-                "plan": exc.plan_key,
-                "upgrade": True,
-            },
-        ) from exc
+        raise credit_error(exc) from exc
     plan = await svc.billing.get_current_plan(user_id, email)
     return StreamingResponse(
         _gate_strategy_stream(svc.fi.generate_strategy(user_id, email), plan),

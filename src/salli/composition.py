@@ -242,9 +242,12 @@ def _build_billing(settings: Settings):
         api_key=settings.paddle_api_key,
         webhook_secret=settings.paddle_webhook_secret,
         environment=settings.paddle_environment,
+        # Only live plans belong here. While "plus" was still mapped, a client
+        # posting {"plan": "plus"} to /billing/checkout would have opened a real
+        # Paddle checkout for the retired tier — and the subscription it created
+        # would store plan="plus", which get_plan() resolves to Free. The user
+        # pays and receives the free allowance.
         price_map={
-            "plus:month": settings.paddle_price_plus,
-            "plus:year": settings.paddle_price_plus_yearly,
             "pro:month": settings.paddle_price_pro,
             "pro:year": settings.paddle_price_pro_yearly,
         },

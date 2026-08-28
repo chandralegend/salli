@@ -13,8 +13,9 @@ from fastapi import APIRouter, HTTPException, UploadFile, status
 from pydantic import BaseModel
 
 from salli.application.services.billing_service import QuotaExceeded
-from salli.domain.billing.plans import METRIC_STATEMENT_UPLOADS
+from salli.domain.billing.credits import ACTION_STATEMENT_UPLOAD
 from salli.interfaces.api.deps import AppServices, CurrentEmail, CurrentUser
+from salli.interfaces.api.quota import credit_error
 
 router = APIRouter(prefix="/statements", tags=["statements"])
 
@@ -40,18 +41,9 @@ async def upload_statement(
         raise HTTPException(status_code=413, detail="File too large (max 10 MB)")
 
     try:
-        await svc.billing.check_and_increment(user_id, METRIC_STATEMENT_UPLOADS, email)
+        await svc.billing.spend_credits(user_id, ACTION_STATEMENT_UPLOAD, None, email)
     except QuotaExceeded as exc:
-        raise HTTPException(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            detail={
-                "error": "quota_exceeded",
-                "metric": exc.metric,
-                "limit": exc.limit,
-                "plan": exc.plan_key,
-                "upgrade": True,
-            },
-        )
+        raise credit_error(exc) from exc
 
     result = await svc.parsing.parse_statement(
         user_id=user_id,

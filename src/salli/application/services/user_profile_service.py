@@ -15,6 +15,7 @@ from salli.application.services.document_service import DocumentService
 from salli.application.services.fi_service import FiService
 from salli.application.services.ledger_service import LedgerService
 from salli.domain.accounting.models import AccountType, Direction
+from salli.domain.ai_models import DEFAULT_MODEL, is_valid_model
 from salli.domain.risk import engine as risk_engine
 from salli.domain.risk.life_stage import derive_life_stage
 from salli.domain.risk.models import RiskQuestionnaireAnswers
@@ -70,6 +71,30 @@ class UserProfileService:
             profile = {"id": user_id}
         await self._backfill_from_legacy_memories(user_id, profile)
         return profile
+
+    async def get_preferred_model(self, user_id: str) -> str:
+        """
+        The model this user's conversations run on.
+
+        Always returns a valid id. A stored value that is no longer in the
+        catalogue — a model we retired since they chose it — resolves to the
+        default rather than being passed through to the provider as an unknown
+        model string, which would fail the request rather than their preference
+        quietly aging out.
+        """
+        async with self._uow_factory() as uow:
+            profile: dict[str, Any] | None = await uow.user_profiles.get(user_id)
+        stored = (profile or {}).get("preferred_model")
+        if isinstance(stored, str) and is_valid_model(stored):
+            return stored
+        return DEFAULT_MODEL
+
+    async def set_preferred_model(self, user_id: str, model_id: str | None) -> None:
+        """Choose a model, or pass None to go back to the default."""
+        if model_id is not None and not is_valid_model(model_id):
+            raise ValueError(f"Unknown model: {model_id}")
+        async with self._uow_factory() as uow:
+            await uow.user_profiles.set_preference(user_id, "preferred_model", model_id)
 
     async def update_identity(self, user_id: str, data: dict[str, Any]) -> None:
         fields: dict[str, Any] = {}

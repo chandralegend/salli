@@ -347,6 +347,54 @@ class UsageRepository(ABC):
         ...
 
 
+class CreditRepository(ABC):
+    """
+    The credit balance: a resetting monthly allowance plus non-expiring
+    purchases, spent in that order.
+
+    Spend has to be one method rather than a read followed by a write because
+    it draws from two places and must not be able to overdraw either. The old
+    `check_and_increment` read the counter and then incremented it in two
+    separate statements with no lock, so concurrent requests could overshoot
+    the limit by however many were in flight. That was survivable when every
+    charge was 1; a single Opus FIRE strategy now costs 200, so the same race
+    overshoots by two hundred credits at a time.
+    """
+
+    @abstractmethod
+    async def balance(
+        self, user_id: str, period: str, metric: str, allowance: int
+    ) -> dict[str, int]:
+        """
+        `{allowance_remaining, purchased_remaining, total}` for the period.
+
+        `allowance` is the limit in force for this user (their plan's, or the
+        BYOK ceiling) — the repository does not know about plans.
+        """
+        ...
+
+    @abstractmethod
+    async def spend(
+        self, user_id: str, period: str, metric: str, cost: int, allowance: int
+    ) -> bool:
+        """
+        Take `cost` credits, allowance first then purchases oldest-first.
+
+        Returns False and changes nothing when the balance is short, so the
+        caller can raise a domain error with the numbers it wants to report.
+        Must be atomic against concurrent spends by the same user.
+        """
+        ...
+
+    @abstractmethod
+    async def grant(self, user_id: str, credits: int, provider_transaction_id: str) -> bool:
+        """
+        Record a purchase. Returns False if this transaction id was already
+        granted, which is how webhook redelivery is made a no-op.
+        """
+        ...
+
+
 class UserProfileRepository(ABC):
     @abstractmethod
     async def get(self, user_id: str) -> dict[str, Any] | None: ...
@@ -357,6 +405,15 @@ class UserProfileRepository(ABC):
     @abstractmethod
     async def set_flag(self, user_id: str, field: str, value: bool) -> None:
         """Set a boolean flag, including to False (which `upsert` cannot do)."""
+        ...
+
+    @abstractmethod
+    async def set_preference(self, user_id: str, field: str, value: str | None) -> None:
+        """Set a nullable string preference, including back to None.
+
+        The string sibling of `set_flag`, and needed for the same reason:
+        `upsert` skips None, so it can set a preference but never clear one.
+        """
         ...
 
     @abstractmethod

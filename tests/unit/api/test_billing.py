@@ -15,7 +15,7 @@ from tests.unit.api.conftest import AUTH
 
 PREVIEW = "/billing/subscription/preview"
 CHANGE = "/billing/subscription/change"
-BODY = {"plan": "plus", "cycle": "year"}
+BODY = {"plan": "pro", "cycle": "year"}
 
 
 async def test_preview_returns_the_service_payload(client, mock_services):
@@ -30,17 +30,17 @@ async def test_preview_returns_the_service_payload(client, mock_services):
     assert resp.status_code == 200
     assert resp.json()["immediate_charge_minor"] == 4271
     mock_services.billing.preview_plan_change.assert_awaited_once_with(
-        "test-user-1", None, "plus", "year"
+        "test-user-1", None, "pro", "year"
     )
 
 
 async def test_change_returns_fresh_entitlements(client, mock_services):
-    mock_services.billing.change_plan.return_value = {"plan": "plus", "billing_cycle": "year"}
+    mock_services.billing.change_plan.return_value = {"plan": "pro", "billing_cycle": "year"}
 
     resp = await client.post(CHANGE, json=BODY, headers=AUTH)
 
     assert resp.status_code == 200
-    assert resp.json() == {"plan": "plus", "billing_cycle": "year"}
+    assert resp.json() == {"plan": "pro", "billing_cycle": "year"}
 
 
 @pytest.mark.parametrize(
@@ -109,7 +109,7 @@ async def test_unconfigured_provider_returns_503(client, mock_services):
     "body",
     [
         {"plan": "gold", "cycle": "month"},
-        {"plan": "plus", "cycle": "weekly"},
+        {"plan": "pro", "cycle": "weekly"},
         {"cycle": "month"},
     ],
 )

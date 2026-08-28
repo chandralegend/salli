@@ -7,7 +7,6 @@ Paddle-provider orchestration (checkout, portal, webhook apply). No DB, no netwo
 from __future__ import annotations
 
 import datetime
-from contextlib import asynccontextmanager
 from typing import Any
 
 import pytest
@@ -18,9 +17,13 @@ from salli.application.services.billing_service import (
     QuotaExceeded,
     SubscriptionChangeUnavailable,
 )
+from salli.domain.billing.credits import (
+    ACTION_AGENT_MESSAGE,
+    ACTION_STATEMENT_UPLOAD,
+    cost,
+)
 from salli.domain.billing.plans import (
-    METRIC_AGENT_MESSAGES,
-    METRIC_STATEMENT_UPLOADS,
+    METRIC_AI_CREDITS,
     METRICS,
     get_plan,
 )
@@ -102,11 +105,73 @@ class FakeUserProfileRepo:
         row.update({k: v for k, v in fields.items() if v is not None})
 
 
+class FakeCreditRepo:
+    """Mirrors SQLCreditRepository over the same in-memory counters.
+
+    Shares the FakeUsageRepo store rather than keeping its own, so a test that
+    seeds usage directly and a test that spends through the service are talking
+    about the same allowance — the real tables behave that way too.
+    """
+
+    def __init__(self, usage: FakeUsageRepo) -> None:
+        self._usage = usage
+        self._purchases: list[dict[str, Any]] = []
+
+    async def balance(self, user_id: str, period: str, metric: str, allowance: int) -> dict:
+        used = await self._usage.get_count(user_id, period, metric)
+        purchased = sum(p["credits_remaining"] for p in self._mine(user_id))
+        allowance_remaining = max(0, allowance - used)
+        return {
+            "allowance_remaining": allowance_remaining,
+            "allowance_used": used,
+            "allowance_total": allowance,
+            "purchased_remaining": purchased,
+            "total": allowance_remaining + purchased,
+        }
+
+    async def spend(
+        self, user_id: str, period: str, metric: str, cost: int, allowance: int
+    ) -> bool:
+        if cost <= 0:
+            return True
+        bal = await self.balance(user_id, period, metric, allowance)
+        if cost > bal["total"]:
+            return False
+        from_allowance = min(cost, bal["allowance_remaining"])
+        if from_allowance:
+            await self._usage.increment(user_id, period, metric, by=from_allowance)
+        outstanding = cost - from_allowance
+        for purchase in self._mine(user_id):
+            if outstanding <= 0:
+                break
+            take = min(outstanding, purchase["credits_remaining"])
+            purchase["credits_remaining"] -= take
+            outstanding -= take
+        return True
+
+    async def grant(self, user_id: str, credits: int, provider_transaction_id: str) -> bool:
+        if any(p["txn"] == provider_transaction_id for p in self._purchases):
+            return False
+        self._purchases.append(
+            {
+                "user_id": user_id,
+                "credits": credits,
+                "credits_remaining": credits,
+                "txn": provider_transaction_id,
+            }
+        )
+        return True
+
+    def _mine(self, user_id: str) -> list[dict[str, Any]]:
+        return [p for p in self._purchases if p["user_id"] == user_id]
+
+
 class FakeUnitOfWork:
-    def __init__(self, subs, usage, profiles) -> None:
+    def __init__(self, subs, usage, profiles, credits=None) -> None:
         self.subscriptions = subs
         self.usage = usage
         self.user_profiles = profiles
+        self.credits = credits if credits is not None else FakeCreditRepo(usage)
 
 
 class FakeBillingPort:
@@ -117,15 +182,13 @@ class FakeBillingPort:
         price_to_plan: dict[str, str] | None = None,
         price_to_cycle: dict[str, str] | None = None,
     ) -> None:
+        # One paid plan now, so one monthly and one annual price. This used to
+        # carry a second pair for the retired Starter tier.
         self._price_to_plan = price_to_plan or {
-            "pri_plus": "plus",
-            "pri_plus_y": "plus",
             "pri_pro": "pro",
             "pri_pro_y": "pro",
         }
         self._price_to_cycle = price_to_cycle or {
-            "pri_plus": "month",
-            "pri_plus_y": "year",
             "pri_pro": "month",
             "pri_pro_y": "year",
         }
@@ -141,7 +204,7 @@ class FakeBillingPort:
 
     async def create_checkout(self, user_id, email, plan_key, cycle, customer_id):
         self.checkout_calls.append((user_id, email, plan_key, cycle, customer_id))
-        return {"provider": "paddle", "price_id": "pri_plus", "custom_data": {"user_id": user_id}}
+        return {"provider": "paddle", "price_id": "pri_pro", "custom_data": {"user_id": user_id}}
 
     async def get_portal_url(self, customer_id: str) -> str:
         self.portal_calls.append(customer_id)
@@ -179,35 +242,6 @@ class FakeBillingPort:
         return self.found_subscription_id
 
 
-# ── Fixtures ────────────────────────────────────────────────────────────────────
-
-
-@pytest.fixture
-def repos():
-    return FakeSubscriptionRepo(), FakeUsageRepo(), FakeUserProfileRepo()
-
-
-@pytest.fixture
-def uow_factory(repos):
-    subs, usage, profiles = repos
-
-    @asynccontextmanager
-    async def _factory():
-        yield FakeUnitOfWork(subs, usage, profiles)
-
-    return _factory
-
-
-@pytest.fixture
-def billing_port():
-    return FakeBillingPort()
-
-
-@pytest.fixture
-def service(uow_factory, billing_port):
-    return BillingService(uow_factory, billing_port=billing_port)
-
-
 USER = "user-1"
 
 
@@ -241,11 +275,11 @@ async def test_get_entitlements_reflects_seeded_usage(service, repos):
     await service.get_entitlements(USER)
     from salli.application.services.billing_service import _period
 
-    usage.seed(USER, _period(), METRIC_AGENT_MESSAGES, 5)
+    usage.seed(USER, _period(), METRIC_AI_CREDITS, 5)
     ent = await service.get_entitlements(USER)
 
-    row = next(u for u in ent["usage"] if u["metric"] == METRIC_AGENT_MESSAGES)
-    limit = get_plan("free").limits[METRIC_AGENT_MESSAGES]
+    row = next(u for u in ent["usage"] if u["metric"] == METRIC_AI_CREDITS)
+    limit = get_plan("free").limits[METRIC_AI_CREDITS]
     assert row["used"] == 5
     assert row["remaining"] == limit - 5
 
@@ -253,41 +287,50 @@ async def test_get_entitlements_reflects_seeded_usage(service, repos):
 # ── Metering ─────────────────────────────────────────────────────────────────
 
 
-async def test_check_and_increment_under_limit(service, repos):
+async def test_spend_charges_the_action_price(service, repos):
     _, usage, _ = repos
-    await service.check_and_increment(USER, METRIC_AGENT_MESSAGES)
+    await service.spend_credits(USER, ACTION_AGENT_MESSAGE)
     from salli.application.services.billing_service import _period
 
-    assert await usage.get_count(USER, _period(), METRIC_AGENT_MESSAGES) == 1
+    # Not a flat 1 any more — the whole point of credits is that the charge
+    # reflects what the action actually costs on the model it ran on.
+    assert await usage.get_count(USER, _period(), METRIC_AI_CREDITS) == cost(
+        ACTION_AGENT_MESSAGE, None
+    )
 
 
-async def test_check_and_increment_raises_at_limit(service, repos):
+async def test_spend_raises_when_balance_is_short(service, repos):
     _, usage, _ = repos
     from salli.application.services.billing_service import _period
 
-    limit = get_plan("free").limits[METRIC_AGENT_MESSAGES]
-    usage.seed(USER, _period(), METRIC_AGENT_MESSAGES, limit)
+    limit = get_plan("free").limits[METRIC_AI_CREDITS]
+    usage.seed(USER, _period(), METRIC_AI_CREDITS, limit)
 
     with pytest.raises(QuotaExceeded) as exc:
-        await service.check_and_increment(USER, METRIC_AGENT_MESSAGES)
+        await service.spend_credits(USER, ACTION_AGENT_MESSAGE)
 
-    assert exc.value.metric == METRIC_AGENT_MESSAGES
+    assert exc.value.metric == METRIC_AI_CREDITS
     assert exc.value.limit == limit
     assert exc.value.plan_key == "free"
     # Counter was NOT incremented past the limit.
-    assert await usage.get_count(USER, _period(), METRIC_AGENT_MESSAGES) == limit
+    assert await usage.get_count(USER, _period(), METRIC_AI_CREDITS) == limit
 
 
-async def test_metrics_are_independent(service, repos):
+async def test_actions_draw_on_one_shared_balance(service, repos):
+    """Replaces test_metrics_are_independent.
+
+    There used to be three counters, and exhausting one left the others with
+    headroom. That is exactly what changed: every AI action now draws on the
+    same balance, so spending it on chat leaves nothing for statements.
+    """
     _, usage, _ = repos
     from salli.application.services.billing_service import _period
 
-    limit = get_plan("free").limits[METRIC_AGENT_MESSAGES]
-    usage.seed(USER, _period(), METRIC_AGENT_MESSAGES, limit)
+    limit = get_plan("free").limits[METRIC_AI_CREDITS]
+    usage.seed(USER, _period(), METRIC_AI_CREDITS, limit)
 
-    # A different metric still has headroom.
-    await service.check_and_increment(USER, METRIC_STATEMENT_UPLOADS)
-    assert await usage.get_count(USER, _period(), METRIC_STATEMENT_UPLOADS) == 1
+    with pytest.raises(QuotaExceeded):
+        await service.spend_credits(USER, ACTION_STATEMENT_UPLOAD)
 
 
 async def test_metering_uses_free_limit_when_canceled(service, repos):
@@ -297,11 +340,11 @@ async def test_metering_uses_free_limit_when_canceled(service, repos):
 
     # User is on pro but canceled.
     await subs.upsert(USER, {"plan": "pro", "status": "canceled"})
-    free_limit = get_plan("free").limits[METRIC_AGENT_MESSAGES]
-    usage.seed(USER, _period(), METRIC_AGENT_MESSAGES, free_limit)
+    free_limit = get_plan("free").limits[METRIC_AI_CREDITS]
+    usage.seed(USER, _period(), METRIC_AI_CREDITS, free_limit)
 
     with pytest.raises(QuotaExceeded) as exc:
-        await service.check_and_increment(USER, METRIC_AGENT_MESSAGES)
+        await service.spend_credits(USER, ACTION_AGENT_MESSAGE)
     assert exc.value.limit == free_limit
     assert exc.value.plan_key == "free"
 
@@ -312,12 +355,14 @@ async def test_metering_active_paid_uses_paid_limit(service, repos):
     from salli.application.services.billing_service import _period
 
     await subs.upsert(USER, {"plan": "pro", "status": "active"})
-    free_limit = get_plan("free").limits[METRIC_AGENT_MESSAGES]
-    usage.seed(USER, _period(), METRIC_AGENT_MESSAGES, free_limit)
+    free_limit = get_plan("free").limits[METRIC_AI_CREDITS]
+    usage.seed(USER, _period(), METRIC_AI_CREDITS, free_limit)
 
     # Past the free limit but well under pro — should not raise.
-    await service.check_and_increment(USER, METRIC_AGENT_MESSAGES)
-    assert await usage.get_count(USER, _period(), METRIC_AGENT_MESSAGES) == free_limit + 1
+    await service.spend_credits(USER, ACTION_AGENT_MESSAGE)
+    assert await usage.get_count(USER, _period(), METRIC_AI_CREDITS) == free_limit + cost(
+        ACTION_AGENT_MESSAGE, None
+    )
 
 
 # ── Plan catalog ─────────────────────────────────────────────────────────────
@@ -325,11 +370,11 @@ async def test_metering_active_paid_uses_paid_limit(service, repos):
 
 def test_get_plans_matches_registry(service):
     plans = {p["key"]: p for p in service.get_plans()}
-    assert set(plans) == {"free", "plus", "pro"}
+    assert set(plans) == {"free", "pro"}
     assert plans["free"]["paid"] is False
-    assert plans["plus"]["paid"] is True
     assert plans["pro"]["paid"] is True
-    assert plans["plus"]["limits"] == get_plan("plus").limits
+    assert plans["pro"]["paid"] is True
+    assert plans["pro"]["limits"] == get_plan("pro").limits
 
 
 # ── Checkout / portal orchestration ──────────────────────────────────────────
@@ -340,9 +385,9 @@ async def test_create_checkout_passes_customer_id_from_subscription(service, rep
     await service.get_entitlements(USER, email="u@example.com")
     await subs.upsert(USER, {"provider_customer_id": "ctm_123"})
 
-    await service.create_checkout(USER, "u@example.com", "plus")
+    await service.create_checkout(USER, "u@example.com", "pro")
 
-    assert billing_port.checkout_calls == [(USER, "u@example.com", "plus", "month", "ctm_123")]
+    assert billing_port.checkout_calls == [(USER, "u@example.com", "pro", "month", "ctm_123")]
 
 
 async def test_create_checkout_passes_cycle(service, billing_port):
@@ -351,14 +396,14 @@ async def test_create_checkout_passes_cycle(service, billing_port):
 
 
 async def test_create_checkout_without_customer_passes_none(service, billing_port):
-    await service.create_checkout(USER, "u@example.com", "plus")
+    await service.create_checkout(USER, "u@example.com", "pro")
     assert billing_port.checkout_calls[0][4] is None
 
 
 async def test_create_checkout_without_provider_raises(uow_factory):
     svc = BillingService(uow_factory, billing_port=None)
     with pytest.raises(RuntimeError, match="not configured"):
-        await svc.create_checkout(USER, "u@example.com", "plus")
+        await svc.create_checkout(USER, "u@example.com", "pro")
 
 
 async def test_get_portal_url_requires_customer(service, repos):
@@ -486,8 +531,8 @@ async def test_apply_webhook_event_downgrades_entitlements_on_cancel(service, re
     ent = await service.get_entitlements(USER)
     assert ent["plan"] == "free"
     assert ent["status"] == "canceled"
-    agent = next(u for u in ent["usage"] if u["metric"] == METRIC_AGENT_MESSAGES)
-    assert agent["limit"] == get_plan("free").limits[METRIC_AGENT_MESSAGES]
+    agent = next(u for u in ent["usage"] if u["metric"] == METRIC_AI_CREDITS)
+    assert agent["limit"] == get_plan("free").limits[METRIC_AI_CREDITS]
 
 
 async def test_apply_webhook_event_captures_customer_from_transaction(service, repos):
@@ -550,22 +595,22 @@ async def test_change_plan_patches_the_existing_subscription_and_never_checkouts
     """
     await _seed_paid(repos)
 
-    await service.change_plan(USER, "u@e.com", "plus", "year")
+    await service.change_plan(USER, "u@e.com", "pro", "year")
 
-    assert billing_port.change_calls == [("sub_123", "plus", "year")]
+    assert billing_port.change_calls == [("sub_123", "pro", "year")]
     assert billing_port.checkout_calls == []
 
 
 async def test_change_plan_writes_the_new_plan_and_cycle(service, repos):
     await _seed_paid(repos)
 
-    out = await service.change_plan(USER, None, "plus", "year")
+    out = await service.change_plan(USER, None, "pro", "year")
 
     row = await repos[0].get(USER)
-    assert (row["plan"], row["billing_cycle"]) == ("plus", "year")
+    assert (row["plan"], row["billing_cycle"]) == ("pro", "year")
     assert row["provider_subscription_id"] == "sub_123"
     # The response is full entitlements, so the client can seed its cache with it.
-    assert out["plan"] == "plus" and out["billing_cycle"] == "year"
+    assert out["plan"] == "pro" and out["billing_cycle"] == "year"
     assert out["current_period_end"] is not None
 
 
@@ -574,11 +619,11 @@ async def test_change_plan_skips_the_write_when_the_webhook_got_there_first(
 ):
     # Webhook already applied the target state; re-applying our (now older) copy of the
     # same payload would risk clobbering anything that landed after it.
-    await _seed_paid(repos, plan="plus", billing_cycle="year")
+    await _seed_paid(repos, plan="pro", billing_cycle="year")
     await repos[0].upsert(USER, {"cancel_at_period_end": False})
 
-    await service.change_plan(USER, None, "plus", "month")  # different cycle -> allowed
-    assert billing_port.change_calls == [("sub_123", "plus", "month")]
+    await service.change_plan(USER, None, "pro", "month")  # different cycle -> allowed
+    assert billing_port.change_calls == [("sub_123", "pro", "month")]
 
 
 @pytest.mark.parametrize(
@@ -598,7 +643,7 @@ async def test_change_plan_blocks_unchangeable_states_without_offering_checkout(
     await _seed_paid(repos, **overrides)
 
     with pytest.raises(SubscriptionChangeUnavailable) as exc:
-        await service.change_plan(USER, None, "plus", "year")
+        await service.change_plan(USER, None, "pro", "year")
 
     assert exc.value.reason == reason
     assert billing_port.change_calls == []
@@ -611,14 +656,14 @@ async def test_change_plan_on_canceled_subscription_routes_to_checkout(service, 
     await _seed_paid(repos, status="canceled")
 
     with pytest.raises(SubscriptionChangeUnavailable) as exc:
-        await service.change_plan(USER, None, "plus", "year")
+        await service.change_plan(USER, None, "pro", "year")
 
     assert exc.value.reason == "checkout_required"
 
 
 async def test_change_plan_for_a_free_user_routes_to_checkout(service, repos):
     with pytest.raises(SubscriptionChangeUnavailable) as exc:
-        await service.change_plan(USER, "u@e.com", "plus", "year")
+        await service.change_plan(USER, "u@e.com", "pro", "year")
 
     assert exc.value.reason == "checkout_required"
 
@@ -651,10 +696,10 @@ async def test_change_plan_recovers_a_missing_subscription_id(service, billing_p
     await _seed_paid(repos, provider_subscription_id=None)
     billing_port.found_subscription_id = "sub_recovered"
 
-    await service.change_plan(USER, None, "plus", "year")
+    await service.change_plan(USER, None, "pro", "year")
 
     assert billing_port.find_calls == ["ctm_1"]
-    assert billing_port.change_calls == [("sub_recovered", "plus", "year")]
+    assert billing_port.change_calls == [("sub_recovered", "pro", "year")]
     assert (await repos[0].get(USER))["provider_subscription_id"] == "sub_recovered"
 
 
@@ -665,7 +710,7 @@ async def test_change_plan_falls_back_to_checkout_when_no_subscription_is_found(
     billing_port.found_subscription_id = None
 
     with pytest.raises(SubscriptionChangeUnavailable) as exc:
-        await service.change_plan(USER, None, "plus", "year")
+        await service.change_plan(USER, None, "pro", "year")
 
     assert exc.value.reason == "checkout_required"
 
@@ -689,16 +734,16 @@ async def test_change_plan_without_a_provider_raises(uow_factory):
     svc = BillingService(uow_factory, billing_port=None)
 
     with pytest.raises(RuntimeError, match="not configured"):
-        await svc.change_plan(USER, None, "plus", "year")
+        await svc.change_plan(USER, None, "pro", "year")
 
 
 async def test_preview_never_writes_to_the_database(service, billing_port, repos):
     await _seed_paid(repos)
     before = await repos[0].get(USER)
 
-    out = await service.preview_plan_change(USER, None, "plus", "year")
+    out = await service.preview_plan_change(USER, None, "pro", "year")
 
-    assert billing_port.preview_calls == [("sub_123", "plus", "year")]
+    assert billing_port.preview_calls == [("sub_123", "pro", "year")]
     assert billing_port.change_calls == []
     assert await repos[0].get(USER) == before
     assert out["immediate_charge_minor"] == 4271
@@ -710,7 +755,7 @@ async def test_provider_rejection_leaves_the_stored_plan_untouched(service, bill
     billing_port.change_raises = BillingChangeRejected("declined", "Card declined")
 
     with pytest.raises(BillingChangeRejected):
-        await service.change_plan(USER, None, "plus", "year")
+        await service.change_plan(USER, None, "pro", "year")
 
     row = await repos[0].get(USER)
     assert (row["plan"], row["billing_cycle"]) == ("pro", "month")
@@ -786,11 +831,11 @@ async def test_byok_lifts_the_metric_limit_to_the_ceiling(uow_factory, billing_p
 
     svc = _byok_service(uow_factory, billing_port, byok_users={USER})
     ent = await svc.get_entitlements(USER)
-    agent = next(u for u in ent["usage"] if u["metric"] == METRIC_AGENT_MESSAGES)
+    agent = next(u for u in ent["usage"] if u["metric"] == METRIC_AI_CREDITS)
 
     assert ent["byok"] is True
-    assert agent["limit"] == BYOK_LIMITS[METRIC_AGENT_MESSAGES]
-    assert agent["limit"] > get_plan("pro").limits[METRIC_AGENT_MESSAGES], (
+    assert agent["limit"] == BYOK_LIMITS[METRIC_AI_CREDITS]
+    assert agent["limit"] > get_plan("pro").limits[METRIC_AI_CREDITS], (
         "the ceiling must sit clear of Pro, or a Pro subscriber gains nothing from BYOK"
     )
 
@@ -798,10 +843,10 @@ async def test_byok_lifts_the_metric_limit_to_the_ceiling(uow_factory, billing_p
 async def test_a_user_without_a_key_keeps_their_plan_limit(uow_factory, billing_port):
     svc = _byok_service(uow_factory, billing_port, byok_users=set())
     ent = await svc.get_entitlements(USER)
-    agent = next(u for u in ent["usage"] if u["metric"] == METRIC_AGENT_MESSAGES)
+    agent = next(u for u in ent["usage"] if u["metric"] == METRIC_AI_CREDITS)
 
     assert ent["byok"] is False
-    assert agent["limit"] == get_plan("free").limits[METRIC_AGENT_MESSAGES]
+    assert agent["limit"] == get_plan("free").limits[METRIC_AI_CREDITS]
 
 
 async def test_byok_still_counts_usage(uow_factory, billing_port, repos):
@@ -809,19 +854,21 @@ async def test_byok_still_counts_usage(uow_factory, billing_port, repos):
     would go blind on the most engaged ones."""
     _, usage, _ = repos
     svc = _byok_service(uow_factory, billing_port, byok_users={USER})
-    await svc.check_and_increment(USER, METRIC_AGENT_MESSAGES)
-    await svc.check_and_increment(USER, METRIC_AGENT_MESSAGES)
+    await svc.spend_credits(USER, ACTION_AGENT_MESSAGE)
+    await svc.spend_credits(USER, ACTION_AGENT_MESSAGE)
 
     ent = await svc.get_entitlements(USER)
-    assert next(u for u in ent["usage"] if u["metric"] == METRIC_AGENT_MESSAGES)["used"] == 2
+    assert next(u for u in ent["usage"] if u["metric"] == METRIC_AI_CREDITS)["used"] == 2 * cost(
+        ACTION_AGENT_MESSAGE, None
+    )
 
 
 async def test_byok_sails_past_the_free_limit(uow_factory, billing_port):
     """Free allows 150 agent messages; a BYOK user must get well past that."""
     svc = _byok_service(uow_factory, billing_port, byok_users={USER})
-    free_limit = get_plan("free").limits[METRIC_AGENT_MESSAGES]
+    free_limit = get_plan("free").limits[METRIC_AI_CREDITS]
     for _ in range(free_limit + 5):
-        await svc.check_and_increment(USER, METRIC_AGENT_MESSAGES)  # must not raise
+        await svc.spend_credits(USER, ACTION_AGENT_MESSAGE)  # must not raise
 
 
 async def test_the_ceiling_is_still_enforced(uow_factory, billing_port, repos):
@@ -833,10 +880,10 @@ async def test_the_ceiling_is_still_enforced(uow_factory, billing_port, repos):
     _, usage, _ = repos
     svc = _byok_service(uow_factory, billing_port, byok_users={USER})
     # Jump the counter to the ceiling rather than looping 50k times.
-    usage.seed(USER, _period(), METRIC_AGENT_MESSAGES, BYOK_LIMITS[METRIC_AGENT_MESSAGES])
+    usage.seed(USER, _period(), METRIC_AI_CREDITS, BYOK_LIMITS[METRIC_AI_CREDITS])
 
     with pytest.raises(QuotaExceeded) as exc:
-        await svc.check_and_increment(USER, METRIC_AGENT_MESSAGES)
+        await svc.spend_credits(USER, ACTION_AGENT_MESSAGE)
     assert exc.value.plan_key == "byok", (
         "the 402 must say which ceiling was hit — a BYOK user needs a different "
         "message from a Free user who should be shown an upgrade"
@@ -848,8 +895,8 @@ async def test_one_users_key_does_not_lift_anothers_quota(uow_factory, billing_p
     ent = await svc.get_entitlements(USER)
     assert ent["byok"] is False
     assert (
-        next(u for u in ent["usage"] if u["metric"] == METRIC_AGENT_MESSAGES)["limit"]
-        == (get_plan("free").limits[METRIC_AGENT_MESSAGES])
+        next(u for u in ent["usage"] if u["metric"] == METRIC_AI_CREDITS)["limit"]
+        == (get_plan("free").limits[METRIC_AI_CREDITS])
     )
 
 

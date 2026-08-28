@@ -24,6 +24,7 @@ from salli.adapters.db.models import (
     AuditLogORM,
     BudgetORM,
     BugReportORM,
+    CreditPurchaseORM,
     DebtORM,
     DocumentORM,
     FireStrategyORM,
@@ -58,6 +59,7 @@ from salli.application.ports import (
     AuditLogRepository,
     BudgetRepository,
     BugReportRepository,
+    CreditRepository,
     DataPortabilityRepository,
     DebtRepository,
     FireStrategyRepository,
@@ -1055,6 +1057,125 @@ class SQLUsageRepository(UsageRepository):
         return {r.metric: r.count for r in result.scalars().all()}
 
 
+class SQLCreditRepository(CreditRepository):
+    """
+    Credit balance over `usage_counters` (the resetting allowance) and
+    `credit_purchases` (non-expiring top-ups).
+
+    Concurrency is handled with `SELECT … FOR UPDATE` on this user's rows
+    rather than a clever conditional UPDATE. Spend spans two tables, so the
+    lock has to cover both anyway, and a plainly-correct lock is worth more
+    here than a lock-free statement that is hard to read and harder to prove.
+    Contention is per-user and the critical section is microseconds, so this
+    costs nothing in practice.
+    """
+
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def _allowance_row(
+        self, user_id: str, period: str, metric: str, *, lock: bool
+    ) -> UsageCounterORM | None:
+        stmt = select(UsageCounterORM).where(
+            UsageCounterORM.user_id == user_id,
+            UsageCounterORM.period == period,
+            UsageCounterORM.metric == metric,
+        )
+        if lock:
+            stmt = stmt.with_for_update()
+        return (await self._s.execute(stmt)).scalar_one_or_none()
+
+    async def _purchase_rows(self, user_id: str, *, lock: bool) -> list[CreditPurchaseORM]:
+        stmt = (
+            select(CreditPurchaseORM)
+            .where(
+                CreditPurchaseORM.user_id == user_id,
+                CreditPurchaseORM.credits_remaining > 0,
+            )
+            .order_by(CreditPurchaseORM.created_at)  # oldest first
+        )
+        if lock:
+            stmt = stmt.with_for_update()
+        return list((await self._s.execute(stmt)).scalars().all())
+
+    async def balance(
+        self, user_id: str, period: str, metric: str, allowance: int
+    ) -> dict[str, int]:
+        row = await self._allowance_row(user_id, period, metric, lock=False)
+        used = row.count if row else 0
+        purchased = sum(p.credits_remaining for p in await self._purchase_rows(user_id, lock=False))
+        allowance_remaining = max(0, allowance - used)
+        return {
+            "allowance_remaining": allowance_remaining,
+            "allowance_used": used,
+            "allowance_total": allowance,
+            "purchased_remaining": purchased,
+            "total": allowance_remaining + purchased,
+        }
+
+    async def spend(
+        self, user_id: str, period: str, metric: str, cost: int, allowance: int
+    ) -> bool:
+        if cost <= 0:
+            return True
+
+        row = await self._allowance_row(user_id, period, metric, lock=True)
+        used = row.count if row else 0
+        allowance_remaining = max(0, allowance - used)
+        purchases = await self._purchase_rows(user_id, lock=True)
+        purchased_remaining = sum(p.credits_remaining for p in purchases)
+
+        if cost > allowance_remaining + purchased_remaining:
+            return False
+
+        # Allowance first: it expires at the end of the month, so spending it
+        # ahead of purchased credits is strictly better for the user.
+        from_allowance = min(cost, allowance_remaining)
+        if from_allowance:
+            if row is None:
+                row = UsageCounterORM(
+                    id=str(uuid.uuid4()),
+                    user_id=user_id,
+                    period=period,
+                    metric=metric,
+                    count=from_allowance,
+                )
+                self._s.add(row)
+            else:
+                row.count += from_allowance
+
+        outstanding = cost - from_allowance
+        for purchase in purchases:
+            if outstanding <= 0:
+                break
+            take = min(outstanding, purchase.credits_remaining)
+            purchase.credits_remaining -= take
+            outstanding -= take
+
+        await self._s.flush()
+        return True
+
+    async def grant(self, user_id: str, credits: int, provider_transaction_id: str) -> bool:
+        existing = await self._s.execute(
+            select(CreditPurchaseORM.id).where(
+                CreditPurchaseORM.provider_transaction_id == provider_transaction_id
+            )
+        )
+        if existing.scalar_one_or_none() is not None:
+            return False
+        self._s.add(
+            CreditPurchaseORM(
+                id=str(uuid.uuid4()),
+                user_id=user_id,
+                credits=credits,
+                credits_remaining=credits,
+                provider_transaction_id=provider_transaction_id,
+            )
+        )
+        await self._s.flush()
+        return True
+
+
 class SQLUserProfileRepository(UserProfileRepository):
     def __init__(self, session: AsyncSession) -> None:
         self._s = session
@@ -1080,6 +1201,7 @@ class SQLUserProfileRepository(UserProfileRepository):
             "life_stage": row.life_stage,
             "mcp_enabled": row.mcp_enabled,
             "daily_briefing_enabled": row.daily_briefing_enabled,
+            "preferred_model": row.preferred_model,
         }
 
     async def upsert(self, user_id: str, fields: dict[str, Any]) -> None:
@@ -1103,6 +1225,25 @@ class SQLUserProfileRepository(UserProfileRepository):
         """
         if field not in ("mcp_enabled", "daily_briefing_enabled"):
             raise ValueError(f"'{field}' is not a togglable profile flag")
+        result = await self._s.execute(select(UserProfileORM).where(UserProfileORM.id == user_id))
+        row = result.scalar_one_or_none()
+        if row is None:
+            row = UserProfileORM(id=user_id)
+            self._s.add(row)
+        setattr(row, field, value)
+        await self._s.flush()
+
+    async def set_preference(self, user_id: str, field: str, value: str | None) -> None:
+        """Set a nullable string preference, including back to NULL.
+
+        `upsert` skips None values, so it can set a preference but never clear
+        one — "use the default model again" would be inexpressible through it.
+        `set_flag` is the same escape hatch for booleans; this is its string
+        sibling, allowlisted for the same reason: so it cannot quietly become a
+        way to write any column from a request body.
+        """
+        if field not in ("preferred_model",):
+            raise ValueError(f"'{field}' is not a settable profile preference")
         result = await self._s.execute(select(UserProfileORM).where(UserProfileORM.id == user_id))
         row = result.scalar_one_or_none()
         if row is None:
@@ -2270,6 +2411,7 @@ class SQLDataPortabilityRepository(DataPortabilityRepository):
         await _delete(OAuthRefreshTokenORM, OAuthRefreshTokenORM.user_id)
         await _delete(OAuthAccessTokenORM, OAuthAccessTokenORM.user_id)
         await _delete(OAuthAuthorizationCodeORM, OAuthAuthorizationCodeORM.user_id)
+        await _delete(CreditPurchaseORM, CreditPurchaseORM.user_id)
 
         # UserProfileORM's primary key IS the user id — no separate user_id
         # column — and nothing else has an FK pointing at it, so it's safe last.

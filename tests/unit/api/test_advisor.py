@@ -50,7 +50,7 @@ async def test_run_advisor_restricted_truncates(client, mock_services):
 async def test_run_advisor_plus_unlimited(client, mock_services):
     recs = [_recommendation(str(i), 2) for i in range(5)]
     mock_services.advisor.run_advisor.return_value = _report(recs)
-    mock_services.billing.get_current_plan.return_value = PLANS["plus"]
+    mock_services.billing.get_current_plan.return_value = PLANS["pro"]
 
     r = await client.post("/advisor/run", headers=AUTH)
     assert r.status_code == 200

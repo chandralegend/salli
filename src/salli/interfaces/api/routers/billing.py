@@ -62,8 +62,12 @@ async def get_plans(svc: AppServices):
 
 
 class CheckoutRequest(BaseModel):
-    plan: str  # "plus" | "pro"
-    cycle: str = "month"  # "month" | "year"
+    # Literal, not a bare str. As a plain string this accepted any plan key,
+    # including the retired "plus" — and while that price was still configured,
+    # a stale client could open a real checkout for a tier whose subscription
+    # now resolves to Free limits.
+    plan: Literal["pro"]
+    cycle: Literal["month", "year"] = "month"
 
 
 @router.post("/checkout")
@@ -80,7 +84,7 @@ async def create_checkout(
 class PlanChangeRequest(BaseModel):
     # Literal rather than the plain `str` CheckoutRequest uses: it rejects garbage with a
     # 422 for free, and makes the generated mobile SDK emit real enums.
-    plan: Literal["plus", "pro"]
+    plan: Literal["pro"]
     cycle: Literal["month", "year"] = "month"
 
 

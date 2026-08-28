@@ -54,7 +54,7 @@ async def test_projections_restricted_redacts_scenarios(client, mock_services):
 @pytest.mark.asyncio
 async def test_projections_plus_full(client, mock_services):
     mock_services.fi.get_projections.return_value = _projections()
-    mock_services.billing.get_current_plan.return_value = PLANS["plus"]
+    mock_services.billing.get_current_plan.return_value = PLANS["pro"]
 
     r = await client.get("/fi/projections", headers=AUTH)
     assert r.status_code == 200
@@ -113,13 +113,13 @@ async def test_strategy_generate_truncates_done_event_only(client, mock_services
     assert events[1]["type"] == "done"
     assert events[1]["strategy"]["ai_rationale"] is None
     assert events[1]["strategy"]["rationale_locked"] is True
-    mock_services.billing.check_and_increment.assert_awaited_once()
+    mock_services.billing.spend_credits.assert_awaited_once()
 
 
 @pytest.mark.asyncio
 async def test_strategy_generate_plus_full_rationale(client, mock_services):
     mock_services.fi.generate_strategy = MagicMock(side_effect=lambda *a, **kw: _fake_stream())
-    mock_services.billing.get_current_plan.return_value = PLANS["plus"]
+    mock_services.billing.get_current_plan.return_value = PLANS["pro"]
 
     r = await client.post("/fi/strategy/generate", headers=AUTH)
     assert r.status_code == 200
@@ -215,4 +215,4 @@ async def test_simulate_purchase_is_not_metered(client, mock_services):
     r = await client.post("/fi/simulate-purchase", json={"amount": "450000"}, headers=AUTH)
 
     assert r.status_code == 200
-    mock_services.billing.check_and_increment.assert_not_called()
+    mock_services.billing.spend_credits.assert_not_called()

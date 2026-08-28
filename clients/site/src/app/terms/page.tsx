@@ -64,11 +64,17 @@ export default function TermsPage() {
 
       <h2>6. Subscriptions and billing</h2>
       <p>
-        Salli offers a free plan and paid plans (Plus, Pro) with higher usage limits. Paid
-        subscriptions are billed in advance on a recurring basis through our payment processor
-        and merchant of record, and are subject to that processor&apos;s payment terms. You can cancel
-        at any time from your account settings; cancellation takes effect at the end of the
-        current billing period. Fees are non-refundable except where required by law.
+        Salli offers a free plan and a paid Pro plan, which differ in the number of AI credits
+        included each month. Paid subscriptions are billed in advance on a recurring basis through
+        our payment processor and merchant of record, and are subject to that processor&apos;s
+        payment terms. You can cancel at any time from your account settings; cancellation takes
+        effect at the end of the current billing period. Fees are non-refundable except where
+        required by law.
+      </p>
+      <p>
+        Credit top-ups are one-time purchases rather than subscriptions. Purchased credits do not
+        expire, are drawn on only after each month&apos;s included allowance is used, and are
+        non-refundable once the associated AI usage has taken place.
       </p>
 
       <h2>7. Acceptable use</h2>

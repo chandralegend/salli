@@ -10,10 +10,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusChip } from "@/components/shared/StatusChip";
-import { UsageMeter } from "@/components/billing/UsageMeter";
+import { CreditBalance } from "@/components/billing/CreditBalance";
+import { TopUpCard } from "@/components/billing/TopUpCard";
 import { UpgradeDialog } from "@/components/billing/UpgradeDialog";
 import { DangerZone } from "@/components/settings/DangerZone";
 import { LlmKeysCard } from "@/components/settings/LlmKeysCard";
+import { ModelPickerCard } from "@/components/settings/ModelPickerCard";
 import { McpConnectionsCard } from "@/components/settings/McpConnectionsCard";
 import { HelpFeedbackCard } from "@/components/support/HelpFeedbackCard";
 import { useSubscription, useBillingPortal, type BillingCycle } from "@/hooks/useBilling";
@@ -155,28 +157,18 @@ function SettingsContent() {
           )}
         </div>
 
-        {/* Usage */}
+        {/* Credits */}
         <div className="rounded-lg border bg-card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[15px] font-semibold">Usage this month</h2>
-            {sub?.usage?.[0]?.resets_at && (
-              <span className="text-xs text-muted-foreground">Resets {formatDate(sub.usage[0].resets_at)}</span>
-            )}
-          </div>
+          <h2 className="mb-4 text-[15px] font-semibold">AI credits</h2>
           {subscription.isLoading ? (
             <Skeleton className="h-24" />
-          ) : (
-            <div className="space-y-5">
-              {(sub?.usage ?? []).map((m) => (
-                <UsageMeter key={m.metric} metric={m} />
-              ))}
-              {sub && (
-                <p className="text-xs text-muted-foreground">
-                  Quotas are per calendar month on the {sub.plan_name || sub.plan} plan.
-                </p>
-              )}
-            </div>
-          )}
+          ) : sub?.credits ? (
+            <CreditBalance
+              balance={sub.credits}
+              planName={sub.plan_name || sub.plan}
+              byok={sub.byok}
+            />
+          ) : null}
         </div>
 
         {/* Profile */}
@@ -200,7 +192,7 @@ function SettingsContent() {
             <div className="min-w-0">
               <p className="text-[13px] font-medium">Daily briefing</p>
               <p className="mt-0.5 text-[12px] text-muted-foreground leading-relaxed">
-                A wealth-advisor run each morning. Uses one of your monthly advisor runs.
+                A wealth-advisor run each morning. Spends credits from your balance.
               </p>
             </div>
             {dailyBriefing.isLoading ? (
@@ -246,6 +238,10 @@ function SettingsContent() {
         </div>
 
         {/* MCP: connect an AI assistant */}
+        <TopUpCard />
+
+        <ModelPickerCard />
+
         <LlmKeysCard />
 
         <McpConnectionsCard />

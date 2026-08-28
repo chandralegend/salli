@@ -419,7 +419,7 @@ export default function FinancialIndependencePage() {
                       <span>
                         Read the full AI rationale ·{" "}
                         <Link href="/settings?upgrade=plus" className="font-semibold underline underline-offset-2">
-                          Upgrade to Plus
+                          Upgrade to Pro
                         </Link>
                       </span>
                     </div>
@@ -464,7 +464,7 @@ export default function FinancialIndependencePage() {
             </div>
             {advisorQuotaHit && (
               <div className="mb-3">
-                <QuotaBanner metric="advisor_runs" />
+                <QuotaBanner />
               </div>
             )}
             {!report || !report.recommendations ? (

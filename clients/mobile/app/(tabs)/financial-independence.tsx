@@ -507,7 +507,7 @@ export default function FinancialIndependenceScreen() {
                   <Lock size={12} color="rgba(255,255,255,0.5)" strokeWidth={2} />
                   <Text className="flex-1 text-[10.5px] text-white/50">
                     {projections.data.scenario_access.locked.map((s) => (s === "conservative" ? "Conservative" : "Growth")).join(" & ")} scenario
-                    {projections.data.scenario_access.locked.length > 1 ? "s" : ""} locked · Unlock on Plus
+                    {projections.data.scenario_access.locked.length > 1 ? "s" : ""} locked · Unlock on Pro
                   </Text>
                   <ChevronRight size={12} color="rgba(255,255,255,0.4)" strokeWidth={2} />
                 </Pressable>
@@ -580,7 +580,7 @@ export default function FinancialIndependenceScreen() {
                             >
                               <Lock size={12} color={colors.accent} strokeWidth={2} />
                               <Text className="flex-1 text-[11px] font-sans-medium text-salli-accent">
-                                Read the full AI rationale · Upgrade to Plus
+                                Read the full AI rationale · Upgrade to Pro
                               </Text>
                               <ChevronRight size={12} color={colors.accent} strokeWidth={2} />
                             </Pressable>
@@ -675,7 +675,7 @@ export default function FinancialIndependenceScreen() {
               {advisorReport.data ? "Re-run Freedom Mentor" : "Run Freedom Mentor"}
             </PillButton>
             {isQuotaError(runAdvisor.error) ? (
-              <QuotaBanner metric="advisor_runs" className="mt-3" />
+              <QuotaBanner className="mt-3" />
             ) : null}
           </Card>
         </View>

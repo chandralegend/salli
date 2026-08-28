@@ -55,30 +55,47 @@ export default function BillingScreen() {
             <Text className="mb-3 text-[11px] font-sans-medium uppercase tracking-wide text-white/50 capitalize">
               {entitlements.data?.plan_name ?? "Free"} Plan
             </Text>
-            <View className="gap-3">
-              {(entitlements.data?.usage ?? []).map((u) => {
-                const limit = Number(u.limit);
-                const used = Number(u.used);
-                const pct = Number.isFinite(limit) && limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
-                const near = pct >= 80;
-                return (
-                  <View key={u.metric}>
-                    <View className="mb-1.5 flex-row justify-between">
-                      <Text className="text-[11px] capitalize text-white/50">{u.metric.replace(/_/g, " ")}</Text>
+            {(() => {
+              const c = entitlements.data?.credits;
+              if (!c) return null;
+              const pct =
+                c.allowance_total > 0
+                  ? Math.min(100, (c.allowance_remaining / c.allowance_total) * 100)
+                  : 0;
+              const low = pct <= 20;
+              return (
+                <View className="gap-3">
+                  <View className="flex-row items-baseline gap-2">
+                    <Text className="font-sans-semibold text-2xl text-white">
+                      {c.total.toLocaleString()}
+                    </Text>
+                    <Text className="text-[12px] text-white/50">credits left</Text>
+                  </View>
+                  <View className="h-1.5 overflow-hidden rounded-pill bg-white/10">
+                    <View
+                      className={cn("h-full rounded-pill", low ? "bg-destructive" : "bg-white")}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </View>
+                  <View className="flex-row justify-between">
+                    <Text className="text-[11px] text-white/50">Monthly allowance</Text>
+                    <Text className="font-sans-semibold text-[11px] text-white">
+                      {c.allowance_remaining.toLocaleString()} / {c.allowance_total.toLocaleString()}
+                    </Text>
+                  </View>
+                  {c.purchased_remaining > 0 && (
+                    <View className="flex-row justify-between">
+                      {/* Said plainly because it is the reassurance someone
+                          wants before buying another pack. */}
+                      <Text className="text-[11px] text-white/50">Purchased · never expires</Text>
                       <Text className="font-sans-semibold text-[11px] text-white">
-                        {u.used}/{u.limit}
+                        {c.purchased_remaining.toLocaleString()}
                       </Text>
                     </View>
-                    <View className="h-1.5 overflow-hidden rounded-pill bg-white/10">
-                      <View
-                        className={cn("h-full rounded-pill", near ? "bg-destructive" : "bg-white")}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
+                  )}
+                </View>
+              );
+            })()}
           </View>
         </View>
 

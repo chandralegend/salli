@@ -89,7 +89,7 @@ export function ProjectionChart({
               .join(" & ")}{" "}
             scenario{lockedScenarios.length > 1 ? "s" : ""} locked ·{" "}
             <Link href="/settings?upgrade=plus" className="font-semibold underline underline-offset-2">
-              Unlock on Plus
+              Unlock on Pro
             </Link>
           </span>
         </div>

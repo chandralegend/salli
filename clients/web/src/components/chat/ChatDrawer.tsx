@@ -560,9 +560,9 @@ export function ChatDrawer() {
             <div className="flex items-center gap-2 rounded-md bg-warning/25 px-3 py-2 text-[12px] text-[var(--status-warning-text)]">
               <TriangleAlert className="size-3.5 shrink-0" />
               <span>
-                Monthly AI messages used up ·{" "}
-                <Link href="/settings?upgrade=1" className="font-semibold underline underline-offset-2" onClick={close}>
-                  Upgrade
+                Out of AI credits ·{" "}
+                <Link href="/settings" className="font-semibold underline underline-offset-2" onClick={close}>
+                  Top up or upgrade
                 </Link>
               </span>
             </div>

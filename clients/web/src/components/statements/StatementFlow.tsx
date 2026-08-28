@@ -315,7 +315,7 @@ export function StatementFlow({ onViewLedger }: { onViewLedger: () => void }) {
   // ── Phase: upload ────────────────────────────────────────────────────────────
   return (
     <div className="max-w-[720px] mx-auto space-y-3">
-      {quotaHit && <QuotaBanner metric="statement_uploads" />}
+      {quotaHit && <QuotaBanner />}
       <div className="rounded-lg border bg-card p-8">
         <div
           role="button"

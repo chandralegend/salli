@@ -149,7 +149,7 @@ export default function StatementsScreen() {
         }
       >
 
-        {quotaHit ? <QuotaBanner metric="statement_uploads" className="mx-4 mt-3" /> : null}
+        {quotaHit ? <QuotaBanner className="mx-4 mt-3" /> : null}
 
         {tab === "Review" ? (
           <ReviewTab

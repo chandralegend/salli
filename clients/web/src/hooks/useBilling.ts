@@ -1,10 +1,10 @@
 "use client";
 
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-fetch";
 
 export type UsageMetric = {
-  metric: "agent_messages" | "statement_uploads" | string;
+  metric: "ai_credits" | string;
   used: number;
   limit: number;
   remaining: number;
@@ -28,12 +28,41 @@ export type Subscription = {
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   usage: UsageMetric[];
+  /** The number the UI shows. `usage` covers only the resetting monthly
+   *  allowance, so a user who has topped up would read as empty while holding
+   *  thousands of purchased credits. */
+  credits: CreditBalance;
   /** True when the user supplied their own LLM key, so metering is lifted. The
    *  `limit` values in `usage` then reflect a safety ceiling rather than an
    *  allowance, and shouldn't be presented as one. Hand-typed because
    *  /billing/subscription returns an untyped dict, so codegen can't see it. */
   byok: boolean;
 };
+
+export type CreditBalance = {
+  /** Left in this month's allowance. Resets on `resets_at`. */
+  allowance_remaining: number;
+  allowance_used: number;
+  allowance_total: number;
+  /** Bought, and never expires. Only drawn on once the allowance is gone. */
+  purchased_remaining: number;
+  /** What the user can actually spend right now. */
+  total: number;
+  resets_at: string;
+};
+
+export type AiModel = {
+  id: string;
+  name: string;
+  blurb: string;
+  credit_multiplier: number;
+  /** What one conversation costs on this model — the number worth showing, in
+   *  preference to an abstract multiplier. */
+  credits_per_message: number;
+  is_default: boolean;
+};
+
+export type CreditPack = "10k" | "25k" | "60k";
 
 export type Plan = {
   key: string;
@@ -106,6 +135,40 @@ export function useChangePlan() {
   });
 }
 
+/** Buy a one-time credit pack. Returns the same shape as a plan checkout, so
+ *  it reuses the existing Paddle.js overlay rather than a second flow. */
+export function useCreditCheckout() {
+  return useMutation({
+    mutationFn: ({ pack }: { pack: CreditPack }) =>
+      apiFetch<Record<string, unknown>>("POST", "/billing/credits/checkout", { pack }),
+  });
+}
+
+export function useAiModels() {
+  return useQuery({
+    queryKey: ["ai-models"],
+    queryFn: () =>
+      apiFetch<{ selected: string; default: string; models: AiModel[] }>("GET", "/ai-models"),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useSetAiModel() {
+  const qc = useQueryClient();
+  return useMutation({
+    // null means "back to the default" — the server clears the stored
+    // preference rather than storing the default's id, so the user follows the
+    // default if it ever changes.
+    mutationFn: (model_id: string | null) =>
+      apiFetch<void>("PUT", "/ai-models/selection", { model_id }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ai-models"] });
+      // The credit cost of a message just changed, so any surface quoting it is stale.
+      qc.invalidateQueries({ queryKey: ["billing"] });
+    },
+  });
+}
+
 export function useBillingPortal() {
   return useMutation({
     mutationFn: () => apiFetch<{ url: string }>("POST", "/billing/portal"),
@@ -113,8 +176,7 @@ export function useBillingPortal() {
 }
 
 const METRIC_LABELS: Record<string, string> = {
-  agent_messages: "AI agent messages",
-  statement_uploads: "Statement uploads",
+  ai_credits: "AI credits",
 };
 
 export function metricLabel(metric: string): string {

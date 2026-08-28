@@ -34,27 +34,33 @@ export const TIERS: Tier[] = [
     monthlyPrice: 0,
     annualPrice: 0,
     cta: "Start free",
-    features: ["Immutable double-entry ledger", "Full Sri Lanka tax engine", "Debt payoff & FIRE planning", "150 AI messages / month", "10 statement uploads / month", "10 wealth-advisor runs / month", "Full FIRE scenarios, AI rationale & all advisor recommendations", "Community support"],
-  },
-  {
-    name: "Plus",
-    tagline: "More AI, and connect your favorite assistant.",
-    monthlyPrice: 9,
-    annualPrice: 100,
-    popular: true,
-    dark: true,
-    cta: "Choose Plus",
-    planKey: "plus",
-    features: ["Everything in Free", "500 AI messages / month", "50 statement uploads / month", "Daily wealth advisor (45 runs / month)", "Connect Claude, ChatGPT & other MCP clients", "Full FIRE scenarios, AI rationale & all advisor recommendations"],
+    features: [
+      "Immutable double-entry ledger",
+      "Full Sri Lanka tax engine",
+      "Debt payoff & FIRE planning",
+      "3,000 AI credits / month",
+      "Every model — Haiku, Sonnet, Opus, Fable",
+      "Full FIRE scenarios, AI rationale & all advisor recommendations",
+      "Connect Claude, ChatGPT & other MCP clients",
+      "Community support",
+    ],
   },
   {
     name: "Pro",
-    tagline: "Full power, priority help.",
+    tagline: "For running your whole financial life through Salli.",
     monthlyPrice: 29,
     annualPrice: 200,
+    popular: true,
+    dark: true,
     cta: "Choose Pro",
     planKey: "pro",
-    features: ["Everything in Plus", "5,000 AI messages / month", "500 statement uploads / month", "150 wealth-advisor runs / month", "Priority support"],
+    features: [
+      "Everything in Free",
+      "50,000 AI credits / month",
+      "Around 1,600 Sonnet or 1,000 Opus conversations",
+      "Daily wealth advisor",
+      "Priority support",
+    ],
   },
 ];
 
@@ -64,8 +70,8 @@ export function tierByName(name: string): Tier {
   return t;
 }
 
-// Derived, not asserted: Plus saves ~7% annually and Pro ~43%, so the flat "−20%"
-// this page used to claim was true of neither. Recomputes if a price changes.
+// Derived, not asserted: Pro saves ~43% annually, so the flat "−20%" this page
+// used to claim was wrong. Recomputes if a price changes.
 export const MAX_ANNUAL_SAVING = Math.max(
   ...TIERS.filter((t) => t.monthlyPrice > 0).map((t) =>
     Math.round((1 - t.annualPrice / (t.monthlyPrice * 12)) * 100),

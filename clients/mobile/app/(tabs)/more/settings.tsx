@@ -7,6 +7,7 @@ import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 
 import { BugReportDrawer } from "@/components/settings/BugReportDrawer";
 import { LlmKeysCard } from "@/components/settings/LlmKeysCard";
+import { ModelPickerCard } from "@/components/settings/ModelPickerCard";
 import { McpConnectionsCard } from "@/components/settings/McpConnectionsCard";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
@@ -51,9 +52,8 @@ export default function SettingsScreen() {
 
   const isFree = entitlements.data?.plan === "free";
 
-  const usage = entitlements.data?.usage ?? [];
-  const messages = usage.find((u) => u.metric === "messages");
-  const resetsAt = formatShortDate(usage[0]?.resets_at ?? entitlements.data?.current_period_end);
+  const credits = entitlements.data?.credits;
+  const resetsAt = formatShortDate(credits?.resets_at ?? entitlements.data?.current_period_end);
 
   async function handleSignOut() {
     await logout();
@@ -134,34 +134,33 @@ export default function SettingsScreen() {
                 <Text className="text-[12px] font-sans-medium text-white/60">
                   Free Plan{resetsAt ? ` · Resets ${resetsAt}` : ""}
                 </Text>
-                {messages ? (
+                {credits ? (
                   <View className="rounded-pill bg-white/15 px-2.5 py-0.5">
-                    <Text className="font-sans-bold text-[11px] text-white">⚠ {messages.remaining} messages left</Text>
+                    <Text className="font-sans-bold text-[11px] text-white">
+                      {credits.total.toLocaleString()} credits left
+                    </Text>
                   </View>
                 ) : null}
               </View>
-              <View className="flex-row flex-wrap gap-1.5">
-                {usage.map((u) => {
-                  const dim = u.remaining <= 0;
-                  return (
-                    <View
-                      key={u.metric}
-                      className={cn(
-                        "flex-row items-center gap-1.5 rounded-pill px-3 py-1.5",
-                        dim ? "bg-white/[0.06]" : "bg-white/10",
-                      )}
-                    >
-                      <Text className={cn("text-[11px] capitalize", dim ? "text-white/30" : "text-white/50")}>
-                        {u.metric.replace(/_/g, " ")}
-                      </Text>
-                      <Text className={cn("font-sans-bold text-[11px]", dim ? "text-white/40" : "text-white")}>
-                        {u.used}/{u.limit}
-                        {dim ? " used" : ""}
+              {credits ? (
+                <View className="flex-row flex-wrap gap-1.5">
+                  <View className="flex-row items-center gap-1.5 rounded-pill bg-white/10 px-3 py-1.5">
+                    <Text className="text-[11px] text-white/50">Allowance</Text>
+                    <Text className="font-sans-bold text-[11px] text-white">
+                      {credits.allowance_remaining.toLocaleString()} /{" "}
+                      {credits.allowance_total.toLocaleString()}
+                    </Text>
+                  </View>
+                  {credits.purchased_remaining > 0 ? (
+                    <View className="flex-row items-center gap-1.5 rounded-pill bg-white/10 px-3 py-1.5">
+                      <Text className="text-[11px] text-white/50">Purchased</Text>
+                      <Text className="font-sans-bold text-[11px] text-white">
+                        {credits.purchased_remaining.toLocaleString()}
                       </Text>
                     </View>
-                  );
-                })}
-              </View>
+                  ) : null}
+                </View>
+              ) : null}
             </View>
           </View>
         ) : null}
@@ -195,7 +194,7 @@ export default function SettingsScreen() {
             <View className="flex-1 pr-3">
               <Text className="font-sans-medium text-[14px] text-foreground">Daily briefing</Text>
               <Text className="mt-0.5 text-[11px] leading-4 text-foreground/35">
-                A wealth-advisor run each morning. Uses one of your monthly advisor runs.
+                A wealth-advisor run each morning. Spends credits from your balance.
               </Text>
             </View>
             {dailyBriefing.isLoading ? (
@@ -253,6 +252,8 @@ export default function SettingsScreen() {
             </View>
           </View>
         </Card>
+
+        <ModelPickerCard />
 
         <LlmKeysCard />
 

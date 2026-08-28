@@ -345,11 +345,11 @@ export type CheckoutRequest = {
     /**
      * Plan
      */
-    plan: string;
+    plan: 'pro';
     /**
      * Cycle
      */
-    cycle?: string;
+    cycle?: 'month' | 'year';
 };
 
 /**
@@ -400,6 +400,16 @@ export type CreateReminderRequest = {
      * Due Date
      */
     due_date: string;
+};
+
+/**
+ * CreditPackRequest
+ */
+export type CreditPackRequest = {
+    /**
+     * Pack
+     */
+    pack: '10k' | '25k' | '60k';
 };
 
 /**
@@ -649,6 +659,16 @@ export type McpEnabledRequest = {
 };
 
 /**
+ * ModelSelection
+ */
+export type ModelSelection = {
+    /**
+     * Model Id
+     */
+    model_id: string | null;
+};
+
+/**
  * OnboardingGoalItem
  */
 export type OnboardingGoalItem = {
@@ -813,7 +833,7 @@ export type PlanChangeRequest = {
     /**
      * Plan
      */
-    plan: 'plus' | 'pro';
+    plan: 'pro';
     /**
      * Cycle
      */
@@ -2654,6 +2674,29 @@ export type CreateCheckoutBillingCheckoutPostResponses = {
     200: unknown;
 };
 
+export type CreateCreditCheckoutBillingCreditsCheckoutPostData = {
+    body: CreditPackRequest;
+    path?: never;
+    query?: never;
+    url: '/billing/credits/checkout';
+};
+
+export type CreateCreditCheckoutBillingCreditsCheckoutPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateCreditCheckoutBillingCreditsCheckoutPostError = CreateCreditCheckoutBillingCreditsCheckoutPostErrors[keyof CreateCreditCheckoutBillingCreditsCheckoutPostErrors];
+
+export type CreateCreditCheckoutBillingCreditsCheckoutPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type PreviewPlanChangeBillingSubscriptionPreviewPostData = {
     body: PlanChangeRequest;
     path?: never;
@@ -4340,6 +4383,45 @@ export type SaveLlmKeyLlmKeysProviderPutResponses = {
 };
 
 export type SaveLlmKeyLlmKeysProviderPutResponse = SaveLlmKeyLlmKeysProviderPutResponses[keyof SaveLlmKeyLlmKeysProviderPutResponses];
+
+export type ListModelsAiModelsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/ai-models';
+};
+
+export type ListModelsAiModelsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SetModelAiModelsSelectionPutData = {
+    body: ModelSelection;
+    path?: never;
+    query?: never;
+    url: '/ai-models/selection';
+};
+
+export type SetModelAiModelsSelectionPutErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SetModelAiModelsSelectionPutError = SetModelAiModelsSelectionPutErrors[keyof SetModelAiModelsSelectionPutErrors];
+
+export type SetModelAiModelsSelectionPutResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type SetModelAiModelsSelectionPutResponse = SetModelAiModelsSelectionPutResponses[keyof SetModelAiModelsSelectionPutResponses];
 
 export type AuthorizationServerMetadataWellKnownOauthAuthorizationServerGetData = {
     body?: never;

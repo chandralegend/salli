@@ -2447,6 +2447,51 @@
         ]
       }
     },
+    "/billing/credits/checkout": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Create Credit Checkout",
+        "description": "Data the client passes to Paddle.js to buy a one-time credit pack.",
+        "operationId": "create_credit_checkout_billing_credits_checkout_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreditPackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/billing/subscription/preview": {
       "post": {
         "tags": [
@@ -5287,6 +5332,71 @@
         }
       }
     },
+    "/ai-models": {
+      "get": {
+        "tags": [
+          "ai-models"
+        ],
+        "summary": "List Models",
+        "description": "The catalogue, with what a chat message costs on each.",
+        "operationId": "list_models_ai_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/ai-models/selection": {
+      "put": {
+        "tags": [
+          "ai-models"
+        ],
+        "summary": "Set Model",
+        "description": "Choose a model, or send null to go back to the default.",
+        "operationId": "set_model_ai_models_selection_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelSelection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/.well-known/oauth-authorization-server": {
       "get": {
         "tags": [
@@ -6465,10 +6575,15 @@
         "properties": {
           "plan": {
             "type": "string",
+            "const": "pro",
             "title": "Plan"
           },
           "cycle": {
             "type": "string",
+            "enum": [
+              "month",
+              "year"
+            ],
             "title": "Cycle",
             "default": "month"
           }
@@ -6568,6 +6683,24 @@
           "due_date"
         ],
         "title": "CreateReminderRequest"
+      },
+      "CreditPackRequest": {
+        "properties": {
+          "pack": {
+            "type": "string",
+            "enum": [
+              "10k",
+              "25k",
+              "60k"
+            ],
+            "title": "Pack"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pack"
+        ],
+        "title": "CreditPackRequest"
       },
       "DailyBriefingRequest": {
         "properties": {
@@ -7023,6 +7156,26 @@
         ],
         "title": "McpEnabledRequest"
       },
+      "ModelSelection": {
+        "properties": {
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_id"
+        ],
+        "title": "ModelSelection"
+      },
       "OnboardingGoalItem": {
         "properties": {
           "name": {
@@ -7287,10 +7440,7 @@
         "properties": {
           "plan": {
             "type": "string",
-            "enum": [
-              "plus",
-              "pro"
-            ],
+            "const": "pro",
             "title": "Plan"
           },
           "cycle": {

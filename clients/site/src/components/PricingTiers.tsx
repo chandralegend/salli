@@ -7,19 +7,29 @@ import { Reveal } from "@/components/Reveal";
 import { APP_LOGIN_URL } from "@/lib/config";
 import { MAX_ANNUAL_SAVING, TIERS, type Tier } from "@/lib/plans";
 
+// Two tiers, and they differ in one row. Everything else is on both, which is
+// the actual product: the backend gates no feature by plan.
+//
+// The previous version of this table claimed web search and MCP clients were
+// paid-only. They never were — plans.py has had every feature on every tier
+// since the BYOK work — so this page was advertising a restriction the product
+// did not implement.
 const COMPARE = [
-  { label: "Immutable double-entry ledger", free: "✓", plus: "✓", pro: "✓" },
-  { label: "Sri Lanka tax engine & payable", free: "✓", plus: "✓", pro: "✓" },
-  { label: "Debt payoff & FIRE planning", free: "✓", plus: "✓", pro: "✓" },
-  { label: "AI messages / month (chat, quick-add, FIRE strategy)", free: "150", plus: "500", pro: "5,000" },
-  { label: "Statement uploads / month", free: "10", plus: "50", pro: "500" },
-  { label: "Wealth advisor runs / month", free: "10", plus: "45", pro: "150" },
-  { label: "Portfolio growth scenarios", free: "3 (Conservative/Base/Growth)", plus: "3 (Conservative/Base/Growth)", pro: "3 (Conservative/Base/Growth)" },
-  { label: "AI strategy rationale & theories", free: "Full", plus: "Full", pro: "Full" },
-  { label: "Wealth advisor recommendations", free: "All", plus: "All", pro: "All" },
-  { label: "Web search & document management", free: "✕", plus: "✓", pro: "✓" },
-  { label: "Connect Claude, ChatGPT & other MCP clients", free: "✕", plus: "✓", pro: "✓" },
-  { label: "Support", free: "Community", plus: "Email", pro: "Priority" },
+  { label: "Immutable double-entry ledger", free: "✓", pro: "✓" },
+  { label: "Sri Lanka tax engine & payable", free: "✓", pro: "✓" },
+  { label: "Debt payoff & FIRE planning", free: "✓", pro: "✓" },
+  { label: "AI credits / month", free: "3,000", pro: "50,000" },
+  { label: "Choose your model (Haiku → Fable)", free: "✓", pro: "✓" },
+  { label: "Buy extra credits any time", free: "✓", pro: "✓" },
+  { label: "Statement reading & quick-add", free: "✓", pro: "✓" },
+  { label: "Daily wealth advisor", free: "✓", pro: "✓" },
+  { label: "Portfolio growth scenarios", free: "3 (Conservative/Base/Growth)", pro: "3 (Conservative/Base/Growth)" },
+  { label: "AI strategy rationale & theories", free: "Full", pro: "Full" },
+  { label: "Wealth advisor recommendations", free: "All", pro: "All" },
+  { label: "Web search & document management", free: "✓", pro: "✓" },
+  { label: "Connect Claude, ChatGPT & other MCP clients", free: "✓", pro: "✓" },
+  { label: "Bring your own API key", free: "✓", pro: "✓" },
+  { label: "Support", free: "Community", pro: "Priority" },
 ];
 
 // Headline figure is always a per-month number so the two cycles compare directly;
@@ -142,10 +152,9 @@ export function PricingTiers() {
         </h2>
         <div className="border-t-2 border-ink">
           {COMPARE.map((row) => (
-            <div key={row.label} className="grid grid-cols-[1.6fr_1fr_1fr_1fr] items-center gap-4 border-b border-ink/12 py-4.5">
+            <div key={row.label} className="grid grid-cols-[1.6fr_1fr_1fr] items-center gap-4 border-b border-ink/12 py-4.5">
               <div className="text-[15px] font-semibold">{row.label}</div>
               <div className="text-center font-mono text-sm text-ink-60">{row.free}</div>
-              <div className="text-center font-mono text-sm text-ink-60">{row.plus}</div>
               <div className="text-center font-mono text-sm font-semibold text-red">{row.pro}</div>
             </div>
           ))}

@@ -29,10 +29,9 @@ import { ApiError } from "@/lib/api-fetch";
 import { formatDate, formatMinor } from "@/lib/format";
 
 function planSummary(p: Plan): string {
-  const bits = Object.entries(p.limits)
-    .slice(0, 3)
-    .map(([k, v]) => `${v} ${metricLabel(k).toLowerCase()}`);
-  return bits.join(" · ") || p.description;
+  // One metric now, so this reads as a sentence rather than a joined list.
+  const credits = p.limits["ai_credits"];
+  return credits ? `${credits.toLocaleString()} AI credits / month` : p.description;
 }
 
 // A quote older than this is re-fetched before we charge. /change recomputes proration
@@ -434,7 +433,7 @@ export function UpgradeDialog({
                                 "Switch to monthly"
                               )
                             ) : changeMode === "in_place" ? (
-                              // Pro→Starter is a legitimate in-place change, so the label
+                              // A cycle switch is a legitimate in-place change, so the label
                               // can't assume the move is upward.
                               `Switch to ${p.name}`
                             ) : (

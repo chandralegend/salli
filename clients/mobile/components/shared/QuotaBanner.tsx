@@ -2,19 +2,28 @@ import { TriangleAlert } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
-const METRIC_LABELS: Record<string, string> = {
-  agent_messages: "AI messages",
-  statement_uploads: "statement uploads",
-  advisor_runs: "advisor runs",
-};
-
 /**
- * 402 quota_exceeded → amber banner with a tappable "Upgrade" CTA routing to the
- * Billing screen. Mobile mirror of the web QuotaBanner.
+ * 402 quota_exceeded → amber banner routing to Billing. Mobile mirror of the
+ * web QuotaBanner.
+ *
+ * There is one balance now, so the per-metric label map is gone. The server
+ * sends `cost` and `balance` instead, which is more useful than any label:
+ * "needs 30 credits, you have 12" tells someone what to do about it.
  */
-export function QuotaBanner({ metric, className }: { metric?: string; className?: string }) {
+export function QuotaBanner({
+  cost,
+  balance,
+  className,
+}: {
+  cost?: number;
+  balance?: number;
+  className?: string;
+}) {
   const router = useRouter();
-  const label = (metric && METRIC_LABELS[metric]) || "quota";
+  const detail =
+    typeof cost === "number" && typeof balance === "number" && cost > 0
+      ? `Needs ${cost.toLocaleString()} credits, you have ${balance.toLocaleString()}`
+      : "Out of AI credits";
 
   return (
     <Pressable
@@ -23,8 +32,8 @@ export function QuotaBanner({ metric, className }: { metric?: string; className?
     >
       <TriangleAlert size={15} color="#d97706" strokeWidth={2} />
       <Text className="flex-1 text-[12px] text-foreground/70">
-        Monthly {label} used up ·{" "}
-        <Text className="font-sans-semibold text-primary underline">Upgrade</Text>
+        {detail} ·{" "}
+        <Text className="font-sans-semibold text-primary underline">Top up</Text>
       </Text>
     </Pressable>
   );

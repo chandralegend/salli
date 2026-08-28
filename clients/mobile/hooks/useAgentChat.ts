@@ -137,7 +137,7 @@ export function useAgentChat({ persona }: { persona: AgentPersona }) {
           closeStream();
           setStreaming(false);
           if (/quota|limit|upgrade/i.test(event.message)) {
-            setQuotaBanner("You've used all your monthly Salli AI messages — upgrade to keep chatting.");
+            setQuotaBanner("You're out of AI credits — top up or upgrade to keep chatting.");
             setMessages((prev) => prev.slice(0, -2)); // remove the attempted user + empty assistant turn
           }
           break;
@@ -153,7 +153,7 @@ export function useAgentChat({ persona }: { persona: AgentPersona }) {
       closeStream();
       setStreaming(false);
       if (/quota|limit|upgrade/i.test(message)) {
-        setQuotaBanner("You've used all your monthly Salli AI messages — upgrade to keep chatting.");
+        setQuotaBanner("You're out of AI credits — top up or upgrade to keep chatting.");
         setMessages((prev) => prev.slice(0, -2)); // drop the attempted user + empty assistant turn
         return;
       }

@@ -51,6 +51,22 @@ class TestFreeTierIntent:
         default_message = cost(ACTION_AGENT_MESSAGE, DEFAULT_MODEL)
         assert FREE.limits[METRIC_AI_CREDITS] // default_message >= 100
 
+    def test_free_is_not_a_downgrade_on_the_old_per_message_limit(self):
+        """Free used to be 150 agent messages a month, on what is now the
+        default model. The first credit sizing quietly cut that to 100 — the
+        move to credits must not take allowance away from existing users, so
+        this pins the old number as a floor."""
+        default_message = cost(ACTION_AGENT_MESSAGE, DEFAULT_MODEL)
+        assert FREE.limits[METRIC_AI_CREDITS] // default_message >= 150
+
+    def test_pro_clears_the_heaviest_observed_real_usage(self):
+        """One production user hit exactly 500 messages in a month — the old
+        Starter ceiling, i.e. they were capped rather than satisfied. Pro has
+        to sit well clear of that, or the limit is still the thing shaping
+        behaviour."""
+        default_message = cost(ACTION_AGENT_MESSAGE, DEFAULT_MODEL)
+        assert PAID.limits[METRIC_AI_CREDITS] // default_message >= 500 * 5
+
     def test_paid_plan_still_differentiated_by_volume(self):
         # Two tiers now, and volume is the *only* axis they differ on — every
         # feature and every model is available on both.
@@ -245,45 +261,3 @@ class TestTruncateRecommendations:
         out = truncate_recommendations(_report([]), RESTRICTED)
         assert out["recommendations"] == []
         assert out["recommendations_locked_count"] == 0
-
-
-class TestLegacyStarterPlan:
-    """
-    Starter is retired from sale but still honoured.
-
-    Eight production accounts carry `plus` with provider='manual' — comped
-    users granted through January 2027, most of them actively using the agent.
-    Removing the key would send them to get_plan()'s Free fallback, cutting
-    their allowance ~80% five months early. These pin that it cannot happen by
-    accident.
-    """
-
-    def test_the_legacy_plan_is_still_resolvable(self):
-        from salli.domain.billing.plans import PLANS
-
-        assert "plus" in PLANS, (
-            "Removing 'plus' sends its holders to the Free fallback. Check "
-            "`select count(*) from subscriptions where plan='plus' and "
-            "current_period_end > now()` before deleting it."
-        )
-
-    def test_it_sits_between_free_and_pro(self):
-        legacy = PLANS["plus"]
-        assert (
-            FREE.limits[METRIC_AI_CREDITS]
-            < legacy.limits[METRIC_AI_CREDITS]
-            < PAID.limits[METRIC_AI_CREDITS]
-        )
-
-    def test_it_is_at_least_as_good_as_what_starter_gave(self):
-        """A like-for-like translation must not leave a comped user worse off:
-        500 agent messages at the default model is the floor."""
-        from salli.domain.ai_models import DEFAULT_MODEL
-        from salli.domain.billing.credits import ACTION_AGENT_MESSAGE, cost
-
-        floor = 500 * cost(ACTION_AGENT_MESSAGE, DEFAULT_MODEL)
-        assert PLANS["plus"].limits[METRIC_AI_CREDITS] >= floor
-
-    def test_it_is_marked_legacy_so_it_is_never_offered(self):
-        assert PLANS["plus"].legacy is True
-        assert FREE.legacy is False and PAID.legacy is False

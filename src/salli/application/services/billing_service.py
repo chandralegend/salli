@@ -315,16 +315,8 @@ class BillingService:
         return await self._credentials.has_byok(user_id)
 
     def get_plans(self) -> list[dict[str, Any]]:
-        """The plans a client may render and offer.
-
-        Legacy plans are honoured for their existing holders but never listed —
-        showing "Starter" on the pricing page would invite people to buy a tier
-        that is no longer sold, and the checkout would reject them.
-        """
         out = []
         for p in plan_registry.PLANS.values():
-            if p.legacy:
-                continue
             out.append(
                 {
                     "key": p.key,

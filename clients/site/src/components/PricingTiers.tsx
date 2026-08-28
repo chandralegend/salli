@@ -18,7 +18,7 @@ const COMPARE = [
   { label: "Immutable double-entry ledger", free: "✓", pro: "✓" },
   { label: "Sri Lanka tax engine & payable", free: "✓", pro: "✓" },
   { label: "Debt payoff & FIRE planning", free: "✓", pro: "✓" },
-  { label: "AI credits / month", free: "3,000", pro: "50,000" },
+  { label: "AI credits / month", free: "6,000", pro: "100,000" },
   { label: "Choose your model (Haiku → Fable)", free: "✓", pro: "✓" },
   { label: "Buy extra credits any time", free: "✓", pro: "✓" },
   { label: "Statement reading & quick-add", free: "✓", pro: "✓" },

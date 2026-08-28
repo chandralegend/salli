@@ -68,3 +68,68 @@ class TestCacheKeyIncludesModel:
             assert model.id == model_id
             assert model.name
             assert model.blurb
+
+
+class TestPriceMatchesWhatRuns:
+    """
+    Every surface that charges a model-scaled price must also run that model.
+
+    This has now been the same bug twice — once in the agent cache key, once in
+    /fi/strategy/generate, both charging an Opus multiplier for a Sonnet answer.
+    The two facts live in different layers with nothing structural tying them
+    together, so this enumerates the charging sites and asserts the pairing at
+    each one.
+    """
+
+    def _charging_sites(self):
+        import pathlib
+        import re
+
+        root = pathlib.Path(__file__).resolve().parents[3] / "src" / "salli"
+        sites = []
+        for path in root.rglob("*.py"):
+            for line in path.read_text().splitlines():
+                m = re.search(r"spend_credits\(\s*\w+,\s*(ACTION_\w+),\s*([^,]+),", line)
+                if m:
+                    sites.append(
+                        (path.relative_to(root).as_posix(), m.group(1), m.group(2).strip())
+                    )
+        return sites
+
+    def test_every_charging_site_is_accounted_for(self):
+        """A new one must be classified deliberately, not inherit a default."""
+        found = {(action, model_arg) for _, action, model_arg in self._charging_sites()}
+        expected = {
+            # Priced on the user's model — and each of these threads that same
+            # id into the call that runs.
+            ("ACTION_AGENT_MESSAGE", "model_id"),
+            ("ACTION_FIRE_STRATEGY", "model_id"),
+            # Priced at the default, and run at the default.
+            #
+            # The two extraction actions are pinned to Haiku in
+            # ai_models.EXTRACTION_MODEL and charged x1 regardless, so the None
+            # here is belt-and-braces rather than the thing doing the work.
+            ("ACTION_ADVISOR_RUN", "None"),
+            ("ACTION_STATEMENT_UPLOAD", "None"),
+            ("ACTION_ENTRY_PARSE", "None"),
+        }
+        assert found == expected, (
+            "A credit-charging site changed. If you added one, decide whether it is "
+            "priced on the user's model — and if so, make sure the same id reaches "
+            "the call that actually runs. Charging one model and running another is "
+            "the bug this test exists to catch."
+        )
+
+    def test_sites_priced_on_a_chosen_model_resolve_it_from_the_profile(self):
+        """`model_id` must come from the user's stored preference, not be
+        invented at the call site."""
+        import pathlib
+
+        root = pathlib.Path(__file__).resolve().parents[3] / "src" / "salli"
+        for rel, _, model_arg in self._charging_sites():
+            if model_arg != "model_id":
+                continue
+            text = (root / rel).read_text()
+            assert "get_preferred_model(user_id)" in text, (
+                f"{rel} charges a model-scaled price but never resolves the user's model"
+            )

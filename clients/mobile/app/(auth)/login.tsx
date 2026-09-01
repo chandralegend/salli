@@ -5,7 +5,7 @@ import { Pressable, Text, View } from "react-native";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { Logo } from "@/components/Logo";
 import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { TextField } from "@/components/ui/text-field";
 import { devLogin, signInWithPassword } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -55,7 +55,7 @@ export default function LoginScreen() {
         {supabaseReady ? <SocialAuthButtons onError={setError} /> : null}
 
         <TextField
-          className="rounded-[10px] px-[18px] py-[14px]"
+          className="rounded-card px-[18px] py-[14px]"
           label="Email"
           value={email}
           onChangeText={setEmail}
@@ -65,7 +65,7 @@ export default function LoginScreen() {
           placeholder="you@example.com"
         />
         <TextField
-          className="rounded-[10px] px-[18px] py-[14px]"
+          className="rounded-card px-[18px] py-[14px]"
           label="Password"
           value={password}
           onChangeText={setPassword}
@@ -75,19 +75,19 @@ export default function LoginScreen() {
         />
 
         {error ? (
-          <View className="rounded-control border border-destructive/30 bg-destructive/10 px-4 py-3">
+          <View className="rounded-card border border-destructive/30 bg-destructive/10 px-4 py-3">
             <Text className="text-[15px] text-destructive">{error}</Text>
           </View>
         ) : null}
 
-        <PillButton
+        <ActionButton
           className="mt-1 h-[54px]"
           loading={loading}
           disabled={!email || !password}
           onPress={handleSignIn}
         >
           Sign in
-        </PillButton>
+        </ActionButton>
 
         <Pressable
           className="items-center py-1"
@@ -102,13 +102,13 @@ export default function LoginScreen() {
           <View className="h-px flex-1 bg-foreground/10" />
         </View>
 
-        <PillButton
+        <ActionButton
           variant="secondary"
           className="h-[54px]"
           onPress={() => router.push("/(auth)/signup")}
         >
           Create account
-        </PillButton>
+        </ActionButton>
 
         {!supabaseReady ? (
           <Pressable className="items-center py-2" onPress={handleDevLogin}>

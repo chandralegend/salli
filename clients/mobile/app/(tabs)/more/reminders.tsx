@@ -12,7 +12,7 @@ import { Pressable, Text, TextInput, View } from "react-native";
 import { Drawer } from "@/components/ui/drawer";
 import { ChipSelect, FilterChip } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { TextField } from "@/components/ui/text-field";
 import { useReminderMutations, useReminders, type Reminder, useSyncAlertsOnOpen } from "@/hooks/useReminders";
@@ -96,7 +96,7 @@ export default function RemindersScreen() {
     return (
       <View
         className={cn(
-          "flex-row gap-2.5 rounded-control border bg-card p-3",
+          "flex-row gap-2.5 rounded-card border bg-card p-3",
           done ? "items-center opacity-40" : "items-start",
           border,
         )}
@@ -118,7 +118,7 @@ export default function RemindersScreen() {
             <View className="mt-1.5 flex-row gap-1.5">
               <View
                 className={cn(
-                  "rounded-[6px] px-2.5 py-0.5",
+                  "rounded-badge px-2.5 py-0.5",
                   kind === "dueSoon"
                     ? "bg-salli-accent/15"
                     : kind === "overdue"
@@ -139,7 +139,7 @@ export default function RemindersScreen() {
                   {statusMeta(r).label}
                 </Text>
               </View>
-              <View className="rounded-[6px] bg-foreground/[0.06] px-2.5 py-0.5">
+              <View className="rounded-badge bg-foreground/[0.06] px-2.5 py-0.5">
                 <Text className="text-[13px] font-sans-medium text-foreground/35">IRD</Text>
               </View>
             </View>
@@ -147,13 +147,13 @@ export default function RemindersScreen() {
         </View>
         <View className="flex-row items-center gap-2.5">
           {kind === "overdue" ? (
-            <Pressable onPress={() => markDone.mutate(r.id)} className="rounded-[8px] bg-primary px-2.5 py-1.5">
+            <Pressable onPress={() => markDone.mutate(r.id)} className="rounded-card bg-primary px-2.5 py-1.5">
               <Text className="font-sans-semibold text-[14px] text-primary-foreground">Done</Text>
             </Pressable>
           ) : kind === "dueSoon" ? (
             <Pressable
               onPress={() => markDone.mutate(r.id)}
-              className="rounded-[8px] border border-foreground/10 bg-foreground/[0.06] px-2.5 py-1.5"
+              className="rounded-card border border-foreground/10 bg-foreground/[0.06] px-2.5 py-1.5"
             >
               <Text className="font-sans-semibold text-[14px] text-foreground/50">Done</Text>
             </Pressable>
@@ -221,22 +221,22 @@ export default function RemindersScreen() {
       }
     >
       <View className="my-3 flex-row gap-2 px-4">
-        <View className="flex-1 items-center rounded-[10px] border border-foreground/15 bg-card px-2.5 py-3">
+        <View className="flex-1 items-center rounded-card border border-foreground/15 bg-card px-2.5 py-3">
           <Text className="font-sans-bold text-[26px] leading-none text-foreground">{overdue.length}</Text>
           <Text className="mt-1 text-[13px] font-sans-medium text-foreground/40">Overdue</Text>
         </View>
-        <View className="flex-1 items-center rounded-[10px] border border-foreground/[0.08] bg-card px-2.5 py-3">
+        <View className="flex-1 items-center rounded-card border border-foreground/[0.08] bg-card px-2.5 py-3">
           <Text className="font-sans-bold text-[26px] leading-none text-foreground">{dueSoon.length}</Text>
           <Text className="mt-1 text-[13px] font-sans-medium text-foreground/40">Due Soon</Text>
         </View>
-        <View className="flex-1 items-center rounded-[10px] border border-foreground/[0.08] bg-card px-2.5 py-3">
+        <View className="flex-1 items-center rounded-card border border-foreground/[0.08] bg-card px-2.5 py-3">
           <Text className="font-sans-bold text-[26px] leading-none text-foreground">{upcoming.length}</Text>
           <Text className="mt-1 text-[13px] font-sans-medium text-foreground/30">Upcoming</Text>
         </View>
       </View>
 
       <View className="mb-2 flex-row items-center gap-2 px-4">
-        <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
+        <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-card border border-foreground/[0.08] bg-card px-3">
           <Search size={15} color="rgba(128,128,128,0.4)" strokeWidth={2} />
           <TextInput
             value={search}
@@ -361,9 +361,9 @@ function NewReminderDrawer({
       onClose={handleClose}
       title="New Reminder"
       footer={
-        <PillButton disabled={!canSubmit} loading={saving} onPress={handleSubmit}>
+        <ActionButton disabled={!canSubmit} loading={saving} onPress={handleSubmit}>
           Add Reminder
-        </PillButton>
+        </ActionButton>
       }
     >
               <TextField

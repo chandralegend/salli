@@ -29,7 +29,7 @@ import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { InfoButton } from "@/components/ui/info-button";
 import { PageShell } from "@/components/ui/page-shell";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
 import { isQuotaError } from "@/lib/quota";
@@ -283,7 +283,7 @@ export default function FinancialIndependenceScreen() {
                 }
               />
             </View>
-            <View className="mb-2.5 rounded-[8px] border border-white/10 bg-white/[0.06] px-2.5 py-1.5">
+            <View className="mb-2.5 rounded-card border border-white/10 bg-white/[0.06] px-2.5 py-1.5">
               <Text className="text-[14px] leading-5 text-white/45">
                 The savings target where investment returns cover your lifestyle — permanently.
               </Text>
@@ -304,19 +304,19 @@ export default function FinancialIndependenceScreen() {
               ) : null}
             </View>
             <View className="flex-row gap-1.5">
-              <View className="flex-1 rounded-[10px] bg-white/[0.06] px-2.5 py-2">
+              <View className="flex-1 rounded-card bg-white/[0.06] px-2.5 py-2">
                 <Text className="mb-1 text-[13px] text-white/30">Funded</Text>
                 <Text className="font-sans-bold text-[17px] leading-[20px] text-salli-accent">
                   {fiScore.data ? formatPct(fiScore.data.progress_to_fi) : "—"}
                 </Text>
               </View>
-              <View className="flex-1 rounded-[10px] bg-white/[0.06] px-2.5 py-2">
+              <View className="flex-1 rounded-card bg-white/[0.06] px-2.5 py-2">
                 <Text className="mb-1 text-[13px] text-white/30">Net Worth</Text>
                 <Text className="font-sans-bold text-[17px] leading-[20px] text-white">
                   {fiScore.data ? `Rs. ${formatLKRAbbrev(fiScore.data.net_worth)}` : "—"}
                 </Text>
               </View>
-              <View className="flex-1 rounded-[10px] bg-white/[0.06] px-2.5 py-2">
+              <View className="flex-1 rounded-card bg-white/[0.06] px-2.5 py-2">
                 <Text className="mb-1 text-[13px] text-white/30">Target</Text>
                 <Text className="font-sans-bold text-[17px] leading-[20px] text-white/40">
                   {projections.data ? `Rs. ${formatLKRAbbrev(projections.data.fi_number)}` : "—"}
@@ -453,13 +453,13 @@ export default function FinancialIndependenceScreen() {
               )}
             </View>
             <View className="flex-row gap-1.5">
-              <View className="flex-1 rounded-[10px] border border-foreground/[0.06] bg-foreground/[0.04] px-2.5 py-2.5">
+              <View className="flex-1 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-2.5 py-2.5">
                 <Text className="mb-1.5 text-[13px] text-foreground/35">Savings Rate</Text>
                 <Text className="font-sans-bold text-[20px] leading-[24px] text-foreground">
                   {fiScore.data ? formatPct(fiScore.data.savings_rate, 0) : "—"}
                 </Text>
               </View>
-              <View className="flex-1 rounded-[10px] border border-foreground/[0.06] bg-foreground/[0.04] px-2.5 py-2.5">
+              <View className="flex-1 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-2.5 py-2.5">
                 <Text className="mb-1.5 text-[13px] text-foreground/35">Debt-to-Asset</Text>
                 <Text className="font-sans-bold text-[20px] leading-[24px] text-foreground">
                   {fiScore.data ? formatPct(fiScore.data.debt_to_asset, 0) : "—"}
@@ -502,7 +502,7 @@ export default function FinancialIndependenceScreen() {
               {projections.data.scenario_access && projections.data.scenario_access.locked.length > 0 ? (
                 <Pressable
                   onPress={() => router.push("/(tabs)/more/billing")}
-                  className="mt-2.5 flex-row items-center gap-1.5 rounded-control bg-white/[0.06] px-3 py-2"
+                  className="mt-2.5 flex-row items-center gap-1.5 rounded-card bg-white/[0.06] px-3 py-2"
                 >
                   <Lock size={14} color="rgba(255,255,255,0.5)" strokeWidth={2} />
                   <Text className="flex-1 text-[10.5px] text-white/50">
@@ -520,10 +520,10 @@ export default function FinancialIndependenceScreen() {
               <Text className="text-center text-[15px] text-foreground/40">
                 No FIRE strategy yet — generate one from your financial profile.
               </Text>
-              <PillButton variant="accent" loading={generateStrategy.isPending} onPress={() => generateStrategy.mutate()}>
+              <ActionButton variant="accent" loading={generateStrategy.isPending} onPress={() => generateStrategy.mutate()}>
                 <Sparkles size={16} color="#FFFFFF" strokeWidth={2} />
                 <Text className="font-sans-semibold text-[16px] text-white">Generate strategy</Text>
-              </PillButton>
+              </ActionButton>
             </Card>
           ) : (
             <>
@@ -548,12 +548,12 @@ export default function FinancialIndependenceScreen() {
                   full rationale OR a locked preview (Free tier) — never just
                   vanishes for a locked user the way `ai_rationale` alone would. */}
               {strategy.data.ai_rationale || strategy.data.rationale_locked ? (
-                <View className="rounded-[10px] border border-salli-accent/20 bg-card">
+                <View className="rounded-card border border-salli-accent/20 bg-card">
                   <Pressable
                     onPress={() => setStrategyOpen((o) => !o)}
                     className="flex-row items-center gap-2 p-3.5"
                   >
-                    <View className="h-[26px] w-[26px] items-center justify-center rounded-[8px] bg-salli-accent/15">
+                    <View className="h-[26px] w-[26px] items-center justify-center rounded-card bg-salli-accent/15">
                       <PiggyBank size={16} color={colors.accent} strokeWidth={2} />
                     </View>
                     <Text className="flex-1 font-sans-semibold text-[15px] text-foreground">Salli AI&apos;s Strategy</Text>
@@ -576,7 +576,7 @@ export default function FinancialIndependenceScreen() {
                             </Text>
                             <Pressable
                               onPress={() => router.push("/(tabs)/more/billing")}
-                              className="mt-2.5 flex-row items-center gap-1.5 rounded-control bg-salli-accent/[0.08] px-3 py-2"
+                              className="mt-2.5 flex-row items-center gap-1.5 rounded-card bg-salli-accent/[0.08] px-3 py-2"
                             >
                               <Lock size={14} color={colors.accent} strokeWidth={2} />
                               <Text className="flex-1 text-[14px] font-sans-medium text-salli-accent">
@@ -613,9 +613,9 @@ export default function FinancialIndependenceScreen() {
                 </View>
               ) : null}
 
-              <PillButton variant="secondary" loading={generateStrategy.isPending} onPress={() => generateStrategy.mutate()}>
+              <ActionButton variant="secondary" loading={generateStrategy.isPending} onPress={() => generateStrategy.mutate()}>
                 Refresh strategy
-              </PillButton>
+              </ActionButton>
             </>
           )}
         </View>
@@ -634,7 +634,7 @@ export default function FinancialIndependenceScreen() {
                 <Text className="mb-2.5 text-[15px] leading-5 text-foreground/50">{advisorReport.data.summary}</Text>
                 {advisorReport.data.recommendations.map((rec) =>
                   rec.locked ? (
-                    <View key={rec.id} className="mb-2 flex-row items-center gap-2 rounded-control border border-foreground/10 bg-muted p-3 opacity-60">
+                    <View key={rec.id} className="mb-2 flex-row items-center gap-2 rounded-card border border-foreground/10 bg-muted p-3 opacity-60">
                       <Lock size={14} color={colors.mutedForeground} strokeWidth={2} />
                       <View className="flex-1">
                         <Text className="font-sans-medium text-[15px] text-foreground">{rec.title}</Text>
@@ -642,9 +642,9 @@ export default function FinancialIndependenceScreen() {
                       </View>
                     </View>
                   ) : (
-                    <View key={rec.id} className="mb-2 rounded-control border border-foreground/10 bg-muted p-3">
+                    <View key={rec.id} className="mb-2 rounded-card border border-foreground/10 bg-muted p-3">
                       <View className="mb-1 flex-row items-center gap-1.5">
-                        <View className="rounded-[4px] bg-salli-accent/15 px-1.5 py-0.5">
+                        <View className="rounded-badge bg-salli-accent/15 px-1.5 py-0.5">
                           <Text className="text-[12px] font-sans-semibold text-salli-accent">P{rec.priority}</Text>
                         </View>
                         <Text className="flex-1 font-sans-medium text-[15px] text-foreground">{rec.title}</Text>
@@ -656,7 +656,7 @@ export default function FinancialIndependenceScreen() {
                 {advisorReport.data.recommendations_locked_count > 0 ? (
                   <Pressable
                     onPress={() => router.push("/(tabs)/more/billing")}
-                    className="mb-1 flex-row items-center gap-1.5 rounded-control bg-salli-accent/[0.08] px-3 py-2"
+                    className="mb-1 flex-row items-center gap-1.5 rounded-card bg-salli-accent/[0.08] px-3 py-2"
                   >
                     <Text className="flex-1 text-[14px] font-sans-medium text-salli-accent">
                       Unlock {advisorReport.data.recommendations_locked_count} more recommendation
@@ -671,9 +671,9 @@ export default function FinancialIndependenceScreen() {
                 Run the advisor for a prioritized, engine-backed action plan.
               </Text>
             )}
-            <PillButton variant="secondary" loading={runAdvisor.isPending} onPress={() => runAdvisor.mutate()}>
+            <ActionButton variant="secondary" loading={runAdvisor.isPending} onPress={() => runAdvisor.mutate()}>
               {advisorReport.data ? "Re-run Freedom Mentor" : "Run Freedom Mentor"}
-            </PillButton>
+            </ActionButton>
             {isQuotaError(runAdvisor.error) ? (
               <QuotaBanner className="mt-3" />
             ) : null}
@@ -701,11 +701,11 @@ export default function FinancialIndependenceScreen() {
                   <Text className="text-[16px] font-sans-medium text-white/40">of {all.length} complete</Text>
                 </View>
                 <View className="flex-row gap-1.5">
-                  <View className="flex-1 rounded-[10px] bg-white/[0.06] px-2.5 py-2">
+                  <View className="flex-1 rounded-card bg-white/[0.06] px-2.5 py-2">
                     <Text className="mb-1 text-[13px] text-white/35">In Progress</Text>
                     <Text className="font-sans-bold text-[17px] leading-[20px] text-salli-accent">{active.length} active</Text>
                   </View>
-                  <View className="flex-1 rounded-[10px] bg-white/[0.06] px-2.5 py-2">
+                  <View className="flex-1 rounded-card bg-white/[0.06] px-2.5 py-2">
                     <Text className="mb-1 text-[13px] text-white/35">Saved Toward</Text>
                     <Text className="font-sans-bold text-[17px] leading-[20px] text-white">Rs. {formatLKRAbbrev(savedToward)}</Text>
                   </View>
@@ -732,7 +732,7 @@ export default function FinancialIndependenceScreen() {
                         <View className="flex-1 flex-row items-center gap-2.5">
                           <View
                             className={cn(
-                              "h-[34px] w-[34px] items-center justify-center rounded-[10px]",
+                              "h-[34px] w-[34px] items-center justify-center rounded-card",
                               done ? "bg-salli-accent/[0.12]" : "border border-salli-accent/20 bg-salli-accent/[0.12]",
                             )}
                           >
@@ -756,7 +756,7 @@ export default function FinancialIndependenceScreen() {
                             sit inside this `!done` branch, so a completed goal
                             could never be removed. */}
                         {done ? (
-                          <View className="rounded-[4px] bg-salli-accent/15 px-2 py-0.5">
+                          <View className="rounded-badge bg-salli-accent/15 px-2 py-0.5">
                             <Text className="text-[13px] font-sans-semibold text-salli-accent">Done</Text>
                           </View>
                         ) : (
@@ -791,7 +791,7 @@ export default function FinancialIndependenceScreen() {
                 onPress={() => setAddOpen(true)}
                 className="flex-row items-center gap-2.5 rounded-card border border-dashed border-foreground/[0.12] bg-card p-3.5"
               >
-                <View className="h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-foreground/[0.04]">
+                <View className="h-[34px] w-[34px] items-center justify-center rounded-card bg-foreground/[0.04]">
                   <Plus size={17} color={colors.mutedForeground} strokeWidth={2.5} />
                 </View>
                 <Text className="font-sans-medium text-[15px] text-foreground/40">Add a goal</Text>
@@ -819,9 +819,9 @@ export default function FinancialIndependenceScreen() {
         onClose={() => setAddOpen(false)}
         title="Add a goal"
         footer={
-          <PillButton loading={createGoal.isPending} disabled={!newName.trim() || !newAmount} onPress={submitGoal}>
+          <ActionButton loading={createGoal.isPending} disabled={!newName.trim() || !newAmount} onPress={submitGoal}>
             Add goal
-          </PillButton>
+          </ActionButton>
         }
       >
         <View className="gap-2">
@@ -847,11 +847,11 @@ export default function FinancialIndependenceScreen() {
               return (
                 <>
                   <View className="mb-3 flex-row gap-2">
-                    <View className="flex-1 rounded-control border border-foreground/[0.08] bg-card p-3">
+                    <View className="flex-1 rounded-card border border-foreground/[0.08] bg-card p-3">
                       <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">Allocation</Text>
                       <Text className="font-sans-extrabold text-[26px] leading-6 text-foreground">{formatPct(b.target_pct, 0)}</Text>
                     </View>
-                    <View className="flex-1 rounded-control border border-foreground/[0.08] bg-card p-3">
+                    <View className="flex-1 rounded-card border border-foreground/[0.08] bg-card p-3">
                       <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">Routed / month</Text>
                       <Text className="font-sans-extrabold text-[26px] leading-6 text-foreground">
                         {route !== null ? `Rs. ${formatLKRAbbrev(route)}` : "—"}

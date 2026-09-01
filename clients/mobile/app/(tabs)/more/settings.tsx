@@ -119,7 +119,7 @@ export default function SettingsScreen() {
             <Text className="font-sans-semibold text-[17px] text-foreground">{profile?.display_name ?? "—"}</Text>
             <Text className="mt-0.5 text-[15px] text-foreground/35">{profile?.email ?? ""}</Text>
           </View>
-          <View className="rounded-[8px] border border-foreground/10 bg-foreground/[0.06] px-2.5 py-1">
+          <View className="rounded-card border border-foreground/10 bg-foreground/[0.06] px-2.5 py-1">
             <Text className="font-sans-semibold text-[14px] text-foreground/50 capitalize">
               {entitlements.data?.plan_name ?? "Free"}
             </Text>

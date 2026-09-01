@@ -143,7 +143,7 @@ export default function DashboardScreen() {
             hairline-background container with 1px gaps between flat cells,
             rather than four individually-bordered tiles. */}
         <View className="px-4 pb-3.5">
-          <View className="overflow-hidden rounded-[10px] bg-foreground/[0.06]" style={{ gap: 1 }}>
+          <View className="overflow-hidden rounded-card bg-foreground/[0.06]" style={{ gap: 1 }}>
             <View className="flex-row" style={{ gap: 1 }}>
               <View className="flex-1 bg-card p-4">
                 <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">
@@ -201,7 +201,7 @@ export default function DashboardScreen() {
         <View className="flex-row gap-2 px-4 pb-3.5">
           <AnimatedPressable
             onPress={() => router.push("/(tabs)/more/statements")}
-            className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-foreground/10 bg-card"
+            className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-card border border-foreground/10 bg-card"
           >
             <Upload size={15} color={colors.mutedForeground} strokeWidth={2} />
             <Text className="font-sans-medium text-[14px] text-foreground/70">Upload</Text>
@@ -209,7 +209,7 @@ export default function DashboardScreen() {
           <AnimatedPressable
             onPress={enterBuddy}
             haptic="light"
-            className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control bg-salli-accent"
+            className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-card bg-salli-accent"
           >
             <Sparkles size={15} color="rgba(255,255,255,0.8)" strokeWidth={1.8} />
             <Text className="font-sans-semibold text-[14px] text-white">Ask Salli AI</Text>
@@ -228,7 +228,7 @@ export default function DashboardScreen() {
                   <ChevronRight size={16} color={colors.mutedForeground} strokeWidth={2} />
                 </View>
               </View>
-            <View className="flex-row overflow-hidden rounded-[8px] bg-foreground/[0.06]" style={{ gap: 1 }}>
+            <View className="flex-row overflow-hidden rounded-card bg-foreground/[0.06]" style={{ gap: 1 }}>
               <View className="flex-1 bg-muted px-3 py-2.5">
                 <Text className="mb-1 text-[13px] font-sans-medium tracking-wide text-foreground/35">SPENT</Text>
                 <Text className="font-sans-bold text-[17px] tracking-tight text-foreground">
@@ -264,8 +264,8 @@ export default function DashboardScreen() {
             <View className="gap-2">
               {topAccounts.map((acc) => (
                 <AnimatedPressable key={acc.id} onPress={() => setSelectedAccountId(acc.id)}>
-                  <Card className="flex-row items-center gap-3 rounded-[10px] border-foreground/[0.08] p-3.5">
-                    <View className="h-10 w-10 items-center justify-center rounded-[8px] bg-salli-accent">
+                  <Card className="flex-row items-center gap-3 rounded-card border-foreground/[0.08] p-3.5">
+                    <View className="h-10 w-10 items-center justify-center rounded-card bg-salli-accent">
                       <Text className="font-sans-bold text-[18px] text-white">{acc.name.charAt(0)}</Text>
                     </View>
                     <View className="flex-1">
@@ -316,9 +316,9 @@ export default function DashboardScreen() {
                 return (
                   <AnimatedPressable key={entry.id} onPress={() => setSelectedEntry(entry)}>
                   <Card
-                    className="flex-row items-center gap-2.5 rounded-[10px] border-foreground/[0.08] p-3"
+                    className="flex-row items-center gap-2.5 rounded-card border-foreground/[0.08] p-3"
                   >
-                    <View className="h-[38px] w-[38px] items-center justify-center rounded-[8px] bg-foreground/[0.06]">
+                    <View className="h-[38px] w-[38px] items-center justify-center rounded-card bg-foreground/[0.06]">
                       <EntryIcon
                         size={19}
                         color={isIncome ? colors.accent : colors.mutedForeground}

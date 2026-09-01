@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 
 import { Drawer } from "@/components/ui/drawer";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { TextField } from "@/components/ui/text-field";
 import { useParseEntry, type EntryDraft } from "@/hooks/useLedger";
 import { useThemeColors } from "@/lib/theme";
@@ -45,10 +45,10 @@ export function VoiceCaptureSheet({
       onClose={onClose}
       title="Quick add"
       footer={
-        <PillButton variant="accent" loading={parse.isPending} disabled={!text.trim()} onPress={submit}>
+        <ActionButton variant="accent" loading={parse.isPending} disabled={!text.trim()} onPress={submit}>
           <Sparkles size={17} color="#FFFFFF" strokeWidth={2} />
           <Text className="font-sans-semibold text-[17px] text-white"> Draft entry</Text>
-        </PillButton>
+        </ActionButton>
       }
     >
       <View className="mb-2.5 flex-row items-center gap-2">

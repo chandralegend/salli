@@ -19,7 +19,7 @@ export function AffordabilityCard() {
     <>
       <Pressable onPress={() => setOpen(true)}>
         <Card className="mx-4 mb-3.5 flex-row items-center gap-3 p-3.5">
-          <View className="h-9 w-9 items-center justify-center rounded-[10px] bg-salli-accent/15">
+          <View className="h-9 w-9 items-center justify-center rounded-card bg-salli-accent/15">
             <Wallet size={18} color={colors.accent} strokeWidth={2} />
           </View>
           <View className="flex-1">

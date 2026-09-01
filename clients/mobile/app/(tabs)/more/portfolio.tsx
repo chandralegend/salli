@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { ChipSelect } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
@@ -166,10 +166,10 @@ export default function PortfolioScreen() {
             <Text className="text-center text-[15px] text-foreground/35">
               Add your first holding to track value, cost and allocation.
             </Text>
-            <PillButton className="mt-3" variant="accent" onPress={() => setAddOpen(true)}>
+            <ActionButton className="mt-3" variant="accent" onPress={() => setAddOpen(true)}>
               <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
               <Text className="font-sans-semibold text-[16px] text-white">New Holding</Text>
-            </PillButton>
+            </ActionButton>
           </View>
         ) : (
           <>
@@ -226,7 +226,7 @@ export default function PortfolioScreen() {
             {tab === "Holdings" ? (
               <>
                 <View className="mt-2.5 flex-row gap-2">
-                  <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
+                  <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-card border border-foreground/[0.08] bg-card px-3">
                     <Search size={15} color={colors.mutedForeground} strokeWidth={2} />
                     <TextInput
                       value={search}
@@ -254,7 +254,7 @@ export default function PortfolioScreen() {
                               <Card className="flex-row items-center gap-2.5 p-3">
                                 <View className="h-[42px] w-[3px] rounded-pill" style={{ backgroundColor: color }} />
                                 <View
-                                  className="h-[38px] w-[38px] items-center justify-center rounded-[8px]"
+                                  className="h-[38px] w-[38px] items-center justify-center rounded-card"
                                   style={{ backgroundColor: `${color}1F`, borderWidth: 0.5, borderColor: `${color}33` }}
                                 >
                                   <Text className="font-sans-bold text-[13px]" style={{ color }}>
@@ -336,7 +336,7 @@ export default function PortfolioScreen() {
                           <View className="mb-2 flex-row items-center justify-between">
                             <View className="flex-1 flex-row items-center gap-2">
                               <View
-                                className="h-8 w-8 items-center justify-center rounded-[9px]"
+                                className="h-8 w-8 items-center justify-center rounded-card"
                                 style={{ backgroundColor: `${color}1F`, borderWidth: 0.5, borderColor: `${color}33` }}
                               >
                                 <View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: color }} />
@@ -374,7 +374,7 @@ export default function PortfolioScreen() {
 
                 {/* Concentration note — only when one class dominates */}
                 {concentrated ? (
-                  <View className="mt-3 flex-row items-start gap-2 rounded-[8px] border border-salli-accent/20 bg-salli-accent/[0.08] px-3.5 py-2.5">
+                  <View className="mt-3 flex-row items-start gap-2 rounded-card border border-salli-accent/20 bg-salli-accent/[0.08] px-3.5 py-2.5">
                     <TriangleAlert size={16} color={colors.accent} strokeWidth={2} style={{ marginTop: 1 }} />
                     <Text className="flex-1 text-[14px] leading-5 text-foreground/55">
                       <Text className="font-sans-semibold text-salli-accent">
@@ -386,7 +386,7 @@ export default function PortfolioScreen() {
                 ) : null}
 
                 {/* Disclaimer */}
-                <View className="mt-2.5 flex-row items-start gap-2 rounded-[8px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
+                <View className="mt-2.5 flex-row items-start gap-2 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
                   <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
                   <Text className="flex-1 text-[14px] leading-5 text-foreground/30">
                     Values are manually entered · no live market feed
@@ -433,20 +433,20 @@ export default function PortfolioScreen() {
                   return (
                     <>
                       <View className="mb-3 flex-row gap-2">
-                        <View className="flex-1 rounded-control border border-foreground/[0.08] bg-card p-3">
+                        <View className="flex-1 rounded-card border border-foreground/[0.08] bg-card p-3">
                           <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">Value</Text>
                           <Text className="font-sans-extrabold text-[22px] leading-6 text-foreground">
                             Rs. {formatLKRAbbrev(a.current_value)}
                           </Text>
                         </View>
-                        <View className="flex-1 rounded-control border border-foreground/[0.08] bg-card p-3">
+                        <View className="flex-1 rounded-card border border-foreground/[0.08] bg-card p-3">
                           <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">Share</Text>
                           <Text className="font-sans-extrabold text-[22px] leading-6" style={{ color }}>
                             {formatPct(a.pct_of_portfolio, 1)}
                           </Text>
                         </View>
                       </View>
-                      <View className="mb-3 flex-row items-center justify-between rounded-control border border-foreground/[0.08] bg-card px-3.5 py-2.5">
+                      <View className="mb-3 flex-row items-center justify-between rounded-card border border-foreground/[0.08] bg-card px-3.5 py-2.5">
                         <Text className="text-[15px] text-foreground/50">Unrealized gain</Text>
                         <Text className={cn("font-sans-bold text-[15px]", gain >= 0 ? "text-salli-accent" : "text-destructive")}>
                           {gain >= 0 ? "+" : "-"}Rs. {formatLKRAbbrev(gain)}
@@ -460,7 +460,7 @@ export default function PortfolioScreen() {
                         {items.map((h) => {
                           const hGain = Number(h.current_value) - Number(h.cost_basis);
                           return (
-                            <View key={h.id} className="flex-row items-center justify-between rounded-control bg-card px-3 py-2.5">
+                            <View key={h.id} className="flex-row items-center justify-between rounded-card bg-card px-3 py-2.5">
                               <View>
                                 <Text className="font-sans-semibold text-[15px] text-foreground">{h.name}</Text>
                                 <Text className="text-[14px] text-foreground/30">{h.symbol.toUpperCase()}</Text>
@@ -589,14 +589,14 @@ function HoldingDrawer({
 
   const footer = (
     <>
-      <PillButton
+      <ActionButton
         variant="accent"
         loading={addHolding.isPending || updateHolding.isPending}
         disabled={!canSubmit}
         onPress={submit}
       >
         {isEdit ? "Save Changes" : "Add Holding"}
-      </PillButton>
+      </ActionButton>
       {isEdit ? (
         <Pressable
           onPress={confirmDelete}
@@ -664,7 +664,7 @@ function HoldingDrawer({
               {cost && value ? (
                 <View
                   className={cn(
-                    "mb-4 flex-row items-center justify-between rounded-[8px] border px-3.5 py-2.5",
+                    "mb-4 flex-row items-center justify-between rounded-card border px-3.5 py-2.5",
                     gain >= 0 ? "border-salli-accent/20 bg-salli-accent/[0.08]" : "border-destructive/20 bg-destructive/[0.08]",
                   )}
                 >

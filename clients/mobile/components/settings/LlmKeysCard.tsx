@@ -115,7 +115,7 @@ export function LlmKeysCard() {
             const isBusy = busy === p.id;
 
             return (
-              <View key={p.id} className="rounded-control border border-foreground/10 p-3">
+              <View key={p.id} className="rounded-card border border-foreground/10 p-3">
                 <View className="flex-row items-center justify-between">
                   <Text className="font-sans-medium text-[15px] text-foreground">{p.label}</Text>
                   {existing && !isEditing ? (
@@ -147,7 +147,7 @@ export function LlmKeysCard() {
                 <Text className="mt-0.5 text-[14px] leading-5 text-foreground/30">{p.hint}</Text>
 
                 {existing && !existing.readable ? (
-                  <View className="mt-2 flex-row items-center gap-2 rounded-control bg-[#FEF3C7] px-3 py-2">
+                  <View className="mt-2 flex-row items-center gap-2 rounded-card bg-[#FEF3C7] px-3 py-2">
                     <TriangleAlert size={15} color="#B45309" strokeWidth={2} />
                     <Text className="flex-1 text-[14px] text-[#B45309]">
                       This key can no longer be read — please add it again.
@@ -167,13 +167,13 @@ export function LlmKeysCard() {
                       // The key is a credential: keep it off the screen and out
                       // of the keyboard's learned-word store.
                       secureTextEntry
-                      className="rounded-control bg-muted px-3 py-2.5 font-mono text-[15px] text-foreground"
+                      className="rounded-card bg-muted px-3 py-2.5 font-mono text-[15px] text-foreground"
                     />
                     <View className="flex-row gap-2">
                       <Pressable
                         onPress={() => handleSave(p.id)}
                         disabled={!draft.trim() || isBusy}
-                        className="h-9 flex-1 flex-row items-center justify-center rounded-control bg-salli-accent"
+                        className="h-9 flex-1 flex-row items-center justify-center rounded-card bg-salli-accent"
                         style={{ opacity: !draft.trim() || isBusy ? 0.5 : 1 }}
                       >
                         {isBusy ? (
@@ -189,7 +189,7 @@ export function LlmKeysCard() {
                           setEditing(null);
                           setDraft("");
                         }}
-                        className="h-9 items-center justify-center rounded-control border border-foreground/10 px-4"
+                        className="h-9 items-center justify-center rounded-card border border-foreground/10 px-4"
                       >
                         <Text className="text-[15px] font-sans-medium text-foreground/50">
                           Cancel

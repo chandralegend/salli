@@ -18,7 +18,7 @@ import { Pressable, Text, TextInput, View } from "react-native";
 import { Card } from "@/components/ui/card";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { getScoreFiScoreGet } from "@/lib/api/sdk.gen";
@@ -174,7 +174,7 @@ export default function BudgetScreen() {
                   </View>
                   <View
                     className={cn(
-                      "mt-1 rounded-[8px] border px-2.5 py-1",
+                      "mt-1 rounded-card border px-2.5 py-1",
                       over
                         ? "border-destructive/30 bg-destructive/20"
                         : "border-salli-accent/30 bg-salli-accent/20",
@@ -222,11 +222,11 @@ export default function BudgetScreen() {
                   return (
                     <View
                       key={i}
-                      className="flex-row items-center gap-2.5 rounded-control border border-foreground/[0.08] bg-card px-3.5 py-[11px]"
+                      className="flex-row items-center gap-2.5 rounded-card border border-foreground/[0.08] bg-card px-3.5 py-[11px]"
                     >
                       <View
                         className={cn(
-                          "h-8 w-8 items-center justify-center rounded-[9px]",
+                          "h-8 w-8 items-center justify-center rounded-card",
                           lineOver ? "border border-destructive/20 bg-destructive/[0.12]" : "bg-foreground/[0.06]",
                         )}
                       >
@@ -275,7 +275,7 @@ export default function BudgetScreen() {
                   </View>
                 </View>
                 {pct !== null ? (
-                  <View className="mt-1 rounded-[8px] border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
+                  <View className="mt-1 rounded-card border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
                     <Text className="text-[14px] font-sans-semibold text-salli-accent">{pct}% of income</Text>
                   </View>
                 ) : null}
@@ -333,11 +333,11 @@ export default function BudgetScreen() {
                 return (
                   <View
                     key={a.id}
-                    className="flex-row items-center gap-2.5 rounded-control border border-foreground/[0.08] bg-card px-3.5 py-[11px]"
+                    className="flex-row items-center gap-2.5 rounded-card border border-foreground/[0.08] bg-card px-3.5 py-[11px]"
                   >
                     <View
                       className={cn(
-                        "h-8 w-8 items-center justify-center rounded-[9px]",
+                        "h-8 w-8 items-center justify-center rounded-card",
                         isDominant ? "border border-salli-accent/20 bg-salli-accent/[0.12]" : "bg-foreground/[0.06]",
                       )}
                     >
@@ -356,7 +356,7 @@ export default function BudgetScreen() {
                         />
                       </View>
                     </View>
-                    <View className="flex-none flex-row items-center gap-1 rounded-[8px] border border-foreground/10 bg-muted px-2.5 py-1.5">
+                    <View className="flex-none flex-row items-center gap-1 rounded-card border border-foreground/10 bg-muted px-2.5 py-1.5">
                       <Text className="text-[15px] font-sans-medium text-foreground/40">Rs.</Text>
                       <TextInput
                         value={limits[a.id] ?? ""}
@@ -378,9 +378,9 @@ export default function BudgetScreen() {
                 did nothing. */}
             <Pressable
               onPress={() => router.push("/(tabs)/ledger")}
-              className="flex-row items-center gap-2.5 rounded-control border border-dashed border-foreground/10 bg-card px-3.5 py-[11px]"
+              className="flex-row items-center gap-2.5 rounded-card border border-dashed border-foreground/10 bg-card px-3.5 py-[11px]"
             >
-              <View className="h-8 w-8 items-center justify-center rounded-[9px] bg-foreground/[0.04]">
+              <View className="h-8 w-8 items-center justify-center rounded-card bg-foreground/[0.04]">
                 <Plus size={15} color="rgba(128,128,128,0.4)" strokeWidth={2.5} />
               </View>
               <View className="flex-1">
@@ -406,9 +406,9 @@ export default function BudgetScreen() {
             </View>
           ) : null}
 
-          <PillButton className="mb-2 mt-4" loading={saving} disabled={allocated === 0} onPress={handleSave}>
+          <ActionButton className="mb-2 mt-4" loading={saving} disabled={allocated === 0} onPress={handleSave}>
             {editing ? "Update Budget" : "Save Budget"}
-          </PillButton>
+          </ActionButton>
           {editing ? (
             <Pressable onPress={() => setEditing(false)} className="mb-4 items-center">
               <Text className="text-[14px] text-foreground/40">Cancel</Text>

@@ -29,7 +29,7 @@ export function StatTile({
   return (
     <View
       className={cn(
-        "rounded-control border px-2.5 py-2.5",
+        "rounded-card border px-2.5 py-2.5",
         onDark ? "border-white/10 bg-white/[0.09]" : "border-foreground/10 bg-muted",
         className,
       )}

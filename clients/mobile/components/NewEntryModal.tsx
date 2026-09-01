@@ -16,7 +16,7 @@ import { AddEditAccountDrawer } from "@/components/AddEditAccountDrawer";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { TextField } from "@/components/ui/text-field";
 import type { Account } from "@/hooks/useDashboard";
@@ -169,9 +169,9 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
       visible={visible}
       onClose={onClose}
       footer={
-        <PillButton loading={saving} disabled={!canSubmit} onPress={handlePost}>
+        <ActionButton loading={saving} disabled={!canSubmit} onPress={handlePost}>
           Post Entry
-        </PillButton>
+        </ActionButton>
       }
     >
       <>
@@ -344,7 +344,7 @@ function AccountRow({
     >
       <View
         className={cn(
-          "h-8 w-8 items-center justify-center rounded-[9px]",
+          "h-8 w-8 items-center justify-center rounded-card",
           filled ? "border border-salli-accent/20 bg-salli-accent/10" : "bg-foreground/[0.06]",
         )}
       >
@@ -407,7 +407,7 @@ function AccountPickerSheet({
         haptic="light"
         className="mb-2 flex-row items-center gap-2.5 rounded-card border border-dashed border-salli-accent/40 bg-salli-accent/[0.06] px-3.5 py-3"
       >
-        <View className="h-8 w-8 items-center justify-center rounded-[9px] bg-salli-accent/15">
+        <View className="h-8 w-8 items-center justify-center rounded-card bg-salli-accent/15">
           <Plus size={17} color={colors.accent} strokeWidth={2.5} />
         </View>
         <Text className="font-sans-semibold text-[15px] text-salli-accent">Add new account</Text>
@@ -432,7 +432,7 @@ function AccountPickerSheet({
               >
                 <View
                   className={cn(
-                    "h-8 w-8 items-center justify-center rounded-[9px]",
+                    "h-8 w-8 items-center justify-center rounded-card",
                     active ? "border border-salli-accent/20 bg-salli-accent/10" : "bg-foreground/[0.06]",
                   )}
                 >
@@ -450,7 +450,7 @@ function AccountPickerSheet({
                   <Text className="mt-0.5 text-[14px] text-foreground/35">{meta.label}</Text>
                 </View>
                 {a.currency !== "LKR" && (
-                  <View className="rounded-[4px] bg-foreground/[0.07] px-1.5 py-px">
+                  <View className="rounded-badge bg-foreground/[0.07] px-1.5 py-px">
                     <Text className="text-[13px] font-sans-medium text-foreground/45">{a.currency}</Text>
                   </View>
                 )}

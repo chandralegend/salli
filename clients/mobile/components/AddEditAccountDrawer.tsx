@@ -3,7 +3,7 @@ import { Text, View } from "react-native";
 
 import { Drawer } from "@/components/ui/drawer";
 import { ChipSelect } from "@/components/ui/filter-chip";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { TextField } from "@/components/ui/text-field";
 import type { Account } from "@/hooks/useDashboard";
 import { useAddAccount, useUpdateAccount } from "@/hooks/useLedger";
@@ -76,9 +76,9 @@ export function AddEditAccountDrawer({
       onClose={onClose}
       title={isEdit ? "Edit Account" : "New Account"}
       footer={
-        <PillButton variant="accent" loading={saving} disabled={!canSubmit} onPress={submit}>
+        <ActionButton variant="accent" loading={saving} disabled={!canSubmit} onPress={submit}>
           {isEdit ? "Save Changes" : "Add Account"}
-        </PillButton>
+        </ActionButton>
       }
     >
       <View className="mb-2.5 flex-row gap-2">

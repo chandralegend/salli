@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { ChipSelect } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
@@ -124,15 +124,15 @@ export default function InsuranceScreen() {
               </View>
             </View>
             <View className="flex-row gap-1.5">
-              <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
                 <Text className="mb-1 text-[13px] text-white/35">Policies</Text>
                 <Text className="font-sans-bold text-[15px] text-white">{activePolicies.length}</Text>
               </View>
-              <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
                 <Text className="mb-1 text-[13px] text-white/35">Target</Text>
                 <Text className="font-sans-bold text-[15px] text-white">Rs. {formatLKRAbbrev(totalTarget)}</Text>
               </View>
-              <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
                 <Text className="mb-1 text-[13px] text-white/35">Gap</Text>
                 <Text className={cn("font-sans-bold text-[15px]", totalGap > 0 ? "text-destructive" : "text-salli-accent")}>
                   Rs. {formatLKRAbbrev(totalGap)}
@@ -154,7 +154,7 @@ export default function InsuranceScreen() {
               activePolicies.map((p) => (
                 <Pressable key={p.id} onPress={() => openEdit(p)}>
                   <Card className="flex-row items-center gap-2.5 p-3.5">
-                    <View className="h-9 w-9 items-center justify-center rounded-[8px] border border-salli-accent/20 bg-salli-accent/[0.12]">
+                    <View className="h-9 w-9 items-center justify-center rounded-card border border-salli-accent/20 bg-salli-accent/[0.12]">
                       <Shield size={17} color={colors.accent} strokeWidth={2} />
                     </View>
                     <View className="flex-1">
@@ -213,9 +213,9 @@ export default function InsuranceScreen() {
                 unreachable, since it only reports a gap where one is declared. */}
             <Pressable
               onPress={() => setTargetOpen(true)}
-              className="mt-1 flex-row items-center gap-2.5 rounded-control border border-dashed border-foreground/[0.12] bg-card px-3.5 py-[11px]"
+              className="mt-1 flex-row items-center gap-2.5 rounded-card border border-dashed border-foreground/[0.12] bg-card px-3.5 py-[11px]"
             >
-              <View className="h-8 w-8 items-center justify-center rounded-[9px] bg-foreground/[0.04]">
+              <View className="h-8 w-8 items-center justify-center rounded-card bg-foreground/[0.04]">
                 <Plus size={15} color={colors.mutedForeground} strokeWidth={2.5} />
               </View>
               <Text className="font-sans-medium text-[15px] text-foreground/45">
@@ -412,9 +412,9 @@ function AddEditPolicyDrawer({
       title={isEdit ? "Edit Policy" : "New Policy"}
       footer={
         <>
-          <PillButton variant="accent" loading={pending} disabled={!canSubmit} onPress={submit}>
+          <ActionButton variant="accent" loading={pending} disabled={!canSubmit} onPress={submit}>
             {isEdit ? "Save Changes" : "Add Policy"}
-          </PillButton>
+          </ActionButton>
           {isError ? (
             <Text className="mt-2 text-center text-[14px] text-destructive">
               Could not save policy. Please try again.
@@ -510,13 +510,13 @@ function SetTargetDrawer({
       onClose={onClose}
       title="Coverage target"
       footer={
-        <PillButton
+        <ActionButton
           loading={pending}
           disabled={!valid}
           onPress={() => onSubmit(policyType, value)}
         >
           {replacing ? "Update target" : "Set target"}
-        </PillButton>
+        </ActionButton>
       }
     >
       <View className="gap-3 pb-2">

@@ -4,7 +4,7 @@ import { Text, View } from "react-native";
 
 import { Drawer } from "@/components/ui/drawer";
 import { FilterChip } from "@/components/ui/filter-chip";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { TextField } from "@/components/ui/text-field";
 import type { PurchaseImpact, PurchaseOption } from "@/hooks/useFi";
 import { useSimulatePurchase } from "@/hooks/useFi";
@@ -33,7 +33,7 @@ const TERM_OPTIONS: { label: string; months: number | null }[] = [
 
 function Badge({ tone, label }: { tone: "success" | "danger"; label: string }) {
   return (
-    <View className={tone === "success" ? "rounded-[5px] bg-salli-success/15 px-1.5 py-0.5" : "rounded-[5px] bg-destructive/15 px-1.5 py-0.5"}>
+    <View className={tone === "success" ? "rounded-badge bg-salli-success/15 px-1.5 py-0.5" : "rounded-badge bg-destructive/15 px-1.5 py-0.5"}>
       <Text className={tone === "success" ? "text-[12px] font-sans-semibold text-salli-success" : "text-[12px] font-sans-semibold text-destructive"}>
         {label}
       </Text>
@@ -70,7 +70,7 @@ function Result({ impact, mutedColor, destructiveColor }: { impact: PurchaseImpa
   // worse than none, and the user can't un-spend on a false "yes."
   if (impact.is_stale) {
     return (
-      <View className="mt-4 flex-row items-start gap-2.5 rounded-control border border-dashed border-foreground/15 p-3.5">
+      <View className="mt-4 flex-row items-start gap-2.5 rounded-card border border-dashed border-foreground/15 p-3.5">
         <TriangleAlert size={18} color={mutedColor} strokeWidth={2} style={{ marginTop: 1 }} />
         <View className="flex-1">
           <Text className="font-sans-semibold text-[15px] text-foreground">Your ledger is out of date</Text>
@@ -119,7 +119,7 @@ function Result({ impact, mutedColor, destructiveColor }: { impact: PurchaseImpa
       </View>
 
       {efBreached || !impact.payable_from_liquid ? (
-        <View className="mt-3.5 flex-row items-start gap-2.5 rounded-control border border-destructive/30 bg-destructive/5 p-3">
+        <View className="mt-3.5 flex-row items-start gap-2.5 rounded-card border border-destructive/30 bg-destructive/5 p-3">
           <ShieldAlert size={17} color={destructiveColor} strokeWidth={2} style={{ marginTop: 1 }} />
           <Text className="flex-1 text-[14px] text-foreground/70">
             {!impact.payable_from_liquid
@@ -189,14 +189,14 @@ export function AffordabilityDrawer({ visible, onClose }: { visible: boolean; on
         ))}
       </View>
 
-      <PillButton className="mt-3" variant="accent" loading={sim.isPending} disabled={!valid || sim.isPending} onPress={submit}>
+      <ActionButton className="mt-3" variant="accent" loading={sim.isPending} disabled={!valid || sim.isPending} onPress={submit}>
         {sim.isPending ? "Working…" : (
           <View className="flex-row items-center gap-1.5">
             <Text className="font-sans-semibold text-[18px] text-white">Ask Salli</Text>
             <ArrowRight size={16} color="#fff" strokeWidth={2.5} />
           </View>
         )}
-      </PillButton>
+      </ActionButton>
 
       {!sim.data && !sim.isPending && !sim.isError ? (
         <Text className="mt-3 text-[14px] text-foreground/35">

@@ -94,12 +94,12 @@ export function McpConnectionsCard() {
           <View className="mt-4">
             <Text className="mb-1.5 text-[14px] text-foreground/35">MCP server URL</Text>
             <View className="flex-row items-center gap-2">
-              <View className="flex-1 rounded-control bg-muted px-3 py-2">
+              <View className="flex-1 rounded-card bg-muted px-3 py-2">
                 <Text className="font-mono text-[15px] text-foreground/70" numberOfLines={1}>
                   {API_URL}/mcp
                 </Text>
               </View>
-              <Pressable onPress={copyServerUrl} hitSlop={8} className="h-[34px] w-[34px] items-center justify-center rounded-control bg-foreground/[0.06]">
+              <Pressable onPress={copyServerUrl} hitSlop={8} className="h-[34px] w-[34px] items-center justify-center rounded-card bg-foreground/[0.06]">
                 <Copy size={15} color={colors.mutedForeground} strokeWidth={2} />
               </Pressable>
             </View>
@@ -113,7 +113,7 @@ export function McpConnectionsCard() {
             {connections.isLoading ? (
               <ActivityIndicator size="small" color={colors.mutedForeground} />
             ) : connections.data && connections.data.length > 0 ? (
-              <View className="overflow-hidden rounded-control border border-foreground/10">
+              <View className="overflow-hidden rounded-card border border-foreground/10">
                 {connections.data.map((c, i) => (
                   <View
                     key={c.token_id}

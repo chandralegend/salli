@@ -99,7 +99,7 @@ export function SpendingBreakdown({ surplus }: { surplus: FiSurplus | undefined 
           </View>
         </View>
       ) : (
-        <View className="mt-3 rounded-[8px] bg-foreground/[0.04] px-3 py-2.5">
+        <View className="mt-3 rounded-card bg-foreground/[0.04] px-3 py-2.5">
           <Text className="text-[14px] leading-5 text-foreground/40">
             Tag a few expenses as Needs, Wants or Savings to see how your spending splits.
           </Text>

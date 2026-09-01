@@ -4,7 +4,7 @@ import { Pressable, Text, View } from "react-native";
 
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { TourTarget } from "@/components/tour/TourTarget";
 import { StatTile } from "@/components/ui/stat-tile";
@@ -75,7 +75,7 @@ function bandUsage(
 function Disclaimer({ text }: { text: string }) {
   const colors = useThemeColors();
   return (
-    <View className="mt-2.5 flex-row items-start gap-2 rounded-[8px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
+    <View className="mt-2.5 flex-row items-start gap-2 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
       <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
       <Text className="flex-1 text-[14px] leading-5 text-foreground/30">{text}</Text>
     </View>
@@ -113,9 +113,9 @@ export default function TaxScreen() {
           <Text className="text-center text-[15px] leading-5 text-foreground/40">
             Deterministic rules engine · not AI · planning estimate only.
           </Text>
-          <PillButton className="mt-2" loading={compute.isPending} onPress={() => compute.mutate()}>
+          <ActionButton className="mt-2" loading={compute.isPending} onPress={() => compute.mutate()}>
             Compute Tax
-          </PillButton>
+          </ActionButton>
         </View>
       ) : tab === "Overview" ? (
         <OverviewTab data={tax.data} pack={currentPack} colors={colors} compute={compute} />
@@ -236,7 +236,7 @@ function OverviewTab({
                   </Text>
                   <View
                     className={cn(
-                      "rounded-[4px] px-1.5 py-px",
+                      "rounded-badge px-1.5 py-px",
                       status === "full" ? "bg-salli-accent/15" : status === "partial" ? "bg-foreground/[0.07]" : "bg-foreground/[0.05]",
                     )}
                   >
@@ -260,9 +260,9 @@ function OverviewTab({
         </View>
       </Card>
 
-      <PillButton variant="secondary" className="mt-3" loading={compute.isPending} onPress={() => compute.mutate()}>
+      <ActionButton variant="secondary" className="mt-3" loading={compute.isPending} onPress={() => compute.mutate()}>
         Recompute
-      </PillButton>
+      </ActionButton>
 
       <Disclaimer text="Deterministic engine · Planning estimate only · Not financial advice" />
     </View>
@@ -345,7 +345,7 @@ function DeductionsTab({ data }: { data: TaxComputationFull }) {
       <View className="px-4">
         <Card className="flex-row items-center gap-2.5 p-3.5">
           <View className="h-10 w-[3px] rounded-pill bg-salli-accent" />
-          <View className="h-9 w-9 items-center justify-center rounded-[10px] border border-salli-accent/15 bg-salli-accent/10">
+          <View className="h-9 w-9 items-center justify-center rounded-card border border-salli-accent/15 bg-salli-accent/10">
             <User size={17} color={colors.accent} strokeWidth={2} />
           </View>
           <View className="flex-1">
@@ -354,7 +354,7 @@ function DeductionsTab({ data }: { data: TaxComputationFull }) {
           </View>
           <View className="items-end">
             <Text className="font-sans-bold text-[15px] text-foreground">Rs. {formatLKRAbbrev(relief)}</Text>
-            <View className="mt-0.5 rounded-[4px] bg-salli-accent/15 px-1.5 py-px">
+            <View className="mt-0.5 rounded-badge bg-salli-accent/15 px-1.5 py-px">
               <Text className="text-[13px] font-sans-medium text-salli-accent">Active</Text>
             </View>
           </View>
@@ -372,7 +372,7 @@ function DeductionsTab({ data }: { data: TaxComputationFull }) {
               <View className={cn("h-10 w-[3px] rounded-pill", active ? "bg-salli-accent" : "bg-foreground/10")} />
               <View
                 className={cn(
-                  "h-9 w-9 items-center justify-center rounded-[10px]",
+                  "h-9 w-9 items-center justify-center rounded-card",
                   active ? "border border-salli-accent/15 bg-salli-accent/10" : "bg-foreground/[0.05]",
                 )}
               >
@@ -388,7 +388,7 @@ function DeductionsTab({ data }: { data: TaxComputationFull }) {
                 <Text className={cn("font-sans-bold text-[15px]", active ? "text-foreground" : "text-foreground/25")}>
                   {active ? `−Rs. ${formatLKRAbbrev(c.amount)}` : "—"}
                 </Text>
-                <View className={cn("mt-0.5 rounded-[4px] px-1.5 py-px", active ? "bg-salli-accent/15" : "bg-foreground/[0.05]")}>
+                <View className={cn("mt-0.5 rounded-badge px-1.5 py-px", active ? "bg-salli-accent/15" : "bg-foreground/[0.05]")}>
                   <Text className={cn("text-[13px] font-sans-medium", active ? "text-salli-accent" : "text-foreground/25")}>
                     {active ? c.activeLabel : "Inactive"}
                   </Text>
@@ -452,7 +452,7 @@ function HistoryTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
             </View>
           </View>
           {yoy != null && (
-            <View className="mt-1 rounded-[8px] border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
+            <View className="mt-1 rounded-card border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
               <Text className="font-sans-semibold text-[14px] text-salli-accent">
                 {yoy >= 0 ? "↑" : "↓"} {formatPct(Math.abs(yoy), 0)} YoY
               </Text>
@@ -496,7 +496,7 @@ function HistoryTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
               <View className="flex-1">
                 <View className="mb-0.5 flex-row items-center gap-1.5">
                   <Text className="font-sans-semibold text-[15px] text-foreground">AY {r.pack.year}</Text>
-                  <View className={cn("rounded-[4px] px-1.5 py-px", isCurrent ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
+                  <View className={cn("rounded-badge px-1.5 py-px", isCurrent ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
                     <Text className={cn("text-[12px] font-sans-semibold", isCurrent ? "text-salli-accent" : "text-foreground/45")}>
                       {isCurrent ? "CURRENT" : "COMPUTED"}
                     </Text>

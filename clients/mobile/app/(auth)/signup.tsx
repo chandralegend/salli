@@ -6,7 +6,7 @@ import { Pressable, Text, View } from "react-native";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { Logo } from "@/components/Logo";
 import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { TextField } from "@/components/ui/text-field";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { signUpWithPassword } from "@/lib/auth";
@@ -61,16 +61,16 @@ export default function SignupScreen() {
           <Text className="text-center text-[15px] text-foreground/40">
             We&apos;ve sent a confirmation link to {email}.
           </Text>
-          <PillButton className="mt-3 h-[54px] w-full" onPress={() => router.replace("/(auth)/login")}>
+          <ActionButton className="mt-3 h-[54px] w-full" onPress={() => router.replace("/(auth)/login")}>
             Back to sign in
-          </PillButton>
+          </ActionButton>
         </View>
       ) : (
         <View className="gap-2.5">
           {isSupabaseConfigured() ? <SocialAuthButtons onError={setError} /> : null}
 
           <TextField
-            className="rounded-[10px] px-[18px] py-[14px]"
+            className="rounded-card px-[18px] py-[14px]"
             label="Email"
             value={email}
             onChangeText={setEmail}
@@ -80,7 +80,7 @@ export default function SignupScreen() {
             placeholder="you@example.com"
           />
           <TextField
-            className="rounded-[10px] px-[18px] py-[14px]"
+            className="rounded-card px-[18px] py-[14px]"
             label="Password"
             optionalHint="min 8 characters"
             value={password}
@@ -91,19 +91,19 @@ export default function SignupScreen() {
           />
 
           {error ? (
-            <View className="rounded-control border border-destructive/30 bg-destructive/10 px-4 py-3">
+            <View className="rounded-card border border-destructive/30 bg-destructive/10 px-4 py-3">
               <Text className="text-[15px] text-destructive">{error}</Text>
             </View>
           ) : null}
 
-          <PillButton
+          <ActionButton
             className="mt-1 h-[54px]"
             loading={loading}
             disabled={!email || !password}
             onPress={handleSignUp}
           >
             Create account
-          </PillButton>
+          </ActionButton>
 
           <Pressable className="items-center py-2" onPress={() => router.replace("/(auth)/login")}>
             <Text className="text-[15px] text-foreground/40">

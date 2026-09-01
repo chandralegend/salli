@@ -46,7 +46,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
   return (
     <View
       className={cn(
-        "rounded-control border bg-card px-4 py-3",
+        "rounded-card border bg-card px-4 py-3",
         active ? "border-salli-accent" : "border-foreground/10",
         rightIcon ? "flex-row items-center justify-between" : undefined,
         className,

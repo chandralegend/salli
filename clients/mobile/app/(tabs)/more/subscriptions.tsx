@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { ChipSelect } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { TextField } from "@/components/ui/text-field";
 import {
@@ -107,15 +107,15 @@ export default function SubscriptionsScreen() {
               </View>
             </View>
             <View className="flex-row gap-1.5">
-              <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
                 <Text className="mb-1 text-[13px] text-white/35">Active</Text>
                 <Text className="font-sans-bold text-[15px] text-white">{active.length}</Text>
               </View>
-              <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
                 <Text className="mb-1 text-[13px] text-white/35">Annualised</Text>
                 <Text className="font-sans-bold text-[15px] text-white">Rs. {formatLKRAbbrev(monthlyTotal * 12)}</Text>
               </View>
-              <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
                 <Text className="mb-1 text-[13px] text-white/35">Alerts</Text>
                 <Text className={cn("font-sans-bold text-[15px]", alertCount > 0 ? "text-destructive" : "text-white")}>
                   {alertCount}
@@ -141,7 +141,7 @@ export default function SubscriptionsScreen() {
                 <Pressable key={s.id} onPress={() => openEdit(s)}>
                 <Card className="p-3.5">
                   <View className="flex-row items-center gap-2.5">
-                    <View className="h-9 w-9 items-center justify-center rounded-[8px] bg-foreground/[0.06]">
+                    <View className="h-9 w-9 items-center justify-center rounded-card bg-foreground/[0.06]">
                       <RefreshCw size={16} color={colors.mutedForeground} strokeWidth={2} />
                     </View>
                     <View className="flex-1">
@@ -257,9 +257,9 @@ function AddEditSubscriptionDrawer({
       title={isEdit ? "Edit Subscription" : "New Subscription"}
       footer={
         <>
-          <PillButton variant="accent" loading={pending} disabled={!canSubmit} onPress={submit}>
+          <ActionButton variant="accent" loading={pending} disabled={!canSubmit} onPress={submit}>
             {isEdit ? "Save Changes" : "Add Subscription"}
-          </PillButton>
+          </ActionButton>
           {isError ? (
             <Text className="mt-2 text-center text-[14px] text-destructive">
               Could not save subscription. Please try again.

@@ -68,7 +68,7 @@ export function TopUpCard() {
               key={p.identifier}
               onPress={() => purchase(p)}
               disabled={busy}
-              className="flex-row items-center justify-between rounded-control border border-foreground/10 p-3"
+              className="flex-row items-center justify-between rounded-card border border-foreground/10 p-3"
             >
               <View>
                 <Text className="font-sans-medium text-[16px] text-foreground">

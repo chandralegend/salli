@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Tabs } from "@/components/ui/tabs";
@@ -208,15 +208,15 @@ export default function DebtScreen() {
                 {allDebts.length} active loan{allDebts.length === 1 ? "" : "s"} · {strategyLabel} strategy
               </Text>
               <View className="flex-row gap-1.5">
-                <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+                <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
                   <Text className="mb-1 text-[13px] text-white/35">Monthly Min</Text>
                   <Text className="font-sans-bold text-[15px] text-white">Rs. {formatLKRAbbrev(totalMinPayment)}</Text>
                 </View>
-                <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+                <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
                   <Text className="mb-1 text-[13px] text-white/35">Payoff</Text>
                   <Text className="font-sans-bold text-[15px] text-white">{totalMonths ?? "—"} mo</Text>
                 </View>
-                <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+                <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
                   <Text className="mb-1 text-[13px] text-white/35">Interest Saved</Text>
                   <Text className="font-sans-bold text-[15px] text-salli-accent">
                     Rs. {interestSaved !== null ? formatLKRAbbrev(interestSaved) : "—"}
@@ -226,7 +226,7 @@ export default function DebtScreen() {
             </Card>
 
             <View className="mt-3 flex-row items-center gap-2">
-              <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
+              <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-card border border-foreground/[0.08] bg-card px-3">
                 <Search size={15} color={colors.mutedForeground} strokeWidth={2} />
                 <TextInput
                   value={search}
@@ -265,7 +265,7 @@ export default function DebtScreen() {
                           <Text className="font-sans-semibold text-[15px] text-foreground">{debt.name}</Text>
                           <Text className="mt-0.5 text-[14px] text-foreground/30">APR {formatPct(debt.apr, 1)}</Text>
                         </View>
-                        <View className={cn("rounded-[6px] px-2 py-0.5", debt.is_active ? "bg-salli-accent/15" : "bg-foreground/10")}>
+                        <View className={cn("rounded-badge px-2 py-0.5", debt.is_active ? "bg-salli-accent/15" : "bg-foreground/10")}>
                           <Text className={cn("text-[14px] font-sans-semibold", debt.is_active ? "text-salli-accent" : "text-foreground/40")}>
                             {debt.is_active ? "Active" : "Paid Off"}
                           </Text>
@@ -305,7 +305,7 @@ export default function DebtScreen() {
                 onChange={setStrategy}
                 capitalize
               />
-              <Pressable onPress={() => setTab("Strategy")} className="flex-row items-center justify-between rounded-control border border-foreground/[0.07] bg-muted px-3.5 py-2.5">
+              <Pressable onPress={() => setTab("Strategy")} className="flex-row items-center justify-between rounded-card border border-foreground/[0.07] bg-muted px-3.5 py-2.5">
                 <View>
                   <Text className="mb-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
                     Extra Monthly Payment
@@ -354,7 +354,7 @@ export default function DebtScreen() {
               onChange={setStrategy}
               capitalize
             />
-            <View className="mt-2 flex-row items-start gap-2 rounded-control border border-salli-accent/20 bg-salli-accent/[0.08] px-3.5 py-2.5">
+            <View className="mt-2 flex-row items-start gap-2 rounded-card border border-salli-accent/20 bg-salli-accent/[0.08] px-3.5 py-2.5">
               <Zap size={16} color={colors.accent} strokeWidth={2} style={{ marginTop: 1 }} />
               <Text className="flex-1 text-[14px] leading-5 text-foreground/55">
                 {strategy === "avalanche" ? (
@@ -384,7 +384,7 @@ export default function DebtScreen() {
                     </Text>
                   </View>
                 </View>
-                <View className="mt-1 rounded-[8px] border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
+                <View className="mt-1 rounded-card border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
                   <Text className="text-[14px] font-sans-semibold text-salli-accent">
                     On top of Rs. {formatLKRAbbrev(totalMinPayment)} min
                   </Text>
@@ -451,7 +451,7 @@ export default function DebtScreen() {
                     <View className="items-end">
                       <Text className="font-sans-bold text-[15px] text-foreground">Rs. {formatLKRAbbrev(debt.principal)}</Text>
                       {focus ? (
-                        <View className="mt-0.5 rounded-[4px] bg-salli-accent/15 px-1.5 py-0.5">
+                        <View className="mt-0.5 rounded-badge bg-salli-accent/15 px-1.5 py-0.5">
                           <Text className="text-[13px] font-sans-medium text-salli-accent">Focus</Text>
                         </View>
                       ) : (
@@ -463,7 +463,7 @@ export default function DebtScreen() {
               })}
             </View>
 
-            <View className="mt-3 flex-row items-start gap-2 rounded-control border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
+            <View className="mt-3 flex-row items-start gap-2 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
               <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
               <Text className="flex-1 text-[14px] leading-5 text-foreground/30">
                 Planning estimate · assumes fixed APR &amp; on-time payments
@@ -486,7 +486,7 @@ export default function DebtScreen() {
                     {totalMonths != null ? `${totalMonths} payments remaining` : "Not paid off within horizon"}
                   </Text>
                 </View>
-                <View className="mt-1 rounded-[8px] border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
+                <View className="mt-1 rounded-card border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
                   <Text className="text-[14px] font-sans-semibold text-salli-accent">{strategyLabel}</Text>
                 </View>
               </View>
@@ -655,9 +655,9 @@ function AddEditDebtDrawer({
       onClose={close}
       title={isEdit ? "Edit Debt" : "New Debt"}
       footer={
-        <PillButton variant="accent" loading={saving} disabled={!canSubmit} onPress={submit}>
+        <ActionButton variant="accent" loading={saving} disabled={!canSubmit} onPress={submit}>
           {isEdit ? "Save Changes" : "Add Debt"}
-        </PillButton>
+        </ActionButton>
       }
     >
       <TextField className="mb-2.5" label="Name *" value={name} onChangeText={setName} placeholder="Housing Loan" />
@@ -691,7 +691,7 @@ function AddEditDebtDrawer({
       </View>
 
       {principal && aprPct ? (
-        <View className="mb-4 flex-row items-center justify-between rounded-[8px] border border-foreground/[0.08] bg-card px-3.5 py-2.5">
+        <View className="mb-4 flex-row items-center justify-between rounded-card border border-foreground/[0.08] bg-card px-3.5 py-2.5">
           <Text className="text-[15px] text-foreground/50">Interest / mo (approx)</Text>
           <Text className="font-sans-bold text-[16px] text-foreground">
             Rs. {formatLKR((principalNum * (aprNum / 100)) / 12, 0)}

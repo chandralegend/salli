@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
 
 import { Drawer } from "@/components/ui/drawer";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { TextField } from "@/components/ui/text-field";
 import { useAccounts, useTrialBalance } from "@/hooks/useLedger";
 import { useFiGoalMutations, useGoalAllocations, type FiGoal } from "@/hooks/useFi";
@@ -119,7 +119,7 @@ export function GoalDetailDrawer({
     <Drawer visible={visible} onClose={onClose} title={goal.name}>
       <View className="gap-3 pb-2">
         {/* what is actually behind this goal */}
-        <View className="rounded-control border border-foreground/[0.08] bg-muted p-3.5">
+        <View className="rounded-card border border-foreground/[0.08] bg-muted p-3.5">
           <View className="flex-row items-baseline justify-between">
             <Text className="text-[14px] font-sans-medium uppercase tracking-wide text-foreground/35">
               Funded
@@ -137,7 +137,7 @@ export function GoalDetailDrawer({
             your money does.
           </Text>
           {hasShortfall ? (
-            <View className="mt-2.5 flex-row items-start gap-2 rounded-[8px] bg-[#FEF3C7] px-3 py-2">
+            <View className="mt-2.5 flex-row items-start gap-2 rounded-card bg-[#FEF3C7] px-3 py-2">
               <TriangleAlert size={15} color="#B45309" strokeWidth={2} />
               <Text className="flex-1 text-[14px] leading-5 text-[#B45309]">
                 You&rsquo;ve earmarked Rs. {formatLKRAbbrev(goal.allocated_amount)} but those
@@ -188,9 +188,9 @@ export function GoalDetailDrawer({
           </Text>
         </View>
 
-        <PillButton loading={updateGoal.isPending} onPress={saveDetails}>
+        <ActionButton loading={updateGoal.isPending} onPress={saveDetails}>
           Save changes
-        </PillButton>
+        </ActionButton>
 
         {/* earmarks */}
         <Text className="mt-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
@@ -214,7 +214,7 @@ export function GoalDetailDrawer({
             return (
               <View
                 key={a.id}
-                className="rounded-control border border-foreground/[0.08] bg-card p-3"
+                className="rounded-card border border-foreground/[0.08] bg-card p-3"
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1 pr-3">
@@ -230,14 +230,14 @@ export function GoalDetailDrawer({
                       placeholder="0"
                       placeholderTextColor="rgba(128,128,128,0.4)"
                       keyboardType="numeric"
-                      className="h-9 w-[110px] rounded-[8px] bg-muted px-2.5 text-right text-[15px] text-foreground"
+                      className="h-9 w-[110px] rounded-card bg-muted px-2.5 text-right text-[15px] text-foreground"
                     />
                     {dirty ? (
                       <Pressable
                         onPress={() => commitAllocation(a.id)}
                         hitSlop={8}
                         disabled={setAllocation.isPending}
-                        className="h-9 w-9 items-center justify-center rounded-[8px] bg-salli-accent"
+                        className="h-9 w-9 items-center justify-center rounded-card bg-salli-accent"
                       >
                         {setAllocation.isPending ? (
                           <ActivityIndicator size="small" color="#FFFFFF" />

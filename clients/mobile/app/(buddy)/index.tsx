@@ -129,7 +129,7 @@ export default function BuddyScreen() {
               item.role === "user" ? (
                 <View className="flex-row justify-end">
                   <View
-                    className="max-w-[78%] rounded-[14px] rounded-br-[6px] px-4 py-3"
+                    className="max-w-[78%] rounded-card rounded-br-[6px] px-4 py-3"
                     style={{ backgroundColor: colors.bubbleUser }}
                   >
                     <Text className="text-[16px] leading-5 text-foreground">{item.content}</Text>
@@ -183,7 +183,7 @@ export default function BuddyScreen() {
         {quotaBanner ? (
           <View className="mb-2 px-4">
             <View
-              className="rounded-control border border-destructive/25 bg-destructive/10 px-3.5 py-2.5"
+              className="rounded-card border border-destructive/25 bg-destructive/10 px-3.5 py-2.5"
               style={chatColumnStyle}
             >
               <Text className="text-[15px] text-destructive">{quotaBanner}</Text>
@@ -193,7 +193,7 @@ export default function BuddyScreen() {
 
         <View className="px-3.5 pt-2" style={{ paddingBottom: keyboardUp ? 8 : insets.bottom + 16 }}>
           <View
-            className="flex-row items-center gap-2 rounded-[16px] border border-foreground/10 bg-card py-1.5 pl-2 pr-1.5"
+            className="flex-row items-center gap-2 rounded-card border border-foreground/10 bg-card py-1.5 pl-2 pr-1.5"
             style={chatColumnStyle}
           >
             <Pressable className="h-11 w-11 items-center justify-center" accessibilityLabel="Attach a file">

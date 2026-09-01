@@ -5,7 +5,7 @@ import { Pressable, Text, View } from "react-native";
 
 import { AuthShell } from "@/components/auth/AuthShell";
 import { Logo } from "@/components/Logo";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { TextField } from "@/components/ui/text-field";
 import { sendPasswordReset } from "@/lib/auth";
 import { useThemeColors } from "@/lib/theme";
@@ -54,14 +54,14 @@ export default function ForgotPasswordScreen() {
           <Text className="text-center text-[15px] text-foreground/40">
             We&apos;ve sent a reset link to {email}.
           </Text>
-          <PillButton className="mt-3 h-[54px] w-full" onPress={() => router.replace("/(auth)/login")}>
+          <ActionButton className="mt-3 h-[54px] w-full" onPress={() => router.replace("/(auth)/login")}>
             Back to sign in
-          </PillButton>
+          </ActionButton>
         </View>
       ) : (
         <View className="gap-2.5">
           <TextField
-            className="rounded-[10px] px-[18px] py-[14px]"
+            className="rounded-card px-[18px] py-[14px]"
             label="Email"
             value={email}
             onChangeText={setEmail}
@@ -72,14 +72,14 @@ export default function ForgotPasswordScreen() {
           />
 
           {error ? (
-            <View className="rounded-control border border-destructive/30 bg-destructive/10 px-4 py-3">
+            <View className="rounded-card border border-destructive/30 bg-destructive/10 px-4 py-3">
               <Text className="text-[15px] text-destructive">{error}</Text>
             </View>
           ) : null}
 
-          <PillButton className="mt-1 h-[54px]" loading={loading} disabled={!email} onPress={handleSend}>
+          <ActionButton className="mt-1 h-[54px]" loading={loading} disabled={!email} onPress={handleSend}>
             Send reset link
-          </PillButton>
+          </ActionButton>
 
           <Pressable className="items-center py-2" onPress={() => router.back()}>
             <Text className="text-[15px] text-foreground/40">Back to sign in</Text>

@@ -28,7 +28,7 @@ export function QuotaBanner({
   return (
     <Pressable
       onPress={() => router.push("/(tabs)/more/billing")}
-      className={`flex-row items-center gap-2 rounded-control border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 ${className ?? ""}`}
+      className={`flex-row items-center gap-2 rounded-card border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 ${className ?? ""}`}
     >
       <TriangleAlert size={17} color="#d97706" strokeWidth={2} />
       <Text className="flex-1 text-[15px] text-foreground/70">

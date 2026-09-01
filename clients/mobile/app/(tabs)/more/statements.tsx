@@ -18,7 +18,7 @@ import { ActivityIndicator, Alert, Modal, Pressable, Text, TextInput, View } fro
 import { QuotaBanner } from "@/components/shared/QuotaBanner";
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { StatTile } from "@/components/ui/stat-tile";
@@ -294,9 +294,9 @@ function ReviewTab({
         <Text className="text-center text-[15px] leading-5 text-foreground/40">
           PDF, CSV, or XLSX — any Sri Lankan bank. Salli parses it and drafts ledger entries for your review.
         </Text>
-        <PillButton className="mt-2" loading={uploading} onPress={onUpload}>
+        <ActionButton className="mt-2" loading={uploading} onPress={onUpload}>
           Choose file
-        </PillButton>
+        </ActionButton>
       </View>
     );
   }
@@ -313,7 +313,7 @@ function ReviewTab({
           </View>
           <View className="items-end gap-1.5">
             {unmatched > 0 ? (
-              <View className="rounded-[6px] border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-0.5">
+              <View className="rounded-badge border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-0.5">
                 <Text className="text-[14px] font-sans-semibold text-salli-accent">{unmatched} Pending</Text>
               </View>
             ) : null}
@@ -345,7 +345,7 @@ function ReviewTab({
       ) : (
         <>
           <View className="mt-3 flex-row items-center gap-2">
-            <View className="h-9 flex-1 flex-row items-center gap-2 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
+            <View className="h-9 flex-1 flex-row items-center gap-2 rounded-card border border-foreground/[0.08] bg-card px-3">
               <Search size={15} color={colors.mutedForeground} strokeWidth={2} />
               <TextInput
                 value={search}
@@ -407,7 +407,7 @@ function ReviewTab({
                         matchedRow && !isApproved ? "bg-foreground/15" : "bg-salli-accent",
                       )}
                     />
-                    <View className="h-9 w-9 items-center justify-center rounded-[8px] border border-salli-accent/20 bg-salli-accent/[0.12]">
+                    <View className="h-9 w-9 items-center justify-center rounded-card border border-salli-accent/20 bg-salli-accent/[0.12]">
                       <CreditCard size={17} color={colors.accent} strokeWidth={2} />
                     </View>
                     <View className="flex-1">
@@ -429,7 +429,7 @@ function ReviewTab({
                       </Text>
                       <View
                         className={cn(
-                          "rounded-[4px] px-1.5 py-0.5",
+                          "rounded-badge px-1.5 py-0.5",
                           isApproved
                             ? "bg-salli-accent"
                             : matchedRow
@@ -490,9 +490,9 @@ function HistoryTab({
           Past statements aren't stored on the server. Import one to review and post it — it will appear here for the
           rest of your session.
         </Text>
-        <PillButton className="mt-2" loading={uploading} onPress={onUpload}>
+        <ActionButton className="mt-2" loading={uploading} onPress={onUpload}>
           Import statement
-        </PillButton>
+        </ActionButton>
       </View>
     );
   }
@@ -512,7 +512,7 @@ function HistoryTab({
               <Text className="font-sans-medium text-[15px] text-white/40">transactions</Text>
             </View>
           </View>
-          <View className="mt-1 rounded-[8px] border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
+          <View className="mt-1 rounded-card border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
             <Text className="font-sans-semibold text-[14px] text-salli-accent">{matched} matched</Text>
           </View>
         </View>
@@ -533,7 +533,7 @@ function HistoryTab({
         Imported This Session
       </Text>
       <Card className="flex-row items-center gap-2.5 p-3.5">
-        <View className="h-9 w-9 items-center justify-center rounded-[10px] border border-salli-accent/15 bg-salli-accent/10">
+        <View className="h-9 w-9 items-center justify-center rounded-card border border-salli-accent/15 bg-salli-accent/10">
           <FileText size={17} color={colors.accent} strokeWidth={2} />
         </View>
         <View className="flex-1">
@@ -546,14 +546,14 @@ function HistoryTab({
           </Text>
         </View>
         <View className="items-end">
-          <View className="rounded-[4px] bg-salli-accent/15 px-2 py-0.5">
+          <View className="rounded-badge bg-salli-accent/15 px-2 py-0.5">
             <Text className="text-[13px] font-sans-semibold text-salli-accent">{matched} matched</Text>
           </View>
           <Text className="mt-1 text-[13px] text-foreground/25">{unmatched} unmatched</Text>
         </View>
       </Card>
 
-      <View className="mt-2.5 flex-row items-start gap-2 rounded-[8px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
+      <View className="mt-2.5 flex-row items-start gap-2 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
         <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
         <Text className="flex-1 text-[14px] leading-5 text-foreground/30">
           Posted entries live in your Ledger. A persistent statement history isn't tracked by the server yet.
@@ -613,7 +613,7 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
               <View className={cn("h-11 w-[3px] rounded-pill", active ? "bg-salli-accent" : "bg-foreground/12")} />
               <View
                 className={cn(
-                  "h-10 w-10 items-center justify-center rounded-[8px]",
+                  "h-10 w-10 items-center justify-center rounded-card",
                   active ? "border border-salli-accent/15 bg-salli-accent/10" : "bg-foreground/[0.06]",
                 )}
               >
@@ -639,7 +639,7 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
                 </Text>
               </View>
               <View className="items-end">
-                <View className={cn("rounded-[4px] px-2 py-0.5", active ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
+                <View className={cn("rounded-badge px-2 py-0.5", active ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
                   <Text
                     className={cn(
                       "text-[13px] font-sans-semibold",
@@ -658,7 +658,7 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
         })}
       </View>
 
-      <View className="mt-3 flex-row items-start gap-2 rounded-[8px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
+      <View className="mt-3 flex-row items-start gap-2 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
         <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
         <Text className="flex-1 text-[14px] leading-5 text-foreground/30">
           Each account maps to a ledger asset code so imported transactions post automatically.
@@ -697,7 +697,7 @@ function OptionsMenu({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable className="flex-1 bg-black/50" onPress={onClose}>
         <View
-          className="absolute right-4 top-[104px] w-[236px] overflow-hidden rounded-[10px] border border-foreground/12 bg-card"
+          className="absolute right-4 top-[104px] w-[236px] overflow-hidden rounded-card border border-foreground/12 bg-card"
           style={{ shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 12 }}
         >
           {items.map((item, i) => (

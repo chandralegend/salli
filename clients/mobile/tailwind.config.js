@@ -57,8 +57,20 @@ module.exports = {
         "mono-bold": ["JetBrainsMono_700Bold"],
       },
       borderRadius: {
+        // One container radius for the whole app — cards, inputs, buttons,
+        // sheets, tiles. 16px because that is what Apple's own Sign-in button
+        // uses, and having it disagree with everything next to it was the
+        // most visible inconsistency. `control` used to be a second, smaller
+        // value and is deliberately gone rather than aliased, so there is no
+        // second name for one value to drift apart again.
         card: "16px",
-        control: "12px",
+        // Micro-labels and square checkboxes — the 18-22px elements where the
+        // container radius would clamp to a capsule and a checkbox would read
+        // as a radio button. Was four different values (4/5/6/7px) for one
+        // kind of element, which is the same inconsistency at a smaller scale.
+        badge: "6px",
+        // Genuine capsules only: filter chips, segmented controls, progress
+        // bars. A different shape on purpose, not an inconsistency.
         pill: "50px",
       },
     },

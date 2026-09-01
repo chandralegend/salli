@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Logo } from "@/components/Logo";
 import { ModeChoiceStep } from "@/components/onboarding/ModeChoiceStep";
 import { FilterChip } from "@/components/ui/filter-chip";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { TextField } from "@/components/ui/text-field";
 import {
   completeOnboardingOnboardingCompletePost,
@@ -340,8 +340,8 @@ export default function OnboardingScreen() {
             </Text>
             <View className="gap-1.5">
               {WELCOME_ITEMS.map((item, i) => (
-                <View key={item.title} className="flex-row items-center gap-3 rounded-control border border-foreground/[0.08] bg-card px-4 py-3">
-                  <View className={cn("h-8 w-8 items-center justify-center rounded-[10px]", i === 0 ? "bg-salli-accent" : "bg-foreground/[0.08]")}>
+                <View key={item.title} className="flex-row items-center gap-3 rounded-card border border-foreground/[0.08] bg-card px-4 py-3">
+                  <View className={cn("h-8 w-8 items-center justify-center rounded-card", i === 0 ? "bg-salli-accent" : "bg-foreground/[0.08]")}>
                     <item.icon size={16} color={i === 0 ? "#FFFFFF" : colors.mutedForeground} strokeWidth={2} />
                   </View>
                   <View className="flex-1">
@@ -355,10 +355,10 @@ export default function OnboardingScreen() {
           </ScrollView>
 
           <View className="pt-3">
-            <PillButton onPress={() => setStep(1)}>
+            <ActionButton onPress={() => setStep(1)}>
               <Text className="font-sans-bold text-[17px] text-primary-foreground">Begin setup</Text>
               <ChevronRight size={15} color={colors.primaryForeground} strokeWidth={2.5} />
-            </PillButton>
+            </ActionButton>
             <View className="mt-2 flex-row justify-center gap-3">
               <Text className="text-[14px] text-foreground/20">IRD-ready</Text>
               <Text className="text-[14px] text-foreground/10">·</Text>
@@ -430,10 +430,10 @@ export default function OnboardingScreen() {
                 rightIcon={<ChevronRight size={15} color={colors.foreground} strokeWidth={2} style={{ opacity: 0.2 }} />}
               />
 
-              <PillButton className="mt-1" loading={saving} disabled={!fullName || !dateOfBirth} onPress={handleAboutYouContinue}>
+              <ActionButton className="mt-1" loading={saving} disabled={!fullName || !dateOfBirth} onPress={handleAboutYouContinue}>
                 <Text className="font-sans-semibold text-[17px] text-primary-foreground">Continue to Income</Text>
                 <ChevronRight size={15} color={colors.primaryForeground} strokeWidth={2.5} />
-              </PillButton>
+              </ActionButton>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -463,12 +463,12 @@ export default function OnboardingScreen() {
                         return next;
                       })
                     }
-                    className={cn("rounded-control border p-3.5", selected ? "border-salli-accent bg-card" : "border-foreground/[0.08] bg-card")}
+                    className={cn("rounded-card border p-3.5", selected ? "border-salli-accent bg-card" : "border-foreground/[0.08] bg-card")}
                   >
                     <View className="flex-row items-center gap-3">
                       <View
                         className={cn(
-                          "h-[22px] w-[22px] items-center justify-center rounded-[7px] border",
+                          "h-[22px] w-[22px] items-center justify-center rounded-badge border",
                           selected ? "border-salli-accent bg-salli-accent" : "border-foreground/20",
                         )}
                       >
@@ -479,7 +479,7 @@ export default function OnboardingScreen() {
                         <Text numberOfLines={1} className="text-[14px] text-foreground/30">{source.hint}</Text>
                       </View>
                       {selected ? (
-                        <View className="flex-none flex-row items-center gap-1 rounded-[8px] border border-foreground/10 bg-muted px-2.5 py-1.5">
+                        <View className="flex-none flex-row items-center gap-1 rounded-card border border-foreground/10 bg-muted px-2.5 py-1.5">
                           <Text className="text-[15px] font-sans-medium text-foreground/40">Rs.</Text>
                           <TextInput
                             value={incomeAmounts[source.key] ?? ""}
@@ -498,10 +498,10 @@ export default function OnboardingScreen() {
                 );
               })}
 
-              <PillButton className="mt-1" loading={saving} disabled={selectedSources.size === 0} onPress={handleIncomeContinue}>
+              <ActionButton className="mt-1" loading={saving} disabled={selectedSources.size === 0} onPress={handleIncomeContinue}>
                 <Text className="font-sans-semibold text-[17px] text-primary-foreground">Continue to Risk</Text>
                 <ChevronRight size={15} color={colors.primaryForeground} strokeWidth={2.5} />
-              </PillButton>
+              </ActionButton>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -541,7 +541,7 @@ export default function OnboardingScreen() {
                         key={o.value}
                         onPress={() => setDrawdown(o.value)}
                         className={cn(
-                          "flex-row items-center gap-2.5 rounded-[8px] border px-3.5 py-[11px]",
+                          "flex-row items-center gap-2.5 rounded-card border px-3.5 py-[11px]",
                           active ? "border-salli-accent bg-card" : "border-foreground/[0.08] bg-card",
                         )}
                       >
@@ -591,21 +591,21 @@ export default function OnboardingScreen() {
               </View>
 
               {riskResult ? (
-                <View className="flex-row items-center justify-between rounded-[10px] border border-salli-accent/20 bg-salli-accent/[0.08] px-4 py-3.5">
+                <View className="flex-row items-center justify-between rounded-card border border-salli-accent/20 bg-salli-accent/[0.08] px-4 py-3.5">
                   <View>
                     <Text className="mb-0.5 text-[14px] text-foreground/40">Your risk category</Text>
                     <Text className="font-sans-bold text-[17px] capitalize text-foreground">{riskResult.category}</Text>
                   </View>
-                  <View className="rounded-[8px] border border-salli-accent/30 bg-salli-accent/20 px-3 py-1.5">
+                  <View className="rounded-card border border-salli-accent/30 bg-salli-accent/20 px-3 py-1.5">
                     <Text className="text-[15px] font-sans-semibold text-salli-accent">Score {riskResult.score}/100</Text>
                   </View>
                 </View>
               ) : null}
 
-              <PillButton className="mt-1" loading={saving} onPress={handleRiskContinue}>
+              <ActionButton className="mt-1" loading={saving} onPress={handleRiskContinue}>
                 <Text className="font-sans-semibold text-[17px] text-primary-foreground">Continue to Goals</Text>
                 <ChevronRight size={15} color={colors.primaryForeground} strokeWidth={2.5} />
-              </PillButton>
+              </ActionButton>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -626,7 +626,7 @@ export default function OnboardingScreen() {
             <StepTitle title="Financial Goals" subtitle="What are you working toward?" />
             <View className="gap-3">
               {goals.map((goal, i) => (
-                <View key={i} className="gap-2 rounded-control border border-foreground/10 bg-card p-3.5">
+                <View key={i} className="gap-2 rounded-card border border-foreground/10 bg-card p-3.5">
                   <View className="flex-row items-center justify-between">
                     <Text className="font-sans-semibold text-[15px] text-foreground">Goal {i + 1}</Text>
                     {goals.length > 1 ? (
@@ -676,15 +676,15 @@ export default function OnboardingScreen() {
 
               <Pressable
                 onPress={() => setGoals((prev) => [...prev, { name: "", kind: "financial_independence", targetAmount: "", targetYear: "", motivation: "" }])}
-                className="items-center rounded-control border border-dashed border-foreground/15 bg-card py-3"
+                className="items-center rounded-card border border-dashed border-foreground/15 bg-card py-3"
               >
                 <Text className="text-[15px] font-sans-medium text-foreground/40">+ Add another goal</Text>
               </Pressable>
 
-              <PillButton className="mt-1" loading={saving} onPress={handleGoalsContinue}>
+              <ActionButton className="mt-1" loading={saving} onPress={handleGoalsContinue}>
                 <Text className="font-sans-semibold text-[17px] text-primary-foreground">Continue to Review</Text>
                 <ChevronRight size={15} color={colors.primaryForeground} strokeWidth={2.5} />
-              </PillButton>
+              </ActionButton>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -725,8 +725,8 @@ export default function OnboardingScreen() {
                 },
               ] as const
             ).map((row) => (
-              <View key={row.step} className="flex-row items-center gap-2.5 rounded-control border border-foreground/[0.08] bg-card p-3.5">
-                <View className="h-8 w-8 items-center justify-center rounded-[9px] bg-foreground/[0.06]">
+              <View key={row.step} className="flex-row items-center gap-2.5 rounded-card border border-foreground/[0.08] bg-card p-3.5">
+                <View className="h-8 w-8 items-center justify-center rounded-card bg-foreground/[0.06]">
                   <row.icon size={16} color={colors.mutedForeground} strokeWidth={2} />
                 </View>
                 <View className="flex-1">
@@ -739,7 +739,7 @@ export default function OnboardingScreen() {
               </View>
             ))}
 
-            <View className="flex-row items-center gap-2.5 rounded-control border border-salli-accent/20 bg-salli-accent/[0.08] p-3.5">
+            <View className="flex-row items-center gap-2.5 rounded-card border border-salli-accent/20 bg-salli-accent/[0.08] p-3.5">
               <CreditCard size={18} color={colors.accent} strokeWidth={2} />
               <Text className="flex-1 text-[15px] leading-5 text-foreground/60">
                 <Text className="font-sans-semibold text-foreground">
@@ -749,10 +749,10 @@ export default function OnboardingScreen() {
               </Text>
             </View>
 
-            <PillButton className="mt-2" onPress={() => setStep(6)}>
+            <ActionButton className="mt-2" onPress={() => setStep(6)}>
               <Text className="font-sans-bold text-[17px] text-primary-foreground">Continue</Text>
               <ChevronRight size={15} color={colors.primaryForeground} strokeWidth={2.5} />
-            </PillButton>
+            </ActionButton>
             <Text className="mb-6 mt-2 text-center text-[14px] text-foreground/20">
               You can change anything later in Settings
             </Text>

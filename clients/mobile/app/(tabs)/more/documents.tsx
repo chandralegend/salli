@@ -37,7 +37,7 @@ export default function DocumentsScreen() {
     >
 
       <View className="mt-3 flex-row items-center gap-2 px-4">
-        <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
+        <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-card border border-foreground/[0.08] bg-card px-3">
           <Search size={15} color="rgba(128,128,128,0.4)" strokeWidth={2} />
           <TextInput
             value={search}
@@ -60,7 +60,7 @@ export default function DocumentsScreen() {
           filtered.map((d) => (
             <Pressable key={d.id} onPress={() => setViewing(d)}>
               <Card className="flex-row items-center gap-2.5 p-3.5">
-                <View className="h-9 w-9 items-center justify-center rounded-[8px] bg-foreground/[0.06]">
+                <View className="h-9 w-9 items-center justify-center rounded-card bg-foreground/[0.06]">
                   {tab === "Memories" ? (
                     <Book size={16} color={colors.mutedForeground} strokeWidth={2} />
                   ) : (
@@ -75,7 +75,7 @@ export default function DocumentsScreen() {
                   <Text className="mt-0.5 text-[13px] text-foreground/20">{d.created_at?.slice(0, 10)}</Text>
                 </View>
                 <View className="items-end">
-                  <View className="rounded-[5px] bg-foreground/[0.07] px-2 py-0.5">
+                  <View className="rounded-badge bg-foreground/[0.07] px-2 py-0.5">
                     <Text className="text-[13px] font-sans-medium capitalize text-foreground/40">{d.source.replace("_", " ")}</Text>
                   </View>
                   <Pressable onPress={() => deleteDoc.mutate(d.id)} className="mt-1.5">

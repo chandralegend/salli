@@ -108,7 +108,7 @@ export function AccountDetailModal({
               <View className="mb-3.5 flex-row items-start justify-between">
                 <View className="flex-1">
                   <View className="mb-1.5 flex-row items-center gap-2">
-                    <View className="rounded-[5px] bg-salli-accent/25 px-2 py-0.5">
+                    <View className="rounded-badge bg-salli-accent/25 px-2 py-0.5">
                       <Text className="text-[13px] font-sans-semibold uppercase tracking-wide text-salli-accent">
                         {account.type}
                       </Text>
@@ -130,17 +130,17 @@ export function AccountDetailModal({
                 </View>
                 <Pressable
                   onPress={() => setEditOpen(true)}
-                  className="rounded-[10px] border border-white/[0.08] bg-white/[0.06] p-2.5"
+                  className="rounded-card border border-white/[0.08] bg-white/[0.06] p-2.5"
                 >
                   <Pencil size={22} color="rgba(255,255,255,0.4)" strokeWidth={1.8} />
                 </Pressable>
               </View>
               <View className="flex-row gap-2">
-                <View className="flex-1 rounded-[8px] bg-white/[0.06] px-3 py-2.5">
+                <View className="flex-1 rounded-card bg-white/[0.06] px-3 py-2.5">
                   <Text className="mb-0.5 text-[13px] text-white/35">Money in ({period})</Text>
                   <Text className="font-sans-bold text-[16px] text-white">Rs. {formatLKRAbbrev(moneyIn)}</Text>
                 </View>
-                <View className="flex-1 rounded-[8px] bg-white/[0.06] px-3 py-2.5">
+                <View className="flex-1 rounded-card bg-white/[0.06] px-3 py-2.5">
                   <Text className="mb-0.5 text-[13px] text-white/35">Money out ({period})</Text>
                   <Text className="font-sans-bold text-[16px] text-white/60">Rs. {formatLKRAbbrev(moneyOut)}</Text>
                 </View>
@@ -182,7 +182,7 @@ export function AccountDetailModal({
                       <View className={cn("h-10 w-[3px] rounded-pill", inflow ? "bg-salli-accent" : "bg-foreground/15")} />
                       <View
                         className={cn(
-                          "h-8 w-8 items-center justify-center rounded-[10px]",
+                          "h-8 w-8 items-center justify-center rounded-card",
                           inflow ? "bg-salli-accent/[0.12]" : "bg-foreground/[0.06]",
                         )}
                       >

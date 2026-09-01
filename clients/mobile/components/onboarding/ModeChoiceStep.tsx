@@ -2,7 +2,7 @@ import { Check, ChevronRight, LayoutGrid, MessageCircle } from "lucide-react-nat
 import type { ComponentType } from "react";
 import { Pressable, Text, View } from "react-native";
 
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import type { AppMode } from "@/lib/store";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -54,13 +54,13 @@ export function ModeChoiceStep({
             key={opt.value}
             onPress={() => onChange(opt.value)}
             className={cn(
-              "flex-row items-center gap-3 rounded-control border p-4",
+              "flex-row items-center gap-3 rounded-card border p-4",
               active ? "border-salli-accent bg-card" : "border-foreground/[0.08] bg-card",
             )}
           >
             <View
               className={cn(
-                "h-10 w-10 items-center justify-center rounded-[8px]",
+                "h-10 w-10 items-center justify-center rounded-card",
                 active ? "bg-salli-accent" : "bg-foreground/[0.08]",
               )}
             >
@@ -86,10 +86,10 @@ export function ModeChoiceStep({
         You can switch anytime — just swipe from either mode to jump to the other.
       </Text>
 
-      <PillButton className="mt-1" loading={loading} onPress={onContinue}>
+      <ActionButton className="mt-1" loading={loading} onPress={onContinue}>
         <Text className="font-sans-bold text-[17px] text-primary-foreground">{continueLabel}</Text>
         <ChevronRight size={15} color={colors.primaryForeground} strokeWidth={2.5} />
-      </PillButton>
+      </ActionButton>
     </View>
   );
 }

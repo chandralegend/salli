@@ -92,7 +92,7 @@ export function ApprovalGateCard({
   }
 
   return (
-    <View className="rounded-[12px] border border-foreground/[0.12] bg-card p-3.5">
+    <View className="rounded-card border border-foreground/[0.12] bg-card p-3.5">
       <View className="mb-2.5 flex-row items-start gap-2.5">
         <View className="h-8 w-8 items-center justify-center rounded-full bg-foreground/[0.08]">
           <ShieldCheck size={17} color={colors.accent} strokeWidth={2} />
@@ -106,7 +106,7 @@ export function ApprovalGateCard({
       </View>
 
       {fields.length ? (
-        <View className="mb-3 gap-2 rounded-[8px] bg-foreground/[0.04] px-3 py-2.5">
+        <View className="mb-3 gap-2 rounded-card bg-foreground/[0.04] px-3 py-2.5">
           {fields.map((f) => (
             <View key={f.label} className="flex-row items-center justify-between gap-3">
               <View className="flex-row items-center gap-1.5">
@@ -138,13 +138,13 @@ export function ApprovalGateCard({
           <View className="flex-row gap-2">
             <Pressable
               onPress={() => onResolve("denied")}
-              className="h-[38px] flex-1 items-center justify-center rounded-[10px] border border-foreground/10 bg-foreground/[0.06]"
+              className="h-[38px] flex-1 items-center justify-center rounded-card border border-foreground/10 bg-foreground/[0.06]"
             >
               <Text className="font-sans-semibold text-[15px] text-foreground/45">Deny</Text>
             </Pressable>
             <Pressable
               onPress={() => onResolve("approved")}
-              className="h-[38px] flex-1 items-center justify-center rounded-[10px] bg-salli-accent"
+              className="h-[38px] flex-1 items-center justify-center rounded-card bg-salli-accent"
             >
               <Text className="font-sans-semibold text-[15px] text-white">{copy.approveLabel}</Text>
             </Pressable>

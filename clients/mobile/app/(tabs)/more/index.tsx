@@ -56,7 +56,7 @@ const FEATURES: {
 function QuickStatCard({ label, value, hint, onPress }: { label: string; value: string; hint: string; onPress: () => void }) {
   const colors = useThemeColors();
   return (
-    <AnimatedPressable onPress={onPress} className="w-[48%] rounded-[10px] border border-foreground/[0.08] bg-card p-3.5">
+    <AnimatedPressable onPress={onPress} className="w-[48%] rounded-card border border-foreground/[0.08] bg-card p-3.5">
       <View className="mb-1.5 flex-row items-center justify-between">
         <Text className="text-[14px] font-sans-medium text-foreground/40">{label}</Text>
         <ChevronRight size={14} color={colors.mutedForeground} strokeWidth={2} />
@@ -96,7 +96,7 @@ export default function MoreScreen() {
       }
     >
 
-      <Card className="mx-4 mb-3 flex-row items-center gap-3 rounded-[12px] border-foreground/[0.08] p-3.5">
+      <Card className="mx-4 mb-3 flex-row items-center gap-3 rounded-card border-foreground/[0.08] p-3.5">
         <View className="h-11 w-11 items-center justify-center rounded-full bg-salli-accent">
           <Text className="font-sans-bold text-[19px] text-white">
             {(profile?.display_name ?? "?").charAt(0).toUpperCase()}
@@ -153,7 +153,7 @@ export default function MoreScreen() {
       {overdueCount > 0 ? (
         <AnimatedPressable
           onPress={() => router.push("/(tabs)/more/reminders")}
-          className="mx-4 mb-3 flex-row items-center gap-2.5 rounded-control border border-foreground/10 bg-card px-3.5 py-2.5"
+          className="mx-4 mb-3 flex-row items-center gap-2.5 rounded-card border border-foreground/10 bg-card px-3.5 py-2.5"
         >
           <View className="h-2 w-2 rounded-full bg-foreground" />
           <Text className="flex-1 font-sans-medium text-[15px] text-foreground">
@@ -167,14 +167,14 @@ export default function MoreScreen() {
         <Text className="mb-1 pl-0.5 text-[13px] font-sans-semibold uppercase tracking-wide text-foreground/25">
           All Features
         </Text>
-        <Card className="overflow-hidden rounded-[10px] border-foreground/[0.08]">
+        <Card className="overflow-hidden rounded-card border-foreground/[0.08]">
           {FEATURES.map((f, i) => (
             <AnimatedPressable
               key={f.key}
               onPress={() => router.push(f.href as never)}
               className={`flex-row items-center px-3.5 py-2.5 ${i < FEATURES.length - 1 ? "border-b border-foreground/[0.05]" : ""}`}
             >
-              <View className="mr-3 h-[30px] w-[30px] items-center justify-center rounded-[9px] bg-foreground/[0.06]">
+              <View className="mr-3 h-[30px] w-[30px] items-center justify-center rounded-card bg-foreground/[0.06]">
                 <f.icon size={16} color={colors.mutedForeground} strokeWidth={2} />
               </View>
               <View className="flex-1">
@@ -182,14 +182,14 @@ export default function MoreScreen() {
                 <Text className="text-[14px] text-foreground/30">{f.detail}</Text>
               </View>
               {f.key === "billing" && credits ? (
-                <View className="mr-2 rounded-[5px] bg-foreground/[0.07] px-2 py-0.5">
+                <View className="mr-2 rounded-badge bg-foreground/[0.07] px-2 py-0.5">
                   <Text className="text-[13px] font-sans-medium text-foreground/40">
                     {credits.total.toLocaleString()}
                   </Text>
                 </View>
               ) : null}
               {f.badge ? (
-                <View className="mr-2 rounded-[5px] bg-foreground/[0.07] px-2 py-0.5">
+                <View className="mr-2 rounded-badge bg-foreground/[0.07] px-2 py-0.5">
                   <Text className="text-[13px] font-sans-medium text-foreground/40">{f.badge}</Text>
                 </View>
               ) : null}

@@ -2,7 +2,7 @@ import { X } from "lucide-react-native";
 import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import type { TourStep } from "@/lib/tour/steps";
 import { useThemeColors } from "@/lib/theme";
 
@@ -36,7 +36,7 @@ export function TourCard({
 
   return (
     <View
-      className="absolute inset-x-3 rounded-[14px] border border-foreground/10 bg-card p-4"
+      className="absolute inset-x-3 rounded-card border border-foreground/10 bg-card p-4"
       style={placement === "top" ? { top: insets.top + 12 } : { bottom: insets.bottom + 12 }}
     >
       <View className="mb-2 flex-row items-center justify-between">
@@ -53,13 +53,13 @@ export function TourCard({
 
       <View className="mt-3.5 flex-row gap-2">
         {index > 0 ? (
-          <PillButton variant="secondary" className="h-[42px] flex-1" onPress={onPrev}>
+          <ActionButton variant="secondary" className="h-[42px] flex-1" onPress={onPrev}>
             <Text className="font-sans-semibold text-[16px] text-foreground">Back</Text>
-          </PillButton>
+          </ActionButton>
         ) : null}
-        <PillButton variant="accent" className="h-[42px] flex-1" onPress={onNext}>
+        <ActionButton variant="accent" className="h-[42px] flex-1" onPress={onNext}>
           <Text className="font-sans-semibold text-[16px] text-white">{index === total - 1 ? "Done" : "Next"}</Text>
-        </PillButton>
+        </ActionButton>
       </View>
     </View>
   );

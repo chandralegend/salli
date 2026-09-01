@@ -5,7 +5,7 @@ import { AnimatedPressable } from "./animated-pressable";
 import { useThemeColors } from "../../lib/theme";
 import { cn } from "../../lib/utils";
 
-type PillButtonProps = Omit<PressableProps, "style"> & {
+type ActionButtonProps = Omit<PressableProps, "style"> & {
   children: ReactNode;
   variant?: "primary" | "secondary" | "accent";
   loading?: boolean;
@@ -13,17 +13,21 @@ type PillButtonProps = Omit<PressableProps, "style"> & {
   className?: string;
 };
 
-/** The mockup's two recurring CTA shapes: a solid "inverse of canvas" primary
- * pill (white-on-black in dark mode) and a translucent secondary pill with a
- * hairline border. `accent` is the fixed-blue variant (e.g. "Set Reminder"). */
-export function PillButton({
+/** The recurring CTA: a solid "inverse of canvas" primary (white-on-black in
+ * dark mode) and a translucent secondary with a hairline border. `accent` is
+ * the brand-orange variant (e.g. "Set Reminder").
+ *
+ * Uses the app's single container radius, not a full pill — it used to be a
+ * pill, which put a fully-round CTA directly beneath Apple's 16px sign-in
+ * button on the login screen and read as two unrelated button systems. */
+export function ActionButton({
   children,
   variant = "primary",
   loading,
   disabled,
   className,
   ...props
-}: PillButtonProps) {
+}: ActionButtonProps) {
   const colors = useThemeColors();
 
   const bg =
@@ -41,7 +45,7 @@ export function PillButton({
         // without it, but under a shrink-to-fit parent (`items-center`) the pill
         // collapsed onto the text with no side padding — see the Tax empty
         // state. Invisible in the stretched case, correct in both.
-        "h-[50px] flex-row items-center justify-center gap-2 rounded-pill px-7",
+        "h-[50px] flex-row items-center justify-center gap-2 rounded-card px-7",
         variant === "secondary" && "border border-foreground/10 bg-foreground/5",
         (disabled || loading) && "opacity-50",
         className,

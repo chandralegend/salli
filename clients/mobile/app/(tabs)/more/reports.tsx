@@ -218,19 +218,19 @@ export default function ReportsScreen() {
               <View className="mb-3.5" />
             )}
             <View className="flex-row gap-1.5">
-              <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
                 <Text className="mb-1 text-[13px] text-white/35">Assets</Text>
                 <Text className="font-sans-bold text-[15px] leading-none text-white">
                   Rs. {balanceSheet.data ? formatLKRAbbrev(balanceSheet.data.total_assets) : "—"}
                 </Text>
               </View>
-              <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
                 <Text className="mb-1 text-[13px] text-white/35">Liabilities</Text>
                 <Text className="font-sans-bold text-[15px] leading-none text-white/60">
                   Rs. {balanceSheet.data ? formatLKRAbbrev(balanceSheet.data.total_liabilities) : "—"}
                 </Text>
               </View>
-              <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
                 <Text className="mb-1 text-[13px] text-white/35">Equity</Text>
                 <Text className="font-sans-bold text-[15px] leading-none text-white/50">
                   Rs. {balanceSheet.data ? formatLKRAbbrev(balanceSheet.data.total_equity) : "—"}
@@ -319,13 +319,13 @@ export default function ReportsScreen() {
               </Text>
             </View>
             <View className="flex-row gap-1.5">
-              <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
                 <Text className="mb-1 text-[13px] text-white/35">Total Income</Text>
                 <Text className="font-sans-bold text-[15px] leading-none text-white">
                   Rs. {income.data ? formatLKRAbbrev(incomeTotal) : "—"}
                 </Text>
               </View>
-              <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
+              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
                 <Text className="mb-1 text-[13px] text-white/35">Total Expenses</Text>
                 <Text className="font-sans-bold text-[15px] leading-none text-white/60">
                   Rs. {income.data ? formatLKRAbbrev(expenseTotal) : "—"}
@@ -365,7 +365,7 @@ export default function ReportsScreen() {
               <Text className="text-[15px] text-foreground/35">No income or expenses this period.</Text>
             </Card>
           ) : income.data ? (
-            <View className="mt-2.5 flex-row items-center justify-between rounded-2xl border border-salli-accent/20 bg-salli-accent/[0.08] px-4 py-3.5">
+            <View className="mt-2.5 flex-row items-center justify-between rounded-card border border-salli-accent/20 bg-salli-accent/[0.08] px-4 py-3.5">
               <Text className="font-sans-bold text-[16px] text-foreground">Net Income</Text>
               <Text className="font-sans-extrabold text-[22px] tracking-tight text-salli-accent">Rs. {formatLKR(saved, 0)}</Text>
             </View>
@@ -390,7 +390,7 @@ export default function ReportsScreen() {
                 </Text>
               </View>
               {yoyPct !== null ? (
-                <View className="mt-1 rounded-control border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
+                <View className="mt-1 rounded-card border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
                   <Text className="font-sans-semibold text-[14px] text-salli-accent">
                     {yoyPct >= 0 ? "↑" : "↓"} {Math.abs(yoyPct).toFixed(0)}% YoY
                   </Text>

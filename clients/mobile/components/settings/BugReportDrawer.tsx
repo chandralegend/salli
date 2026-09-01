@@ -6,7 +6,7 @@ import { Pressable, Text, View } from "react-native";
 
 import { Drawer } from "@/components/ui/drawer";
 import { ChipSelect } from "@/components/ui/filter-chip";
-import { PillButton } from "@/components/ui/pill-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { TextField } from "@/components/ui/text-field";
 import { MAX_ATTACHMENT_BYTES, useSubmitBugReport, type BugSeverity } from "@/hooks/useBugReport";
 import { buildReportContext } from "@/lib/report-context";
@@ -122,9 +122,9 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
       title="Report a problem"
       footer={
         <>
-          <PillButton variant="accent" loading={submit.isPending} onPress={submitReport}>
+          <ActionButton variant="accent" loading={submit.isPending} onPress={submitReport}>
             Send report
-          </PillButton>
+          </ActionButton>
           {error || submit.isError ? (
             <Text className="mt-2 text-center text-[14px] text-destructive">
               {error ?? "Couldn't send that report. Please try again."}
@@ -159,7 +159,7 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
 
       <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">Screenshot (optional)</Text>
       {attachment ? (
-        <View className="mb-1 flex-row items-center gap-2 rounded-control border border-foreground/10 bg-card px-3.5 py-2.5">
+        <View className="mb-1 flex-row items-center gap-2 rounded-card border border-foreground/10 bg-card px-3.5 py-2.5">
           <Paperclip size={15} color={colors.mutedForeground} strokeWidth={2} />
           <Text className="flex-1 text-[15px] text-foreground/70" numberOfLines={1}>{attachment.name}</Text>
           <Pressable onPress={() => setAttachment(null)} hitSlop={8}>
@@ -169,7 +169,7 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
       ) : (
         <Pressable
           onPress={pickAttachment}
-          className="mb-1 flex-row items-center justify-center gap-2 rounded-control border border-dashed border-foreground/15 bg-card px-3.5 py-3"
+          className="mb-1 flex-row items-center justify-center gap-2 rounded-card border border-dashed border-foreground/15 bg-card px-3.5 py-3"
         >
           <Paperclip size={15} color={colors.mutedForeground} strokeWidth={2} />
           <Text className="text-[15px] font-sans-medium text-foreground/50">Attach a screenshot</Text>
@@ -181,7 +181,7 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
 
       <Pressable
         onPress={() => setContactOk((v) => !v)}
-        className="mb-1 flex-row items-start justify-between gap-3 rounded-control border border-foreground/10 bg-card p-3"
+        className="mb-1 flex-row items-start justify-between gap-3 rounded-card border border-foreground/10 bg-card p-3"
       >
         <View className="flex-1">
           <Text className="text-[15px] font-sans-medium text-foreground">You can email me about this</Text>
@@ -190,7 +190,7 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
           </Text>
         </View>
         <View
-          className="mt-0.5 h-[20px] w-[20px] items-center justify-center rounded-[6px] border"
+          className="mt-0.5 h-[20px] w-[20px] items-center justify-center rounded-badge border"
           style={{ backgroundColor: contactOk ? colors.accent : "transparent", borderColor: contactOk ? colors.accent : "rgba(128,128,128,0.35)" }}
         >
           {contactOk ? <Check size={15} color="#fff" strokeWidth={3} /> : null}

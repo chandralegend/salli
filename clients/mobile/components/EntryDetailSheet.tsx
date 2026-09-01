@@ -124,7 +124,7 @@ export function EntryDetailSheet({
       }
     >
       <View className="mb-3 flex-row justify-end">
-        <View className="rounded-[4px] bg-foreground/[0.07] px-2 py-0.5">
+        <View className="rounded-badge bg-foreground/[0.07] px-2 py-0.5">
           <Text className="text-[13px] font-sans-medium capitalize text-foreground/40">
             {reversed ? "reversed" : entry?.source}
           </Text>
@@ -132,7 +132,7 @@ export function EntryDetailSheet({
       </View>
 
       {/* amount hero */}
-      <View className="mb-3 rounded-[12px] border border-foreground/[0.08] bg-salli-navy-card p-[18px]">
+      <View className="mb-3 rounded-card border border-foreground/[0.08] bg-salli-navy-card p-[18px]">
         <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-white/40" numberOfLines={1}>
           {entry?.description}
         </Text>
@@ -157,7 +157,7 @@ export function EntryDetailSheet({
       </View>
 
       {classifiable?.id && !reversed ? (
-        <View className="mb-3 rounded-[12px] border border-foreground/[0.08] bg-card p-3.5">
+        <View className="mb-3 rounded-card border border-foreground/[0.08] bg-card p-3.5">
           <TagPicker
             key={classifiable.id}
             postingId={classifiable.id}
@@ -166,7 +166,7 @@ export function EntryDetailSheet({
         </View>
       ) : null}
 
-      <View className="flex-row items-start gap-2 rounded-[8px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
+      <View className="flex-row items-start gap-2 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
         <Lock size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
         <Text className="flex-1 text-[14px] leading-5 text-foreground/30">
           {/* Tags are the exception, and deliberately so: the amounts never

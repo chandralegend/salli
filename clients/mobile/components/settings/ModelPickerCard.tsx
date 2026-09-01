@@ -59,7 +59,7 @@ export function ModelPickerCard() {
               onPress={() => choose(m.id)}
               disabled={setModel.isPending}
               className={cn(
-                "rounded-control border p-3",
+                "rounded-card border p-3",
                 active ? "border-salli-accent bg-salli-accent/10" : "border-foreground/10",
               )}
             >

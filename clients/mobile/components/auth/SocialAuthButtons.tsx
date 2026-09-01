@@ -4,7 +4,7 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
 import { isAppleAuthAvailable, signInWithApple, signInWithGoogle } from "@/lib/auth";
-import { useThemeColors } from "@/lib/theme";
+import { useThemeColors, useThemeMode } from "@/lib/theme";
 
 /** Official 4-color Google "G" mark — Google's brand guidelines for a custom
  * "Sign in with Google" button (there's no first-party RN component) require
@@ -51,6 +51,7 @@ function GoogleIcon() {
  * button matching Google's documented light-theme spec. */
 export function SocialAuthButtons({ onError }: { onError: (message: string) => void }) {
   const colors = useThemeColors();
+  const { isDark } = useThemeMode();
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [busyProvider, setBusyProvider] = useState<"google" | "apple" | null>(null);
 
@@ -105,9 +106,18 @@ export function SocialAuthButtons({ onError }: { onError: (message: string) => v
             opacity: busyProvider && busyProvider !== "apple" ? 0.5 : 1,
           }}
         >
+          {/* Theme-aware, per Apple's own guidance: BLACK on a light
+              background, WHITE on a dark one. It used to be hard-coded WHITE,
+              which was visible only because the canvas was warm cream — on the
+              plain white canvas a white button disappears completely, taking
+              the primary sign-in route with it. */}
           <AppleAuthentication.AppleAuthenticationButton
             buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+            buttonStyle={
+              isDark
+                ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+                : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+            }
             cornerRadius={16}
             style={{ height: 54, width: "100%" }}
             onPress={handleApple}
@@ -115,9 +125,10 @@ export function SocialAuthButtons({ onError }: { onError: (message: string) => v
           {busyProvider === "apple" ? (
             <View
               pointerEvents="none"
-              className="absolute inset-0 items-center justify-center rounded-[10px] bg-white"
+              className="absolute inset-0 items-center justify-center rounded-[16px]"
+              style={{ backgroundColor: isDark ? "#FFFFFF" : "#000000" }}
             >
-              <ActivityIndicator color="#000000" />
+              <ActivityIndicator color={isDark ? "#000000" : "#FFFFFF"} />
             </View>
           ) : null}
         </View>

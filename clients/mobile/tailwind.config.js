@@ -37,12 +37,10 @@ module.exports = {
         // brand/bright — theme-invariant, for pressed/highlight states and
         // the Voice Mode orb core (brighter than salli-accent).
         "salli-bright": "#FF784E",
-        // brand/deep — theme-invariant, consumed only by SalliBackground's
-        // ambient glow fields, not a general-purpose UI color.
-        "salli-glow-deep": "#7B2A20",
-        // Deep-ink card (Tax hero, New Entry amount hero, etc.) — theme-invariant,
-        // repointed to the new warm-charcoal surface/2 tone.
-        "salli-navy-card": "#211B18",
+        // Deep-ink hero card (Tax, New Entry amount, Account detail) — always
+        // dark in both themes. Repointed off the old warm brown to iOS's
+        // systemGray6 so it sits in the same neutral family as `card`.
+        "salli-navy-card": "#1C1C1E",
       },
       fontFamily: {
         sans: ["Archivo_400Regular"],

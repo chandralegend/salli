@@ -22,7 +22,6 @@ import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
-import { SalliBackground } from "@/components/ui/SalliBackground";
 import { Tabs } from "@/components/ui/tabs";
 import { useThemedRefreshControl } from "@/components/ui/themed-refresh-control";
 import { TourTarget } from "@/components/tour/TourTarget";
@@ -153,7 +152,6 @@ export default function LedgerScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <SalliBackground intensity="subtle" />
       <PageShell
         animateOn={tab}
         transparent

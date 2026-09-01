@@ -18,7 +18,6 @@ import { AssistantMarkdown } from "@/components/agent/AssistantMarkdown";
 import { MessageActions } from "@/components/agent/MessageActions";
 import { ToolActivityBlock } from "@/components/agent/ToolActivityBlock";
 import { Drawer } from "@/components/ui/drawer";
-import { SalliBackground } from "@/components/ui/SalliBackground";
 import { type ChatMessage, useAgentChat } from "@/hooks/useAgentChat";
 import { useIsTablet } from "@/lib/responsive";
 import { useThemeColors } from "@/lib/theme";
@@ -105,7 +104,6 @@ export default function BuddyScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
-      <SalliBackground intensity="strong" />
       {/* No hamburger/new-chat icons in the header — tapping the title opens
           the same session-history drawer that used to sit behind a menu icon,
           per the spec's "no hamburger menu on Buddy Mode". */}

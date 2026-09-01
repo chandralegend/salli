@@ -6,7 +6,6 @@ import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ApprovalGateCard } from "@/components/agent/ApprovalGateCard";
-import { SalliBackground } from "@/components/ui/SalliBackground";
 import { VoiceOrb } from "@/components/agent/VoiceOrb";
 import { useVoiceSession } from "@/hooks/useVoiceSession";
 import { useIsTablet } from "@/lib/responsive";
@@ -101,7 +100,6 @@ export default function VoiceScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
-      <SalliBackground intensity="strong" />
 
       <View className="items-center pt-2.5">
         <Text className="font-sans-semibold text-[15px] text-foreground">Buddy Mode</Text>

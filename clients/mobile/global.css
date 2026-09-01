@@ -7,27 +7,31 @@
  * Tailwind's rgb(var(...) / <alpha-value>) wrapper (see tailwind.config.js)
  * can apply opacity modifiers — text-foreground/40, border-foreground/10.
  *
- * Warm-charcoal system (UI refresh): brand/base (#F15A32) is fixed across
- * both themes — only the neutral surfaces/text shift between warm-charcoal
- * (dark) and warm-cream (light). Must be kept in sync with lib/theme.tsx's
+ * Neutral system: brand/base (#F15A32) is fixed across both themes; the
+ * neutrals are a plain white canvas in light and a true-black canvas in dark,
+ * with surfaces raised on iOS's own system greys so a card reads as a floating
+ * container rather than a tinted panel. Must be kept in sync with lib/theme.tsx's
  * DARK/LIGHT objects (NativeWind's vars() needs the same values as plain JS
  * for RN Modal content, which portals outside this styled tree).
  */
 :root {
-  --color-background: 247 243 239; /* #F7F3EF — warm cream canvas */
-  --color-foreground: 28 24 21; /* #1C1815 — warm ink, primary text */
+  --color-background: 255 255 255; /* pure white canvas */
+  --color-foreground: 0 0 0; /* iOS label */
 
-  --color-card: 255 255 255; /* white cards, one step up from canvas */
-  --color-card-foreground: 28 24 21;
+  /* Card sits at the same white as the canvas and is separated by its hairline
+     border, not by a fill. A tinted card on a white page is what made the old
+     palette read as "designed surface" rather than as paper. */
+  --color-card: 255 255 255;
+  --color-card-foreground: 0 0 0;
 
   --color-popover: 255 255 255;
-  --color-popover-foreground: 28 24 21;
+  --color-popover-foreground: 0 0 0;
 
-  --color-primary: 28 24 21; /* CTA pill = inverse of canvas (dark pill) */
-  --color-primary-foreground: 247 243 239;
+  --color-primary: 0 0 0; /* CTA pill = inverse of canvas (black pill) */
+  --color-primary-foreground: 255 255 255;
 
-  --color-muted: 240 233 226; /* #F0E9E2 — raised warm-tan surface */
-  --color-muted-foreground: 122 115 112;
+  --color-muted: 242 242 247; /* iOS systemGroupedBackground — nested cells */
+  --color-muted-foreground: 108 108 112; /* iOS secondaryLabel, flattened */
 
   /* Kept a true red, deliberately distinct from salli-accent below, so a
      destructive action never looks like a CTA. */
@@ -38,20 +42,23 @@
 }
 
 .dark {
-  --color-background: 16 15 14; /* #100F0E — warm charcoal canvas */
-  --color-foreground: 245 242 239; /* #F5F2EF */
+  --color-background: 0 0 0; /* true black canvas */
+  --color-foreground: 255 255 255; /* iOS label (dark) */
 
-  --color-card: 26 23 21; /* #1A1715 */
-  --color-card-foreground: 245 242 239;
+  /* Unlike light mode, dark surfaces DO carry a fill: iOS raises them on
+     systemGray6 against a black canvas, which is what makes a card look like
+     it is floating rather than cut out of the page. */
+  --color-card: 28 28 30; /* iOS systemGray6 (dark) */
+  --color-card-foreground: 255 255 255;
 
-  --color-popover: 26 23 21;
-  --color-popover-foreground: 245 242 239;
+  --color-popover: 28 28 30;
+  --color-popover-foreground: 255 255 255;
 
-  --color-primary: 245 242 239; /* CTA pill = inverse of canvas */
-  --color-primary-foreground: 16 15 14;
+  --color-primary: 255 255 255; /* CTA pill = inverse of canvas */
+  --color-primary-foreground: 0 0 0;
 
-  --color-muted: 33 27 24; /* #211B18 — raised surface, lighter than card */
-  --color-muted-foreground: 142 137 133;
+  --color-muted: 44 44 46; /* iOS systemGray5 (dark) — one step above card */
+  --color-muted-foreground: 152 152 159; /* iOS secondaryLabel, flattened */
 
   --color-destructive: 239 68 68; /* #EF4444 */
 

@@ -20,7 +20,6 @@ import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { IconButton } from "@/components/ui/icon-button";
 import { PageShell } from "@/components/ui/page-shell";
-import { SalliBackground } from "@/components/ui/SalliBackground";
 import { useThemedRefreshControl } from "@/components/ui/themed-refresh-control";
 import type { JournalEntry } from "@/hooks/useDashboard";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -85,7 +84,6 @@ export default function DashboardScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <SalliBackground intensity="subtle" />
       <PageShell
         transparent
         refreshControl={refreshControl}

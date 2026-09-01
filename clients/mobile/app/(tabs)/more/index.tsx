@@ -3,6 +3,7 @@ import {
   Bell,
   Book,
   ChevronRight,
+  Coins,
   CreditCard,
   FileText,
   Landmark,
@@ -21,6 +22,7 @@ import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useThemeColors } from "@/lib/theme";
+import { useEntitlements } from "@/hooks/useSettings";
 import { useMore } from "@/hooks/useMore";
 import { useTaxPacks } from "@/hooks/useTax";
 import { dueDateShort } from "@/lib/taxDates";
@@ -33,6 +35,11 @@ const FEATURES: {
   href: string;
   badge?: string;
 }[] = [
+  // Billing is listed here because this menu is its ONLY entry point. It was
+  // previously reachable only from a quota banner, i.e. only once you had
+  // already run out of credits — so the balance and the top-up buttons were
+  // invisible to everyone who had not yet hit the wall.
+  { key: "billing", title: "Billing", detail: "AI credits, plan & top-ups", icon: Coins, href: "/(tabs)/more/billing" },
   { key: "budget", title: "Budget", detail: "Monthly & category limits", icon: CreditCard, href: "/(tabs)/more/budget" },
   { key: "debt", title: "Debt", detail: "Loans & payoff planning", icon: Landmark, href: "/(tabs)/more/debt" },
   { key: "portfolio", title: "Portfolio", detail: "Holdings & allocation", icon: TrendingUp, href: "/(tabs)/more/portfolio" },
@@ -68,6 +75,10 @@ export default function MoreScreen() {
   // The filing deadline comes from the tax pack, never from a literal in this
   // file — see lib/taxDates.ts.
   const packs = useTaxPacks();
+  // Shown as a badge on the Billing row so the balance is legible without
+  // navigating. `credits.total` is allowance + purchased, which is what can
+  // actually be spent — allowance alone reads as empty for a topped-up user.
+  const credits = useEntitlements().data?.credits;
   const currentPack = packs.data?.find((p) => p.year === tax?.pack_year);
 
   return (
@@ -170,6 +181,13 @@ export default function MoreScreen() {
                 <Text className="font-sans-medium text-[13px] text-foreground">{f.title}</Text>
                 <Text className="text-[11px] text-foreground/30">{f.detail}</Text>
               </View>
+              {f.key === "billing" && credits ? (
+                <View className="mr-2 rounded-[5px] bg-foreground/[0.07] px-2 py-0.5">
+                  <Text className="text-[10px] font-sans-medium text-foreground/40">
+                    {credits.total.toLocaleString()}
+                  </Text>
+                </View>
+              ) : null}
               {f.badge ? (
                 <View className="mr-2 rounded-[5px] bg-foreground/[0.07] px-2 py-0.5">
                   <Text className="text-[10px] font-sans-medium text-foreground/40">{f.badge}</Text>

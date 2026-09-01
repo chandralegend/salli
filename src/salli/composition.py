@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import Any
 
 from salli.adapters.db.session import make_session_factory
 from salli.adapters.fx.cbsl import CBSLFxRateAdapter
@@ -47,6 +48,9 @@ class Services:
     storage: StoragePort
     documents: DocumentService
     billing: BillingService
+    # iOS purchases. Always constructed; it reports `configured`
+    # False when no signing secret is set, and the route 503s then.
+    revenuecat: Any
     fi: FiService
     advisor: AdvisorService
     profile: UserProfileService
@@ -183,6 +187,7 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
         storage=storage,
         documents=documents,
         billing=billing,
+        revenuecat=_build_revenuecat(settings),
         fi=fi,
         advisor=advisor,
         profile=profile,
@@ -229,6 +234,24 @@ def _build_llm_credentials(settings: Settings, uow_factory) -> LlmCredentialServ
         platform_anthropic_key=settings.anthropic_api_key,
         validator=validate_provider_key,
         feature_enabled=auth_is_real,
+    )
+
+
+def _build_revenuecat(settings: Settings):
+    """The iOS webhook adapter. Unlike Paddle this is always constructed — it
+    makes no outbound calls, so there is no credential whose absence should
+    disable it; only the signing secret gates whether deliveries verify."""
+    from salli.adapters.billing.revenuecat import RevenueCatAdapter
+
+    return RevenueCatAdapter(
+        webhook_secret=settings.revenuecat_webhook_secret,
+        # product identifier -> credits, matching the Paddle packs so a user
+        # gets the same thing whichever surface they bought it on.
+        credit_packs={
+            settings.revenuecat_product_credits_10k: 10_000,
+            settings.revenuecat_product_credits_25k: 25_000,
+            settings.revenuecat_product_credits_60k: 60_000,
+        },
     )
 
 

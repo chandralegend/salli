@@ -187,3 +187,31 @@ async def paddle_webhook(request: Request, svc: AppServices):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid webhook")
     await svc.billing.apply_webhook_event(event)
     return {"ok": True}
+
+
+@router.post("/revenuecat/webhook")
+async def revenuecat_webhook(request: Request, svc: AppServices):
+    """Receive RevenueCat events for iOS purchases (no auth; HMAC verified).
+
+    Separate from the Paddle route rather than folded into it: the two have
+    different signature schemes and different payload shapes, and a single
+    endpoint guessing which provider sent a delivery is how you end up
+    accepting a forged one.
+    """
+    if not svc.revenuecat.configured:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="RevenueCat is not configured",
+        )
+    raw = await request.body()
+    signature = request.headers.get("X-RevenueCat-Webhook-Signature")
+    event = svc.revenuecat.verify_and_parse_webhook(raw, signature)
+    if event is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid webhook")
+    if event.get("credits"):
+        # Same grant path as Paddle, same idempotency. A credit is a credit
+        # whoever sold it, so the balance does not learn about stores.
+        await svc.billing.grant_credits(
+            event["user_id"], int(event["credits"]), str(event["transaction_id"])
+        )
+    return {"ok": True}

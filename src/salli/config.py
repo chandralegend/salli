@@ -49,6 +49,16 @@ class Settings(BaseSettings):
     paddle_price_credits_25k: str = ""
     paddle_price_credits_60k: str = ""
 
+    # RevenueCat — the iOS purchase path. Paddle's external checkout is US-only,
+    # so StoreKit is the only compliant route for Salli's actual users.
+    # Signing secret from the webhook integration; no API key is needed because
+    # everything required to grant credits arrives in the signed payload.
+    revenuecat_webhook_secret: str = ""
+    # App Store Connect product identifiers for the consumable credit packs.
+    revenuecat_product_credits_10k: str = ""
+    revenuecat_product_credits_25k: str = ""
+    revenuecat_product_credits_60k: str = ""
+
     # Issue tracker — Jira Cloud. User-submitted bug reports are mirrored here.
     # Leave blank and reports are still stored in Salli, with push_status "skipped".
     jira_base_url: str = ""  # e.g. "https://leafmonkey.atlassian.net"

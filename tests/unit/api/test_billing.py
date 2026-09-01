@@ -182,3 +182,103 @@ async def test_the_retired_starter_plan_cannot_be_bought(client, mock_services):
 
     assert resp.status_code == 422
     mock_services.billing.create_checkout.assert_not_awaited()
+
+
+# ── RevenueCat (iOS purchases) ───────────────────────────────────────────────
+
+
+def _rc_sign(raw: bytes, secret: str = "rcsec_test") -> str:
+    import hashlib
+    import hmac
+    import time
+
+    ts = str(int(time.time()))
+    mac = hmac.new(secret.encode(), f"{ts}.".encode() + raw, hashlib.sha256).hexdigest()
+    return f"t={ts},v1={mac}"
+
+
+def _rc_body(event_id: str = "evt_1", product: str = "lk.salli.credits.25k") -> bytes:
+    import json
+
+    return json.dumps(
+        {
+            "api_version": "1.0",
+            "event": {
+                "id": event_id,
+                "type": "NON_RENEWING_PURCHASE",
+                "app_user_id": "test-user-1",
+                "product_id": product,
+                "store": "APP_STORE",
+                "environment": "PRODUCTION",
+            },
+        }
+    ).encode()
+
+
+@pytest.fixture
+def revenuecat(mock_services):
+    from salli.adapters.billing.revenuecat import RevenueCatAdapter
+
+    mock_services.revenuecat = RevenueCatAdapter(
+        webhook_secret="rcsec_test",
+        credit_packs={"lk.salli.credits.25k": 25_000},
+    )
+    return mock_services.revenuecat
+
+
+async def test_an_ios_purchase_grants_credits(client, mock_services, revenuecat):
+    raw = _rc_body()
+    resp = await client.post(
+        "/billing/revenuecat/webhook",
+        content=raw,
+        headers={"X-RevenueCat-Webhook-Signature": _rc_sign(raw)},
+    )
+
+    assert resp.status_code == 200
+    mock_services.billing.grant_credits.assert_awaited_once_with("test-user-1", 25_000, "rc_evt_1")
+
+
+async def test_a_forged_ios_webhook_grants_nothing(client, mock_services, revenuecat):
+    raw = _rc_body()
+    resp = await client.post(
+        "/billing/revenuecat/webhook",
+        content=raw,
+        headers={"X-RevenueCat-Webhook-Signature": _rc_sign(raw, secret="wrong")},
+    )
+
+    assert resp.status_code == 400
+    mock_services.billing.grant_credits.assert_not_awaited()
+
+
+async def test_a_subscription_event_is_a_200_no_op(client, mock_services, revenuecat):
+    """200 so RevenueCat stops retrying; no grant because it isn't a top-up."""
+    import json
+
+    raw = json.dumps(
+        {
+            "api_version": "1.0",
+            "event": {"id": "e", "type": "RENEWAL", "app_user_id": "test-user-1"},
+        }
+    ).encode()
+    resp = await client.post(
+        "/billing/revenuecat/webhook",
+        content=raw,
+        headers={"X-RevenueCat-Webhook-Signature": _rc_sign(raw)},
+    )
+
+    assert resp.status_code == 200
+    mock_services.billing.grant_credits.assert_not_awaited()
+
+
+async def test_the_route_503s_when_revenuecat_is_unconfigured(client, mock_services):
+    from salli.adapters.billing.revenuecat import RevenueCatAdapter
+
+    mock_services.revenuecat = RevenueCatAdapter(webhook_secret="", credit_packs={})
+    raw = _rc_body()
+    resp = await client.post(
+        "/billing/revenuecat/webhook",
+        content=raw,
+        headers={"X-RevenueCat-Webhook-Signature": _rc_sign(raw)},
+    )
+
+    assert resp.status_code == 503

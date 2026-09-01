@@ -29,7 +29,7 @@ export function FilterChip({
     >
       <Text
         className={cn(
-          "text-[12px]",
+          "text-[15px]",
           capitalize && "capitalize",
           active ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/50",
         )}

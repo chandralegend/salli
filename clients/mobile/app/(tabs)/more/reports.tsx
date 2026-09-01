@@ -166,9 +166,9 @@ export default function ReportsScreen() {
               {exporting ? (
                 <ActivityIndicator size="small" color={colors.mutedForeground} />
               ) : (
-                <Download size={13} color={colors.mutedForeground} strokeWidth={2} />
+                <Download size={15} color={colors.mutedForeground} strokeWidth={2} />
               )}
-              <Text className="font-sans-medium text-[12px] text-foreground/50">Export</Text>
+              <Text className="font-sans-medium text-[15px] text-foreground/50">Export</Text>
             </Pressable>
           }
         />
@@ -185,11 +185,11 @@ export default function ReportsScreen() {
       {tab === "Balance Sheet" ? (
         <View className="px-4 pt-2.5">
           <Card className="bg-salli-navy-card p-[18px]">
-            <Text className="mb-1.5 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
+            <Text className="mb-1.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
               Net Worth Snapshot
             </Text>
             <View className="mb-1 flex-row items-baseline gap-1">
-              <Text className="font-sans-semibold text-[18px] text-white/40">Rs.</Text>
+              <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
               <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
                 {balanceSheet.data ? formatLKRAbbrev(balanceSheet.data.net_worth) : "—"}
               </Text>
@@ -209,7 +209,7 @@ export default function ReportsScreen() {
                   ) : (
                     <ArrowDownRight size={9} color="#EF4444" strokeWidth={2.5} />
                   )}
-                  <Text className={cn("text-[11px] font-sans-semibold", nwDelta >= 0 ? "text-salli-accent" : "text-destructive")}>
+                  <Text className={cn("text-[14px] font-sans-semibold", nwDelta >= 0 ? "text-salli-accent" : "text-destructive")}>
                     {nwDelta >= 0 ? "+" : "−"}Rs. {formatLKRAbbrev(Math.abs(nwDelta))} vs {prevLabel}
                   </Text>
                 </View>
@@ -219,20 +219,20 @@ export default function ReportsScreen() {
             )}
             <View className="flex-row gap-1.5">
               <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[10px] text-white/35">Assets</Text>
-                <Text className="font-sans-bold text-[13px] leading-none text-white">
+                <Text className="mb-1 text-[13px] text-white/35">Assets</Text>
+                <Text className="font-sans-bold text-[15px] leading-none text-white">
                   Rs. {balanceSheet.data ? formatLKRAbbrev(balanceSheet.data.total_assets) : "—"}
                 </Text>
               </View>
               <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[10px] text-white/35">Liabilities</Text>
-                <Text className="font-sans-bold text-[13px] leading-none text-white/60">
+                <Text className="mb-1 text-[13px] text-white/35">Liabilities</Text>
+                <Text className="font-sans-bold text-[15px] leading-none text-white/60">
                   Rs. {balanceSheet.data ? formatLKRAbbrev(balanceSheet.data.total_liabilities) : "—"}
                 </Text>
               </View>
               <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[10px] text-white/35">Equity</Text>
-                <Text className="font-sans-bold text-[13px] leading-none text-white/50">
+                <Text className="mb-1 text-[13px] text-white/35">Equity</Text>
+                <Text className="font-sans-bold text-[15px] leading-none text-white/50">
                   Rs. {balanceSheet.data ? formatLKRAbbrev(balanceSheet.data.total_equity) : "—"}
                 </Text>
               </View>
@@ -240,14 +240,14 @@ export default function ReportsScreen() {
           </Card>
 
           <Card className="mt-2.5 p-4">
-            <Text className="mb-3 font-sans-semibold text-[13px] text-foreground">
+            <Text className="mb-3 font-sans-semibold text-[15px] text-foreground">
               Income vs Expense · {range.label}
             </Text>
             <View className="gap-2.5">
               <View>
                 <View className="mb-1.5 flex-row justify-between">
-                  <Text className="text-[12px] text-foreground/50">Income</Text>
-                  <Text className="font-sans-semibold text-[12px] text-foreground">Rs. {formatLKRAbbrev(incomeTotal)}</Text>
+                  <Text className="text-[15px] text-foreground/50">Income</Text>
+                  <Text className="font-sans-semibold text-[15px] text-foreground">Rs. {formatLKRAbbrev(incomeTotal)}</Text>
                 </View>
                 <View className="h-1.5 overflow-hidden rounded-pill bg-foreground/[0.06]">
                   <View className="h-full rounded-pill bg-salli-accent" style={{ width: incomeTotal > 0 ? "100%" : "0%" }} />
@@ -255,16 +255,16 @@ export default function ReportsScreen() {
               </View>
               <View>
                 <View className="mb-1.5 flex-row justify-between">
-                  <Text className="text-[12px] text-foreground/50">Expenses</Text>
-                  <Text className="font-sans-semibold text-[12px] text-foreground/60">Rs. {formatLKRAbbrev(expenseTotal)}</Text>
+                  <Text className="text-[15px] text-foreground/50">Expenses</Text>
+                  <Text className="font-sans-semibold text-[15px] text-foreground/60">Rs. {formatLKRAbbrev(expenseTotal)}</Text>
                 </View>
                 <View className="h-1.5 overflow-hidden rounded-pill bg-foreground/[0.06]">
                   <View className="h-full rounded-pill bg-foreground/35" style={{ width: `${expensePct}%` }} />
                 </View>
               </View>
               <View className="flex-row justify-between border-t border-foreground/[0.07] pt-2">
-                <Text className="text-[12px] font-sans-medium text-foreground/40">Saved this month</Text>
-                <Text className="font-sans-bold text-[13px] text-foreground">Rs. {formatLKR(saved, 0)}</Text>
+                <Text className="text-[15px] font-sans-medium text-foreground/40">Saved this month</Text>
+                <Text className="font-sans-bold text-[15px] text-foreground">Rs. {formatLKR(saved, 0)}</Text>
               </View>
             </View>
           </Card>
@@ -281,24 +281,24 @@ export default function ReportsScreen() {
             return (
               <Card key={section} className="mt-2.5 overflow-hidden p-0">
                 <View className="border-b border-foreground/[0.06] px-4 py-3">
-                  <Text className="font-sans-semibold text-[13px] capitalize text-foreground">{section}</Text>
+                  <Text className="font-sans-semibold text-[15px] capitalize text-foreground">{section}</Text>
                 </View>
                 <View className="px-4">
                   {lines.map((line, i) => (
                     <View key={i} className="flex-row items-center gap-2.5 border-b border-foreground/[0.05] py-2.5">
                       <View className={cn("h-[30px] w-[3px] rounded-pill", i === 0 ? "bg-salli-accent" : "bg-foreground/15")} />
-                      <Text className="flex-1 text-[12px] text-foreground/55">
+                      <Text className="flex-1 text-[15px] text-foreground/55">
                         {line.code} · {line.name}
                       </Text>
-                      <Text className="font-sans-medium text-[12px] text-foreground">
+                      <Text className="font-sans-medium text-[15px] text-foreground">
                         Rs. {formatLKR(line.balance, 0)}
                       </Text>
                     </View>
                   ))}
                   {total ? (
                     <View className="flex-row justify-between bg-foreground/[0.02] py-2.5">
-                      <Text className="font-sans-semibold text-[12px] capitalize text-foreground/40">Total {section}</Text>
-                      <Text className="font-sans-bold text-[13px] text-foreground">Rs. {formatLKR(total, 0)}</Text>
+                      <Text className="font-sans-semibold text-[15px] capitalize text-foreground/40">Total {section}</Text>
+                      <Text className="font-sans-bold text-[15px] text-foreground">Rs. {formatLKR(total, 0)}</Text>
                     </View>
                   ) : null}
                 </View>
@@ -309,25 +309,25 @@ export default function ReportsScreen() {
       ) : tab === "Income Stmt" ? (
         <View className="px-4 pt-2.5">
           <Card className="bg-salli-navy-card p-[18px]">
-            <Text className="mb-1.5 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
+            <Text className="mb-1.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
               Net Income · {range.label}
             </Text>
             <View className="mb-2.5 flex-row items-baseline gap-1">
-              <Text className="font-sans-semibold text-[18px] text-white/40">Rs.</Text>
+              <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
               <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
                 {income.data ? formatLKRAbbrev(saved) : "—"}
               </Text>
             </View>
             <View className="flex-row gap-1.5">
               <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[10px] text-white/35">Total Income</Text>
-                <Text className="font-sans-bold text-[13px] leading-none text-white">
+                <Text className="mb-1 text-[13px] text-white/35">Total Income</Text>
+                <Text className="font-sans-bold text-[15px] leading-none text-white">
                   Rs. {income.data ? formatLKRAbbrev(incomeTotal) : "—"}
                 </Text>
               </View>
               <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[10px] text-white/35">Total Expenses</Text>
-                <Text className="font-sans-bold text-[13px] leading-none text-white/60">
+                <Text className="mb-1 text-[13px] text-white/35">Total Expenses</Text>
+                <Text className="font-sans-bold text-[15px] leading-none text-white/60">
                   Rs. {income.data ? formatLKRAbbrev(expenseTotal) : "—"}
                 </Text>
               </View>
@@ -341,19 +341,19 @@ export default function ReportsScreen() {
             return (
               <Card key={section} className="mt-2.5 overflow-hidden p-0">
                 <View className="border-b border-foreground/[0.06] px-4 py-3">
-                  <Text className="font-sans-semibold text-[13px] capitalize text-foreground">{section}</Text>
+                  <Text className="font-sans-semibold text-[15px] capitalize text-foreground">{section}</Text>
                 </View>
                 <View className="px-4">
                   {entries.map(([name, amount], i) => (
                     <View key={i} className="flex-row items-center gap-2.5 border-b border-foreground/[0.05] py-2.5">
                       <View className={cn("h-[30px] w-[3px] rounded-pill", section === "income" ? "bg-salli-accent" : "bg-foreground/15")} />
-                      <Text className="flex-1 text-[12px] text-foreground/55">{name}</Text>
-                      <Text className="font-sans-medium text-[12px] text-foreground">Rs. {formatLKR(amount, 0)}</Text>
+                      <Text className="flex-1 text-[15px] text-foreground/55">{name}</Text>
+                      <Text className="font-sans-medium text-[15px] text-foreground">Rs. {formatLKR(amount, 0)}</Text>
                     </View>
                   ))}
                   <View className="flex-row justify-between bg-foreground/[0.02] py-2.5">
-                    <Text className="font-sans-semibold text-[12px] capitalize text-foreground/40">Total {section}</Text>
-                    <Text className="font-sans-bold text-[13px] text-foreground">Rs. {formatLKR(total, 0)}</Text>
+                    <Text className="font-sans-semibold text-[15px] capitalize text-foreground/40">Total {section}</Text>
+                    <Text className="font-sans-bold text-[15px] text-foreground">Rs. {formatLKR(total, 0)}</Text>
                   </View>
                 </View>
               </Card>
@@ -362,12 +362,12 @@ export default function ReportsScreen() {
 
           {income.data && Object.keys(income.data.income).length === 0 && Object.keys(income.data.expenses).length === 0 ? (
             <Card className="mt-2.5 items-center p-6">
-              <Text className="text-[13px] text-foreground/35">No income or expenses this period.</Text>
+              <Text className="text-[15px] text-foreground/35">No income or expenses this period.</Text>
             </Card>
           ) : income.data ? (
             <View className="mt-2.5 flex-row items-center justify-between rounded-2xl border border-salli-accent/20 bg-salli-accent/[0.08] px-4 py-3.5">
-              <Text className="font-sans-bold text-[14px] text-foreground">Net Income</Text>
-              <Text className="font-sans-extrabold text-[20px] tracking-tight text-salli-accent">Rs. {formatLKR(saved, 0)}</Text>
+              <Text className="font-sans-bold text-[16px] text-foreground">Net Income</Text>
+              <Text className="font-sans-extrabold text-[22px] tracking-tight text-salli-accent">Rs. {formatLKR(saved, 0)}</Text>
             </View>
           ) : null}
         </View>
@@ -376,22 +376,22 @@ export default function ReportsScreen() {
           <Card className="bg-salli-navy-card p-[18px]">
             <View className="mb-3.5 flex-row items-start justify-between">
               <View className="flex-1">
-                <Text className="mb-1.5 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
+                <Text className="mb-1.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
                   Current Net Worth
                 </Text>
                 <View className="flex-row items-baseline gap-1">
-                  <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
+                  <Text className="font-sans-semibold text-[22px] text-white/40">Rs.</Text>
                   <Text className="font-sans-extrabold text-[42px] leading-none tracking-tighter text-white">
                     {netWorth.data ? formatLKRAbbrev(netWorth.data.current_net_worth) : "—"}
                   </Text>
                 </View>
-                <Text className="mt-1 text-[11px] text-white/30">
+                <Text className="mt-1 text-[14px] text-white/30">
                   As of {netWorth.data?.as_of ? monthLabel(netWorth.data.as_of) : "—"}
                 </Text>
               </View>
               {yoyPct !== null ? (
                 <View className="mt-1 rounded-control border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
-                  <Text className="font-sans-semibold text-[11px] text-salli-accent">
+                  <Text className="font-sans-semibold text-[14px] text-salli-accent">
                     {yoyPct >= 0 ? "↑" : "↓"} {Math.abs(yoyPct).toFixed(0)}% YoY
                   </Text>
                 </View>
@@ -401,8 +401,8 @@ export default function ReportsScreen() {
               <>
                 <TrendChart values={trendValues} />
                 <View className="mt-1 flex-row justify-between">
-                  <Text className="text-[10px] text-white/30">{monthLabel(trendChron[0].date)}</Text>
-                  <Text className="text-[10px] text-white/30">{monthLabel(trendChron[trendChron.length - 1].date)}</Text>
+                  <Text className="text-[13px] text-white/30">{monthLabel(trendChron[0].date)}</Text>
+                  <Text className="text-[13px] text-white/30">{monthLabel(trendChron[trendChron.length - 1].date)}</Text>
                 </View>
               </>
             ) : null}
@@ -410,11 +410,11 @@ export default function ReportsScreen() {
 
           {trend.length === 0 ? (
             <Card className="mt-2.5 items-center p-6">
-              <Text className="text-[13px] text-foreground/35">No history yet.</Text>
+              <Text className="text-[15px] text-foreground/35">No history yet.</Text>
             </Card>
           ) : (
             <>
-              <Text className="px-0.5 pb-1.5 pt-3.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+              <Text className="px-0.5 pb-1.5 pt-3.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
                 Monthly Trend
               </Text>
               <View className="gap-1.5">
@@ -430,17 +430,17 @@ export default function ReportsScreen() {
                   .map(({ point, value, delta, pct }, i) => (
                     <Card key={i} className="flex-row items-center justify-between p-3.5">
                       <View>
-                        <Text className="font-sans-semibold text-[13px] text-foreground">{monthLabel(point.date)}</Text>
+                        <Text className="font-sans-semibold text-[15px] text-foreground">{monthLabel(point.date)}</Text>
                         {delta !== null ? (
-                          <Text className="mt-0.5 text-[11px] text-foreground/30">
+                          <Text className="mt-0.5 text-[14px] text-foreground/30">
                             {delta >= 0 ? "+" : "−"}Rs. {formatLKRAbbrev(Math.abs(delta))} this month
                           </Text>
                         ) : null}
                       </View>
                       <View className="items-end">
-                        <Text className="font-sans-bold text-[14px] text-foreground">Rs. {formatLKRAbbrev(value)}</Text>
+                        <Text className="font-sans-bold text-[16px] text-foreground">Rs. {formatLKRAbbrev(value)}</Text>
                         {pct !== null ? (
-                          <Text className={cn("text-[11px] font-sans-medium", pct >= 0 ? "text-salli-accent" : "text-destructive")}>
+                          <Text className={cn("text-[14px] font-sans-medium", pct >= 0 ? "text-salli-accent" : "text-destructive")}>
                             {pct >= 0 ? "+" : "−"}
                             {Math.abs(pct).toFixed(1)}%
                           </Text>

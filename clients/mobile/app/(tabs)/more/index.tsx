@@ -58,11 +58,11 @@ function QuickStatCard({ label, value, hint, onPress }: { label: string; value: 
   return (
     <AnimatedPressable onPress={onPress} className="w-[48%] rounded-[10px] border border-foreground/[0.08] bg-card p-3.5">
       <View className="mb-1.5 flex-row items-center justify-between">
-        <Text className="text-[11px] font-sans-medium text-foreground/40">{label}</Text>
-        <ChevronRight size={12} color={colors.mutedForeground} strokeWidth={2} />
+        <Text className="text-[14px] font-sans-medium text-foreground/40">{label}</Text>
+        <ChevronRight size={14} color={colors.mutedForeground} strokeWidth={2} />
       </View>
-      <Text className="mb-0.5 font-sans-bold text-[16px] text-foreground">{value}</Text>
-      <Text className="text-[10px] text-foreground/25">{hint}</Text>
+      <Text className="mb-0.5 font-sans-bold text-[18px] text-foreground">{value}</Text>
+      <Text className="text-[13px] text-foreground/25">{hint}</Text>
     </AnimatedPressable>
   );
 }
@@ -85,12 +85,12 @@ export default function MoreScreen() {
     <PageShell
       header={
         <View className="flex-row items-center px-5 pt-2.5">
-          <Text className="flex-1 font-sans-bold text-[22px] text-foreground">More</Text>
+          <Text className="flex-1 font-sans-bold text-[26px] text-foreground">More</Text>
           <AnimatedPressable
             onPress={() => router.push("/(tabs)/more/settings")}
-            className="h-[34px] w-[34px] items-center justify-center rounded-full border border-foreground/[0.08] bg-foreground/[0.07]"
+            className="h-11 w-11 items-center justify-center rounded-full border border-foreground/[0.08] bg-foreground/[0.07]"
           >
-            <Settings size={15} color={colors.mutedForeground} strokeWidth={2} />
+            <Settings size={21} color={colors.foreground} strokeWidth={2} />
           </AnimatedPressable>
         </View>
       }
@@ -98,15 +98,15 @@ export default function MoreScreen() {
 
       <Card className="mx-4 mb-3 flex-row items-center gap-3 rounded-[12px] border-foreground/[0.08] p-3.5">
         <View className="h-11 w-11 items-center justify-center rounded-full bg-salli-accent">
-          <Text className="font-sans-bold text-[17px] text-white">
+          <Text className="font-sans-bold text-[19px] text-white">
             {(profile?.display_name ?? "?").charAt(0).toUpperCase()}
           </Text>
         </View>
         <View className="flex-1">
-          <Text className="font-sans-semibold text-[14px] text-foreground">
+          <Text className="font-sans-semibold text-[16px] text-foreground">
             {profile?.display_name ?? "Set your name"}
           </Text>
-          <Text className="mt-0.5 text-[11px] text-foreground/35">{profile?.email ?? ""}</Text>
+          <Text className="mt-0.5 text-[14px] text-foreground/35">{profile?.email ?? ""}</Text>
         </View>
       </Card>
 
@@ -156,15 +156,15 @@ export default function MoreScreen() {
           className="mx-4 mb-3 flex-row items-center gap-2.5 rounded-control border border-foreground/10 bg-card px-3.5 py-2.5"
         >
           <View className="h-2 w-2 rounded-full bg-foreground" />
-          <Text className="flex-1 font-sans-medium text-[13px] text-foreground">
+          <Text className="flex-1 font-sans-medium text-[15px] text-foreground">
             {overdueCount} overdue reminder{overdueCount === 1 ? "" : "s"}
           </Text>
-          <Text className="text-[12px] text-foreground/30">Reminders →</Text>
+          <Text className="text-[15px] text-foreground/30">Reminders →</Text>
         </AnimatedPressable>
       ) : null}
 
       <View className="px-4">
-        <Text className="mb-1 pl-0.5 text-[10px] font-sans-semibold uppercase tracking-wide text-foreground/25">
+        <Text className="mb-1 pl-0.5 text-[13px] font-sans-semibold uppercase tracking-wide text-foreground/25">
           All Features
         </Text>
         <Card className="overflow-hidden rounded-[10px] border-foreground/[0.08]">
@@ -175,28 +175,28 @@ export default function MoreScreen() {
               className={`flex-row items-center px-3.5 py-2.5 ${i < FEATURES.length - 1 ? "border-b border-foreground/[0.05]" : ""}`}
             >
               <View className="mr-3 h-[30px] w-[30px] items-center justify-center rounded-[9px] bg-foreground/[0.06]">
-                <f.icon size={14} color={colors.mutedForeground} strokeWidth={2} />
+                <f.icon size={16} color={colors.mutedForeground} strokeWidth={2} />
               </View>
               <View className="flex-1">
-                <Text className="font-sans-medium text-[13px] text-foreground">{f.title}</Text>
-                <Text className="text-[11px] text-foreground/30">{f.detail}</Text>
+                <Text className="font-sans-medium text-[15px] text-foreground">{f.title}</Text>
+                <Text className="text-[14px] text-foreground/30">{f.detail}</Text>
               </View>
               {f.key === "billing" && credits ? (
                 <View className="mr-2 rounded-[5px] bg-foreground/[0.07] px-2 py-0.5">
-                  <Text className="text-[10px] font-sans-medium text-foreground/40">
+                  <Text className="text-[13px] font-sans-medium text-foreground/40">
                     {credits.total.toLocaleString()}
                   </Text>
                 </View>
               ) : null}
               {f.badge ? (
                 <View className="mr-2 rounded-[5px] bg-foreground/[0.07] px-2 py-0.5">
-                  <Text className="text-[10px] font-sans-medium text-foreground/40">{f.badge}</Text>
+                  <Text className="text-[13px] font-sans-medium text-foreground/40">{f.badge}</Text>
                 </View>
               ) : null}
               {f.key === "reminders" && overdueCount > 0 ? (
                 <View className="mr-2.5 h-[7px] w-[7px] rounded-full bg-foreground" />
               ) : null}
-              <ChevronRight size={13} color={colors.mutedForeground} strokeWidth={2} />
+              <ChevronRight size={15} color={colors.mutedForeground} strokeWidth={2} />
             </AnimatedPressable>
           ))}
         </Card>

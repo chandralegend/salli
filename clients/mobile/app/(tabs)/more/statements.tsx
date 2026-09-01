@@ -138,9 +138,9 @@ export default function StatementsScreen() {
                   onPress={() => setMenuOpen(true)}
                   accessibilityRole="button"
                   accessibilityLabel="Options"
-                  className="h-[34px] w-[34px] items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.07]"
+                  className="h-11 w-11 items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.07]"
                 >
-                  <MoreVertical size={15} color={colors.mutedForeground} strokeWidth={2} />
+                  <MoreVertical size={17} color={colors.mutedForeground} strokeWidth={2} />
                 </Pressable>
               }
             />
@@ -217,8 +217,8 @@ export default function StatementsScreen() {
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <>
-                <Check size={15} color="#FFFFFF" strokeWidth={2.5} />
-                <Text className="font-sans-semibold text-[16px] text-white">
+                <Check size={17} color="#FFFFFF" strokeWidth={2.5} />
+                <Text className="font-sans-semibold text-[18px] text-white">
                   Post {approved.size || ""} {approved.size === 1 ? "Entry" : "Entries"} to Ledger
                 </Text>
               </>
@@ -290,8 +290,8 @@ function ReviewTab({
         <View className="h-16 w-16 items-center justify-center rounded-full bg-salli-accent/15">
           <Upload size={26} color={colors.accent} strokeWidth={1.8} />
         </View>
-        <Text className="text-center font-sans-semibold text-[16px] text-foreground">Import a bank statement</Text>
-        <Text className="text-center text-[13px] leading-5 text-foreground/40">
+        <Text className="text-center font-sans-semibold text-[18px] text-foreground">Import a bank statement</Text>
+        <Text className="text-center text-[15px] leading-5 text-foreground/40">
           PDF, CSV, or XLSX — any Sri Lankan bank. Salli parses it and drafts ledger entries for your review.
         </Text>
         <PillButton className="mt-2" loading={uploading} onPress={onUpload}>
@@ -306,15 +306,15 @@ function ReviewTab({
       <Card className="bg-salli-navy-card p-4">
         <View className="mb-3 flex-row items-start justify-between">
           <View className="flex-1">
-            <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-white/45">
+            <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-white/45">
               {bank ? `${bank} · Import` : "Bank Statement · Import"}
             </Text>
-            <Text className="text-[12px] text-white/40">{period || "Parsed statement"}</Text>
+            <Text className="text-[15px] text-white/40">{period || "Parsed statement"}</Text>
           </View>
           <View className="items-end gap-1.5">
             {unmatched > 0 ? (
               <View className="rounded-[6px] border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-0.5">
-                <Text className="text-[11px] font-sans-semibold text-salli-accent">{unmatched} Pending</Text>
+                <Text className="text-[14px] font-sans-semibold text-salli-accent">{unmatched} Pending</Text>
               </View>
             ) : null}
             <Lock size={28} color="rgba(255,255,255,0.2)" strokeWidth={1.5} />
@@ -340,19 +340,19 @@ function ReviewTab({
         </View>
       ) : imported === 0 ? (
         <Card className="mt-3 items-center p-6">
-          <Text className="text-[13px] text-foreground/35">No transactions parsed from this file.</Text>
+          <Text className="text-[15px] text-foreground/35">No transactions parsed from this file.</Text>
         </Card>
       ) : (
         <>
           <View className="mt-3 flex-row items-center gap-2">
             <View className="h-9 flex-1 flex-row items-center gap-2 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
-              <Search size={13} color={colors.mutedForeground} strokeWidth={2} />
+              <Search size={15} color={colors.mutedForeground} strokeWidth={2} />
               <TextInput
                 value={search}
                 onChangeText={setSearch}
                 placeholder="Search transactions..."
                 placeholderTextColor="rgba(128,128,128,0.4)"
-                className="flex-1 text-[13px] text-foreground"
+                className="flex-1 text-[15px] text-foreground"
               />
             </View>
           </View>
@@ -372,14 +372,14 @@ function ReviewTab({
             })}
           </View>
 
-          <Text className="mb-1.5 mt-3 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+          <Text className="mb-1.5 mt-3 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
             {status === "Matched" ? "Matched" : status === "Skipped" ? "Skipped" : "Needs Review"}
             {upload.period_start ? ` · ${upload.period_start}` : ""}
           </Text>
 
           {visible.length === 0 ? (
             <Card className="items-center p-6">
-              <Text className="text-[13px] text-foreground/35">
+              <Text className="text-[15px] text-foreground/35">
                 {status === "Skipped"
                   ? "Transactions aren't skipped on the server yet."
                   : "Nothing here for this filter."}
@@ -408,20 +408,20 @@ function ReviewTab({
                       )}
                     />
                     <View className="h-9 w-9 items-center justify-center rounded-[8px] border border-salli-accent/20 bg-salli-accent/[0.12]">
-                      <CreditCard size={15} color={colors.accent} strokeWidth={2} />
+                      <CreditCard size={17} color={colors.accent} strokeWidth={2} />
                     </View>
                     <View className="flex-1">
-                      <Text className="font-sans-semibold text-[13px] text-foreground" numberOfLines={1}>
+                      <Text className="font-sans-semibold text-[15px] text-foreground" numberOfLines={1}>
                         {t.description}
                       </Text>
-                      <Text className="mt-0.5 text-[11px] text-foreground/30" numberOfLines={1}>
+                      <Text className="mt-0.5 text-[14px] text-foreground/30" numberOfLines={1}>
                         {txnSubtitle(t, bank)}
                       </Text>
                     </View>
                     <View className="items-end gap-1">
                       <Text
                         className={cn(
-                          "font-sans-bold text-[13px]",
+                          "font-sans-bold text-[15px]",
                           t.credit_flag ? "text-foreground" : "text-foreground/70",
                         )}
                       >
@@ -439,7 +439,7 @@ function ReviewTab({
                       >
                         <Text
                           className={cn(
-                            "text-[10px] font-sans-semibold",
+                            "text-[13px] font-sans-semibold",
                             isApproved ? "text-white" : matchedRow ? "text-foreground/45" : "text-salli-accent",
                           )}
                         >
@@ -485,8 +485,8 @@ function HistoryTab({
         <View className="mb-1 h-14 w-14 items-center justify-center rounded-full bg-foreground/[0.06]">
           <FileText size={24} color={colors.mutedForeground} strokeWidth={1.6} />
         </View>
-        <Text className="text-center font-sans-semibold text-[15px] text-foreground">No imports yet</Text>
-        <Text className="text-center text-[13px] leading-5 text-foreground/40">
+        <Text className="text-center font-sans-semibold text-[17px] text-foreground">No imports yet</Text>
+        <Text className="text-center text-[15px] leading-5 text-foreground/40">
           Past statements aren't stored on the server. Import one to review and post it — it will appear here for the
           rest of your session.
         </Text>
@@ -502,18 +502,18 @@ function HistoryTab({
       <Card className="bg-salli-navy-card p-[18px]">
         <View className="flex-row items-start justify-between">
           <View>
-            <Text className="mb-2 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
+            <Text className="mb-2 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
               This Import
             </Text>
             <View className="flex-row items-baseline gap-1.5">
               <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
                 {imported}
               </Text>
-              <Text className="font-sans-medium text-[13px] text-white/40">transactions</Text>
+              <Text className="font-sans-medium text-[15px] text-white/40">transactions</Text>
             </View>
           </View>
           <View className="mt-1 rounded-[8px] border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
-            <Text className="font-sans-semibold text-[11px] text-salli-accent">{matched} matched</Text>
+            <Text className="font-sans-semibold text-[14px] text-salli-accent">{matched} matched</Text>
           </View>
         </View>
         <View className="mt-3.5 flex-row gap-1.5">
@@ -529,33 +529,33 @@ function HistoryTab({
         </View>
       </Card>
 
-      <Text className="px-1.5 pb-1.5 pt-3.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+      <Text className="px-1.5 pb-1.5 pt-3.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
         Imported This Session
       </Text>
       <Card className="flex-row items-center gap-2.5 p-3.5">
         <View className="h-9 w-9 items-center justify-center rounded-[10px] border border-salli-accent/15 bg-salli-accent/10">
-          <FileText size={15} color={colors.accent} strokeWidth={2} />
+          <FileText size={17} color={colors.accent} strokeWidth={2} />
         </View>
         <View className="flex-1">
-          <Text className="font-sans-semibold text-[13px] text-foreground" numberOfLines={1}>
+          <Text className="font-sans-semibold text-[15px] text-foreground" numberOfLines={1}>
             {bank || "Bank statement"}
           </Text>
-          <Text className="mt-0.5 text-[11px] text-foreground/30" numberOfLines={1}>
+          <Text className="mt-0.5 text-[14px] text-foreground/30" numberOfLines={1}>
             {period ? `${period} · ` : ""}
             {imported} txns
           </Text>
         </View>
         <View className="items-end">
           <View className="rounded-[4px] bg-salli-accent/15 px-2 py-0.5">
-            <Text className="text-[10px] font-sans-semibold text-salli-accent">{matched} matched</Text>
+            <Text className="text-[13px] font-sans-semibold text-salli-accent">{matched} matched</Text>
           </View>
-          <Text className="mt-1 text-[10px] text-foreground/25">{unmatched} unmatched</Text>
+          <Text className="mt-1 text-[13px] text-foreground/25">{unmatched} unmatched</Text>
         </View>
       </Card>
 
       <View className="mt-2.5 flex-row items-start gap-2 rounded-[8px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
-        <Info size={13} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
-        <Text className="flex-1 text-[11px] leading-4 text-foreground/30">
+        <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
+        <Text className="flex-1 text-[14px] leading-5 text-foreground/30">
           Posted entries live in your Ledger. A persistent statement history isn't tracked by the server yet.
         </Text>
       </View>
@@ -587,8 +587,8 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
         <View className="mb-1 h-14 w-14 items-center justify-center rounded-full bg-foreground/[0.06]">
           <Landmark size={24} color={colors.mutedForeground} strokeWidth={1.6} />
         </View>
-        <Text className="text-center font-sans-semibold text-[15px] text-foreground">No asset accounts yet</Text>
-        <Text className="text-center text-[13px] leading-5 text-foreground/40">
+        <Text className="text-center font-sans-semibold text-[17px] text-foreground">No asset accounts yet</Text>
+        <Text className="text-center text-[15px] leading-5 text-foreground/40">
           Imports post against ledger asset accounts. Add one in the Ledger to map a bank account here.
         </Text>
       </View>
@@ -597,7 +597,7 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
 
   return (
     <View className="px-4 pt-4">
-      <Text className="px-1.5 pb-1.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+      <Text className="px-1.5 pb-1.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
         Ledger Bank &amp; Cash Accounts
       </Text>
       <View className="gap-1.5">
@@ -620,21 +620,21 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
                 {a.code ? (
                   <Text
                     className={cn(
-                      "text-[10px] font-sans-bold",
+                      "text-[13px] font-sans-bold",
                       active ? "text-salli-accent" : "text-foreground/50",
                     )}
                   >
                     {initials}
                   </Text>
                 ) : (
-                  <Building2 size={16} color={active ? colors.accent : colors.mutedForeground} strokeWidth={2} />
+                  <Building2 size={18} color={active ? colors.accent : colors.mutedForeground} strokeWidth={2} />
                 )}
               </View>
               <View className="flex-1">
-                <Text className="font-sans-semibold text-[13px] text-foreground" numberOfLines={1}>
+                <Text className="font-sans-semibold text-[15px] text-foreground" numberOfLines={1}>
                   {a.name}
                 </Text>
-                <Text className="mt-0.5 text-[11px] text-foreground/30" numberOfLines={1}>
+                <Text className="mt-0.5 text-[14px] text-foreground/30" numberOfLines={1}>
                   {a.currency} · maps to {a.code}
                 </Text>
               </View>
@@ -642,7 +642,7 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
                 <View className={cn("rounded-[4px] px-2 py-0.5", active ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
                   <Text
                     className={cn(
-                      "text-[10px] font-sans-semibold",
+                      "text-[13px] font-sans-semibold",
                       active ? "text-salli-accent" : "text-foreground/40",
                     )}
                   >
@@ -650,7 +650,7 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
                   </Text>
                 </View>
                 {bal != null ? (
-                  <Text className="mt-1 text-[10px] text-foreground/25">Rs. {formatLKR(bal, 0)}</Text>
+                  <Text className="mt-1 text-[13px] text-foreground/25">Rs. {formatLKR(bal, 0)}</Text>
                 ) : null}
               </View>
             </Card>
@@ -659,8 +659,8 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
       </View>
 
       <View className="mt-3 flex-row items-start gap-2 rounded-[8px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
-        <Info size={13} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
-        <Text className="flex-1 text-[11px] leading-4 text-foreground/30">
+        <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
+        <Text className="flex-1 text-[14px] leading-5 text-foreground/30">
           Each account maps to a ledger asset code so imported transactions post automatically.
         </Text>
       </View>
@@ -710,13 +710,13 @@ function OptionsMenu({
               )}
             >
               <item.Icon
-                size={16}
+                size={18}
                 color={item.danger ? "#EF4444" : colors.foreground}
                 strokeWidth={2}
               />
               <Text
                 className={cn(
-                  "font-sans-medium text-[14px]",
+                  "font-sans-medium text-[16px]",
                   item.danger ? "text-[#EF4444]" : "text-foreground",
                 )}
               >

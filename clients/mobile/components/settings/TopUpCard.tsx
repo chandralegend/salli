@@ -51,10 +51,10 @@ export function TopUpCard() {
   return (
     <Card className="p-4">
       <View className="mb-1 flex-row items-center gap-2">
-        <Coins size={16} color={colors.mutedForeground} />
-        <Text className="font-sans-semibold text-[15px] text-foreground">Top up credits</Text>
+        <Coins size={18} color={colors.mutedForeground} />
+        <Text className="font-sans-semibold text-[17px] text-foreground">Top up credits</Text>
       </View>
-      <Text className="mb-3 text-[12px] leading-[17px] text-muted-foreground">
+      <Text className="mb-3 text-[15px] leading-[22px] text-muted-foreground">
         A one-off purchase, not a subscription. Purchased credits never expire and are used only
         after your monthly allowance runs out.
       </Text>
@@ -71,10 +71,10 @@ export function TopUpCard() {
               className="flex-row items-center justify-between rounded-control border border-foreground/10 p-3"
             >
               <View>
-                <Text className="font-sans-medium text-[14px] text-foreground">
+                <Text className="font-sans-medium text-[16px] text-foreground">
                   {credits ? credits.toLocaleString() : p.title} credits
                 </Text>
-                <Text className="mt-0.5 text-[11px] text-muted-foreground">
+                <Text className="mt-0.5 text-[14px] text-muted-foreground">
                   {credits ? `About ${Math.round(credits / 30).toLocaleString()} Sonnet conversations` : p.description}
                 </Text>
               </View>
@@ -84,7 +84,7 @@ export function TopUpCard() {
                 /* priceString, not our own formatting — StoreKit gives it in the
                    user's currency with local tax already applied, which a
                    hard-coded "$4.99" would get wrong everywhere but the US. */
-                <Text className="font-sans-semibold text-[14px] text-salli-accent">
+                <Text className="font-sans-semibold text-[16px] text-salli-accent">
                   {p.priceString}
                 </Text>
               )}
@@ -105,7 +105,7 @@ export function TopUpCard() {
         disabled={restore.isPending}
         className="mt-3 items-center py-1.5"
       >
-        <Text className="text-[12px] text-muted-foreground underline">
+        <Text className="text-[15px] text-muted-foreground underline">
           {restore.isPending ? "Restoring…" : "Restore purchases"}
         </Text>
       </Pressable>

@@ -30,8 +30,8 @@ export function QuotaBanner({
       onPress={() => router.push("/(tabs)/more/billing")}
       className={`flex-row items-center gap-2 rounded-control border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 ${className ?? ""}`}
     >
-      <TriangleAlert size={15} color="#d97706" strokeWidth={2} />
-      <Text className="flex-1 text-[12px] text-foreground/70">
+      <TriangleAlert size={17} color="#d97706" strokeWidth={2} />
+      <Text className="flex-1 text-[15px] text-foreground/70">
         {detail} ·{" "}
         {/* "Top up" is the web CTA; mobile has no purchase path, so promising
             one is both a dead end and — since the only way to act on it is off

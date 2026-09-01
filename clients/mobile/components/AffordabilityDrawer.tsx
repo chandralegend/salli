@@ -34,7 +34,7 @@ const TERM_OPTIONS: { label: string; months: number | null }[] = [
 function Badge({ tone, label }: { tone: "success" | "danger"; label: string }) {
   return (
     <View className={tone === "success" ? "rounded-[5px] bg-salli-success/15 px-1.5 py-0.5" : "rounded-[5px] bg-destructive/15 px-1.5 py-0.5"}>
-      <Text className={tone === "success" ? "text-[9px] font-sans-semibold text-salli-success" : "text-[9px] font-sans-semibold text-destructive"}>
+      <Text className={tone === "success" ? "text-[12px] font-sans-semibold text-salli-success" : "text-[12px] font-sans-semibold text-destructive"}>
         {label}
       </Text>
     </View>
@@ -46,17 +46,17 @@ function OptionRow({ option, currency, cheapest }: { option: PurchaseOption; cur
     <View className="flex-row items-start justify-between gap-3 border-t border-foreground/[0.06] py-2.5">
       <View className="flex-1">
         <View className="flex-row flex-wrap items-center gap-1.5">
-          <Text className="font-sans-semibold text-[13px] text-foreground">{option.label}</Text>
+          <Text className="font-sans-semibold text-[15px] text-foreground">{option.label}</Text>
           {cheapest ? <Badge tone="success" label="cheapest" /> : null}
           {option.exceeds_monthly_surplus ? <Badge tone="danger" label="over your surplus" /> : null}
         </View>
-        <Text className="mt-1 text-[11px] text-foreground/40">
+        <Text className="mt-1 text-[14px] text-foreground/40">
           {currency} {formatLKR(option.total_cost)}
           {Number(option.interest_cost) > 0 ? ` · ${currency} ${formatLKR(option.interest_cost)} interest` : ""}
           {option.monthly_payment ? ` · ${currency} ${formatLKR(option.monthly_payment)}/mo` : ""}
         </Text>
       </View>
-      <Text className="font-sans-bold text-[14px] text-foreground">
+      <Text className="font-sans-bold text-[16px] text-foreground">
         {option.months_delay === null ? "—" : `+${monthsLabel(option.months_delay)}`}
       </Text>
     </View>
@@ -71,10 +71,10 @@ function Result({ impact, mutedColor, destructiveColor }: { impact: PurchaseImpa
   if (impact.is_stale) {
     return (
       <View className="mt-4 flex-row items-start gap-2.5 rounded-control border border-dashed border-foreground/15 p-3.5">
-        <TriangleAlert size={16} color={mutedColor} strokeWidth={2} style={{ marginTop: 1 }} />
+        <TriangleAlert size={18} color={mutedColor} strokeWidth={2} style={{ marginTop: 1 }} />
         <View className="flex-1">
-          <Text className="font-sans-semibold text-[13px] text-foreground">Your ledger is out of date</Text>
-          <Text className="mt-1 text-[11px] text-foreground/40">
+          <Text className="font-sans-semibold text-[15px] text-foreground">Your ledger is out of date</Text>
+          <Text className="mt-1 text-[14px] text-foreground/40">
             {impact.data_as_of ? `The newest entry is from ${formatShortDate(impact.data_as_of)}.` : "There are no entries yet."}{" "}
             Bring it up to date and ask again.
           </Text>
@@ -92,27 +92,27 @@ function Result({ impact, mutedColor, destructiveColor }: { impact: PurchaseImpa
     <View className="mt-4">
       <View className="flex-row gap-3">
         <View className="flex-1">
-          <Text className="text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">Costs you</Text>
+          <Text className="text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">Costs you</Text>
           {headline?.months_delay === null ? (
             <>
-              <Text className="mt-1.5 font-sans-bold text-[22px] text-foreground">Not yet knowable</Text>
-              <Text className="mt-1.5 text-[11px] text-foreground/40">
+              <Text className="mt-1.5 font-sans-bold text-[26px] text-foreground">Not yet knowable</Text>
+              <Text className="mt-1.5 text-[14px] text-foreground/40">
                 Your Freedom date isn&rsquo;t reachable yet — it isn&rsquo;t free.
               </Text>
             </>
           ) : (
             <>
-              <Text className="mt-1.5 font-sans-bold text-[22px] text-foreground">{monthsLabel(headline?.months_delay ?? 0)}</Text>
-              <Text className="mt-1.5 text-[11px] text-foreground/40">of freedom, cheapest way</Text>
+              <Text className="mt-1.5 font-sans-bold text-[26px] text-foreground">{monthsLabel(headline?.months_delay ?? 0)}</Text>
+              <Text className="mt-1.5 text-[14px] text-foreground/40">of freedom, cheapest way</Text>
             </>
           )}
         </View>
         <View className="flex-1">
-          <Text className="text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">Emergency fund</Text>
-          <Text className={efBreached ? "mt-1.5 font-sans-bold text-[22px] text-destructive" : "mt-1.5 font-sans-bold text-[22px] text-foreground"}>
+          <Text className="text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">Emergency fund</Text>
+          <Text className={efBreached ? "mt-1.5 font-sans-bold text-[26px] text-destructive" : "mt-1.5 font-sans-bold text-[26px] text-foreground"}>
             {efAfter.toFixed(1)} mo
           </Text>
-          <Text className="mt-1.5 text-[11px] text-foreground/40">
+          <Text className="mt-1.5 text-[14px] text-foreground/40">
             from {Number(impact.emergency_months_before).toFixed(1)} mo · target {efTarget} mo
           </Text>
         </View>
@@ -120,8 +120,8 @@ function Result({ impact, mutedColor, destructiveColor }: { impact: PurchaseImpa
 
       {efBreached || !impact.payable_from_liquid ? (
         <View className="mt-3.5 flex-row items-start gap-2.5 rounded-control border border-destructive/30 bg-destructive/5 p-3">
-          <ShieldAlert size={15} color={destructiveColor} strokeWidth={2} style={{ marginTop: 1 }} />
-          <Text className="flex-1 text-[11px] text-foreground/70">
+          <ShieldAlert size={17} color={destructiveColor} strokeWidth={2} style={{ marginTop: 1 }} />
+          <Text className="flex-1 text-[14px] text-foreground/70">
             {!impact.payable_from_liquid
               ? "This is more than your liquid savings — paying cash would leave you short."
               : `Paying cash drops your buffer below the ${efTarget}-month target.`}
@@ -135,7 +135,7 @@ function Result({ impact, mutedColor, destructiveColor }: { impact: PurchaseImpa
         ))}
       </View>
 
-      <Text className="mt-3 text-[10px] text-foreground/25">
+      <Text className="mt-3 text-[13px] text-foreground/25">
         Deterministic engine · as of {impact.data_as_of ? formatShortDate(impact.data_as_of) : "today"} · information, not formal financial advice
       </Text>
     </View>
@@ -192,20 +192,20 @@ export function AffordabilityDrawer({ visible, onClose }: { visible: boolean; on
       <PillButton className="mt-3" variant="accent" loading={sim.isPending} disabled={!valid || sim.isPending} onPress={submit}>
         {sim.isPending ? "Working…" : (
           <View className="flex-row items-center gap-1.5">
-            <Text className="font-sans-semibold text-[16px] text-white">Ask Salli</Text>
-            <ArrowRight size={14} color="#fff" strokeWidth={2.5} />
+            <Text className="font-sans-semibold text-[18px] text-white">Ask Salli</Text>
+            <ArrowRight size={16} color="#fff" strokeWidth={2.5} />
           </View>
         )}
       </PillButton>
 
       {!sim.data && !sim.isPending && !sim.isError ? (
-        <Text className="mt-3 text-[11px] text-foreground/35">
+        <Text className="mt-3 text-[14px] text-foreground/35">
           Salli prices it against what you own, owe and will owe in tax — and tells you what it costs your Freedom date.
         </Text>
       ) : null}
 
       {sim.isError ? (
-        <Text className="mt-3 text-[11px] text-destructive">Couldn&rsquo;t price that purchase. Check the amount and try again.</Text>
+        <Text className="mt-3 text-[14px] text-destructive">Couldn&rsquo;t price that purchase. Check the amount and try again.</Text>
       ) : null}
 
       {sim.data ? <Result impact={sim.data} mutedColor={colors.mutedForeground} destructiveColor={destructiveColor} /> : null}

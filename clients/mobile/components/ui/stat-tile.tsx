@@ -36,7 +36,7 @@ export function StatTile({
     >
       <Text
         className={cn(
-          "mb-1 text-[9px] font-sans-medium uppercase tracking-wide",
+          "mb-1 text-[12px] font-sans-medium uppercase tracking-wide",
           onDark ? "text-white/40" : "text-foreground/40",
           labelClassName,
         )}
@@ -46,7 +46,7 @@ export function StatTile({
       {typeof value === "string" || typeof value === "number" ? (
         <Text
           className={cn(
-            "text-[14px] font-sans-bold tracking-tight",
+            "text-[16px] font-sans-bold tracking-tight",
             onDark ? "text-white" : "text-foreground",
             valueClassName,
           )}
@@ -59,7 +59,7 @@ export function StatTile({
       {hint ? (
         <Text
           className={cn(
-            "mt-0.5 text-[9px] font-sans",
+            "mt-0.5 text-[12px] font-sans",
             onDark ? "text-white/20" : "text-foreground/20",
             hintClassName,
           )}

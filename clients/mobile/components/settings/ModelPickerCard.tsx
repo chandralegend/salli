@@ -41,10 +41,10 @@ export function ModelPickerCard() {
   return (
     <Card className="p-4">
       <View className="mb-1 flex-row items-center gap-2">
-        <Sparkles size={16} color={colors.mutedForeground} />
-        <Text className="font-sans-semibold text-[15px] text-foreground">AI model</Text>
+        <Sparkles size={18} color={colors.mutedForeground} />
+        <Text className="font-sans-semibold text-[17px] text-foreground">AI model</Text>
       </View>
-      <Text className="mb-3 text-[12px] leading-[17px] text-muted-foreground">
+      <Text className="mb-3 text-[15px] leading-[22px] text-muted-foreground">
         Every model is available on every plan — the only difference is how many credits a
         conversation costs. Statement reading always runs on Haiku at the lowest rate, whichever
         model you pick here.
@@ -64,13 +64,13 @@ export function ModelPickerCard() {
               )}
             >
               <View className="flex-row items-center justify-between">
-                <Text className="font-sans-medium text-[14px] text-foreground">{m.name}</Text>
-                {active ? <Check size={14} color={colors.accent} /> : null}
+                <Text className="font-sans-medium text-[16px] text-foreground">{m.name}</Text>
+                {active ? <Check size={16} color={colors.accent} /> : null}
               </View>
-              <Text className="mt-0.5 text-[11px] leading-[15px] text-muted-foreground">
+              <Text className="mt-0.5 text-[14px] leading-[20px] text-muted-foreground">
                 {m.blurb}
               </Text>
-              <Text className="mt-1.5 text-[11px] text-muted-foreground">
+              <Text className="mt-1.5 text-[14px] text-muted-foreground">
                 {m.credits_per_message} credits / conversation
                 {m.is_default ? " · default" : ""}
               </Text>

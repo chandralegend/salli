@@ -19,7 +19,7 @@ function Spinner({ color }: { color: string }) {
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
   return (
     <Animated.View style={{ transform: [{ rotate }] }}>
-      <LoaderCircle size={13} color={color} strokeWidth={2} />
+      <LoaderCircle size={15} color={color} strokeWidth={2} />
     </Animated.View>
   );
 }
@@ -30,18 +30,18 @@ export function ToolActivityRow({ row }: { row: ActivityRow }) {
     <View className="flex-row items-center gap-2 py-1">
       <View className="h-4 w-4 items-center justify-center">
         {row.state === "complete" ? (
-          <Check size={13} color={colors.accent} strokeWidth={2.5} />
+          <Check size={15} color={colors.accent} strokeWidth={2.5} />
         ) : (
           <Spinner color={colors.mutedForeground} />
         )}
       </View>
       <View className="flex-1">
-        <Text className="text-[12px] font-sans-medium text-foreground/70">
+        <Text className="text-[15px] font-sans-medium text-foreground/70">
           {row.agent === "tax_specialist" ? "Tax specialist: " : row.agent === "finance_specialist" ? "Finance specialist: " : ""}
           {row.label}
         </Text>
         {row.state === "running" ? (
-          <Text className="text-[10px] text-foreground/30">{row.status}</Text>
+          <Text className="text-[13px] text-foreground/30">{row.status}</Text>
         ) : null}
       </View>
     </View>

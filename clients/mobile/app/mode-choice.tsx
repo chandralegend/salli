@@ -42,10 +42,10 @@ export default function ModeChoiceScreen() {
       >
         <View className="mb-6 items-center pt-4">
           <Logo size={32} className="text-foreground" />
-          <Text className="mb-1.5 mt-3 text-center font-sans-bold text-[24px] tracking-tight text-foreground">
+          <Text className="mb-1.5 mt-3 text-center font-sans-bold text-[28px] tracking-tight text-foreground">
             Pick your starting point
           </Text>
-          <Text className="text-center text-[13px] leading-5 text-foreground/40">
+          <Text className="text-center text-[15px] leading-5 text-foreground/40">
             We&apos;ve added a new way to use Salli.{"\n"}You can switch anytime.
           </Text>
         </View>

@@ -40,25 +40,25 @@ export function TourCard({
       style={placement === "top" ? { top: insets.top + 12 } : { bottom: insets.bottom + 12 }}
     >
       <View className="mb-2 flex-row items-center justify-between">
-        <Text className="text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
+        <Text className="text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
           {index + 1} of {total}
         </Text>
         <Pressable onPress={onSkip} hitSlop={8} className="h-[26px] w-[26px] items-center justify-center rounded-full bg-foreground/[0.08]">
-          <X size={13} color={colors.mutedForeground} strokeWidth={2} />
+          <X size={15} color={colors.mutedForeground} strokeWidth={2} />
         </Pressable>
       </View>
 
-      <Text className="font-sans-bold text-[16px] text-foreground">{step.title}</Text>
-      <Text className="mt-1.5 text-[13px] leading-5 text-foreground/50">{step.body}</Text>
+      <Text className="font-sans-bold text-[18px] text-foreground">{step.title}</Text>
+      <Text className="mt-1.5 text-[15px] leading-5 text-foreground/50">{step.body}</Text>
 
       <View className="mt-3.5 flex-row gap-2">
         {index > 0 ? (
           <PillButton variant="secondary" className="h-[42px] flex-1" onPress={onPrev}>
-            <Text className="font-sans-semibold text-[14px] text-foreground">Back</Text>
+            <Text className="font-sans-semibold text-[16px] text-foreground">Back</Text>
           </PillButton>
         ) : null}
         <PillButton variant="accent" className="h-[42px] flex-1" onPress={onNext}>
-          <Text className="font-sans-semibold text-[14px] text-white">{index === total - 1 ? "Done" : "Next"}</Text>
+          <Text className="font-sans-semibold text-[16px] text-white">{index === total - 1 ? "Done" : "Next"}</Text>
         </PillButton>
       </View>
     </View>

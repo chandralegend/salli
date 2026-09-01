@@ -67,9 +67,9 @@ export default function SubscriptionsScreen() {
             trailing={
               <Pressable
                 onPress={openAdd}
-                className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
+                className="h-11 w-11 items-center justify-center rounded-full bg-salli-accent"
               >
-                <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
+                <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
               </Pressable>
             }
           />
@@ -78,11 +78,11 @@ export default function SubscriptionsScreen() {
         {/* hero — monthly recurring cost */}
         <View className="px-4 pt-3">
           <Card className="bg-salli-navy-card p-[18px]">
-            <Text className="mb-1.5 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
+            <Text className="mb-1.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
               Monthly Recurring
             </Text>
             <View className="mb-1 flex-row items-baseline gap-1">
-              <Text className="font-sans-semibold text-[18px] text-white/40">Rs.</Text>
+              <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
               <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
                 {formatLKRAbbrev(monthlyTotal)}
               </Text>
@@ -98,7 +98,7 @@ export default function SubscriptionsScreen() {
               >
                 <Text
                   className={cn(
-                    "text-[11px] font-sans-semibold",
+                    "text-[14px] font-sans-semibold",
                     alertCount > 0 ? "text-destructive" : "text-salli-accent",
                   )}
                 >
@@ -108,16 +108,16 @@ export default function SubscriptionsScreen() {
             </View>
             <View className="flex-row gap-1.5">
               <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[10px] text-white/35">Active</Text>
-                <Text className="font-sans-bold text-[13px] text-white">{active.length}</Text>
+                <Text className="mb-1 text-[13px] text-white/35">Active</Text>
+                <Text className="font-sans-bold text-[15px] text-white">{active.length}</Text>
               </View>
               <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[10px] text-white/35">Annualised</Text>
-                <Text className="font-sans-bold text-[13px] text-white">Rs. {formatLKRAbbrev(monthlyTotal * 12)}</Text>
+                <Text className="mb-1 text-[13px] text-white/35">Annualised</Text>
+                <Text className="font-sans-bold text-[15px] text-white">Rs. {formatLKRAbbrev(monthlyTotal * 12)}</Text>
               </View>
               <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[10px] text-white/35">Alerts</Text>
-                <Text className={cn("font-sans-bold text-[13px]", alertCount > 0 ? "text-destructive" : "text-white")}>
+                <Text className="mb-1 text-[13px] text-white/35">Alerts</Text>
+                <Text className={cn("font-sans-bold text-[15px]", alertCount > 0 ? "text-destructive" : "text-white")}>
                   {alertCount}
                 </Text>
               </View>
@@ -125,14 +125,14 @@ export default function SubscriptionsScreen() {
           </Card>
         </View>
 
-        <Text className="mb-1.5 mt-3 px-4 pl-[18px] text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+        <Text className="mb-1.5 mt-3 px-4 pl-[18px] text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
           Active Subscriptions
         </Text>
 
         <View className="gap-2 px-4">
           {active.length === 0 ? (
             <Card className="items-center p-6">
-              <Text className="text-[13px] text-foreground/35">No subscriptions tracked yet.</Text>
+              <Text className="text-[15px] text-foreground/35">No subscriptions tracked yet.</Text>
             </Card>
           ) : (
             active.map((s) => {
@@ -142,18 +142,18 @@ export default function SubscriptionsScreen() {
                 <Card className="p-3.5">
                   <View className="flex-row items-center gap-2.5">
                     <View className="h-9 w-9 items-center justify-center rounded-[8px] bg-foreground/[0.06]">
-                      <RefreshCw size={14} color={colors.mutedForeground} strokeWidth={2} />
+                      <RefreshCw size={16} color={colors.mutedForeground} strokeWidth={2} />
                     </View>
                     <View className="flex-1">
-                      <Text className="font-sans-semibold text-[13px] text-foreground">{s.name}</Text>
-                      <Text className="text-[11px] capitalize text-foreground/30">
+                      <Text className="font-sans-semibold text-[15px] text-foreground">{s.name}</Text>
+                      <Text className="text-[14px] capitalize text-foreground/30">
                         {s.frequency} · next {s.next_due_date}
                       </Text>
                     </View>
                     <View className="items-end">
-                      <Text className="font-sans-semibold text-[13px] text-foreground">Rs. {formatLKR(s.amount, 0)}</Text>
+                      <Text className="font-sans-semibold text-[15px] text-foreground">Rs. {formatLKR(s.amount, 0)}</Text>
                       <Pressable onPress={() => remove.mutate(s.id)} className="mt-1">
-                        <Trash2 size={13} color={colors.mutedForeground} strokeWidth={2} />
+                        <Trash2 size={15} color={colors.mutedForeground} strokeWidth={2} />
                       </Pressable>
                     </View>
                   </View>
@@ -161,14 +161,14 @@ export default function SubscriptionsScreen() {
                     <View className="mt-2.5 gap-1.5 border-t border-foreground/[0.06] pt-2.5">
                       {report.alerts.map((a, i) => (
                         <View key={i} className="flex-row items-center gap-1.5">
-                          <AlertTriangle size={12} color="#EF4444" strokeWidth={2} />
-                          <Text className="flex-1 text-[11px] text-destructive">{a.message}</Text>
+                          <AlertTriangle size={14} color="#EF4444" strokeWidth={2} />
+                          <Text className="flex-1 text-[14px] text-destructive">{a.message}</Text>
                         </View>
                       ))}
                     </View>
                   ) : (
                     <View className="mt-2.5 border-t border-foreground/[0.06] pt-2.5">
-                      <Text className="text-[11px] text-salli-accent">No alerts</Text>
+                      <Text className="text-[14px] text-salli-accent">No alerts</Text>
                     </View>
                   )}
                 </Card>
@@ -261,7 +261,7 @@ function AddEditSubscriptionDrawer({
             {isEdit ? "Save Changes" : "Add Subscription"}
           </PillButton>
           {isError ? (
-            <Text className="mt-2 text-center text-[11px] text-destructive">
+            <Text className="mt-2 text-center text-[14px] text-destructive">
               Could not save subscription. Please try again.
             </Text>
           ) : null}
@@ -289,7 +289,7 @@ function AddEditSubscriptionDrawer({
         />
       </View>
 
-      <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">
+      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">
         Billing Cycle *
       </Text>
       <ChipSelect className="mb-1" options={FREQUENCIES} value={frequency} onChange={setFrequency} capitalize />

@@ -104,7 +104,7 @@ export function Tabs<T extends string>({
                 <Text
                   numberOfLines={1}
                   className={cn(
-                    "text-[13px]",
+                    "text-[15px]",
                     active
                       ? "font-sans-semibold text-primary-foreground"
                       : "font-sans-medium text-foreground/45",

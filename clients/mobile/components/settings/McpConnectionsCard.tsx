@@ -62,8 +62,8 @@ export function McpConnectionsCard() {
     <Card className="p-4">
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2">
-          <Bot size={15} color={colors.mutedForeground} strokeWidth={2} />
-          <Text className="font-sans-semibold text-[14px] text-foreground">Connect an AI assistant</Text>
+          <Bot size={17} color={colors.mutedForeground} strokeWidth={2} />
+          <Text className="font-sans-semibold text-[16px] text-foreground">Connect an AI assistant</Text>
         </View>
         {enabled.isLoading ? (
           <ActivityIndicator size="small" color={colors.mutedForeground} />
@@ -84,7 +84,7 @@ export function McpConnectionsCard() {
         )}
       </View>
 
-      <Text className="mt-1.5 text-[12px] leading-4 text-foreground/40">
+      <Text className="mt-1.5 text-[15px] leading-5 text-foreground/40">
         Let Claude, ChatGPT, or any other MCP-capable AI read and manage your Salli account — the
         same access Salli AI has in-app, authorized the same way you sign in anywhere else.
       </Text>
@@ -92,24 +92,24 @@ export function McpConnectionsCard() {
       {enabled.data ? (
         <>
           <View className="mt-4">
-            <Text className="mb-1.5 text-[11px] text-foreground/35">MCP server URL</Text>
+            <Text className="mb-1.5 text-[14px] text-foreground/35">MCP server URL</Text>
             <View className="flex-row items-center gap-2">
               <View className="flex-1 rounded-control bg-muted px-3 py-2">
-                <Text className="font-mono text-[12px] text-foreground/70" numberOfLines={1}>
+                <Text className="font-mono text-[15px] text-foreground/70" numberOfLines={1}>
                   {API_URL}/mcp
                 </Text>
               </View>
               <Pressable onPress={copyServerUrl} hitSlop={8} className="h-[34px] w-[34px] items-center justify-center rounded-control bg-foreground/[0.06]">
-                <Copy size={13} color={colors.mutedForeground} strokeWidth={2} />
+                <Copy size={15} color={colors.mutedForeground} strokeWidth={2} />
               </Pressable>
             </View>
-            <Text className="mt-1.5 text-[11px] leading-4 text-foreground/30">
+            <Text className="mt-1.5 text-[14px] leading-5 text-foreground/30">
               Paste this into Claude&rsquo;s or ChatGPT&rsquo;s &ldquo;add custom connector&rdquo; screen.
             </Text>
           </View>
 
           <View className="mt-4">
-            <Text className="mb-2 text-[11px] text-foreground/35">Connected apps</Text>
+            <Text className="mb-2 text-[14px] text-foreground/35">Connected apps</Text>
             {connections.isLoading ? (
               <ActivityIndicator size="small" color={colors.mutedForeground} />
             ) : connections.data && connections.data.length > 0 ? (
@@ -120,8 +120,8 @@ export function McpConnectionsCard() {
                     className={`flex-row items-center justify-between px-3 py-2.5 ${i < connections.data.length - 1 ? "border-b border-foreground/[0.06]" : ""}`}
                   >
                     <View className="flex-1">
-                      <Text className="font-sans-medium text-[13px] text-foreground">{c.client_name}</Text>
-                      <Text className="text-[11px] text-foreground/35">Connected {formatShortDate(c.connected_at)}</Text>
+                      <Text className="font-sans-medium text-[15px] text-foreground">{c.client_name}</Text>
+                      <Text className="text-[14px] text-foreground/35">Connected {formatShortDate(c.connected_at)}</Text>
                     </View>
                     <Pressable
                       onPress={() => handleRevoke(c.token_id)}
@@ -132,8 +132,8 @@ export function McpConnectionsCard() {
                         <ActivityIndicator size="small" color="#EF4444" />
                       ) : (
                         <>
-                          <ShieldOff size={12} color="#EF4444" strokeWidth={2} />
-                          <Text className="text-[11px] font-sans-medium text-destructive">Revoke</Text>
+                          <ShieldOff size={14} color="#EF4444" strokeWidth={2} />
+                          <Text className="text-[14px] font-sans-medium text-destructive">Revoke</Text>
                         </>
                       )}
                     </Pressable>
@@ -141,7 +141,7 @@ export function McpConnectionsCard() {
                 ))}
               </View>
             ) : (
-              <Text className="text-[12px] text-foreground/30">No apps connected yet.</Text>
+              <Text className="text-[15px] text-foreground/30">No apps connected yet.</Text>
             )}
           </View>
         </>

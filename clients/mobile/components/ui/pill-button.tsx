@@ -52,7 +52,7 @@ export function PillButton({
       {loading ? (
         <ActivityIndicator color={textColor} />
       ) : typeof children === "string" ? (
-        <Text style={{ color: textColor }} className="text-[16px] font-sans-semibold">
+        <Text style={{ color: textColor }} className="text-[18px] font-sans-semibold">
           {children}
         </Text>
       ) : (

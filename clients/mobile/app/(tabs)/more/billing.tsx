@@ -58,7 +58,7 @@ export default function BillingScreen() {
       <View className="px-4 pt-3">
         <View className="overflow-hidden rounded-card border border-foreground/10">
           <View className="bg-salli-navy-card px-4 pb-4 pt-3.5">
-            <Text className="mb-3 text-[11px] font-sans-medium uppercase tracking-wide text-white/50 capitalize">
+            <Text className="mb-3 text-[14px] font-sans-medium uppercase tracking-wide text-white/50 capitalize">
               {entitlements.data?.plan_name ?? "Free"} Plan
             </Text>
             {(() => {
@@ -75,7 +75,7 @@ export default function BillingScreen() {
                     <Text className="font-sans-semibold text-2xl text-white">
                       {c.total.toLocaleString()}
                     </Text>
-                    <Text className="text-[12px] text-white/50">credits left</Text>
+                    <Text className="text-[15px] text-white/50">credits left</Text>
                   </View>
                   <View className="h-1.5 overflow-hidden rounded-pill bg-white/10">
                     <View
@@ -84,8 +84,8 @@ export default function BillingScreen() {
                     />
                   </View>
                   <View className="flex-row justify-between">
-                    <Text className="text-[11px] text-white/50">Monthly allowance</Text>
-                    <Text className="font-sans-semibold text-[11px] text-white">
+                    <Text className="text-[14px] text-white/50">Monthly allowance</Text>
+                    <Text className="font-sans-semibold text-[14px] text-white">
                       {c.allowance_remaining.toLocaleString()} / {c.allowance_total.toLocaleString()}
                     </Text>
                   </View>
@@ -93,8 +93,8 @@ export default function BillingScreen() {
                     <View className="flex-row justify-between">
                       {/* Said plainly because it is the reassurance someone
                           wants before buying another pack. */}
-                      <Text className="text-[11px] text-white/50">Purchased · never expires</Text>
-                      <Text className="font-sans-semibold text-[11px] text-white">
+                      <Text className="text-[14px] text-white/50">Purchased · never expires</Text>
+                      <Text className="font-sans-semibold text-[14px] text-white">
                         {c.purchased_remaining.toLocaleString()}
                       </Text>
                     </View>
@@ -109,7 +109,7 @@ export default function BillingScreen() {
           <TopUpCard />
         </View>
 
-        <Text className="mb-2 mt-4 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+        <Text className="mb-2 mt-4 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
           Plans
         </Text>
         <View className="gap-2.5">
@@ -118,17 +118,17 @@ export default function BillingScreen() {
             return (
               <Card key={plan.key} className={cn("p-4", isCurrent && "border-salli-accent/40")}>
                 <View className="mb-1.5 flex-row items-center justify-between">
-                  <Text className="font-sans-bold text-[16px] text-foreground">{plan.name}</Text>
-                  <Text className="font-sans-bold text-[16px] text-foreground">
+                  <Text className="font-sans-bold text-[18px] text-foreground">{plan.name}</Text>
+                  <Text className="font-sans-bold text-[18px] text-foreground">
                     {plan.monthly_price_usd === 0 ? "Free" : `$${plan.monthly_price_usd}/mo`}
                   </Text>
                 </View>
-                <Text className="mb-2.5 text-[12px] text-foreground/40">{plan.description}</Text>
+                <Text className="mb-2.5 text-[15px] text-foreground/40">{plan.description}</Text>
                 <View className="mb-3 gap-1.5">
                   {plan.features.map((f, i) => (
                     <View key={i} className="flex-row items-start gap-2">
-                      <Check size={13} color={colors.accent} strokeWidth={2.5} />
-                      <Text className="flex-1 text-[12px] leading-4 text-foreground/60">{f}</Text>
+                      <Check size={15} color={colors.accent} strokeWidth={2.5} />
+                      <Text className="flex-1 text-[15px] leading-5 text-foreground/60">{f}</Text>
                     </View>
                   ))}
                 </View>
@@ -142,12 +142,12 @@ export default function BillingScreen() {
                       {portal.isPending ? (
                         <ActivityIndicator size="small" color={colors.accent} />
                       ) : (
-                        <Text className="text-[13px] font-sans-semibold text-foreground/70">Manage subscription</Text>
+                        <Text className="text-[15px] font-sans-semibold text-foreground/70">Manage subscription</Text>
                       )}
                     </Pressable>
                   ) : (
                     <View className="items-center rounded-pill border border-foreground/10 bg-foreground/[0.06] py-2.5">
-                      <Text className="text-[13px] font-sans-semibold text-foreground/40">Current Plan</Text>
+                      <Text className="text-[15px] font-sans-semibold text-foreground/40">Current Plan</Text>
                     </View>
                   )
                 ) : null}

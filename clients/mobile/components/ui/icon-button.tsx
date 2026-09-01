@@ -29,7 +29,7 @@ export function IconButton({
       haptic={haptic}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      className={cn("h-9 w-9 items-center justify-center rounded-full bg-foreground/10", className)}
+      className={cn("h-11 w-11 items-center justify-center rounded-full bg-foreground/10", className)}
     >
       <Icon size={size} color={colors.foreground} strokeWidth={2} />
     </AnimatedPressable>

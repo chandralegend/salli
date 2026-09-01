@@ -87,18 +87,18 @@ export function LlmKeysCard() {
     <Card className="p-4">
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2">
-          <KeyRound size={15} color={colors.mutedForeground} strokeWidth={2} />
-          <Text className="font-sans-semibold text-[14px] text-foreground">Use your own AI key</Text>
+          <KeyRound size={17} color={colors.mutedForeground} strokeWidth={2} />
+          <Text className="font-sans-semibold text-[16px] text-foreground">Use your own AI key</Text>
         </View>
         {byok ? (
           <View className="flex-row items-center gap-1.5 rounded-pill bg-salli-accent/15 px-2.5 py-1">
             <Check size={11} color={colors.accent} strokeWidth={3} />
-            <Text className="text-[11px] font-sans-semibold text-salli-accent">Unlimited</Text>
+            <Text className="text-[14px] font-sans-semibold text-salli-accent">Unlimited</Text>
           </View>
         ) : null}
       </View>
 
-      <Text className="mt-1.5 text-[12px] leading-4 text-foreground/40">
+      <Text className="mt-1.5 text-[15px] leading-5 text-foreground/40">
         Add your own API key and you pay your provider directly — Salli stops counting your monthly
         AI usage. Your key is encrypted, never shown again, and you can remove it any time.
       </Text>
@@ -117,17 +117,17 @@ export function LlmKeysCard() {
             return (
               <View key={p.id} className="rounded-control border border-foreground/10 p-3">
                 <View className="flex-row items-center justify-between">
-                  <Text className="font-sans-medium text-[13px] text-foreground">{p.label}</Text>
+                  <Text className="font-sans-medium text-[15px] text-foreground">{p.label}</Text>
                   {existing && !isEditing ? (
                     <View className="flex-row items-center gap-2.5">
-                      <Text className="font-mono text-[12px] text-foreground/45">
+                      <Text className="font-mono text-[15px] text-foreground/45">
                         ····{existing.last4}
                       </Text>
                       <Pressable onPress={() => handleRemove(p.id)} hitSlop={8} disabled={isBusy}>
                         {isBusy ? (
                           <ActivityIndicator size="small" color={colors.mutedForeground} />
                         ) : (
-                          <Trash2 size={14} color="#EF4444" strokeWidth={2} />
+                          <Trash2 size={16} color="#EF4444" strokeWidth={2} />
                         )}
                       </Pressable>
                     </View>
@@ -139,17 +139,17 @@ export function LlmKeysCard() {
                       }}
                       hitSlop={8}
                     >
-                      <Text className="text-[12px] font-sans-semibold text-salli-accent">Add</Text>
+                      <Text className="text-[15px] font-sans-semibold text-salli-accent">Add</Text>
                     </Pressable>
                   ) : null}
                 </View>
 
-                <Text className="mt-0.5 text-[11px] leading-4 text-foreground/30">{p.hint}</Text>
+                <Text className="mt-0.5 text-[14px] leading-5 text-foreground/30">{p.hint}</Text>
 
                 {existing && !existing.readable ? (
                   <View className="mt-2 flex-row items-center gap-2 rounded-control bg-[#FEF3C7] px-3 py-2">
-                    <TriangleAlert size={13} color="#B45309" strokeWidth={2} />
-                    <Text className="flex-1 text-[11px] text-[#B45309]">
+                    <TriangleAlert size={15} color="#B45309" strokeWidth={2} />
+                    <Text className="flex-1 text-[14px] text-[#B45309]">
                       This key can no longer be read — please add it again.
                     </Text>
                   </View>
@@ -167,7 +167,7 @@ export function LlmKeysCard() {
                       // The key is a credential: keep it off the screen and out
                       // of the keyboard's learned-word store.
                       secureTextEntry
-                      className="rounded-control bg-muted px-3 py-2.5 font-mono text-[12px] text-foreground"
+                      className="rounded-control bg-muted px-3 py-2.5 font-mono text-[15px] text-foreground"
                     />
                     <View className="flex-row gap-2">
                       <Pressable
@@ -179,7 +179,7 @@ export function LlmKeysCard() {
                         {isBusy ? (
                           <ActivityIndicator size="small" color="#FFFFFF" />
                         ) : (
-                          <Text className="text-[13px] font-sans-semibold text-white">
+                          <Text className="text-[15px] font-sans-semibold text-white">
                             Verify & save
                           </Text>
                         )}
@@ -191,7 +191,7 @@ export function LlmKeysCard() {
                         }}
                         className="h-9 items-center justify-center rounded-control border border-foreground/10 px-4"
                       >
-                        <Text className="text-[13px] font-sans-medium text-foreground/50">
+                        <Text className="text-[15px] font-sans-medium text-foreground/50">
                           Cancel
                         </Text>
                       </Pressable>

@@ -40,9 +40,9 @@ export function MessageActions({ text }: { text: string }) {
         className="h-7 w-7 items-center justify-center rounded-[7px]"
       >
         {copied ? (
-          <Check size={14} color={colors.accent} strokeWidth={2.2} />
+          <Check size={16} color={colors.accent} strokeWidth={2.2} />
         ) : (
-          <Copy size={14} color={colors.mutedForeground} strokeWidth={1.9} />
+          <Copy size={16} color={colors.mutedForeground} strokeWidth={1.9} />
         )}
       </Pressable>
     </View>

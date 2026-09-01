@@ -51,8 +51,8 @@ export function SpendingBreakdown({ surplus }: { surplus: FiSurplus | undefined 
   if (categories.length === 0) {
     return (
       <Card className="p-4">
-        <Text className="font-sans-semibold text-[14px] text-foreground">Where it goes</Text>
-        <Text className="mt-1 text-[12px] leading-4 text-foreground/35">
+        <Text className="font-sans-semibold text-[16px] text-foreground">Where it goes</Text>
+        <Text className="mt-1 text-[15px] leading-5 text-foreground/35">
           No spending in the last year yet. Once you have some, it&rsquo;ll break down here.
         </Text>
       </Card>
@@ -62,7 +62,7 @@ export function SpendingBreakdown({ surplus }: { surplus: FiSurplus | undefined 
   return (
     <Card className="p-4">
       <View className="flex-row items-center gap-2">
-        <Text className="font-sans-semibold text-[14px] text-foreground">Where it goes</Text>
+        <Text className="font-sans-semibold text-[16px] text-foreground">Where it goes</Text>
         <InfoButton
           title="Where it goes"
           description={
@@ -72,7 +72,7 @@ export function SpendingBreakdown({ surplus }: { surplus: FiSurplus | undefined 
           }
         />
       </View>
-      <Text className="mt-0.5 text-[11px] text-foreground/35">Monthly average</Text>
+      <Text className="mt-0.5 text-[14px] text-foreground/35">Monthly average</Text>
 
       {/* needs vs wants */}
       {needs.length > 0 ? (
@@ -90,8 +90,8 @@ export function SpendingBreakdown({ surplus }: { surplus: FiSurplus | undefined 
             {needs.map((n) => (
               <View key={n.slug} className="flex-row items-center gap-1.5">
                 <View className={cn("h-2 w-2 rounded-full", NEED_META[n.slug].bar)} />
-                <Text className="text-[11px] text-foreground/45">{NEED_META[n.slug].label}</Text>
-                <Text className={cn("text-[11px] font-sans-semibold", NEED_META[n.slug].text)}>
+                <Text className="text-[14px] text-foreground/45">{NEED_META[n.slug].label}</Text>
+                <Text className={cn("text-[14px] font-sans-semibold", NEED_META[n.slug].text)}>
                   {Math.round((n.amount / needTotal) * 100)}%
                 </Text>
               </View>
@@ -100,7 +100,7 @@ export function SpendingBreakdown({ surplus }: { surplus: FiSurplus | undefined 
         </View>
       ) : (
         <View className="mt-3 rounded-[8px] bg-foreground/[0.04] px-3 py-2.5">
-          <Text className="text-[11px] leading-4 text-foreground/40">
+          <Text className="text-[14px] leading-5 text-foreground/40">
             Tag a few expenses as Needs, Wants or Savings to see how your spending splits.
           </Text>
         </View>
@@ -111,10 +111,10 @@ export function SpendingBreakdown({ surplus }: { surplus: FiSurplus | undefined 
         {categories.map((c) => (
           <View key={c.label}>
             <View className="mb-1 flex-row items-baseline justify-between">
-              <Text className="flex-1 text-[12px] text-foreground/60" numberOfLines={1}>
+              <Text className="flex-1 text-[15px] text-foreground/60" numberOfLines={1}>
                 {c.label}
               </Text>
-              <Text className="font-sans-semibold text-[12px] text-foreground">
+              <Text className="font-sans-semibold text-[15px] text-foreground">
                 Rs. {formatLKRAbbrev(c.amount)}
               </Text>
             </View>

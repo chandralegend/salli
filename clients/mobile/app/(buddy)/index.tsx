@@ -108,15 +108,15 @@ export default function BuddyScreen() {
           the same session-history drawer that used to sit behind a menu icon,
           per the spec's "no hamburger menu on Buddy Mode". */}
       <Pressable onPress={openSessions} className="items-center py-2.5">
-        <Text className="font-sans-semibold text-[15px] text-foreground">Buddy Mode</Text>
-        <Text className="mt-0.5 text-[11px] text-foreground/35">Swipe left for Pro Mode</Text>
+        <Text className="font-sans-semibold text-[17px] text-foreground">Buddy Mode</Text>
+        <Text className="mt-0.5 text-[14px] text-foreground/35">Swipe left for Pro Mode</Text>
       </Pressable>
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
         {messages.length === 0 ? (
           <View className="flex-1 justify-end px-4 pb-3">
             <View style={chatColumnStyle}>
-              <Text className="px-1 text-[15px] leading-[22px] text-foreground">{WELCOME_MESSAGE}</Text>
+              <Text className="px-1 text-[17px] leading-[28px] text-foreground">{WELCOME_MESSAGE}</Text>
             </View>
           </View>
         ) : (
@@ -132,7 +132,7 @@ export default function BuddyScreen() {
                     className="max-w-[78%] rounded-[14px] rounded-br-[6px] px-4 py-3"
                     style={{ backgroundColor: colors.bubbleUser }}
                   >
-                    <Text className="text-[14px] leading-5 text-foreground">{item.content}</Text>
+                    <Text className="text-[16px] leading-5 text-foreground">{item.content}</Text>
                   </View>
                 </View>
               ) : (
@@ -186,7 +186,7 @@ export default function BuddyScreen() {
               className="rounded-control border border-destructive/25 bg-destructive/10 px-3.5 py-2.5"
               style={chatColumnStyle}
             >
-              <Text className="text-[12px] text-destructive">{quotaBanner}</Text>
+              <Text className="text-[15px] text-destructive">{quotaBanner}</Text>
             </View>
           </View>
         ) : null}
@@ -196,15 +196,15 @@ export default function BuddyScreen() {
             className="flex-row items-center gap-2 rounded-[16px] border border-foreground/10 bg-card py-1.5 pl-2 pr-1.5"
             style={chatColumnStyle}
           >
-            <Pressable className="h-9 w-9 items-center justify-center" accessibilityLabel="Attach a file">
-              <Paperclip size={17} color={colors.mutedForeground} strokeWidth={1.8} />
+            <Pressable className="h-11 w-11 items-center justify-center" accessibilityLabel="Attach a file">
+              <Paperclip size={19} color={colors.mutedForeground} strokeWidth={1.8} />
             </Pressable>
             <TextInput
               value={input}
               onChangeText={setInput}
               placeholder="Tell me what's up..."
               placeholderTextColor="rgba(128,128,128,0.4)"
-              className="flex-1 text-[14px] text-foreground"
+              className="flex-1 text-[16px] text-foreground"
               multiline
               onSubmitEditing={() => send(input)}
             />
@@ -213,19 +213,19 @@ export default function BuddyScreen() {
                 onPress={() => send(input)}
                 disabled={streaming}
                 className={cn(
-                  "h-[36px] w-[36px] items-center justify-center rounded-full bg-salli-accent",
+                  "h-11 w-11 items-center justify-center rounded-full bg-salli-accent",
                   streaming && "opacity-40",
                 )}
               >
-                <Send size={15} color="#FFFFFF" strokeWidth={2.5} />
+                <Send size={17} color="#FFFFFF" strokeWidth={2.5} />
               </Pressable>
             ) : (
               <Pressable
                 onPress={() => router.push("/voice")}
-                className="h-[36px] w-[36px] items-center justify-center rounded-full bg-foreground/[0.06]"
+                className="h-11 w-11 items-center justify-center rounded-full bg-foreground/[0.06]"
                 accessibilityLabel="Start voice mode"
               >
-                <Mic size={15} color={colors.mutedForeground} strokeWidth={2} />
+                <Mic size={17} color={colors.mutedForeground} strokeWidth={2} />
               </Pressable>
             )}
           </View>
@@ -234,7 +234,7 @@ export default function BuddyScreen() {
 
       <Drawer visible={sessionsOpen} onClose={() => setSessionsOpen(false)} keyboardAvoiding={false}>
         <View className="flex-row items-center justify-between px-1 pb-3 pt-1">
-          <Text className="font-sans-bold text-[17px] text-foreground">Conversations</Text>
+          <Text className="font-sans-bold text-[19px] text-foreground">Conversations</Text>
           <Pressable
             onPress={() => {
               startNewChat();
@@ -242,13 +242,13 @@ export default function BuddyScreen() {
             }}
             className="flex-row items-center gap-1.5 rounded-pill bg-salli-accent px-3 py-1.5"
           >
-            <SquarePen size={13} color="#FFFFFF" strokeWidth={2} />
-            <Text className="font-sans-semibold text-[12px] text-white">New chat</Text>
+            <SquarePen size={15} color="#FFFFFF" strokeWidth={2} />
+            <Text className="font-sans-semibold text-[15px] text-white">New chat</Text>
           </Pressable>
         </View>
         {(sessions.data ?? []).length === 0 ? (
           <View className="items-center px-1 py-10">
-            <Text className="text-[13px] text-foreground/35">No conversations yet.</Text>
+            <Text className="text-[15px] text-foreground/35">No conversations yet.</Text>
           </View>
         ) : (
           (sessions.data ?? []).map((s) => (
@@ -257,15 +257,15 @@ export default function BuddyScreen() {
               className="flex-row items-center gap-3 border-t border-foreground/[0.05] px-1 py-3"
             >
               <Pressable className="flex-1" onPress={() => handleLoadThread(s.thread_id)}>
-                <Text numberOfLines={1} className="font-sans-medium text-[14px] text-foreground">
+                <Text numberOfLines={1} className="font-sans-medium text-[16px] text-foreground">
                   {s.title || "New conversation"}
                 </Text>
-                <Text className="mt-0.5 text-[11px] text-foreground/30">
+                <Text className="mt-0.5 text-[14px] text-foreground/30">
                   {new Date(s.last_active_at).toLocaleDateString()}
                 </Text>
               </Pressable>
               <Pressable onPress={() => deleteSession.mutate(s.thread_id)} className="p-1">
-                <Trash2 size={15} color={colors.mutedForeground} strokeWidth={2} />
+                <Trash2 size={17} color={colors.mutedForeground} strokeWidth={2} />
               </Pressable>
             </View>
           ))

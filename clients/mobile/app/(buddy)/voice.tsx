@@ -45,7 +45,7 @@ function ControlButton({
       >
         <Icon size={22} color={danger ? "#FFFFFF" : colors.foreground} strokeWidth={2} />
       </View>
-      <Text className="text-[11px] text-foreground/50">{label}</Text>
+      <Text className="text-[14px] text-foreground/50">{label}</Text>
     </Pressable>
   );
 }
@@ -102,8 +102,8 @@ export default function VoiceScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
 
       <View className="items-center pt-2.5">
-        <Text className="font-sans-semibold text-[15px] text-foreground">Buddy Mode</Text>
-        <Text className="mt-0.5 text-[11px] font-sans-medium text-salli-accent">Voice mode</Text>
+        <Text className="font-sans-semibold text-[17px] text-foreground">Buddy Mode</Text>
+        <Text className="mt-0.5 text-[14px] font-sans-medium text-salli-accent">Voice mode</Text>
       </View>
 
       <View className="flex-1 items-center justify-center px-8">
@@ -122,13 +122,13 @@ export default function VoiceScreen() {
             >
               <VoiceOrb state={state} level={level} />
             </Pressable>
-            <Text className="mt-8 font-sans-semibold text-[17px] text-foreground">
+            <Text className="mt-8 font-sans-semibold text-[19px] text-foreground">
               {muted && state === "idle" ? "Mic is muted" : STATE_LABEL[state]}
             </Text>
             {caption ? (
               <Text
                 className={cn(
-                  "mt-3 text-center text-[13px] leading-5",
+                  "mt-3 text-center text-[15px] leading-5",
                   error || quotaBanner ? "text-destructive" : "text-foreground/35",
                 )}
                 style={{ maxWidth: isTablet ? 420 : undefined }}

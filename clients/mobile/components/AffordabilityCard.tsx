@@ -20,17 +20,17 @@ export function AffordabilityCard() {
       <Pressable onPress={() => setOpen(true)}>
         <Card className="mx-4 mb-3.5 flex-row items-center gap-3 p-3.5">
           <View className="h-9 w-9 items-center justify-center rounded-[10px] bg-salli-accent/15">
-            <Wallet size={16} color={colors.accent} strokeWidth={2} />
+            <Wallet size={18} color={colors.accent} strokeWidth={2} />
           </View>
           <View className="flex-1">
-            <Text className="text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">
+            <Text className="text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">
               Can I afford this?
             </Text>
-            <Text className="mt-0.5 text-[12px] text-foreground/50" numberOfLines={1}>
+            <Text className="mt-0.5 text-[15px] text-foreground/50" numberOfLines={1}>
               Price a purchase against your Freedom date
             </Text>
           </View>
-          <ChevronRight size={16} color={colors.mutedForeground} strokeWidth={2} />
+          <ChevronRight size={18} color={colors.mutedForeground} strokeWidth={2} />
         </Card>
       </Pressable>
 

@@ -99,7 +99,7 @@ export function TagPicker({
   }
 
   const label = cn(
-    "mb-1.5 text-[10px] font-sans-medium uppercase tracking-wide",
+    "mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide",
     onDark ? "text-white/35" : "text-foreground/30",
   );
 
@@ -128,7 +128,7 @@ export function TagPicker({
         {active ? <Check size={11} color="#FFFFFF" strokeWidth={3} /> : null}
         <Text
           className={cn(
-            "text-[12px]",
+            "text-[15px]",
             active
               ? "font-sans-semibold text-white"
               : onDark
@@ -174,16 +174,16 @@ export function TagPicker({
                 placeholder="New category"
                 placeholderTextColor="rgba(128,128,128,0.45)"
                 className={cn(
-                  "h-[30px] w-[130px] rounded-pill px-3 text-[12px]",
+                  "h-[30px] w-[130px] rounded-pill px-3 text-[15px]",
                   onDark ? "bg-white/[0.08] text-white" : "bg-muted text-foreground",
                 )}
               />
               <Pressable
                 onPress={addCategory}
                 disabled={!draft.trim()}
-                className="h-[30px] w-[30px] items-center justify-center rounded-full bg-salli-accent"
+                className="h-10 w-10 items-center justify-center rounded-full bg-salli-accent"
               >
-                <Check size={13} color="#FFFFFF" strokeWidth={3} />
+                <Check size={15} color="#FFFFFF" strokeWidth={3} />
               </Pressable>
             </View>
           ) : (
@@ -201,7 +201,7 @@ export function TagPicker({
               />
               <Text
                 className={cn(
-                  "text-[12px] font-sans-medium",
+                  "text-[15px] font-sans-medium",
                   onDark ? "text-white/45" : "text-foreground/40",
                 )}
               >
@@ -231,7 +231,7 @@ export function TagPicker({
         />
         <Text
           className={cn(
-            "flex-1 text-[10px] leading-4",
+            "flex-1 text-[13px] leading-5",
             onDark ? "text-white/30" : "text-foreground/30",
           )}
         >

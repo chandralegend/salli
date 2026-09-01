@@ -145,14 +145,14 @@ export function SocialAuthButtons({ onError }: { onError: (message: string) => v
         ) : (
           <>
             <GoogleIcon />
-            <Text className="font-sans-semibold text-[15px] text-foreground">Continue with Google</Text>
+            <Text className="font-sans-semibold text-[17px] text-foreground">Continue with Google</Text>
           </>
         )}
       </Pressable>
 
       <View className="my-1 flex-row items-center gap-3">
         <View className="h-px flex-1 bg-foreground/10" />
-        <Text className="text-[12px] text-foreground/20">or</Text>
+        <Text className="text-[15px] text-foreground/20">or</Text>
         <View className="h-px flex-1 bg-foreground/10" />
       </View>
     </View>

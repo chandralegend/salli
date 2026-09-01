@@ -109,22 +109,22 @@ export function AccountDetailModal({
                 <View className="flex-1">
                   <View className="mb-1.5 flex-row items-center gap-2">
                     <View className="rounded-[5px] bg-salli-accent/25 px-2 py-0.5">
-                      <Text className="text-[10px] font-sans-semibold uppercase tracking-wide text-salli-accent">
+                      <Text className="text-[13px] font-sans-semibold uppercase tracking-wide text-salli-accent">
                         {account.type}
                       </Text>
                     </View>
-                    <Text className="text-[11px] text-white/30">
+                    <Text className="text-[14px] text-white/30">
                       {account.code} · {account.currency}
                     </Text>
                   </View>
-                  <Text className="mb-2 font-sans-bold text-[17px] text-white">{account.name}</Text>
+                  <Text className="mb-2 font-sans-bold text-[19px] text-white">{account.name}</Text>
                   <View className="flex-row items-baseline gap-1">
-                    <Text className="font-sans-semibold text-[18px] text-white/40">Rs.</Text>
+                    <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
                     <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
                       {formatLKRAbbrev(overview.data!.current_balance)}
                     </Text>
                   </View>
-                  <Text className="mt-1 text-[11px] text-white/30">
+                  <Text className="mt-1 text-[14px] text-white/30">
                     Current balance · {account.is_active ? "Active" : "Inactive"}
                   </Text>
                 </View>
@@ -132,17 +132,17 @@ export function AccountDetailModal({
                   onPress={() => setEditOpen(true)}
                   className="rounded-[10px] border border-white/[0.08] bg-white/[0.06] p-2.5"
                 >
-                  <Pencil size={20} color="rgba(255,255,255,0.4)" strokeWidth={1.8} />
+                  <Pencil size={22} color="rgba(255,255,255,0.4)" strokeWidth={1.8} />
                 </Pressable>
               </View>
               <View className="flex-row gap-2">
                 <View className="flex-1 rounded-[8px] bg-white/[0.06] px-3 py-2.5">
-                  <Text className="mb-0.5 text-[10px] text-white/35">Money in ({period})</Text>
-                  <Text className="font-sans-bold text-[14px] text-white">Rs. {formatLKRAbbrev(moneyIn)}</Text>
+                  <Text className="mb-0.5 text-[13px] text-white/35">Money in ({period})</Text>
+                  <Text className="font-sans-bold text-[16px] text-white">Rs. {formatLKRAbbrev(moneyIn)}</Text>
                 </View>
                 <View className="flex-1 rounded-[8px] bg-white/[0.06] px-3 py-2.5">
-                  <Text className="mb-0.5 text-[10px] text-white/35">Money out ({period})</Text>
-                  <Text className="font-sans-bold text-[14px] text-white/60">Rs. {formatLKRAbbrev(moneyOut)}</Text>
+                  <Text className="mb-0.5 text-[13px] text-white/35">Money out ({period})</Text>
+                  <Text className="font-sans-bold text-[16px] text-white/60">Rs. {formatLKRAbbrev(moneyOut)}</Text>
                 </View>
               </View>
             </Card>
@@ -158,20 +158,20 @@ export function AccountDetailModal({
                     period === p ? "bg-salli-accent" : "border border-foreground/[0.08] bg-card",
                   )}
                 >
-                  <Text className={cn("text-[12px]", period === p ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/40")}>
+                  <Text className={cn("text-[15px]", period === p ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/40")}>
                     {p}
                   </Text>
                 </Pressable>
               ))}
             </View>
 
-            <Text className="mb-1.5 mt-3.5 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+            <Text className="mb-1.5 mt-3.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
               Entries · {visibleTxs.length}
             </Text>
 
             {rows.length === 0 ? (
               <Card className="items-center p-6">
-                <Text className="text-[13px] text-foreground/35">No entries in this period.</Text>
+                <Text className="text-[15px] text-foreground/35">No entries in this period.</Text>
               </Card>
             ) : (
               <View className="gap-1.5">
@@ -187,20 +187,20 @@ export function AccountDetailModal({
                         )}
                       >
                         {inflow ? (
-                          <ArrowDownLeft size={14} color={colors.accent} strokeWidth={2} />
+                          <ArrowDownLeft size={16} color={colors.accent} strokeWidth={2} />
                         ) : (
-                          <ArrowUpRight size={14} color={colors.mutedForeground} strokeWidth={2} />
+                          <ArrowUpRight size={16} color={colors.mutedForeground} strokeWidth={2} />
                         )}
                       </View>
                       <View className="flex-1">
-                        <Text numberOfLines={1} className="font-sans-semibold text-[13px] text-foreground">
+                        <Text numberOfLines={1} className="font-sans-semibold text-[15px] text-foreground">
                           {t.description}
                         </Text>
-                        <Text className="mt-0.5 text-[11px] capitalize text-foreground/30">
+                        <Text className="mt-0.5 text-[14px] capitalize text-foreground/30">
                           {t.entry_date} · {t.source}
                         </Text>
                       </View>
-                      <Text className={cn("font-sans-bold text-[13px]", inflow ? "text-foreground" : "text-foreground/60")}>
+                      <Text className={cn("font-sans-bold text-[15px]", inflow ? "text-foreground" : "text-foreground/60")}>
                         {inflow ? "+" : "−"}Rs. {formatLKR(Math.abs(t.delta), 0)}
                       </Text>
                     </Card>
@@ -223,13 +223,13 @@ export function AccountDetailModal({
             >
               {account.is_active ? (
                 <>
-                  <PowerOff size={15} color="#EF4444" strokeWidth={2} />
-                  <Text className="font-sans-semibold text-[13px] text-destructive">Deactivate account</Text>
+                  <PowerOff size={17} color="#EF4444" strokeWidth={2} />
+                  <Text className="font-sans-semibold text-[15px] text-destructive">Deactivate account</Text>
                 </>
               ) : (
                 <>
-                  <Power size={15} color={colors.accent} strokeWidth={2} />
-                  <Text className="font-sans-semibold text-[13px] text-salli-accent">Reactivate account</Text>
+                  <Power size={17} color={colors.accent} strokeWidth={2} />
+                  <Text className="font-sans-semibold text-[15px] text-salli-accent">Reactivate account</Text>
                 </>
               )}
             </Pressable>

@@ -104,11 +104,11 @@ function StepHeader({ index, onBack }: { index: number; onBack: () => void }) {
       <View className="flex-row items-center justify-between px-5 pt-2.5">
         <Pressable
           onPress={onBack}
-          className="h-[34px] w-[34px] items-center justify-center rounded-full border border-foreground/[0.08] bg-foreground/[0.07]"
+          className="h-11 w-11 items-center justify-center rounded-full border border-foreground/[0.08] bg-foreground/[0.07]"
         >
-          <ChevronLeft size={14} color={colors.foreground} strokeWidth={2} />
+          <ChevronLeft size={16} color={colors.foreground} strokeWidth={2} />
         </Pressable>
-        <Text className="font-sans-medium text-[13px] text-foreground/35">
+        <Text className="font-sans-medium text-[15px] text-foreground/35">
           {index + 2} of {TOTAL_STEPS}
         </Text>
         <View style={{ width: 34 }} />
@@ -129,7 +129,7 @@ function StepHeader({ index, onBack }: { index: number; onBack: () => void }) {
       </View>
       <View className="flex-row justify-between px-4">
         {STEP_LABELS.map((label, i) => (
-          <Text key={label} className={cn("text-[10px]", i === index ? "font-sans-medium text-salli-accent" : "text-foreground/20")}>
+          <Text key={label} className={cn("text-[13px]", i === index ? "font-sans-medium text-salli-accent" : "text-foreground/20")}>
             {label}
           </Text>
         ))}
@@ -141,8 +141,8 @@ function StepHeader({ index, onBack }: { index: number; onBack: () => void }) {
 function StepTitle({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <View className="pb-4 pt-4">
-      <Text className="mb-1.5 font-sans-extrabold text-[28px] tracking-tight text-foreground">{title}</Text>
-      <Text className="text-[13px] text-foreground/35">{subtitle}</Text>
+      <Text className="mb-1.5 font-sans-extrabold text-[32px] tracking-tight text-foreground">{title}</Text>
+      <Text className="text-[15px] text-foreground/35">{subtitle}</Text>
     </View>
   );
 }
@@ -326,29 +326,29 @@ export default function OnboardingScreen() {
         <View className="flex-1 px-6 pt-4" style={[{ paddingBottom: insets.bottom + 16 }, stepColumnStyle]}>
           <View className="mb-5 items-center">
             <Logo size={36} className="text-foreground" />
-            <Text className="mb-1.5 mt-3 text-center font-sans-bold text-[26px] tracking-tight text-foreground">
+            <Text className="mb-1.5 mt-3 text-center font-sans-bold text-[30px] tracking-tight text-foreground">
               Welcome to Salli
             </Text>
-            <Text className="text-center text-[13px] leading-5 text-foreground/40">
+            <Text className="text-center text-[15px] leading-5 text-foreground/40">
               Your AI-powered financial companion,{"\n"}built for Sri Lanka.
             </Text>
           </View>
 
           <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-            <Text className="mb-3 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+            <Text className="mb-3 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
               We&apos;ll set up together in ~5 min
             </Text>
             <View className="gap-1.5">
               {WELCOME_ITEMS.map((item, i) => (
                 <View key={item.title} className="flex-row items-center gap-3 rounded-control border border-foreground/[0.08] bg-card px-4 py-3">
                   <View className={cn("h-8 w-8 items-center justify-center rounded-[10px]", i === 0 ? "bg-salli-accent" : "bg-foreground/[0.08]")}>
-                    <item.icon size={14} color={i === 0 ? "#FFFFFF" : colors.mutedForeground} strokeWidth={2} />
+                    <item.icon size={16} color={i === 0 ? "#FFFFFF" : colors.mutedForeground} strokeWidth={2} />
                   </View>
                   <View className="flex-1">
-                    <Text className="font-sans-medium text-[13px] text-foreground">{item.title}</Text>
-                    <Text className="text-[11px] text-foreground/30">{item.detail}</Text>
+                    <Text className="font-sans-medium text-[15px] text-foreground">{item.title}</Text>
+                    <Text className="text-[14px] text-foreground/30">{item.detail}</Text>
                   </View>
-                  <ChevronRight size={12} color={colors.mutedForeground} strokeWidth={2} />
+                  <ChevronRight size={14} color={colors.mutedForeground} strokeWidth={2} />
                 </View>
               ))}
             </View>
@@ -356,15 +356,15 @@ export default function OnboardingScreen() {
 
           <View className="pt-3">
             <PillButton onPress={() => setStep(1)}>
-              <Text className="font-sans-bold text-[15px] text-primary-foreground">Begin setup</Text>
-              <ChevronRight size={13} color={colors.primaryForeground} strokeWidth={2.5} />
+              <Text className="font-sans-bold text-[17px] text-primary-foreground">Begin setup</Text>
+              <ChevronRight size={15} color={colors.primaryForeground} strokeWidth={2.5} />
             </PillButton>
             <View className="mt-2 flex-row justify-center gap-3">
-              <Text className="text-[11px] text-foreground/20">IRD-ready</Text>
-              <Text className="text-[11px] text-foreground/10">·</Text>
-              <Text className="text-[11px] text-foreground/20">100% private</Text>
-              <Text className="text-[11px] text-foreground/10">·</Text>
-              <Text className="text-[11px] text-foreground/20">~5 minutes</Text>
+              <Text className="text-[14px] text-foreground/20">IRD-ready</Text>
+              <Text className="text-[14px] text-foreground/10">·</Text>
+              <Text className="text-[14px] text-foreground/20">100% private</Text>
+              <Text className="text-[14px] text-foreground/10">·</Text>
+              <Text className="text-[14px] text-foreground/20">~5 minutes</Text>
             </View>
           </View>
         </View>
@@ -387,11 +387,11 @@ export default function OnboardingScreen() {
                 value={dateOfBirth}
                 onChangeText={setDateOfBirth}
                 placeholder="YYYY-MM-DD"
-                rightIcon={<Calendar size={15} color={colors.foreground} strokeWidth={2} style={{ opacity: 0.2 }} />}
+                rightIcon={<Calendar size={17} color={colors.foreground} strokeWidth={2} style={{ opacity: 0.2 }} />}
               />
 
               <View>
-                <Text className="mb-1.5 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">Tax Residency *</Text>
+                <Text className="mb-1.5 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">Tax Residency *</Text>
                 <View className="flex-row rounded-pill border border-foreground/[0.08] bg-card p-1">
                   {(["resident", "non_resident"] as const).map((value) => (
                     <Pressable
@@ -399,7 +399,7 @@ export default function OnboardingScreen() {
                       onPress={() => setResidency(value)}
                       className={cn("h-9 flex-1 items-center justify-center rounded-pill", residency === value && "bg-salli-accent")}
                     >
-                      <Text className={cn("text-[13px]", residency === value ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/35")}>
+                      <Text className={cn("text-[15px]", residency === value ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/35")}>
                         {value === "resident" ? "Sri Lankan Resident" : "Non-Resident"}
                       </Text>
                     </Pressable>
@@ -408,7 +408,7 @@ export default function OnboardingScreen() {
               </View>
 
               <View>
-                <Text className="mb-1.5 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">Employment *</Text>
+                <Text className="mb-1.5 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">Employment *</Text>
                 <View className="flex-row flex-wrap gap-1.5">
                   {EMPLOYMENT_OPTIONS.map((opt) => (
                     <FilterChip
@@ -427,12 +427,12 @@ export default function OnboardingScreen() {
                 value={irdNumber}
                 onChangeText={setIrdNumber}
                 placeholder="Add for accurate tax pre-fill"
-                rightIcon={<ChevronRight size={13} color={colors.foreground} strokeWidth={2} style={{ opacity: 0.2 }} />}
+                rightIcon={<ChevronRight size={15} color={colors.foreground} strokeWidth={2} style={{ opacity: 0.2 }} />}
               />
 
               <PillButton className="mt-1" loading={saving} disabled={!fullName || !dateOfBirth} onPress={handleAboutYouContinue}>
-                <Text className="font-sans-semibold text-[15px] text-primary-foreground">Continue to Income</Text>
-                <ChevronRight size={13} color={colors.primaryForeground} strokeWidth={2.5} />
+                <Text className="font-sans-semibold text-[17px] text-primary-foreground">Continue to Income</Text>
+                <ChevronRight size={15} color={colors.primaryForeground} strokeWidth={2.5} />
               </PillButton>
             </View>
           </ScrollView>
@@ -472,15 +472,15 @@ export default function OnboardingScreen() {
                           selected ? "border-salli-accent bg-salli-accent" : "border-foreground/20",
                         )}
                       >
-                        {selected ? <Check size={12} color="#FFFFFF" strokeWidth={3} /> : null}
+                        {selected ? <Check size={14} color="#FFFFFF" strokeWidth={3} /> : null}
                       </View>
                       <View className="min-w-0 flex-1">
-                        <Text numberOfLines={1} className="font-sans-semibold text-[13px] text-foreground">{source.label}</Text>
-                        <Text numberOfLines={1} className="text-[11px] text-foreground/30">{source.hint}</Text>
+                        <Text numberOfLines={1} className="font-sans-semibold text-[15px] text-foreground">{source.label}</Text>
+                        <Text numberOfLines={1} className="text-[14px] text-foreground/30">{source.hint}</Text>
                       </View>
                       {selected ? (
                         <View className="flex-none flex-row items-center gap-1 rounded-[8px] border border-foreground/10 bg-muted px-2.5 py-1.5">
-                          <Text className="text-[12px] font-sans-medium text-foreground/40">Rs.</Text>
+                          <Text className="text-[15px] font-sans-medium text-foreground/40">Rs.</Text>
                           <TextInput
                             value={incomeAmounts[source.key] ?? ""}
                             onChangeText={(v) => setIncomeAmounts((prev) => ({ ...prev, [source.key]: v }))}
@@ -488,9 +488,9 @@ export default function OnboardingScreen() {
                             placeholder="0"
                             placeholderTextColor="rgba(128,128,128,0.4)"
                             style={{ width: 44 }}
-                            className="text-right font-sans-semibold text-[13px] text-foreground"
+                            className="text-right font-sans-semibold text-[15px] text-foreground"
                           />
-                          <Text className="text-[11px] text-foreground/30">/mo</Text>
+                          <Text className="text-[14px] text-foreground/30">/mo</Text>
                         </View>
                       ) : null}
                     </View>
@@ -499,8 +499,8 @@ export default function OnboardingScreen() {
               })}
 
               <PillButton className="mt-1" loading={saving} disabled={selectedSources.size === 0} onPress={handleIncomeContinue}>
-                <Text className="font-sans-semibold text-[15px] text-primary-foreground">Continue to Risk</Text>
-                <ChevronRight size={13} color={colors.primaryForeground} strokeWidth={2.5} />
+                <Text className="font-sans-semibold text-[17px] text-primary-foreground">Continue to Risk</Text>
+                <ChevronRight size={15} color={colors.primaryForeground} strokeWidth={2.5} />
               </PillButton>
             </View>
           </ScrollView>
@@ -519,7 +519,7 @@ export default function OnboardingScreen() {
             <StepTitle title="Risk Profile" subtitle="Shapes your FIRE strategy's asset allocation." />
             <View className="gap-3.5">
               <View>
-                <Text className="mb-1.5 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
+                <Text className="mb-1.5 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
                   Time horizon: {timeHorizon} years
                 </Text>
                 <View className="flex-row flex-wrap gap-1.5">
@@ -530,7 +530,7 @@ export default function OnboardingScreen() {
               </View>
 
               <View>
-                <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
+                <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
                   If markets drop 20%, I would
                 </Text>
                 <View className="gap-1.5">
@@ -553,7 +553,7 @@ export default function OnboardingScreen() {
                         >
                           {active ? <View className="h-2 w-2 rounded-full bg-salli-accent" /> : null}
                         </View>
-                        <Text className={cn("text-[13px]", active ? "font-sans-semibold text-foreground" : "font-sans-medium text-foreground/60")}>
+                        <Text className={cn("text-[15px]", active ? "font-sans-semibold text-foreground" : "font-sans-medium text-foreground/60")}>
                           {o.label}
                         </Text>
                       </Pressable>
@@ -563,7 +563,7 @@ export default function OnboardingScreen() {
               </View>
 
               <View>
-                <Text className="mb-1.5 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">Income stability</Text>
+                <Text className="mb-1.5 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">Income stability</Text>
                 <View className="flex-row flex-wrap gap-1.5">
                   {STABILITY_OPTIONS.map((o) => (
                     <FilterChip
@@ -577,7 +577,7 @@ export default function OnboardingScreen() {
               </View>
 
               <View>
-                <Text className="mb-1.5 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">Investment experience</Text>
+                <Text className="mb-1.5 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">Investment experience</Text>
                 <View className="flex-row flex-wrap gap-1.5">
                   {EXPERIENCE_OPTIONS.map((o) => (
                     <FilterChip
@@ -593,18 +593,18 @@ export default function OnboardingScreen() {
               {riskResult ? (
                 <View className="flex-row items-center justify-between rounded-[10px] border border-salli-accent/20 bg-salli-accent/[0.08] px-4 py-3.5">
                   <View>
-                    <Text className="mb-0.5 text-[11px] text-foreground/40">Your risk category</Text>
-                    <Text className="font-sans-bold text-[15px] capitalize text-foreground">{riskResult.category}</Text>
+                    <Text className="mb-0.5 text-[14px] text-foreground/40">Your risk category</Text>
+                    <Text className="font-sans-bold text-[17px] capitalize text-foreground">{riskResult.category}</Text>
                   </View>
                   <View className="rounded-[8px] border border-salli-accent/30 bg-salli-accent/20 px-3 py-1.5">
-                    <Text className="text-[12px] font-sans-semibold text-salli-accent">Score {riskResult.score}/100</Text>
+                    <Text className="text-[15px] font-sans-semibold text-salli-accent">Score {riskResult.score}/100</Text>
                   </View>
                 </View>
               ) : null}
 
               <PillButton className="mt-1" loading={saving} onPress={handleRiskContinue}>
-                <Text className="font-sans-semibold text-[15px] text-primary-foreground">Continue to Goals</Text>
-                <ChevronRight size={13} color={colors.primaryForeground} strokeWidth={2.5} />
+                <Text className="font-sans-semibold text-[17px] text-primary-foreground">Continue to Goals</Text>
+                <ChevronRight size={15} color={colors.primaryForeground} strokeWidth={2.5} />
               </PillButton>
             </View>
           </ScrollView>
@@ -628,10 +628,10 @@ export default function OnboardingScreen() {
               {goals.map((goal, i) => (
                 <View key={i} className="gap-2 rounded-control border border-foreground/10 bg-card p-3.5">
                   <View className="flex-row items-center justify-between">
-                    <Text className="font-sans-semibold text-[13px] text-foreground">Goal {i + 1}</Text>
+                    <Text className="font-sans-semibold text-[15px] text-foreground">Goal {i + 1}</Text>
                     {goals.length > 1 ? (
                       <Pressable onPress={() => setGoals((prev) => prev.filter((_, idx) => idx !== i))}>
-                        <Trash2 size={14} color={colors.mutedForeground} strokeWidth={2} />
+                        <Trash2 size={16} color={colors.mutedForeground} strokeWidth={2} />
                       </Pressable>
                     ) : null}
                   </View>
@@ -678,12 +678,12 @@ export default function OnboardingScreen() {
                 onPress={() => setGoals((prev) => [...prev, { name: "", kind: "financial_independence", targetAmount: "", targetYear: "", motivation: "" }])}
                 className="items-center rounded-control border border-dashed border-foreground/15 bg-card py-3"
               >
-                <Text className="text-[13px] font-sans-medium text-foreground/40">+ Add another goal</Text>
+                <Text className="text-[15px] font-sans-medium text-foreground/40">+ Add another goal</Text>
               </Pressable>
 
               <PillButton className="mt-1" loading={saving} onPress={handleGoalsContinue}>
-                <Text className="font-sans-semibold text-[15px] text-primary-foreground">Continue to Review</Text>
-                <ChevronRight size={13} color={colors.primaryForeground} strokeWidth={2.5} />
+                <Text className="font-sans-semibold text-[17px] text-primary-foreground">Continue to Review</Text>
+                <ChevronRight size={15} color={colors.primaryForeground} strokeWidth={2.5} />
               </PillButton>
             </View>
           </ScrollView>
@@ -727,21 +727,21 @@ export default function OnboardingScreen() {
             ).map((row) => (
               <View key={row.step} className="flex-row items-center gap-2.5 rounded-control border border-foreground/[0.08] bg-card p-3.5">
                 <View className="h-8 w-8 items-center justify-center rounded-[9px] bg-foreground/[0.06]">
-                  <row.icon size={14} color={colors.mutedForeground} strokeWidth={2} />
+                  <row.icon size={16} color={colors.mutedForeground} strokeWidth={2} />
                 </View>
                 <View className="flex-1">
-                  <Text className="font-sans-semibold text-[13px] capitalize text-foreground">{row.title}</Text>
-                  <Text numberOfLines={1} className="text-[11px] text-foreground/30">{row.subtitle}</Text>
+                  <Text className="font-sans-semibold text-[15px] capitalize text-foreground">{row.title}</Text>
+                  <Text numberOfLines={1} className="text-[14px] text-foreground/30">{row.subtitle}</Text>
                 </View>
                 <Pressable onPress={() => setStep(row.step)}>
-                  <Text className="text-[11px] font-sans-medium text-salli-accent">Edit</Text>
+                  <Text className="text-[14px] font-sans-medium text-salli-accent">Edit</Text>
                 </Pressable>
               </View>
             ))}
 
             <View className="flex-row items-center gap-2.5 rounded-control border border-salli-accent/20 bg-salli-accent/[0.08] p-3.5">
-              <CreditCard size={16} color={colors.accent} strokeWidth={2} />
-              <Text className="flex-1 text-[12px] leading-4 text-foreground/60">
+              <CreditCard size={18} color={colors.accent} strokeWidth={2} />
+              <Text className="flex-1 text-[15px] leading-5 text-foreground/60">
                 <Text className="font-sans-semibold text-foreground">
                   {selectedSources.size} ledger account{selectedSources.size === 1 ? "" : "s"}
                 </Text>{" "}
@@ -750,10 +750,10 @@ export default function OnboardingScreen() {
             </View>
 
             <PillButton className="mt-2" onPress={() => setStep(6)}>
-              <Text className="font-sans-bold text-[15px] text-primary-foreground">Continue</Text>
-              <ChevronRight size={13} color={colors.primaryForeground} strokeWidth={2.5} />
+              <Text className="font-sans-bold text-[17px] text-primary-foreground">Continue</Text>
+              <ChevronRight size={15} color={colors.primaryForeground} strokeWidth={2.5} />
             </PillButton>
-            <Text className="mb-6 mt-2 text-center text-[11px] text-foreground/20">
+            <Text className="mb-6 mt-2 text-center text-[14px] text-foreground/20">
               You can change anything later in Settings
             </Text>
           </View>

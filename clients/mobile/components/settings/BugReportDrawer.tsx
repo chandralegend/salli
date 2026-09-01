@@ -126,14 +126,14 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
             Send report
           </PillButton>
           {error || submit.isError ? (
-            <Text className="mt-2 text-center text-[11px] text-destructive">
+            <Text className="mt-2 text-center text-[14px] text-destructive">
               {error ?? "Couldn't send that report. Please try again."}
             </Text>
           ) : null}
         </>
       }
     >
-      <Text className="mb-3 text-[12px] leading-4 text-foreground/40">
+      <Text className="mb-3 text-[15px] leading-5 text-foreground/40">
         Tell us what went wrong. We attach a small technical snapshot — never your balances,
         amounts, or account names.
       </Text>
@@ -150,20 +150,20 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
         style={{ minHeight: 110, textAlignVertical: "top" }}
       />
 
-      <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">How bad is it?</Text>
+      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">How bad is it?</Text>
       <ChipSelect className="mb-1.5" options={SEVERITIES} value={severity} onChange={setSeverity} capitalize />
-      <Text className="mb-3 text-[11px] text-foreground/30">{SEVERITY_HINT[severity]}</Text>
+      <Text className="mb-3 text-[14px] text-foreground/30">{SEVERITY_HINT[severity]}</Text>
 
-      <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">Where in Salli?</Text>
+      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">Where in Salli?</Text>
       <ChipSelect className="mb-3" options={AREAS} value={area} onChange={setArea} />
 
-      <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">Screenshot (optional)</Text>
+      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">Screenshot (optional)</Text>
       {attachment ? (
         <View className="mb-1 flex-row items-center gap-2 rounded-control border border-foreground/10 bg-card px-3.5 py-2.5">
-          <Paperclip size={13} color={colors.mutedForeground} strokeWidth={2} />
-          <Text className="flex-1 text-[12px] text-foreground/70" numberOfLines={1}>{attachment.name}</Text>
+          <Paperclip size={15} color={colors.mutedForeground} strokeWidth={2} />
+          <Text className="flex-1 text-[15px] text-foreground/70" numberOfLines={1}>{attachment.name}</Text>
           <Pressable onPress={() => setAttachment(null)} hitSlop={8}>
-            <X size={14} color={colors.mutedForeground} strokeWidth={2} />
+            <X size={16} color={colors.mutedForeground} strokeWidth={2} />
           </Pressable>
         </View>
       ) : (
@@ -171,11 +171,11 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
           onPress={pickAttachment}
           className="mb-1 flex-row items-center justify-center gap-2 rounded-control border border-dashed border-foreground/15 bg-card px-3.5 py-3"
         >
-          <Paperclip size={13} color={colors.mutedForeground} strokeWidth={2} />
-          <Text className="text-[12px] font-sans-medium text-foreground/50">Attach a screenshot</Text>
+          <Paperclip size={15} color={colors.mutedForeground} strokeWidth={2} />
+          <Text className="text-[15px] font-sans-medium text-foreground/50">Attach a screenshot</Text>
         </Pressable>
       )}
-      <Text className="mb-3 text-[11px] leading-4 text-foreground/30">
+      <Text className="mb-3 text-[14px] leading-5 text-foreground/30">
         Take a screenshot yourself and pick the file — Salli never captures your screen.
       </Text>
 
@@ -184,8 +184,8 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
         className="mb-1 flex-row items-start justify-between gap-3 rounded-control border border-foreground/10 bg-card p-3"
       >
         <View className="flex-1">
-          <Text className="text-[13px] font-sans-medium text-foreground">You can email me about this</Text>
-          <Text className="mt-0.5 text-[11px] text-foreground/35">
+          <Text className="text-[15px] font-sans-medium text-foreground">You can email me about this</Text>
+          <Text className="mt-0.5 text-[14px] text-foreground/35">
             We&apos;ll use the address on your account — it&apos;s never attached to the ticket.
           </Text>
         </View>
@@ -193,7 +193,7 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
           className="mt-0.5 h-[20px] w-[20px] items-center justify-center rounded-[6px] border"
           style={{ backgroundColor: contactOk ? colors.accent : "transparent", borderColor: contactOk ? colors.accent : "rgba(128,128,128,0.35)" }}
         >
-          {contactOk ? <Check size={13} color="#fff" strokeWidth={3} /> : null}
+          {contactOk ? <Check size={15} color="#fff" strokeWidth={3} /> : null}
         </View>
       </Pressable>
     </Drawer>

@@ -35,10 +35,10 @@ export default function ForgotPasswordScreen() {
     <AuthShell>
       <View className="items-center pb-9">
         <Logo size={44} className="text-foreground" />
-        <Text className="mt-[22px] font-sans-bold text-[26px] tracking-tight text-foreground">
+        <Text className="mt-[22px] font-sans-bold text-[30px] tracking-tight text-foreground">
           Forgot password?
         </Text>
-        <Text className="mt-2.5 text-center text-[13px] text-foreground/45">
+        <Text className="mt-2.5 text-center text-[15px] text-foreground/45">
           We&apos;ll email you a link to reset it.
         </Text>
       </View>
@@ -48,10 +48,10 @@ export default function ForgotPasswordScreen() {
           <View className="h-14 w-14 items-center justify-center rounded-full bg-salli-accent/20">
             <Mail size={22} color={colors.accent} strokeWidth={2} />
           </View>
-          <Text className="text-center font-sans-semibold text-[16px] text-foreground">
+          <Text className="text-center font-sans-semibold text-[18px] text-foreground">
             Check your inbox
           </Text>
-          <Text className="text-center text-[13px] text-foreground/40">
+          <Text className="text-center text-[15px] text-foreground/40">
             We&apos;ve sent a reset link to {email}.
           </Text>
           <PillButton className="mt-3 h-[54px] w-full" onPress={() => router.replace("/(auth)/login")}>
@@ -73,7 +73,7 @@ export default function ForgotPasswordScreen() {
 
           {error ? (
             <View className="rounded-control border border-destructive/30 bg-destructive/10 px-4 py-3">
-              <Text className="text-[13px] text-destructive">{error}</Text>
+              <Text className="text-[15px] text-destructive">{error}</Text>
             </View>
           ) : null}
 
@@ -82,7 +82,7 @@ export default function ForgotPasswordScreen() {
           </PillButton>
 
           <Pressable className="items-center py-2" onPress={() => router.back()}>
-            <Text className="text-[13px] text-foreground/40">Back to sign in</Text>
+            <Text className="text-[15px] text-foreground/40">Back to sign in</Text>
           </Pressable>
         </View>
       )}

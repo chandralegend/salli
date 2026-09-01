@@ -6,7 +6,7 @@ import { Text, View } from "react-native";
 export function QuotaBanner({ message }: { message: string }) {
   return (
     <View className="mb-2 rounded-control border border-destructive/25 bg-destructive/10 px-3.5 py-2.5">
-      <Text className="text-[12px] text-destructive">{message}</Text>
+      <Text className="text-[15px] text-destructive">{message}</Text>
     </View>
   );
 }

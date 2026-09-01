@@ -138,13 +138,13 @@ export default function BudgetScreen() {
               {latestBudget && summary.data && !editing ? (
                 <Pressable
                   onPress={enterEdit}
-                  className="h-[30px] w-[30px] items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.07]"
+                  className="h-10 w-10 items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.07]"
                 >
-                  <Pencil size={13} color="rgba(128,128,128,0.8)" strokeWidth={2} />
+                  <Pencil size={15} color="rgba(128,128,128,0.8)" strokeWidth={2} />
                 </Pressable>
               ) : null}
               <View className="rounded-pill border border-foreground/10 bg-foreground/[0.07] px-3 py-1">
-                <Text className="text-[12px] font-sans-medium text-foreground/45">{currentMonthLabel()}</Text>
+                <Text className="text-[15px] font-sans-medium text-foreground/45">{currentMonthLabel()}</Text>
               </View>
             </View>
           }
@@ -162,12 +162,12 @@ export default function BudgetScreen() {
             <View className="px-4 pt-3.5">
               {/* hero — spend vs limit */}
               <Card className="bg-salli-navy-card p-[18px]">
-                <Text className="mb-1.5 text-[10px] font-sans-medium uppercase tracking-wide text-white/40">
+                <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-white/40">
                   Monthly Budget
                 </Text>
                 <View className="mb-2.5 flex-row items-start justify-between">
                   <View className="flex-row items-baseline gap-1.5">
-                    <Text className="font-sans-semibold text-[20px] text-white/35">Rs.</Text>
+                    <Text className="font-sans-semibold text-[22px] text-white/35">Rs.</Text>
                     <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
                       {formatLKRAbbrev(spent)}
                     </Text>
@@ -182,7 +182,7 @@ export default function BudgetScreen() {
                   >
                     <Text
                       className={cn(
-                        "text-[11px] font-sans-semibold",
+                        "text-[14px] font-sans-semibold",
                         over ? "text-destructive" : "text-salli-accent",
                       )}
                     >
@@ -197,8 +197,8 @@ export default function BudgetScreen() {
                   />
                 </View>
                 <View className="flex-row justify-between">
-                  <Text className="text-[11px] text-white/30">of Rs. {formatLKRAbbrev(limit)}</Text>
-                  <Text className="text-[11px] text-white/30">
+                  <Text className="text-[14px] text-white/30">of Rs. {formatLKRAbbrev(limit)}</Text>
+                  <Text className="text-[14px] text-white/30">
                     Rs. {formatLKRAbbrev(Math.abs(remaining))} {over ? "over" : "remaining"}
                   </Text>
                 </View>
@@ -206,10 +206,10 @@ export default function BudgetScreen() {
 
               {/* category limits */}
               <View className="mb-2 mt-3 flex-row items-center justify-between">
-                <Text className="text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
                   Category Limits
                 </Text>
-                <Text className="text-[11px] text-foreground/25">{currentMonthLabel()}</Text>
+                <Text className="text-[14px] text-foreground/25">{currentMonthLabel()}</Text>
               </View>
 
               <View className="gap-1.5">
@@ -231,15 +231,15 @@ export default function BudgetScreen() {
                         )}
                       >
                         <Icon
-                          size={13}
+                          size={15}
                           color={lineOver ? "#ef4444" : "rgba(128,128,128,0.7)"}
                           strokeWidth={2.5}
                         />
                       </View>
                       <View className="flex-1">
                         <View className="flex-row items-center justify-between">
-                          <Text className="font-sans-semibold text-[13px] text-foreground">{line.category}</Text>
-                          <Text className="text-[11px] text-foreground/30">
+                          <Text className="font-sans-semibold text-[15px] text-foreground">{line.category}</Text>
+                          <Text className="text-[14px] text-foreground/30">
                             Rs. {formatLKR(actual, 0)} / {formatLKRAbbrev(lim)}
                           </Text>
                         </View>
@@ -264,11 +264,11 @@ export default function BudgetScreen() {
             <View className="p-[18px] pb-4">
               <View className="mb-2.5 flex-row items-start justify-between">
                 <View>
-                  <Text className="mb-1.5 text-[10px] font-sans-medium uppercase tracking-wide text-white/40">
+                  <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-white/40">
                     Monthly Limit
                   </Text>
                   <View className="flex-row items-baseline gap-1.5">
-                    <Text className="font-sans-semibold text-[20px] text-white/35">Rs.</Text>
+                    <Text className="font-sans-semibold text-[22px] text-white/35">Rs.</Text>
                     <Text className="font-sans-extrabold text-[44px] leading-none tracking-tighter text-white">
                       {formatLKR(effectiveLimit, 0)}
                     </Text>
@@ -276,7 +276,7 @@ export default function BudgetScreen() {
                 </View>
                 {pct !== null ? (
                   <View className="mt-1 rounded-[8px] border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
-                    <Text className="text-[11px] font-sans-semibold text-salli-accent">{pct}% of income</Text>
+                    <Text className="text-[14px] font-sans-semibold text-salli-accent">{pct}% of income</Text>
                   </View>
                 ) : null}
               </View>
@@ -287,10 +287,10 @@ export default function BudgetScreen() {
                 />
               </View>
               <View className="flex-row justify-between">
-                <Text className="text-[11px] text-white/30">
+                <Text className="text-[14px] text-white/30">
                   Avg monthly income {avgIncome > 0 ? `Rs. ${formatLKRAbbrev(avgIncome)}` : "—"}
                 </Text>
-                <Text className="text-[11px] text-white/30">Recommended ≤80%</Text>
+                <Text className="text-[14px] text-white/30">Recommended ≤80%</Text>
               </View>
             </View>
           </Card>
@@ -312,18 +312,18 @@ export default function BudgetScreen() {
 
           {/* category limits */}
           <View className="mb-2 mt-3 flex-row items-center justify-between">
-            <Text className="text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+            <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
               Category Limits
             </Text>
             <Pressable onPress={autoSplit}>
-              <Text className="text-[11px] font-sans-medium text-salli-accent">Auto-split</Text>
+              <Text className="text-[14px] font-sans-medium text-salli-accent">Auto-split</Text>
             </Pressable>
           </View>
 
           <View className="gap-1.5">
             {expenseAccounts.length === 0 ? (
               <Card className="items-center p-6">
-                <Text className="text-[13px] text-foreground/35">No expense accounts to budget yet.</Text>
+                <Text className="text-[15px] text-foreground/35">No expense accounts to budget yet.</Text>
               </Card>
             ) : (
               expenseAccounts.map((a) => {
@@ -342,13 +342,13 @@ export default function BudgetScreen() {
                       )}
                     >
                       <Icon
-                        size={13}
+                        size={15}
                         color={isDominant ? colors.accent : "rgba(128,128,128,0.7)"}
                         strokeWidth={2.5}
                       />
                     </View>
                     <View className="flex-1">
-                      <Text className="font-sans-semibold text-[13px] text-foreground">{a.name}</Text>
+                      <Text className="font-sans-semibold text-[15px] text-foreground">{a.name}</Text>
                       <View className="mt-[5px] h-[3px] overflow-hidden rounded-pill bg-foreground/[0.06]">
                         <View
                           className={cn("h-full rounded-pill", isDominant ? "bg-salli-accent" : "bg-foreground/30")}
@@ -357,7 +357,7 @@ export default function BudgetScreen() {
                       </View>
                     </View>
                     <View className="flex-none flex-row items-center gap-1 rounded-[8px] border border-foreground/10 bg-muted px-2.5 py-1.5">
-                      <Text className="text-[12px] font-sans-medium text-foreground/40">Rs.</Text>
+                      <Text className="text-[15px] font-sans-medium text-foreground/40">Rs.</Text>
                       <TextInput
                         value={limits[a.id] ?? ""}
                         onChangeText={(v) => setLimits((prev) => ({ ...prev, [a.id]: v }))}
@@ -365,7 +365,7 @@ export default function BudgetScreen() {
                         placeholder="0"
                         placeholderTextColor="rgba(128,128,128,0.4)"
                         style={{ width: 56 }}
-                        className="text-right font-sans-semibold text-[13px] text-foreground"
+                        className="text-right font-sans-semibold text-[15px] text-foreground"
                       />
                     </View>
                   </View>
@@ -381,13 +381,13 @@ export default function BudgetScreen() {
               className="flex-row items-center gap-2.5 rounded-control border border-dashed border-foreground/10 bg-card px-3.5 py-[11px]"
             >
               <View className="h-8 w-8 items-center justify-center rounded-[9px] bg-foreground/[0.04]">
-                <Plus size={13} color="rgba(128,128,128,0.4)" strokeWidth={2.5} />
+                <Plus size={15} color="rgba(128,128,128,0.4)" strokeWidth={2.5} />
               </View>
               <View className="flex-1">
-                <Text className="font-sans-medium text-[13px] text-foreground/45">
+                <Text className="font-sans-medium text-[15px] text-foreground/45">
                   Add a spending category
                 </Text>
-                <Text className="mt-0.5 text-[11px] text-foreground/30">
+                <Text className="mt-0.5 text-[14px] text-foreground/30">
                   Categories come from your expense accounts — add one in the Ledger
                 </Text>
               </View>
@@ -400,7 +400,7 @@ export default function BudgetScreen() {
               <View
                 className={cn("h-2 w-2 rounded-full", unallocated < 0 ? "bg-destructive" : "bg-salli-accent")}
               />
-              <Text className="text-[11px] text-foreground/30">
+              <Text className="text-[14px] text-foreground/30">
                 Rs. {formatLKR(Math.abs(unallocated), 0)} {unallocated < 0 ? "over budget" : "unallocated"} · tap any category to edit
               </Text>
             </View>
@@ -411,10 +411,10 @@ export default function BudgetScreen() {
           </PillButton>
           {editing ? (
             <Pressable onPress={() => setEditing(false)} className="mb-4 items-center">
-              <Text className="text-[11px] text-foreground/40">Cancel</Text>
+              <Text className="text-[14px] text-foreground/40">Cancel</Text>
             </Pressable>
           ) : (
-            <Text className="mb-4 text-center text-[11px] text-foreground/25">Skip category limits for now</Text>
+            <Text className="mb-4 text-center text-[14px] text-foreground/25">Skip category limits for now</Text>
           )}
         </View>
       )}

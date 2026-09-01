@@ -147,13 +147,13 @@ export default function PortfolioScreen() {
             trailing={
               <View className="flex-row items-center gap-2">
                 <View className="rounded-pill border border-foreground/[0.08] bg-card px-3 py-1.5">
-                  <Text className="text-[11px] text-foreground/40">Manual values only</Text>
+                  <Text className="text-[14px] text-foreground/40">Manual values only</Text>
                 </View>
                 <Pressable
                   onPress={() => setAddOpen(true)}
-                  className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
+                  className="h-11 w-11 items-center justify-center rounded-full bg-salli-accent"
                 >
-                  <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
+                  <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
                 </Pressable>
               </View>
             }
@@ -162,13 +162,13 @@ export default function PortfolioScreen() {
       >
         {empty ? (
           <View className="items-center gap-2 px-8 pt-16">
-            <Text className="text-center font-sans-semibold text-[15px] text-foreground">No holdings yet</Text>
-            <Text className="text-center text-[13px] text-foreground/35">
+            <Text className="text-center font-sans-semibold text-[17px] text-foreground">No holdings yet</Text>
+            <Text className="text-center text-[15px] text-foreground/35">
               Add your first holding to track value, cost and allocation.
             </Text>
             <PillButton className="mt-3" variant="accent" onPress={() => setAddOpen(true)}>
-              <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
-              <Text className="font-sans-semibold text-[14px] text-white">New Holding</Text>
+              <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+              <Text className="font-sans-semibold text-[16px] text-white">New Holding</Text>
             </PillButton>
           </View>
         ) : (
@@ -176,17 +176,17 @@ export default function PortfolioScreen() {
             <View className="px-4 pt-3">
             {/* Navy hero — total value + cost/gain */}
             <Card className="bg-salli-navy-card p-[18px]">
-              <Text className="mb-2 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
+              <Text className="mb-2 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
                 Total Portfolio Value
               </Text>
               <View className="mb-1.5 flex-row items-baseline gap-1">
-                <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
+                <Text className="font-sans-semibold text-[22px] text-white/40">Rs.</Text>
                 <Text className="font-sans-extrabold text-[44px] tracking-tighter text-white">
                   {summary.data ? formatLKRAbbrev(summary.data.total_value) : "—"}
                 </Text>
               </View>
               <View className="flex-row items-center gap-2.5">
-                <Text className="text-[11px] text-white/30">
+                <Text className="text-[14px] text-white/30">
                   {tab === "Allocation"
                     ? `${allocation.length} asset ${allocation.length === 1 ? "class" : "classes"}`
                     : `Cost Rs. ${summary.data ? formatLKRAbbrev(summary.data.total_cost_basis) : "—"}`}
@@ -205,7 +205,7 @@ export default function PortfolioScreen() {
                     ) : null}
                     <Text
                       className={cn(
-                        "text-[11px] font-sans-semibold",
+                        "text-[14px] font-sans-semibold",
                         Number(summary.data.total_gain) >= 0 ? "text-salli-accent" : "text-destructive",
                       )}
                     >
@@ -227,13 +227,13 @@ export default function PortfolioScreen() {
               <>
                 <View className="mt-2.5 flex-row gap-2">
                   <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
-                    <Search size={13} color={colors.mutedForeground} strokeWidth={2} />
+                    <Search size={15} color={colors.mutedForeground} strokeWidth={2} />
                     <TextInput
                       value={search}
                       onChangeText={setSearch}
                       placeholder="Search..."
                       placeholderTextColor="rgba(128,128,128,0.4)"
-                      className="flex-1 text-[13px] text-foreground"
+                      className="flex-1 text-[15px] text-foreground"
                     />
                   </View>
                 </View>
@@ -241,7 +241,7 @@ export default function PortfolioScreen() {
                 <View className="mt-3 gap-3">
                   {Object.entries(grouped).map(([assetClass, items]) => (
                     <View key={assetClass}>
-                      <Text className="mb-1.5 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                      <Text className="mb-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
                         {titleCase(assetClass)}
                       </Text>
                       <View className="gap-1.5">
@@ -257,19 +257,19 @@ export default function PortfolioScreen() {
                                   className="h-[38px] w-[38px] items-center justify-center rounded-[8px]"
                                   style={{ backgroundColor: `${color}1F`, borderWidth: 0.5, borderColor: `${color}33` }}
                                 >
-                                  <Text className="font-sans-bold text-[10px]" style={{ color }}>
+                                  <Text className="font-sans-bold text-[13px]" style={{ color }}>
                                     {h.symbol.slice(0, 4).toUpperCase()}
                                   </Text>
                                 </View>
                                 <View className="flex-1">
-                                  <Text className="font-sans-semibold text-[13px] text-foreground">{h.name}</Text>
-                                  <Text className="text-[11px] text-foreground/30">{formatPct(pct, 0)} of portfolio</Text>
+                                  <Text className="font-sans-semibold text-[15px] text-foreground">{h.name}</Text>
+                                  <Text className="text-[14px] text-foreground/30">{formatPct(pct, 0)} of portfolio</Text>
                                 </View>
                                 <View className="items-end">
-                                  <Text className="font-sans-semibold text-[13px] text-foreground">
+                                  <Text className="font-sans-semibold text-[15px] text-foreground">
                                     Rs. {formatLKRAbbrev(h.current_value)}
                                   </Text>
-                                  <Text className={cn("text-[11px]", gain >= 0 ? "text-foreground/50" : "text-destructive")}>
+                                  <Text className={cn("text-[14px]", gain >= 0 ? "text-foreground/50" : "text-destructive")}>
                                     {gain >= 0 ? "+" : "-"}Rs. {formatLKRAbbrev(gain)}
                                   </Text>
                                 </View>
@@ -281,7 +281,7 @@ export default function PortfolioScreen() {
                     </View>
                   ))}
                   {visible.length === 0 ? (
-                    <Text className="pt-6 text-center text-[13px] text-foreground/35">No holdings match “{search}”.</Text>
+                    <Text className="pt-6 text-center text-[15px] text-foreground/35">No holdings match “{search}”.</Text>
                   ) : null}
                 </View>
               </>
@@ -289,7 +289,7 @@ export default function PortfolioScreen() {
               <>
                 {/* Donut hero — tappable slices open the asset-class drawer */}
                 <Card className="mt-3 p-4">
-                  <Text className="text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                  <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
                     Allocation by asset class
                   </Text>
                   <View className="my-3 h-[168px] w-[168px] items-center justify-center self-center">
@@ -301,20 +301,20 @@ export default function PortfolioScreen() {
                       onSelect={setSelectedClass}
                     />
                     <View pointerEvents="none" style={{ position: "absolute", alignItems: "center" }}>
-                      <Text className="font-sans-extrabold text-[18px] leading-6 text-foreground">
+                      <Text className="font-sans-extrabold text-[20px] leading-6 text-foreground">
                         {summary.data ? `Rs. ${formatLKRAbbrev(summary.data.total_value)}` : "—"}
                       </Text>
-                      <Text className="text-[10px] text-foreground/35">total value</Text>
+                      <Text className="text-[13px] text-foreground/35">total value</Text>
                     </View>
                   </View>
-                  <Text className="mb-3 text-center text-[11px] text-foreground/30">Tap a slice for asset-class detail</Text>
+                  <Text className="mb-3 text-center text-[14px] text-foreground/30">Tap a slice for asset-class detail</Text>
                   <View className="flex-row flex-wrap justify-center gap-x-4 gap-y-1.5">
                     {allocation.map((a) => (
                       <View key={a.asset_class} className="flex-row items-center gap-1.5">
                         <View
                           style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: colorForClass[a.asset_class] }}
                         />
-                        <Text className="text-[11px] font-sans-medium text-foreground/50">
+                        <Text className="text-[14px] font-sans-medium text-foreground/50">
                           {titleCase(a.asset_class)} {formatPct(a.pct_of_portfolio, 0)}
                         </Text>
                       </View>
@@ -323,7 +323,7 @@ export default function PortfolioScreen() {
                 </Card>
 
                 {/* By asset class — value, share, progress */}
-                <Text className="mb-2 mt-3.5 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                <Text className="mb-2 mt-3.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
                   By Asset Class
                 </Text>
                 <View className="gap-2">
@@ -342,17 +342,17 @@ export default function PortfolioScreen() {
                                 <View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: color }} />
                               </View>
                               <View>
-                                <Text className="font-sans-semibold text-[13px] text-foreground">{titleCase(a.asset_class)}</Text>
-                                <Text className="text-[11px] text-foreground/30">
+                                <Text className="font-sans-semibold text-[15px] text-foreground">{titleCase(a.asset_class)}</Text>
+                                <Text className="text-[14px] text-foreground/30">
                                   {count} {count === 1 ? "holding" : "holdings"}
                                 </Text>
                               </View>
                             </View>
                             <View className="items-end">
-                              <Text className="font-sans-bold text-[14px] text-foreground">
+                              <Text className="font-sans-bold text-[16px] text-foreground">
                                 Rs. {formatLKRAbbrev(a.current_value)}
                               </Text>
-                              <Text className="font-sans-semibold text-[11px]" style={{ color }}>
+                              <Text className="font-sans-semibold text-[14px]" style={{ color }}>
                                 {formatPct(a.pct_of_portfolio, 0)}
                               </Text>
                             </View>
@@ -375,8 +375,8 @@ export default function PortfolioScreen() {
                 {/* Concentration note — only when one class dominates */}
                 {concentrated ? (
                   <View className="mt-3 flex-row items-start gap-2 rounded-[8px] border border-salli-accent/20 bg-salli-accent/[0.08] px-3.5 py-2.5">
-                    <TriangleAlert size={14} color={colors.accent} strokeWidth={2} style={{ marginTop: 1 }} />
-                    <Text className="flex-1 text-[11px] leading-4 text-foreground/55">
+                    <TriangleAlert size={16} color={colors.accent} strokeWidth={2} style={{ marginTop: 1 }} />
+                    <Text className="flex-1 text-[14px] leading-5 text-foreground/55">
                       <Text className="font-sans-semibold text-salli-accent">
                         {formatPct(concentrated.pct_of_portfolio, 0)} in {titleCase(concentrated.asset_class).toLowerCase()}
                       </Text>{" "}
@@ -387,8 +387,8 @@ export default function PortfolioScreen() {
 
                 {/* Disclaimer */}
                 <View className="mt-2.5 flex-row items-start gap-2 rounded-[8px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
-                  <Info size={13} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
-                  <Text className="flex-1 text-[11px] leading-4 text-foreground/30">
+                  <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
+                  <Text className="flex-1 text-[14px] leading-5 text-foreground/30">
                     Values are manually entered · no live market feed
                   </Text>
                 </View>
@@ -412,7 +412,7 @@ export default function PortfolioScreen() {
             elevation: 6,
           }}
         >
-          <Plus size={20} color="#FFFFFF" strokeWidth={2.5} />
+          <Plus size={22} color="#FFFFFF" strokeWidth={2.5} />
         </Pressable>
       ) : null}
 
@@ -434,26 +434,26 @@ export default function PortfolioScreen() {
                     <>
                       <View className="mb-3 flex-row gap-2">
                         <View className="flex-1 rounded-control border border-foreground/[0.08] bg-card p-3">
-                          <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">Value</Text>
-                          <Text className="font-sans-extrabold text-[20px] leading-6 text-foreground">
+                          <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">Value</Text>
+                          <Text className="font-sans-extrabold text-[22px] leading-6 text-foreground">
                             Rs. {formatLKRAbbrev(a.current_value)}
                           </Text>
                         </View>
                         <View className="flex-1 rounded-control border border-foreground/[0.08] bg-card p-3">
-                          <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">Share</Text>
-                          <Text className="font-sans-extrabold text-[20px] leading-6" style={{ color }}>
+                          <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">Share</Text>
+                          <Text className="font-sans-extrabold text-[22px] leading-6" style={{ color }}>
                             {formatPct(a.pct_of_portfolio, 1)}
                           </Text>
                         </View>
                       </View>
                       <View className="mb-3 flex-row items-center justify-between rounded-control border border-foreground/[0.08] bg-card px-3.5 py-2.5">
-                        <Text className="text-[12px] text-foreground/50">Unrealized gain</Text>
-                        <Text className={cn("font-sans-bold text-[13px]", gain >= 0 ? "text-salli-accent" : "text-destructive")}>
+                        <Text className="text-[15px] text-foreground/50">Unrealized gain</Text>
+                        <Text className={cn("font-sans-bold text-[15px]", gain >= 0 ? "text-salli-accent" : "text-destructive")}>
                           {gain >= 0 ? "+" : "-"}Rs. {formatLKRAbbrev(gain)}
                           {cost > 0 ? ` · ${formatPct(gain / cost, 1)}` : ""}
                         </Text>
                       </View>
-                      <Text className="mb-1.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">
+                      <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">
                         {items.length} {items.length === 1 ? "holding" : "holdings"}
                       </Text>
                       <View className="gap-1.5">
@@ -462,12 +462,12 @@ export default function PortfolioScreen() {
                           return (
                             <View key={h.id} className="flex-row items-center justify-between rounded-control bg-card px-3 py-2.5">
                               <View>
-                                <Text className="font-sans-semibold text-[13px] text-foreground">{h.name}</Text>
-                                <Text className="text-[11px] text-foreground/30">{h.symbol.toUpperCase()}</Text>
+                                <Text className="font-sans-semibold text-[15px] text-foreground">{h.name}</Text>
+                                <Text className="text-[14px] text-foreground/30">{h.symbol.toUpperCase()}</Text>
                               </View>
                               <View className="items-end">
-                                <Text className="font-sans-semibold text-[13px] text-foreground">Rs. {formatLKRAbbrev(h.current_value)}</Text>
-                                <Text className={cn("text-[11px]", hGain >= 0 ? "text-foreground/50" : "text-destructive")}>
+                                <Text className="font-sans-semibold text-[15px] text-foreground">Rs. {formatLKRAbbrev(h.current_value)}</Text>
+                                <Text className={cn("text-[14px]", hGain >= 0 ? "text-foreground/50" : "text-destructive")}>
                                   {hGain >= 0 ? "+" : "-"}Rs. {formatLKRAbbrev(hGain)}
                                 </Text>
                               </View>
@@ -603,14 +603,14 @@ function HoldingDrawer({
           disabled={busy}
           className="mt-2.5 h-12 flex-row items-center justify-center gap-2 rounded-pill border border-destructive/25 bg-destructive/[0.08]"
         >
-          <Trash2 size={15} color="#EF4444" strokeWidth={2} />
-          <Text className="font-sans-semibold text-[14px] text-destructive">
+          <Trash2 size={17} color="#EF4444" strokeWidth={2} />
+          <Text className="font-sans-semibold text-[16px] text-destructive">
             {deleteHolding.isPending ? "Deleting…" : "Delete Holding"}
           </Text>
         </Pressable>
       ) : null}
       {isError ? (
-        <Text className="mt-2 text-center text-[11px] text-destructive">Could not save holding. Please try again.</Text>
+        <Text className="mt-2 text-center text-[14px] text-destructive">Could not save holding. Please try again.</Text>
       ) : null}
     </>
   );
@@ -631,7 +631,7 @@ function HoldingDrawer({
               </View>
 
               {/* asset class chips */}
-              <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">Asset Class *</Text>
+              <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">Asset Class *</Text>
               <ChipSelect
                 className="mb-3"
                 options={ASSET_CLASSES}
@@ -668,8 +668,8 @@ function HoldingDrawer({
                     gain >= 0 ? "border-salli-accent/20 bg-salli-accent/[0.08]" : "border-destructive/20 bg-destructive/[0.08]",
                   )}
                 >
-                  <Text className="text-[12px] text-foreground/50">Unrealized gain</Text>
-                  <Text className={cn("font-sans-bold text-[14px]", gain >= 0 ? "text-salli-accent" : "text-destructive")}>
+                  <Text className="text-[15px] text-foreground/50">Unrealized gain</Text>
+                  <Text className={cn("font-sans-bold text-[16px]", gain >= 0 ? "text-salli-accent" : "text-destructive")}>
                     {gain >= 0 ? "+" : "-"}Rs. {formatLKR(Math.abs(gain), 0)} · {formatPct(gainPct, 1)}
                   </Text>
                 </View>

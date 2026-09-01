@@ -76,8 +76,8 @@ function Disclaimer({ text }: { text: string }) {
   const colors = useThemeColors();
   return (
     <View className="mt-2.5 flex-row items-start gap-2 rounded-[8px] border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
-      <Info size={13} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
-      <Text className="flex-1 text-[11px] leading-4 text-foreground/30">{text}</Text>
+      <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
+      <Text className="flex-1 text-[14px] leading-5 text-foreground/30">{text}</Text>
     </View>
   );
 }
@@ -109,8 +109,8 @@ export default function TaxScreen() {
 
       {!tax.data ? (
         <View className="items-center gap-3 px-8 pt-10">
-          <Text className="text-center font-sans-semibold text-[16px] text-foreground">Compute your tax</Text>
-          <Text className="text-center text-[13px] leading-5 text-foreground/40">
+          <Text className="text-center font-sans-semibold text-[18px] text-foreground">Compute your tax</Text>
+          <Text className="text-center text-[15px] leading-5 text-foreground/40">
             Deterministic rules engine · not AI · planning estimate only.
           </Text>
           <PillButton className="mt-2" loading={compute.isPending} onPress={() => compute.mutate()}>
@@ -163,11 +163,11 @@ function OverviewTab({
   return (
     <View className="px-4 pt-3">
       <Card className="bg-salli-navy-card p-[18px]">
-        <Text className="mb-2 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
+        <Text className="mb-2 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
           {isRefund ? "Refund Due" : "Net Tax Payable"} · AY {data.pack_year}
         </Text>
         <View className="mb-1 flex-row items-baseline gap-1">
-          <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
+          <Text className="font-sans-semibold text-[22px] text-white/40">Rs.</Text>
           <Text
             className={cn(
               "font-sans-extrabold text-[44px] tracking-tighter",
@@ -177,7 +177,7 @@ function OverviewTab({
             {formatLKR(isRefund ? data.refund_due : data.tax_payable, 0)}
           </Text>
         </View>
-        <Text className="mb-3.5 text-[11px] text-white/30">
+        <Text className="mb-3.5 text-[14px] text-white/30">
           Eff. rate {formatPct(effRate(data), 2)} · {dueDateLabel(pack, data.pack_year)}
         </Text>
         <View className="flex-row gap-1.5">
@@ -195,16 +195,16 @@ function OverviewTab({
           reminders.create.isPending && "opacity-60",
         )}
       >
-        <Bell size={13} color="#FFFFFF" strokeWidth={2} />
-        <Text className="font-sans-semibold text-[12px] text-white">
+        <Bell size={15} color="#FFFFFF" strokeWidth={2} />
+        <Text className="font-sans-semibold text-[15px] text-white">
           {reminders.create.isPending ? "Setting reminder…" : "Set filing reminder"}
         </Text>
       </Pressable>
 
       <Card className="mt-2.5 overflow-hidden p-0">
         <View className="flex-row items-center justify-between border-b border-foreground/[0.06] px-4 py-3">
-          <Text className="font-sans-semibold text-[13px] text-foreground">Progressive Tax Bands</Text>
-          <Text className="text-[11px] text-foreground/25">IRD · AY {data.pack_year}</Text>
+          <Text className="font-sans-semibold text-[15px] text-foreground">Progressive Tax Bands</Text>
+          <Text className="text-[14px] text-foreground/25">IRD · AY {data.pack_year}</Text>
         </View>
         <View className="px-4">
           {data.band_workings.map((band, i) => {
@@ -225,13 +225,13 @@ function OverviewTab({
                   )}
                 />
                 <View className="flex-1">
-                  <Text className={cn("font-sans-medium text-[12px]", used ? "text-foreground" : "text-foreground/30")}>
+                  <Text className={cn("font-sans-medium text-[15px]", used ? "text-foreground" : "text-foreground/30")}>
                     {band.band} · {band.rate}
                   </Text>
-                  <Text className={cn("text-[11px]", used ? "text-foreground/30" : "text-foreground/20")}>{detail}</Text>
+                  <Text className={cn("text-[14px]", used ? "text-foreground/30" : "text-foreground/20")}>{detail}</Text>
                 </View>
                 <View className="items-end gap-1">
-                  <Text className={cn("font-sans-semibold text-[12px]", used ? "text-foreground" : "text-foreground/25")}>
+                  <Text className={cn("font-sans-semibold text-[15px]", used ? "text-foreground" : "text-foreground/25")}>
                     {Number(band.tax) > 0 ? `Rs. ${formatLKR(band.tax, 0)}` : "—"}
                   </Text>
                   <View
@@ -242,7 +242,7 @@ function OverviewTab({
                   >
                     <Text
                       className={cn(
-                        "text-[10px] font-sans-medium capitalize",
+                        "text-[13px] font-sans-medium capitalize",
                         status === "full" ? "text-salli-accent" : "text-foreground/40",
                       )}
                     >
@@ -254,8 +254,8 @@ function OverviewTab({
             );
           })}
           <View className="flex-row justify-between py-2.5">
-            <Text className="font-sans-semibold text-[12px] text-foreground/45">Gross Tax</Text>
-            <Text className="font-sans-bold text-[14px] text-foreground">Rs. {formatLKR(data.tax_before_credits, 0)}</Text>
+            <Text className="font-sans-semibold text-[15px] text-foreground/45">Gross Tax</Text>
+            <Text className="font-sans-bold text-[16px] text-foreground">Rs. {formatLKR(data.tax_before_credits, 0)}</Text>
           </View>
         </View>
       </Card>
@@ -318,14 +318,14 @@ function DeductionsTab({ data }: { data: TaxComputationFull }) {
     <View className="pt-3">
       <View className="px-4">
         <Card className="bg-salli-navy-card p-[18px]">
-          <Text className="mb-2 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
+          <Text className="mb-2 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
             Total Deductions &amp; Credits
           </Text>
           <View className="mb-1 flex-row items-baseline gap-1">
-            <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
+            <Text className="font-sans-semibold text-[22px] text-white/40">Rs.</Text>
             <Text className="font-sans-extrabold text-[44px] tracking-tighter text-white">{formatLKR(total, 0)}</Text>
           </View>
-          <Text className="mb-3.5 text-[11px] text-white/30">Reduces taxable income &amp; tax due</Text>
+          <Text className="mb-3.5 text-[14px] text-white/30">Reduces taxable income &amp; tax due</Text>
           <View className="flex-row gap-1.5">
             <StatTile onDark className="flex-1" label="Relief (from income)" value={`Rs. ${formatLKRAbbrev(relief)}`} />
             <StatTile
@@ -339,29 +339,29 @@ function DeductionsTab({ data }: { data: TaxComputationFull }) {
         </Card>
       </View>
 
-      <Text className="px-[18px] pb-1.5 pt-3.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+      <Text className="px-[18px] pb-1.5 pt-3.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
         Personal Relief
       </Text>
       <View className="px-4">
         <Card className="flex-row items-center gap-2.5 p-3.5">
           <View className="h-10 w-[3px] rounded-pill bg-salli-accent" />
           <View className="h-9 w-9 items-center justify-center rounded-[10px] border border-salli-accent/15 bg-salli-accent/10">
-            <User size={15} color={colors.accent} strokeWidth={2} />
+            <User size={17} color={colors.accent} strokeWidth={2} />
           </View>
           <View className="flex-1">
-            <Text className="font-sans-semibold text-[13px] text-foreground">Statutory Personal Relief</Text>
-            <Text className="mt-0.5 text-[11px] text-foreground/30">Auto-applied · AY {data.pack_year}</Text>
+            <Text className="font-sans-semibold text-[15px] text-foreground">Statutory Personal Relief</Text>
+            <Text className="mt-0.5 text-[14px] text-foreground/30">Auto-applied · AY {data.pack_year}</Text>
           </View>
           <View className="items-end">
-            <Text className="font-sans-bold text-[13px] text-foreground">Rs. {formatLKRAbbrev(relief)}</Text>
+            <Text className="font-sans-bold text-[15px] text-foreground">Rs. {formatLKRAbbrev(relief)}</Text>
             <View className="mt-0.5 rounded-[4px] bg-salli-accent/15 px-1.5 py-px">
-              <Text className="text-[10px] font-sans-medium text-salli-accent">Active</Text>
+              <Text className="text-[13px] font-sans-medium text-salli-accent">Active</Text>
             </View>
           </View>
         </Card>
       </View>
 
-      <Text className="px-[18px] pb-1.5 pt-3.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+      <Text className="px-[18px] pb-1.5 pt-3.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
         Tax Credits
       </Text>
       <View className="gap-1.5 px-4">
@@ -376,20 +376,20 @@ function DeductionsTab({ data }: { data: TaxComputationFull }) {
                   active ? "border border-salli-accent/15 bg-salli-accent/10" : "bg-foreground/[0.05]",
                 )}
               >
-                <c.Icon size={15} color={active ? colors.accent : "rgba(148,163,184,0.7)"} strokeWidth={2} />
+                <c.Icon size={17} color={active ? colors.accent : "rgba(148,163,184,0.7)"} strokeWidth={2} />
               </View>
               <View className="flex-1">
-                <Text className={cn("font-sans-semibold text-[13px]", active ? "text-foreground" : "text-foreground/50")}>
+                <Text className={cn("font-sans-semibold text-[15px]", active ? "text-foreground" : "text-foreground/50")}>
                   {c.title}
                 </Text>
-                <Text className="mt-0.5 text-[11px] text-foreground/30">{c.subtitle}</Text>
+                <Text className="mt-0.5 text-[14px] text-foreground/30">{c.subtitle}</Text>
               </View>
               <View className="items-end">
-                <Text className={cn("font-sans-bold text-[13px]", active ? "text-foreground" : "text-foreground/25")}>
+                <Text className={cn("font-sans-bold text-[15px]", active ? "text-foreground" : "text-foreground/25")}>
                   {active ? `−Rs. ${formatLKRAbbrev(c.amount)}` : "—"}
                 </Text>
                 <View className={cn("mt-0.5 rounded-[4px] px-1.5 py-px", active ? "bg-salli-accent/15" : "bg-foreground/[0.05]")}>
-                  <Text className={cn("text-[10px] font-sans-medium", active ? "text-salli-accent" : "text-foreground/25")}>
+                  <Text className={cn("text-[13px] font-sans-medium", active ? "text-salli-accent" : "text-foreground/25")}>
                     {active ? c.activeLabel : "Inactive"}
                   </Text>
                 </View>
@@ -430,8 +430,8 @@ function HistoryTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
   if (rows.length === 0) {
     return (
       <View className="items-center gap-2 px-8 pt-12">
-        <Text className="text-center font-sans-semibold text-[15px] text-foreground">No assessment years yet</Text>
-        <Text className="text-center text-[13px] leading-5 text-foreground/40">
+        <Text className="text-center font-sans-semibold text-[17px] text-foreground">No assessment years yet</Text>
+        <Text className="text-center text-[15px] leading-5 text-foreground/40">
           Once you compute tax for a year of assessment, it appears here.
         </Text>
       </View>
@@ -443,17 +443,17 @@ function HistoryTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
       <Card className="bg-salli-navy-card p-[18px]">
         <View className="flex-row items-start justify-between">
           <View>
-            <Text className="mb-2 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
+            <Text className="mb-2 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
               Tax {rows.length > 1 ? `· ${rows.length}-Year Total` : "· Estimated"}
             </Text>
             <View className="flex-row items-baseline gap-1">
-              <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
+              <Text className="font-sans-semibold text-[22px] text-white/40">Rs.</Text>
               <Text className="font-sans-extrabold text-[40px] tracking-tighter text-white">{formatLKR(total, 0)}</Text>
             </View>
           </View>
           {yoy != null && (
             <View className="mt-1 rounded-[8px] border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
-              <Text className="font-sans-semibold text-[11px] text-salli-accent">
+              <Text className="font-sans-semibold text-[14px] text-salli-accent">
                 {yoy >= 0 ? "↑" : "↓"} {formatPct(Math.abs(yoy), 0)} YoY
               </Text>
             </View>
@@ -471,7 +471,7 @@ function HistoryTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
                   style={{ height: h }}
                   className={cn("w-full rounded-t-[6px]", isLast ? "bg-salli-accent" : "bg-white/15")}
                 />
-                <Text className={cn("text-[10px]", isLast ? "font-sans-semibold text-white" : "text-white/30")}>
+                <Text className={cn("text-[13px]", isLast ? "font-sans-semibold text-white" : "text-white/30")}>
                   {r.pack.year.replace("20", "")}
                 </Text>
               </View>
@@ -481,7 +481,7 @@ function HistoryTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
         )}
       </Card>
 
-      <Text className="px-1.5 pb-1.5 pt-3.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+      <Text className="px-1.5 pb-1.5 pt-3.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
         Assessment Years
       </Text>
       <View className="gap-1.5">
@@ -495,20 +495,20 @@ function HistoryTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
               <View className={cn("h-11 w-[3px] rounded-pill", isCurrent ? "bg-salli-accent" : "bg-foreground/15")} />
               <View className="flex-1">
                 <View className="mb-0.5 flex-row items-center gap-1.5">
-                  <Text className="font-sans-semibold text-[13px] text-foreground">AY {r.pack.year}</Text>
+                  <Text className="font-sans-semibold text-[15px] text-foreground">AY {r.pack.year}</Text>
                   <View className={cn("rounded-[4px] px-1.5 py-px", isCurrent ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
-                    <Text className={cn("text-[9px] font-sans-semibold", isCurrent ? "text-salli-accent" : "text-foreground/45")}>
+                    <Text className={cn("text-[12px] font-sans-semibold", isCurrent ? "text-salli-accent" : "text-foreground/45")}>
                       {isCurrent ? "CURRENT" : "COMPUTED"}
                     </Text>
                   </View>
                 </View>
-                <Text className="text-[11px] text-foreground/30">
+                <Text className="text-[14px] text-foreground/30">
                   Est. · {dueDateLabel(r.pack, r.pack.year)} · Eff. {formatPct(effRate(r.result), 2)}
                 </Text>
               </View>
               <View className="items-end">
-                <Text className="font-sans-bold text-[14px] text-foreground">Rs. {formatLKRAbbrev(r.result.tax_payable)}</Text>
-                <Text className="mt-0.5 text-[10px] text-foreground/25">Not filed</Text>
+                <Text className="font-sans-bold text-[16px] text-foreground">Rs. {formatLKRAbbrev(r.result.tax_payable)}</Text>
+                <Text className="mt-0.5 text-[13px] text-foreground/25">Not filed</Text>
               </View>
             </Card>
           );

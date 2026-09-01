@@ -95,12 +95,12 @@ export function ApprovalGateCard({
     <View className="rounded-[12px] border border-foreground/[0.12] bg-card p-3.5">
       <View className="mb-2.5 flex-row items-start gap-2.5">
         <View className="h-8 w-8 items-center justify-center rounded-full bg-foreground/[0.08]">
-          <ShieldCheck size={15} color={colors.accent} strokeWidth={2} />
+          <ShieldCheck size={17} color={colors.accent} strokeWidth={2} />
         </View>
         <View className="flex-1">
-          <Text className="font-sans-bold text-[14px] text-foreground">{copy.title}</Text>
+          <Text className="font-sans-bold text-[16px] text-foreground">{copy.title}</Text>
           {description ? (
-            <Text className="mt-0.5 text-[12px] leading-4 text-foreground/50">{description}</Text>
+            <Text className="mt-0.5 text-[15px] leading-5 text-foreground/50">{description}</Text>
           ) : null}
         </View>
       </View>
@@ -110,10 +110,10 @@ export function ApprovalGateCard({
           {fields.map((f) => (
             <View key={f.label} className="flex-row items-center justify-between gap-3">
               <View className="flex-row items-center gap-1.5">
-                <f.icon size={12} color={colors.mutedForeground} strokeWidth={2} />
-                <Text className="text-[11px] capitalize text-foreground/40">{f.label}</Text>
+                <f.icon size={14} color={colors.mutedForeground} strokeWidth={2} />
+                <Text className="text-[14px] capitalize text-foreground/40">{f.label}</Text>
               </View>
-              <Text className="flex-1 text-right text-[12px] font-sans-medium text-foreground" numberOfLines={1}>
+              <Text className="flex-1 text-right text-[15px] font-sans-medium text-foreground" numberOfLines={1}>
                 {f.value}
               </Text>
             </View>
@@ -124,7 +124,7 @@ export function ApprovalGateCard({
       {resolved ? (
         <Text
           className={cn(
-            "text-center text-[12px] font-sans-semibold",
+            "text-center text-[15px] font-sans-semibold",
             resolved === "approved" ? "text-salli-accent" : "text-destructive",
           )}
         >
@@ -133,20 +133,20 @@ export function ApprovalGateCard({
       ) : (
         <>
           <Pressable onPress={() => setDetailsOpen(true)} className="mb-2 items-center py-1.5">
-            <Text className="text-[12px] font-sans-medium text-foreground/40">Review details</Text>
+            <Text className="text-[15px] font-sans-medium text-foreground/40">Review details</Text>
           </Pressable>
           <View className="flex-row gap-2">
             <Pressable
               onPress={() => onResolve("denied")}
               className="h-[38px] flex-1 items-center justify-center rounded-[10px] border border-foreground/10 bg-foreground/[0.06]"
             >
-              <Text className="font-sans-semibold text-[13px] text-foreground/45">Deny</Text>
+              <Text className="font-sans-semibold text-[15px] text-foreground/45">Deny</Text>
             </Pressable>
             <Pressable
               onPress={() => onResolve("approved")}
               className="h-[38px] flex-1 items-center justify-center rounded-[10px] bg-salli-accent"
             >
-              <Text className="font-sans-semibold text-[13px] text-white">{copy.approveLabel}</Text>
+              <Text className="font-sans-semibold text-[15px] text-white">{copy.approveLabel}</Text>
             </Pressable>
           </View>
         </>
@@ -156,8 +156,8 @@ export function ApprovalGateCard({
         <View className="gap-2 pb-2">
           {Object.entries(params).map(([k, v]) => (
             <View key={k} className="flex-row justify-between gap-3 border-b border-foreground/[0.06] pb-2">
-              <Text className="text-[12px] capitalize text-foreground/40">{k.replace(/_/g, " ")}</Text>
-              <Text className="flex-1 text-right text-[12px] font-sans-medium text-foreground">
+              <Text className="text-[15px] capitalize text-foreground/40">{k.replace(/_/g, " ")}</Text>
+              <Text className="flex-1 text-right text-[15px] font-sans-medium text-foreground">
                 {typeof v === "object" ? JSON.stringify(v) : String(v)}
               </Text>
             </View>

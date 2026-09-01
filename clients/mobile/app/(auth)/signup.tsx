@@ -42,10 +42,10 @@ export default function SignupScreen() {
     <AuthShell>
       <View className="items-center pb-9">
         <Logo size={44} className="text-foreground" />
-        <Text className="mt-[22px] font-sans-bold text-[26px] tracking-tight text-foreground">
+        <Text className="mt-[22px] font-sans-bold text-[30px] tracking-tight text-foreground">
           Create account
         </Text>
-        <Text className="mt-2.5 text-center text-[13px] text-foreground/45">
+        <Text className="mt-2.5 text-center text-[15px] text-foreground/45">
           Set up your Salli account to get started.
         </Text>
       </View>
@@ -55,10 +55,10 @@ export default function SignupScreen() {
           <View className="h-14 w-14 items-center justify-center rounded-full bg-salli-accent/20">
             <Mail size={22} color={colors.accent} strokeWidth={2} />
           </View>
-          <Text className="text-center font-sans-semibold text-[16px] text-foreground">
+          <Text className="text-center font-sans-semibold text-[18px] text-foreground">
             Check your inbox
           </Text>
-          <Text className="text-center text-[13px] text-foreground/40">
+          <Text className="text-center text-[15px] text-foreground/40">
             We&apos;ve sent a confirmation link to {email}.
           </Text>
           <PillButton className="mt-3 h-[54px] w-full" onPress={() => router.replace("/(auth)/login")}>
@@ -92,7 +92,7 @@ export default function SignupScreen() {
 
           {error ? (
             <View className="rounded-control border border-destructive/30 bg-destructive/10 px-4 py-3">
-              <Text className="text-[13px] text-destructive">{error}</Text>
+              <Text className="text-[15px] text-destructive">{error}</Text>
             </View>
           ) : null}
 
@@ -106,7 +106,7 @@ export default function SignupScreen() {
           </PillButton>
 
           <Pressable className="items-center py-2" onPress={() => router.replace("/(auth)/login")}>
-            <Text className="text-[13px] text-foreground/40">
+            <Text className="text-[15px] text-foreground/40">
               Already have an account? <Text className="text-salli-accent">Sign in</Text>
             </Text>
           </Pressable>

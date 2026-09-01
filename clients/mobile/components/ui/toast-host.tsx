@@ -80,8 +80,8 @@ export function ToastHost() {
               elevation: 10,
             }}
           >
-            <Icon size={18} color={iconColor} strokeWidth={2} />
-            <Text className="flex-1 font-sans-medium text-[13px] text-foreground">{toast.message}</Text>
+            <Icon size={20} color={iconColor} strokeWidth={2} />
+            <Text className="flex-1 font-sans-medium text-[15px] text-foreground">{toast.message}</Text>
           </Pressable>
         </Animated.View>
       </View>

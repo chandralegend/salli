@@ -48,7 +48,7 @@ export function InfoButton({
 
       <Drawer visible={open} onClose={() => setOpen(false)} title={title} keyboardAvoiding={false}>
         <View className="pb-2">
-          <Text className="text-[14px] leading-[22px] text-foreground/70">{description}</Text>
+          <Text className="text-[16px] leading-[28px] text-foreground/70">{description}</Text>
         </View>
       </Drawer>
     </>

@@ -33,7 +33,7 @@ const POLICY_TYPES = ["life", "health", "motor", "property", "other"] as const;
 const PREMIUM_FREQUENCIES = ["monthly", "quarterly", "yearly"] as const;
 
 const FieldLabel = ({ children }: { children: string }) => (
-  <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">{children}</Text>
+  <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">{children}</Text>
 );
 
 export default function InsuranceScreen() {
@@ -80,9 +80,9 @@ export default function InsuranceScreen() {
             trailing={
               <Pressable
                 onPress={openAdd}
-                className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
+                className="h-11 w-11 items-center justify-center rounded-full bg-salli-accent"
               >
-                <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
+                <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
               </Pressable>
             }
           />
@@ -91,11 +91,11 @@ export default function InsuranceScreen() {
         {/* hero — coverage vs gap */}
         <View className="px-4 pt-3">
           <Card className="bg-salli-navy-card p-[18px]">
-            <Text className="mb-1.5 text-[11px] font-sans-medium uppercase tracking-wide text-white/50">
+            <Text className="mb-1.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
               Total Coverage
             </Text>
             <View className="mb-1 flex-row items-baseline gap-1">
-              <Text className="font-sans-semibold text-[18px] text-white/40">Rs.</Text>
+              <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
               <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
                 {formatLKRAbbrev(totalCoverage)}
               </Text>
@@ -111,7 +111,7 @@ export default function InsuranceScreen() {
               >
                 <Text
                   className={cn(
-                    "text-[11px] font-sans-semibold",
+                    "text-[14px] font-sans-semibold",
                     gapFree ? "text-salli-accent" : "text-destructive",
                   )}
                 >
@@ -125,16 +125,16 @@ export default function InsuranceScreen() {
             </View>
             <View className="flex-row gap-1.5">
               <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[10px] text-white/35">Policies</Text>
-                <Text className="font-sans-bold text-[13px] text-white">{activePolicies.length}</Text>
+                <Text className="mb-1 text-[13px] text-white/35">Policies</Text>
+                <Text className="font-sans-bold text-[15px] text-white">{activePolicies.length}</Text>
               </View>
               <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[10px] text-white/35">Target</Text>
-                <Text className="font-sans-bold text-[13px] text-white">Rs. {formatLKRAbbrev(totalTarget)}</Text>
+                <Text className="mb-1 text-[13px] text-white/35">Target</Text>
+                <Text className="font-sans-bold text-[15px] text-white">Rs. {formatLKRAbbrev(totalTarget)}</Text>
               </View>
               <View className="flex-1 rounded-control bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[10px] text-white/35">Gap</Text>
-                <Text className={cn("font-sans-bold text-[13px]", totalGap > 0 ? "text-destructive" : "text-salli-accent")}>
+                <Text className="mb-1 text-[13px] text-white/35">Gap</Text>
+                <Text className={cn("font-sans-bold text-[15px]", totalGap > 0 ? "text-destructive" : "text-salli-accent")}>
                   Rs. {formatLKRAbbrev(totalGap)}
                 </Text>
               </View>
@@ -148,29 +148,29 @@ export default function InsuranceScreen() {
           <View className="gap-1.5 px-4 pt-3">
             {activePolicies.length === 0 ? (
               <Card className="items-center p-6">
-                <Text className="text-[13px] text-foreground/35">No policies yet.</Text>
+                <Text className="text-[15px] text-foreground/35">No policies yet.</Text>
               </Card>
             ) : (
               activePolicies.map((p) => (
                 <Pressable key={p.id} onPress={() => openEdit(p)}>
                   <Card className="flex-row items-center gap-2.5 p-3.5">
                     <View className="h-9 w-9 items-center justify-center rounded-[8px] border border-salli-accent/20 bg-salli-accent/[0.12]">
-                      <Shield size={15} color={colors.accent} strokeWidth={2} />
+                      <Shield size={17} color={colors.accent} strokeWidth={2} />
                     </View>
                     <View className="flex-1">
-                      <Text className="font-sans-semibold text-[13px] text-foreground">{p.name}</Text>
-                      <Text className="text-[11px] capitalize text-foreground/30">
+                      <Text className="font-sans-semibold text-[15px] text-foreground">{p.name}</Text>
+                      <Text className="text-[14px] capitalize text-foreground/30">
                         {p.policy_type} · {p.provider} · expires {p.expiry_date}
                       </Text>
                     </View>
                     <View className="items-end gap-1.5">
-                      <Text className="font-sans-semibold text-[13px] text-foreground">Rs. {formatLKRAbbrev(p.coverage_amount)}</Text>
+                      <Text className="font-sans-semibold text-[15px] text-foreground">Rs. {formatLKRAbbrev(p.coverage_amount)}</Text>
                       <View className="flex-row items-center gap-3">
                         <Pressable onPress={() => openEdit(p)} hitSlop={8}>
-                          <Pencil size={13} color={colors.mutedForeground} strokeWidth={2} />
+                          <Pencil size={15} color={colors.mutedForeground} strokeWidth={2} />
                         </Pressable>
                         <Pressable onPress={() => confirmDelete(p)} hitSlop={8}>
-                          <Trash2 size={13} color={colors.mutedForeground} strokeWidth={2} />
+                          <Trash2 size={15} color={colors.mutedForeground} strokeWidth={2} />
                         </Pressable>
                       </View>
                     </View>
@@ -185,10 +185,10 @@ export default function InsuranceScreen() {
           <View className="gap-1.5 px-4 pt-3">
             {(targets.data ?? []).length === 0 ? (
               <Card className="items-center gap-1.5 p-6">
-                <Text className="text-center text-[13px] text-foreground/45">
+                <Text className="text-center text-[15px] text-foreground/45">
                   No coverage targets yet
                 </Text>
-                <Text className="text-center text-[12px] leading-4 text-foreground/30">
+                <Text className="text-center text-[15px] leading-5 text-foreground/30">
                   Declare how much cover you think you need, and the Coverage Report will show
                   where you fall short.
                 </Text>
@@ -196,11 +196,11 @@ export default function InsuranceScreen() {
             ) : (
               (targets.data ?? []).map((t) => (
                 <Card key={t.policy_type} className="flex-row items-center justify-between p-3.5">
-                  <Text className="font-sans-semibold text-[13px] capitalize text-foreground">{t.policy_type}</Text>
+                  <Text className="font-sans-semibold text-[15px] capitalize text-foreground">{t.policy_type}</Text>
                   <View className="flex-row items-center gap-3">
-                    <Text className="font-sans-semibold text-[13px] text-foreground">Rs. {formatLKRAbbrev(t.target_amount)}</Text>
+                    <Text className="font-sans-semibold text-[15px] text-foreground">Rs. {formatLKRAbbrev(t.target_amount)}</Text>
                     <Pressable onPress={() => deleteTarget.mutate(t.policy_type)}>
-                      <Trash2 size={13} color={colors.mutedForeground} strokeWidth={2} />
+                      <Trash2 size={15} color={colors.mutedForeground} strokeWidth={2} />
                     </Pressable>
                   </View>
                 </Card>
@@ -216,9 +216,9 @@ export default function InsuranceScreen() {
               className="mt-1 flex-row items-center gap-2.5 rounded-control border border-dashed border-foreground/[0.12] bg-card px-3.5 py-[11px]"
             >
               <View className="h-8 w-8 items-center justify-center rounded-[9px] bg-foreground/[0.04]">
-                <Plus size={13} color={colors.mutedForeground} strokeWidth={2.5} />
+                <Plus size={15} color={colors.mutedForeground} strokeWidth={2.5} />
               </View>
-              <Text className="font-sans-medium text-[13px] text-foreground/45">
+              <Text className="font-sans-medium text-[15px] text-foreground/45">
                 Set a coverage target
               </Text>
             </Pressable>
@@ -238,8 +238,8 @@ export default function InsuranceScreen() {
                   return (
                     <Card key={i} className="p-3.5">
                       <View className="mb-2 flex-row items-center justify-between">
-                        <Text className="font-sans-semibold text-[13px] capitalize text-foreground">{line.policy_type}</Text>
-                        <Text className={cn("font-sans-semibold text-[12px]", covered ? "text-salli-accent" : "text-destructive")}>
+                        <Text className="font-sans-semibold text-[15px] capitalize text-foreground">{line.policy_type}</Text>
+                        <Text className={cn("font-sans-semibold text-[15px]", covered ? "text-salli-accent" : "text-destructive")}>
                           {covered ? "Covered" : `Gap Rs. ${formatLKR(gap, 0)}`}
                         </Text>
                       </View>
@@ -249,7 +249,7 @@ export default function InsuranceScreen() {
                           style={{ width: `${pct}%` }}
                         />
                       </View>
-                      <Text className="text-[11px] text-foreground/30">
+                      <Text className="text-[14px] text-foreground/30">
                         Rs. {formatLKRAbbrev(actual)} of Rs. {formatLKRAbbrev(target)} target
                       </Text>
                     </Card>
@@ -258,14 +258,14 @@ export default function InsuranceScreen() {
               </View>
             ) : (
               <Card className="items-center p-6">
-                <Text className="text-[13px] text-foreground/35">No coverage targets declared.</Text>
+                <Text className="text-[15px] text-foreground/35">No coverage targets declared.</Text>
               </Card>
             )}
 
             {(report.data?.missing_types.length ?? 0) > 0 ? (
               <Card className="flex-row items-start gap-2 border-destructive/25 bg-destructive/5 p-3.5">
-                <AlertTriangle size={14} color="#EF4444" strokeWidth={2} />
-                <Text className="flex-1 text-[12px] capitalize text-destructive">
+                <AlertTriangle size={16} color="#EF4444" strokeWidth={2} />
+                <Text className="flex-1 text-[15px] capitalize text-destructive">
                   Missing coverage: {report.data!.missing_types.join(", ")}
                 </Text>
               </Card>
@@ -274,7 +274,7 @@ export default function InsuranceScreen() {
             {(report.data?.expiring_soon.length ?? 0) > 0 ? (
               <Card className="overflow-hidden p-0">
                 <View className="border-b border-foreground/[0.06] px-4 py-3">
-                  <Text className="font-sans-semibold text-[13px] text-foreground">Expiring Soon</Text>
+                  <Text className="font-sans-semibold text-[15px] text-foreground">Expiring Soon</Text>
                 </View>
                 {report.data!.expiring_soon.map((e, i) => (
                   <View
@@ -284,8 +284,8 @@ export default function InsuranceScreen() {
                       i < report.data!.expiring_soon.length - 1 && "border-b border-foreground/[0.05]",
                     )}
                   >
-                    <Text className="text-[13px] text-foreground">{e.policy_name}</Text>
-                    <Text className={cn("text-[12px]", e.days_until_expiry <= 30 ? "text-destructive" : "text-foreground/40")}>
+                    <Text className="text-[15px] text-foreground">{e.policy_name}</Text>
+                    <Text className={cn("text-[15px]", e.days_until_expiry <= 30 ? "text-destructive" : "text-foreground/40")}>
                       {e.days_until_expiry} days
                     </Text>
                   </View>
@@ -416,7 +416,7 @@ function AddEditPolicyDrawer({
             {isEdit ? "Save Changes" : "Add Policy"}
           </PillButton>
           {isError ? (
-            <Text className="mt-2 text-center text-[11px] text-destructive">
+            <Text className="mt-2 text-center text-[14px] text-destructive">
               Could not save policy. Please try again.
             </Text>
           ) : null}
@@ -521,7 +521,7 @@ function SetTargetDrawer({
     >
       <View className="gap-3 pb-2">
         <View>
-          <Text className="mb-1.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
+          <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
             Policy type
           </Text>
           <View className="flex-row flex-wrap gap-1.5">
@@ -536,7 +536,7 @@ function SetTargetDrawer({
               >
                 <Text
                   className={cn(
-                    "text-[12px] capitalize",
+                    "text-[15px] capitalize",
                     policyType === t
                       ? "font-sans-semibold text-white"
                       : "font-sans-medium text-foreground/55",
@@ -557,7 +557,7 @@ function SetTargetDrawer({
           placeholder="e.g. 5000000"
         />
 
-        <Text className="text-[11px] leading-4 text-foreground/30">
+        <Text className="text-[14px] leading-5 text-foreground/30">
           {replacing
             ? "You already have a target for this type — saving replaces it."
             : "The Coverage Report compares this against the policies you hold and shows the shortfall."}

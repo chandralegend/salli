@@ -173,7 +173,7 @@ function ScoreRing({ score }: { score: number }) {
           strokeLinecap="round"
         />
       </Svg>
-      <Text className="font-sans-bold text-[14px] text-foreground">{score.toFixed(0)}</Text>
+      <Text className="font-sans-bold text-[16px] text-foreground">{score.toFixed(0)}</Text>
     </View>
   );
 }
@@ -241,9 +241,9 @@ export default function FinancialIndependenceScreen() {
         <>
           <TourTarget id="freedom-header">
             <View className="flex-row items-center px-5 pb-1 pt-2.5">
-              <Text className="flex-1 font-sans-bold text-[20px] text-foreground">Freedom</Text>
+              <Text className="flex-1 font-sans-bold text-[22px] text-foreground">Freedom</Text>
               <InfoButton
-                size={18}
+                size={20}
                 title="Freedom"
                 description={
                   "Freedom is the point where your investments can cover your living costs, so working becomes a choice.\n\n" +
@@ -270,7 +270,7 @@ export default function FinancialIndependenceScreen() {
           {/* TIER 1 — Freedom Number (navy hero card) */}
           <View className="rounded-card border border-foreground/[0.08] bg-salli-navy-card p-[18px]">
             <View className="mb-2 flex-row items-center gap-1.5">
-              <Text className="text-[11px] font-sans-semibold uppercase tracking-wide text-white/50">
+              <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-white/50">
                 Freedom Number
               </Text>
               <InfoButton
@@ -284,41 +284,41 @@ export default function FinancialIndependenceScreen() {
               />
             </View>
             <View className="mb-2.5 rounded-[8px] border border-white/10 bg-white/[0.06] px-2.5 py-1.5">
-              <Text className="text-[11px] leading-4 text-white/45">
+              <Text className="text-[14px] leading-5 text-white/45">
                 The savings target where investment returns cover your lifestyle — permanently.
               </Text>
             </View>
             <View className="mb-1.5 flex-row items-baseline gap-1">
-              <Text className="font-sans-bold text-[22px] text-white/45">Rs.</Text>
+              <Text className="font-sans-bold text-[26px] text-white/45">Rs.</Text>
               <Text className="font-sans-extrabold text-[42px] leading-[42px] tracking-tighter text-white">
                 {projections.data ? formatLKRAbbrev(projections.data.fi_number) : "—"}
               </Text>
             </View>
             <View className="mb-3.5 flex-row items-center gap-1.5">
-              <Text className="text-[11px] text-white/30">4% SWR</Text>
+              <Text className="text-[14px] text-white/30">4% SWR</Text>
               {targetAge ? (
                 <>
-                  <Text className="text-[11px] text-white/15">·</Text>
-                  <Text className="text-[11px] text-white/30">Target age {targetAge}</Text>
+                  <Text className="text-[14px] text-white/15">·</Text>
+                  <Text className="text-[14px] text-white/30">Target age {targetAge}</Text>
                 </>
               ) : null}
             </View>
             <View className="flex-row gap-1.5">
               <View className="flex-1 rounded-[10px] bg-white/[0.06] px-2.5 py-2">
-                <Text className="mb-1 text-[10px] text-white/30">Funded</Text>
-                <Text className="font-sans-bold text-[15px] leading-[15px] text-salli-accent">
+                <Text className="mb-1 text-[13px] text-white/30">Funded</Text>
+                <Text className="font-sans-bold text-[17px] leading-[20px] text-salli-accent">
                   {fiScore.data ? formatPct(fiScore.data.progress_to_fi) : "—"}
                 </Text>
               </View>
               <View className="flex-1 rounded-[10px] bg-white/[0.06] px-2.5 py-2">
-                <Text className="mb-1 text-[10px] text-white/30">Net Worth</Text>
-                <Text className="font-sans-bold text-[15px] leading-[15px] text-white">
+                <Text className="mb-1 text-[13px] text-white/30">Net Worth</Text>
+                <Text className="font-sans-bold text-[17px] leading-[20px] text-white">
                   {fiScore.data ? `Rs. ${formatLKRAbbrev(fiScore.data.net_worth)}` : "—"}
                 </Text>
               </View>
               <View className="flex-1 rounded-[10px] bg-white/[0.06] px-2.5 py-2">
-                <Text className="mb-1 text-[10px] text-white/30">Target</Text>
-                <Text className="font-sans-bold text-[15px] leading-[15px] text-white/40">
+                <Text className="mb-1 text-[13px] text-white/30">Target</Text>
+                <Text className="font-sans-bold text-[17px] leading-[20px] text-white/40">
                   {projections.data ? `Rs. ${formatLKRAbbrev(projections.data.fi_number)}` : "—"}
                 </Text>
               </View>
@@ -329,7 +329,7 @@ export default function FinancialIndependenceScreen() {
           <View className="flex-row gap-2">
             <Card className="flex-1 p-3.5">
               <View className="mb-1.5 flex-row items-center gap-1.5">
-                <Text className="text-[11px] font-sans-medium text-foreground/40">Years to Freedom</Text>
+                <Text className="text-[14px] font-sans-medium text-foreground/40">Years to Freedom</Text>
                 <InfoButton
                   size={11}
                   title="Years to Freedom"
@@ -339,16 +339,16 @@ export default function FinancialIndependenceScreen() {
                   }
                 />
               </View>
-              <Text className="mb-1 font-sans-extrabold text-[28px] leading-[28px] tracking-tight text-foreground">
+              <Text className="mb-1 font-sans-extrabold text-[32px] leading-[34px] tracking-tight text-foreground">
                 {projections.data ? yearsToFi.toFixed(1) : "—"}
               </Text>
-              <Text className="text-[10px] text-foreground/20">
+              <Text className="text-[13px] text-foreground/20">
                 {projections.data ? `Freedom by ${freedomYear} · base case` : "base case"}
               </Text>
             </Card>
             <Card className="flex-1 p-3.5">
               <View className="mb-1.5 flex-row items-center gap-1.5">
-                <Text className="text-[11px] font-sans-medium text-foreground/40">Savings Rate</Text>
+                <Text className="text-[14px] font-sans-medium text-foreground/40">Savings Rate</Text>
                 <InfoButton
                   size={11}
                   title="Savings Rate"
@@ -358,10 +358,10 @@ export default function FinancialIndependenceScreen() {
                   }
                 />
               </View>
-              <Text className="mb-1 font-sans-extrabold text-[28px] leading-[28px] tracking-tight text-foreground">
+              <Text className="mb-1 font-sans-extrabold text-[32px] leading-[34px] tracking-tight text-foreground">
                 {fiScore.data ? formatPct(fiScore.data.savings_rate, 0) : "—"}
               </Text>
-              <Text className="text-[10px] text-foreground/20">% of income saved · aim 40%+</Text>
+              <Text className="text-[13px] text-foreground/20">% of income saved · aim 40%+</Text>
             </Card>
           </View>
 
@@ -375,9 +375,9 @@ export default function FinancialIndependenceScreen() {
           <Card className="p-4">
             <View className="mb-3.5 flex-row items-center justify-between">
               <View className="flex-row items-center gap-1.5">
-                <Text className="font-sans-semibold text-[14px] text-foreground">Goals</Text>
+                <Text className="font-sans-semibold text-[16px] text-foreground">Goals</Text>
                 <InfoButton
-                  size={12}
+                  size={14}
                   title="Goals"
                   description={
                     "Specific things you're saving toward — a deposit, a fund, a purchase — each with a target amount and date.\n\n" +
@@ -386,14 +386,14 @@ export default function FinancialIndependenceScreen() {
                 />
               </View>
               <Pressable onPress={() => setTab("Goals")}>
-                <Text className="text-[12px] font-sans-medium text-salli-accent">See all</Text>
+                <Text className="text-[15px] font-sans-medium text-salli-accent">See all</Text>
               </Pressable>
             </View>
             {allGoals.length === 0 ? (
-              <Text className="text-[12px] text-foreground/35">No goals yet — add one in the Goals tab.</Text>
+              <Text className="text-[15px] text-foreground/35">No goals yet — add one in the Goals tab.</Text>
             ) : (
               <>
-                <Text className="mb-3 text-[11px] text-foreground/30">
+                <Text className="mb-3 text-[14px] text-foreground/30">
                   {completeGoals.length} of {allGoals.length} complete
                 </Text>
                 <View className="gap-3">
@@ -403,16 +403,16 @@ export default function FinancialIndependenceScreen() {
                     return (
                       <View key={goal.id}>
                         <View className="mb-1.5 flex-row items-center gap-2">
-                          <GoalIcon size={13} color={done ? colors.mutedForeground : colors.accent} strokeWidth={2} />
+                          <GoalIcon size={15} color={done ? colors.mutedForeground : colors.accent} strokeWidth={2} />
                           <Text
                             className={cn(
-                              "flex-1 font-sans-medium text-[13px]",
+                              "flex-1 font-sans-medium text-[15px]",
                               done ? "text-foreground/40 line-through" : "text-foreground",
                             )}
                           >
                             {goal.name}
                           </Text>
-                          <Text className="font-sans-semibold text-[12px] text-salli-accent">
+                          <Text className="font-sans-semibold text-[15px] text-salli-accent">
                             {(goal.progress * 100).toFixed(0)}%
                           </Text>
                         </View>
@@ -430,9 +430,9 @@ export default function FinancialIndependenceScreen() {
             <View className="mb-3 flex-row items-center justify-between">
               <View>
                 <View className="flex-row items-center gap-1.5">
-                  <Text className="font-sans-semibold text-[14px] text-foreground">Freedom Score</Text>
+                  <Text className="font-sans-semibold text-[16px] text-foreground">Freedom Score</Text>
                   <InfoButton
-                    size={12}
+                    size={14}
                     title="Freedom Score"
                     description={
                       "A 0–100 read on your overall financial health, combining your savings rate, emergency fund, debt level, and progress toward Freedom.\n\n" +
@@ -441,7 +441,7 @@ export default function FinancialIndependenceScreen() {
                   />
                 </View>
                 {fiScore.data?.grade ? (
-                  <Text className="mt-0.5 text-[11px] text-foreground/30">Grade {fiScore.data.grade}</Text>
+                  <Text className="mt-0.5 text-[14px] text-foreground/30">Grade {fiScore.data.grade}</Text>
                 ) : null}
               </View>
               {fiScore.data ? (
@@ -454,14 +454,14 @@ export default function FinancialIndependenceScreen() {
             </View>
             <View className="flex-row gap-1.5">
               <View className="flex-1 rounded-[10px] border border-foreground/[0.06] bg-foreground/[0.04] px-2.5 py-2.5">
-                <Text className="mb-1.5 text-[10px] text-foreground/35">Savings Rate</Text>
-                <Text className="font-sans-bold text-[18px] leading-[18px] text-foreground">
+                <Text className="mb-1.5 text-[13px] text-foreground/35">Savings Rate</Text>
+                <Text className="font-sans-bold text-[20px] leading-[24px] text-foreground">
                   {fiScore.data ? formatPct(fiScore.data.savings_rate, 0) : "—"}
                 </Text>
               </View>
               <View className="flex-1 rounded-[10px] border border-foreground/[0.06] bg-foreground/[0.04] px-2.5 py-2.5">
-                <Text className="mb-1.5 text-[10px] text-foreground/35">Debt-to-Asset</Text>
-                <Text className="font-sans-bold text-[18px] leading-[18px] text-foreground">
+                <Text className="mb-1.5 text-[13px] text-foreground/35">Debt-to-Asset</Text>
+                <Text className="font-sans-bold text-[20px] leading-[24px] text-foreground">
                   {fiScore.data ? formatPct(fiScore.data.debt_to_asset, 0) : "—"}
                 </Text>
               </View>
@@ -476,10 +476,10 @@ export default function FinancialIndependenceScreen() {
           {projections.data ? (
             <View className="rounded-card border border-foreground/[0.08] bg-salli-navy-card p-[16px]">
               <View className="mb-3 flex-row items-center justify-between">
-                <Text className="text-[11px] font-sans-semibold uppercase tracking-wide text-white/50">
+                <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-white/50">
                   Portfolio Projection
                 </Text>
-                <Text className="text-[11px] text-white/30">
+                <Text className="text-[14px] text-white/30">
                   {targetAge ? `to age ${targetAge}` : `${projections.data.points.length - 1} yrs`}
                 </Text>
               </View>
@@ -494,22 +494,22 @@ export default function FinancialIndependenceScreen() {
                   .map((x) => (
                     <View key={x.l} className="flex-row items-center gap-1.5">
                       <View style={{ width: 12, height: 2, borderRadius: 2, backgroundColor: x.c }} />
-                      <Text className="text-[10px] text-white/50">{x.l}</Text>
+                      <Text className="text-[13px] text-white/50">{x.l}</Text>
                     </View>
                   ))}
-                <Text className="flex-1 text-right text-[10px] text-white/30">- - Freedom target</Text>
+                <Text className="flex-1 text-right text-[13px] text-white/30">- - Freedom target</Text>
               </View>
               {projections.data.scenario_access && projections.data.scenario_access.locked.length > 0 ? (
                 <Pressable
                   onPress={() => router.push("/(tabs)/more/billing")}
                   className="mt-2.5 flex-row items-center gap-1.5 rounded-control bg-white/[0.06] px-3 py-2"
                 >
-                  <Lock size={12} color="rgba(255,255,255,0.5)" strokeWidth={2} />
+                  <Lock size={14} color="rgba(255,255,255,0.5)" strokeWidth={2} />
                   <Text className="flex-1 text-[10.5px] text-white/50">
                     {projections.data.scenario_access.locked.map((s) => (s === "conservative" ? "Conservative" : "Growth")).join(" & ")} scenario
                     {projections.data.scenario_access.locked.length > 1 ? "s" : ""} locked · Unlock on Pro
                   </Text>
-                  <ChevronRight size={12} color="rgba(255,255,255,0.4)" strokeWidth={2} />
+                  <ChevronRight size={14} color="rgba(255,255,255,0.4)" strokeWidth={2} />
                 </Pressable>
               ) : null}
             </View>
@@ -517,31 +517,31 @@ export default function FinancialIndependenceScreen() {
 
           {!strategy.data ? (
             <Card className="items-center gap-3 p-6">
-              <Text className="text-center text-[13px] text-foreground/40">
+              <Text className="text-center text-[15px] text-foreground/40">
                 No FIRE strategy yet — generate one from your financial profile.
               </Text>
               <PillButton variant="accent" loading={generateStrategy.isPending} onPress={() => generateStrategy.mutate()}>
-                <Sparkles size={14} color="#FFFFFF" strokeWidth={2} />
-                <Text className="font-sans-semibold text-[14px] text-white">Generate strategy</Text>
+                <Sparkles size={16} color="#FFFFFF" strokeWidth={2} />
+                <Text className="font-sans-semibold text-[16px] text-white">Generate strategy</Text>
               </PillButton>
             </Card>
           ) : (
             <>
               {/* Allocation — tappable donut (slices open a detail drawer) */}
               <Card className="p-4">
-                <Text className="text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
                   Allocation{surplus.data ? ` · Rs. ${formatLKRAbbrev(surplus.data.monthly_surplus)}/mo surplus` : ""}
                 </Text>
                 <View className="my-2 h-[156px] w-[156px] items-center justify-center self-center">
                   <AllocationDonut buckets={strategy.data.buckets} onSelect={setSelectedBucket} />
                   <View pointerEvents="none" style={{ position: "absolute", alignItems: "center" }}>
-                    <Text className="font-sans-extrabold text-[16px] leading-5 text-foreground">
+                    <Text className="font-sans-extrabold text-[18px] leading-5 text-foreground">
                       {surplus.data ? `Rs. ${formatLKRAbbrev(surplus.data.monthly_surplus)}` : "—"}
                     </Text>
-                    <Text className="text-[10px] text-foreground/35">surplus/mo</Text>
+                    <Text className="text-[13px] text-foreground/35">surplus/mo</Text>
                   </View>
                 </View>
-                <Text className="text-center text-[11px] text-foreground/30">Tap a slice to see how each bucket works</Text>
+                <Text className="text-center text-[14px] text-foreground/30">Tap a slice to see how each bucket works</Text>
               </Card>
 
               {/* Salli AI's Strategy — collapsible. Shown whenever there's a
@@ -554,16 +554,16 @@ export default function FinancialIndependenceScreen() {
                     className="flex-row items-center gap-2 p-3.5"
                   >
                     <View className="h-[26px] w-[26px] items-center justify-center rounded-[8px] bg-salli-accent/15">
-                      <PiggyBank size={14} color={colors.accent} strokeWidth={2} />
+                      <PiggyBank size={16} color={colors.accent} strokeWidth={2} />
                     </View>
-                    <Text className="flex-1 font-sans-semibold text-[13px] text-foreground">Salli AI&apos;s Strategy</Text>
-                    <Text className="text-[10px] capitalize text-foreground/30">
+                    <Text className="flex-1 font-sans-semibold text-[15px] text-foreground">Salli AI&apos;s Strategy</Text>
+                    <Text className="text-[13px] capitalize text-foreground/30">
                       {strategy.data.fire_style} · v{strategy.data.version}
                     </Text>
                     {strategyOpen ? (
-                      <ChevronUp size={16} color={colors.mutedForeground} strokeWidth={2} />
+                      <ChevronUp size={18} color={colors.mutedForeground} strokeWidth={2} />
                     ) : (
-                      <ChevronDown size={16} color={colors.mutedForeground} strokeWidth={2} />
+                      <ChevronDown size={18} color={colors.mutedForeground} strokeWidth={2} />
                     )}
                   </Pressable>
                   {strategyOpen ? (
@@ -571,18 +571,18 @@ export default function FinancialIndependenceScreen() {
                       <View className="mb-2.5 border-t border-foreground/[0.06] pt-2.5">
                         {strategy.data.rationale_locked ? (
                           <>
-                            <Text className="pt-2 text-[12px] leading-[18px] text-foreground/50">
+                            <Text className="pt-2 text-[15px] leading-[24px] text-foreground/50">
                               {strategy.data.rationale_preview}
                             </Text>
                             <Pressable
                               onPress={() => router.push("/(tabs)/more/billing")}
                               className="mt-2.5 flex-row items-center gap-1.5 rounded-control bg-salli-accent/[0.08] px-3 py-2"
                             >
-                              <Lock size={12} color={colors.accent} strokeWidth={2} />
-                              <Text className="flex-1 text-[11px] font-sans-medium text-salli-accent">
+                              <Lock size={14} color={colors.accent} strokeWidth={2} />
+                              <Text className="flex-1 text-[14px] font-sans-medium text-salli-accent">
                                 Read the full AI rationale · Upgrade to Pro
                               </Text>
-                              <ChevronRight size={12} color={colors.accent} strokeWidth={2} />
+                              <ChevronRight size={14} color={colors.accent} strokeWidth={2} />
                             </Pressable>
                           </>
                         ) : (
@@ -604,7 +604,7 @@ export default function FinancialIndependenceScreen() {
                       <View className="flex-row flex-wrap gap-1.5">
                         {["4% rule", `${formatPct(strategy.data.swr, 0)} SWR`, `${formatPct(strategy.data.return_base, 0)} base`].map((t) => (
                           <View key={t} className="rounded-pill bg-salli-accent/[0.12] px-2.5 py-0.5">
-                            <Text className="text-[10px] font-sans-medium text-salli-accent">{t}</Text>
+                            <Text className="text-[13px] font-sans-medium text-salli-accent">{t}</Text>
                           </View>
                         ))}
                       </View>
@@ -625,31 +625,31 @@ export default function FinancialIndependenceScreen() {
         <View className="gap-3 px-4 pt-3.5">
           <Card className="p-4">
             <View className="mb-2 flex-row items-center justify-between">
-              <Text className="font-sans-semibold text-[14px] text-foreground">Freedom Mentor</Text>
+              <Text className="font-sans-semibold text-[16px] text-foreground">Freedom Mentor</Text>
               {runAdvisor.isPending ? <ActivityIndicator color={colors.accent} /> : null}
             </View>
 
             {advisorReport.data ? (
               <>
-                <Text className="mb-2.5 text-[12px] leading-5 text-foreground/50">{advisorReport.data.summary}</Text>
+                <Text className="mb-2.5 text-[15px] leading-5 text-foreground/50">{advisorReport.data.summary}</Text>
                 {advisorReport.data.recommendations.map((rec) =>
                   rec.locked ? (
                     <View key={rec.id} className="mb-2 flex-row items-center gap-2 rounded-control border border-foreground/10 bg-muted p-3 opacity-60">
-                      <Lock size={12} color={colors.mutedForeground} strokeWidth={2} />
+                      <Lock size={14} color={colors.mutedForeground} strokeWidth={2} />
                       <View className="flex-1">
-                        <Text className="font-sans-medium text-[12px] text-foreground">{rec.title}</Text>
-                        <Text className="text-[10px] capitalize text-foreground/35">{rec.category}</Text>
+                        <Text className="font-sans-medium text-[15px] text-foreground">{rec.title}</Text>
+                        <Text className="text-[13px] capitalize text-foreground/35">{rec.category}</Text>
                       </View>
                     </View>
                   ) : (
                     <View key={rec.id} className="mb-2 rounded-control border border-foreground/10 bg-muted p-3">
                       <View className="mb-1 flex-row items-center gap-1.5">
                         <View className="rounded-[4px] bg-salli-accent/15 px-1.5 py-0.5">
-                          <Text className="text-[9px] font-sans-semibold text-salli-accent">P{rec.priority}</Text>
+                          <Text className="text-[12px] font-sans-semibold text-salli-accent">P{rec.priority}</Text>
                         </View>
-                        <Text className="flex-1 font-sans-medium text-[12px] text-foreground">{rec.title}</Text>
+                        <Text className="flex-1 font-sans-medium text-[15px] text-foreground">{rec.title}</Text>
                       </View>
-                      <Text className="text-[11px] leading-4 text-foreground/35">{rec.rationale}</Text>
+                      <Text className="text-[14px] leading-5 text-foreground/35">{rec.rationale}</Text>
                     </View>
                   ),
                 )}
@@ -658,16 +658,16 @@ export default function FinancialIndependenceScreen() {
                     onPress={() => router.push("/(tabs)/more/billing")}
                     className="mb-1 flex-row items-center gap-1.5 rounded-control bg-salli-accent/[0.08] px-3 py-2"
                   >
-                    <Text className="flex-1 text-[11px] font-sans-medium text-salli-accent">
+                    <Text className="flex-1 text-[14px] font-sans-medium text-salli-accent">
                       Unlock {advisorReport.data.recommendations_locked_count} more recommendation
                       {advisorReport.data.recommendations_locked_count > 1 ? "s" : ""}
                     </Text>
-                    <ChevronRight size={12} color={colors.accent} strokeWidth={2} />
+                    <ChevronRight size={14} color={colors.accent} strokeWidth={2} />
                   </Pressable>
                 ) : null}
               </>
             ) : (
-              <Text className="mb-3 text-[12px] text-foreground/35">
+              <Text className="mb-3 text-[15px] text-foreground/35">
                 Run the advisor for a prioritized, engine-backed action plan.
               </Text>
             )}
@@ -691,34 +691,34 @@ export default function FinancialIndependenceScreen() {
             <View className="gap-2 px-4 pt-3.5">
               {/* summary hero */}
               <View className="rounded-card border border-foreground/[0.08] bg-salli-navy-card p-[16px]">
-                <Text className="mb-1.5 text-[11px] font-sans-semibold uppercase tracking-wide text-white/50">
+                <Text className="mb-1.5 text-[14px] font-sans-semibold uppercase tracking-wide text-white/50">
                   Goals Progress
                 </Text>
                 <View className="mb-3 flex-row items-baseline gap-1.5">
                   <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
                     {complete.length}
                   </Text>
-                  <Text className="text-[14px] font-sans-medium text-white/40">of {all.length} complete</Text>
+                  <Text className="text-[16px] font-sans-medium text-white/40">of {all.length} complete</Text>
                 </View>
                 <View className="flex-row gap-1.5">
                   <View className="flex-1 rounded-[10px] bg-white/[0.06] px-2.5 py-2">
-                    <Text className="mb-1 text-[10px] text-white/35">In Progress</Text>
-                    <Text className="font-sans-bold text-[15px] leading-[15px] text-salli-accent">{active.length} active</Text>
+                    <Text className="mb-1 text-[13px] text-white/35">In Progress</Text>
+                    <Text className="font-sans-bold text-[17px] leading-[20px] text-salli-accent">{active.length} active</Text>
                   </View>
                   <View className="flex-1 rounded-[10px] bg-white/[0.06] px-2.5 py-2">
-                    <Text className="mb-1 text-[10px] text-white/35">Saved Toward</Text>
-                    <Text className="font-sans-bold text-[15px] leading-[15px] text-white">Rs. {formatLKRAbbrev(savedToward)}</Text>
+                    <Text className="mb-1 text-[13px] text-white/35">Saved Toward</Text>
+                    <Text className="font-sans-bold text-[17px] leading-[20px] text-white">Rs. {formatLKRAbbrev(savedToward)}</Text>
                   </View>
                 </View>
               </View>
 
-              <Text className="mb-0.5 mt-1.5 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+              <Text className="mb-0.5 mt-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
                 Your Goals
               </Text>
 
               {all.length === 0 ? (
                 <Card className="items-center p-6">
-                  <Text className="text-[13px] text-foreground/35">No goals yet — add your first one.</Text>
+                  <Text className="text-[15px] text-foreground/35">No goals yet — add your first one.</Text>
                 </Card>
               ) : (
                 all.map((goal) => {
@@ -737,16 +737,16 @@ export default function FinancialIndependenceScreen() {
                             )}
                           >
                             {done ? (
-                              <Check size={15} color={colors.accent} strokeWidth={2.5} />
+                              <Check size={17} color={colors.accent} strokeWidth={2.5} />
                             ) : (
-                              <Icon size={15} color={colors.accent} strokeWidth={2} />
+                              <Icon size={17} color={colors.accent} strokeWidth={2} />
                             )}
                           </View>
                           <View className="flex-1">
-                            <Text className={cn("font-sans-semibold text-[13px] text-foreground", done && "line-through")}>
+                            <Text className={cn("font-sans-semibold text-[15px] text-foreground", done && "line-through")}>
                               {goal.name}
                             </Text>
-                            <Text className="mt-0.5 text-[11px] text-foreground/30">
+                            <Text className="mt-0.5 text-[14px] text-foreground/30">
                               {done ? `Rs. ${formatLKRAbbrev(goal.current_amount)} · Completed` : year ? `Target ${year}` : "No target date"}
                             </Text>
                           </View>
@@ -757,25 +757,25 @@ export default function FinancialIndependenceScreen() {
                             could never be removed. */}
                         {done ? (
                           <View className="rounded-[4px] bg-salli-accent/15 px-2 py-0.5">
-                            <Text className="text-[10px] font-sans-semibold text-salli-accent">Done</Text>
+                            <Text className="text-[13px] font-sans-semibold text-salli-accent">Done</Text>
                           </View>
                         ) : (
-                          <Text className="font-sans-bold text-[13px] text-salli-accent">{(goal.progress * 100).toFixed(0)}%</Text>
+                          <Text className="font-sans-bold text-[15px] text-salli-accent">{(goal.progress * 100).toFixed(0)}%</Text>
                         )}
                       </View>
                       {!done ? (
                         <>
                           <ProgressBar pct={goal.progress} />
                           <View className="mt-1.5 flex-row justify-between">
-                            <Text className="text-[11px] text-foreground/40">Rs. {formatLKRAbbrev(goal.current_amount)} saved</Text>
-                            <Text className="text-[11px] text-foreground/40">of Rs. {formatLKRAbbrev(goal.target_amount)}</Text>
+                            <Text className="text-[14px] text-foreground/40">Rs. {formatLKRAbbrev(goal.current_amount)} saved</Text>
+                            <Text className="text-[14px] text-foreground/40">of Rs. {formatLKRAbbrev(goal.target_amount)}</Text>
                           </View>
                           {Number(goal.allocated_amount) === 0 ? (
-                            <Text className="mt-1.5 text-[11px] text-foreground/30">
+                            <Text className="mt-1.5 text-[14px] text-foreground/30">
                               Tap to choose which account is saving for this.
                             </Text>
                           ) : Number(goal.shortfall) > 0 ? (
-                            <Text className="mt-1.5 text-[11px] text-[#B45309]">
+                            <Text className="mt-1.5 text-[14px] text-[#B45309]">
                               Rs. {formatLKRAbbrev(goal.shortfall)} short of what you earmarked.
                             </Text>
                           ) : null}
@@ -792,16 +792,16 @@ export default function FinancialIndependenceScreen() {
                 className="flex-row items-center gap-2.5 rounded-card border border-dashed border-foreground/[0.12] bg-card p-3.5"
               >
                 <View className="h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-foreground/[0.04]">
-                  <Plus size={15} color={colors.mutedForeground} strokeWidth={2.5} />
+                  <Plus size={17} color={colors.mutedForeground} strokeWidth={2.5} />
                 </View>
-                <Text className="font-sans-medium text-[13px] text-foreground/40">Add a goal</Text>
+                <Text className="font-sans-medium text-[15px] text-foreground/40">Add a goal</Text>
               </Pressable>
             </View>
           );
         })()
       ) : null}
 
-      <Text className="mt-4 px-8 text-center text-[11px] leading-4 text-foreground/25">
+      <Text className="mt-4 px-8 text-center text-[14px] leading-5 text-foreground/25">
         Planning estimates only · Not financial advice · Numbers from deterministic engine
       </Text>
 
@@ -848,18 +848,18 @@ export default function FinancialIndependenceScreen() {
                 <>
                   <View className="mb-3 flex-row gap-2">
                     <View className="flex-1 rounded-control border border-foreground/[0.08] bg-card p-3">
-                      <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">Allocation</Text>
-                      <Text className="font-sans-extrabold text-[22px] leading-6 text-foreground">{formatPct(b.target_pct, 0)}</Text>
+                      <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">Allocation</Text>
+                      <Text className="font-sans-extrabold text-[26px] leading-6 text-foreground">{formatPct(b.target_pct, 0)}</Text>
                     </View>
                     <View className="flex-1 rounded-control border border-foreground/[0.08] bg-card p-3">
-                      <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">Routed / month</Text>
-                      <Text className="font-sans-extrabold text-[22px] leading-6 text-foreground">
+                      <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">Routed / month</Text>
+                      <Text className="font-sans-extrabold text-[26px] leading-6 text-foreground">
                         {route !== null ? `Rs. ${formatLKRAbbrev(route)}` : "—"}
                       </Text>
                     </View>
                   </View>
-                  <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/35">How it works</Text>
-                  <Text className="text-[13px] leading-5 text-foreground/60">{b.description}</Text>
+                  <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">How it works</Text>
+                  <Text className="text-[15px] leading-5 text-foreground/60">{b.description}</Text>
                 </>
               );
             })()

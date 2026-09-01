@@ -16,9 +16,9 @@ export function AvatarMoreButton({ initial = "?" }: AvatarMoreButtonProps) {
       onPress={() => router.push("/(tabs)/more")}
       accessibilityRole="button"
       accessibilityLabel="More"
-      className="h-9 w-9 items-center justify-center rounded-full bg-salli-accent"
+      className="h-11 w-11 items-center justify-center rounded-full bg-salli-accent"
     >
-      <Text className="font-sans-bold text-[15px] text-white">{initial}</Text>
+      <Text className="font-sans-bold text-[17px] text-white">{initial}</Text>
     </AnimatedPressable>
   );
 }

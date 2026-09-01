@@ -148,13 +148,13 @@ export function Drawer({
 
         {title ? (
           <View className="flex-row items-center px-0.5 pb-3 pt-1">
-            <Text className="flex-1 font-sans-bold text-[18px] text-foreground">{title}</Text>
+            <Text className="flex-1 font-sans-bold text-[20px] text-foreground">{title}</Text>
             <Pressable
               onPress={dismiss}
               hitSlop={8}
-              className="h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.08]"
+              className="h-10 w-10 items-center justify-center rounded-full bg-foreground/[0.08]"
             >
-              <X size={14} color={colors.mutedForeground} strokeWidth={2} />
+              <X size={16} color={colors.mutedForeground} strokeWidth={2} />
             </Pressable>
           </View>
         ) : null}

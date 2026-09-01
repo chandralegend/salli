@@ -105,13 +105,13 @@ export default function RemindersScreen() {
         <View className="flex-1">
           <Text
             className={cn(
-              "font-sans-semibold text-[13px]",
+              "font-sans-semibold text-[15px]",
               done ? "text-foreground/60 line-through" : "text-foreground",
             )}
           >
             {r.kind.replace(/_/g, " ")}
           </Text>
-          <Text className={cn("mt-0.5 text-[11px]", done ? "text-foreground/25" : "text-foreground/30")}>
+          <Text className={cn("mt-0.5 text-[14px]", done ? "text-foreground/25" : "text-foreground/30")}>
             {subtitle}
           </Text>
           {!done ? (
@@ -128,7 +128,7 @@ export default function RemindersScreen() {
               >
                 <Text
                   className={cn(
-                    "text-[10px] font-sans-semibold",
+                    "text-[13px] font-sans-semibold",
                     kind === "dueSoon"
                       ? "text-salli-accent"
                       : kind === "overdue"
@@ -140,7 +140,7 @@ export default function RemindersScreen() {
                 </Text>
               </View>
               <View className="rounded-[6px] bg-foreground/[0.06] px-2.5 py-0.5">
-                <Text className="text-[10px] font-sans-medium text-foreground/35">IRD</Text>
+                <Text className="text-[13px] font-sans-medium text-foreground/35">IRD</Text>
               </View>
             </View>
           ) : null}
@@ -148,19 +148,19 @@ export default function RemindersScreen() {
         <View className="flex-row items-center gap-2.5">
           {kind === "overdue" ? (
             <Pressable onPress={() => markDone.mutate(r.id)} className="rounded-[8px] bg-primary px-2.5 py-1.5">
-              <Text className="font-sans-semibold text-[11px] text-primary-foreground">Done</Text>
+              <Text className="font-sans-semibold text-[14px] text-primary-foreground">Done</Text>
             </Pressable>
           ) : kind === "dueSoon" ? (
             <Pressable
               onPress={() => markDone.mutate(r.id)}
               className="rounded-[8px] border border-foreground/10 bg-foreground/[0.06] px-2.5 py-1.5"
             >
-              <Text className="font-sans-semibold text-[11px] text-foreground/50">Done</Text>
+              <Text className="font-sans-semibold text-[14px] text-foreground/50">Done</Text>
             </Pressable>
           ) : kind === "upcoming" ? (
-            <ChevronRight size={13} color={colors.mutedForeground} strokeWidth={2} />
+            <ChevronRight size={15} color={colors.mutedForeground} strokeWidth={2} />
           ) : (
-            <Check size={16} color={colors.mutedForeground} strokeWidth={2.5} />
+            <Check size={18} color={colors.mutedForeground} strokeWidth={2.5} />
           )}
           {/* Web has had delete all along; mobile's `remove` mutation existed
               and nothing rendered it, so a reminder created by mistake was
@@ -180,7 +180,7 @@ export default function RemindersScreen() {
             accessibilityRole="button"
             accessibilityLabel={`Delete ${r.kind}`}
           >
-            <Trash2 size={13} color={colors.mutedForeground} strokeWidth={2} />
+            <Trash2 size={15} color={colors.mutedForeground} strokeWidth={2} />
           </Pressable>
         </View>
       </View>
@@ -190,7 +190,7 @@ export default function RemindersScreen() {
   const Section = ({ title, data, kind }: { title: string; data: Reminder[]; kind: RowKind }) =>
     data.length === 0 ? null : (
       <View className="mb-1">
-        <Text className="mb-1.5 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+        <Text className="mb-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
           {title}
         </Text>
         <View className="gap-1.5">
@@ -212,9 +212,9 @@ export default function RemindersScreen() {
               onPress={() => setDrawerOpen(true)}
               accessibilityRole="button"
               accessibilityLabel="New reminder"
-              className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
+              className="h-11 w-11 items-center justify-center rounded-full bg-salli-accent"
             >
-              <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
+              <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
             </Pressable>
           }
         />
@@ -222,28 +222,28 @@ export default function RemindersScreen() {
     >
       <View className="my-3 flex-row gap-2 px-4">
         <View className="flex-1 items-center rounded-[10px] border border-foreground/15 bg-card px-2.5 py-3">
-          <Text className="font-sans-bold text-[22px] leading-none text-foreground">{overdue.length}</Text>
-          <Text className="mt-1 text-[10px] font-sans-medium text-foreground/40">Overdue</Text>
+          <Text className="font-sans-bold text-[26px] leading-none text-foreground">{overdue.length}</Text>
+          <Text className="mt-1 text-[13px] font-sans-medium text-foreground/40">Overdue</Text>
         </View>
         <View className="flex-1 items-center rounded-[10px] border border-foreground/[0.08] bg-card px-2.5 py-3">
-          <Text className="font-sans-bold text-[22px] leading-none text-foreground">{dueSoon.length}</Text>
-          <Text className="mt-1 text-[10px] font-sans-medium text-foreground/40">Due Soon</Text>
+          <Text className="font-sans-bold text-[26px] leading-none text-foreground">{dueSoon.length}</Text>
+          <Text className="mt-1 text-[13px] font-sans-medium text-foreground/40">Due Soon</Text>
         </View>
         <View className="flex-1 items-center rounded-[10px] border border-foreground/[0.08] bg-card px-2.5 py-3">
-          <Text className="font-sans-bold text-[22px] leading-none text-foreground">{upcoming.length}</Text>
-          <Text className="mt-1 text-[10px] font-sans-medium text-foreground/30">Upcoming</Text>
+          <Text className="font-sans-bold text-[26px] leading-none text-foreground">{upcoming.length}</Text>
+          <Text className="mt-1 text-[13px] font-sans-medium text-foreground/30">Upcoming</Text>
         </View>
       </View>
 
       <View className="mb-2 flex-row items-center gap-2 px-4">
         <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
-          <Search size={13} color="rgba(128,128,128,0.4)" strokeWidth={2} />
+          <Search size={15} color="rgba(128,128,128,0.4)" strokeWidth={2} />
           <TextInput
             value={search}
             onChangeText={setSearch}
             placeholder="Search..."
             placeholderTextColor="rgba(128,128,128,0.4)"
-            className="flex-1 text-[13px] text-foreground"
+            className="flex-1 text-[15px] text-foreground"
           />
         </View>
       </View>
@@ -257,13 +257,13 @@ export default function RemindersScreen() {
       <View className="px-4">
         {items.length === 0 ? (
           <View className="mb-3 items-center gap-3 rounded-card border border-foreground/10 bg-card p-6">
-            <Text className="text-center text-[13px] text-foreground/35">No reminders yet.</Text>
+            <Text className="text-center text-[15px] text-foreground/35">No reminders yet.</Text>
             <Pressable
               onPress={() => seed.mutate("2025/26")}
               className="flex-row items-center gap-2 rounded-pill border border-foreground/[0.08] bg-foreground/[0.04] px-4 py-2"
             >
-              <Calendar size={13} color="rgba(128,128,128,0.6)" strokeWidth={2} />
-              <Text className="text-[12px] text-foreground/40">Seed IRD Filing Calendar</Text>
+              <Calendar size={15} color="rgba(128,128,128,0.6)" strokeWidth={2} />
+              <Text className="text-[15px] text-foreground/40">Seed IRD Filing Calendar</Text>
             </Pressable>
           </View>
         ) : (
@@ -272,8 +272,8 @@ export default function RemindersScreen() {
               onPress={() => seed.mutate("2025/26")}
               className="mb-2.5 h-[38px] flex-row items-center justify-center gap-2 rounded-pill border border-foreground/[0.08] bg-foreground/[0.04]"
             >
-              <Calendar size={13} color="rgba(128,128,128,0.6)" strokeWidth={2} />
-              <Text className="text-[12px] text-foreground/40">Seed IRD Filing Calendar</Text>
+              <Calendar size={15} color="rgba(128,128,128,0.6)" strokeWidth={2} />
+              <Text className="text-[15px] text-foreground/40">Seed IRD Filing Calendar</Text>
             </Pressable>
             {showOverdue ? <Section title="Overdue" data={overdue} kind="overdue" /> : null}
             {showDueSoon ? <Section title="Due This Month" data={dueSoon} kind="dueSoon" /> : null}
@@ -285,7 +285,7 @@ export default function RemindersScreen() {
               (showCompleted ? completed.length : 0) ===
             0 ? (
               <View className="items-center rounded-card border border-foreground/[0.08] bg-card p-6">
-                <Text className="text-center text-[13px] text-foreground/35">
+                <Text className="text-center text-[15px] text-foreground/35">
                   No reminders match {q ? `“${search}”` : `the ${filter} filter`}.
                 </Text>
               </View>
@@ -385,13 +385,13 @@ function NewReminderDrawer({
                 autoCapitalize="none"
                 autoCorrect={false}
                 maxLength={10}
-                rightIcon={<Calendar size={16} color={colors.mutedForeground} strokeWidth={2} />}
+                rightIcon={<Calendar size={18} color={colors.mutedForeground} strokeWidth={2} />}
               />
-              <Text className="mb-3 pl-1 text-[11px] text-foreground/35">
+              <Text className="mb-3 pl-1 text-[14px] text-foreground/35">
                 {duePreview ? duePreview : "Enter a date as YYYY-MM-DD."}
               </Text>
 
-              <Text className="mb-2 pl-0.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
+              <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
                 Type
               </Text>
               <ChipSelect className="mb-4" options={REMINDER_TYPES} value={type} onChange={setType} />

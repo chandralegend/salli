@@ -121,25 +121,25 @@ export function GoalDetailDrawer({
         {/* what is actually behind this goal */}
         <View className="rounded-control border border-foreground/[0.08] bg-muted p-3.5">
           <View className="flex-row items-baseline justify-between">
-            <Text className="text-[11px] font-sans-medium uppercase tracking-wide text-foreground/35">
+            <Text className="text-[14px] font-sans-medium uppercase tracking-wide text-foreground/35">
               Funded
             </Text>
-            <Text className="font-sans-bold text-[15px] text-foreground">
+            <Text className="font-sans-bold text-[17px] text-foreground">
               Rs. {formatLKRAbbrev(goal.current_amount)}
-              <Text className="text-[12px] font-sans text-foreground/35">
+              <Text className="text-[15px] font-sans text-foreground/35">
                 {" "}
                 of {formatLKRAbbrev(goal.target_amount)}
               </Text>
             </Text>
           </View>
-          <Text className="mt-1 text-[11px] leading-4 text-foreground/35">
+          <Text className="mt-1 text-[14px] leading-5 text-foreground/35">
             Comes from the live balance of the accounts you earmark below, so it moves only when
             your money does.
           </Text>
           {hasShortfall ? (
             <View className="mt-2.5 flex-row items-start gap-2 rounded-[8px] bg-[#FEF3C7] px-3 py-2">
-              <TriangleAlert size={13} color="#B45309" strokeWidth={2} />
-              <Text className="flex-1 text-[11px] leading-4 text-[#B45309]">
+              <TriangleAlert size={15} color="#B45309" strokeWidth={2} />
+              <Text className="flex-1 text-[14px] leading-5 text-[#B45309]">
                 You&rsquo;ve earmarked Rs. {formatLKRAbbrev(goal.allocated_amount)} but those
                 accounts hold Rs. {formatLKRAbbrev(goal.shortfall)} less than that right now.
               </Text>
@@ -156,7 +156,7 @@ export function GoalDetailDrawer({
         />
 
         <View>
-          <Text className="mb-1.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
+          <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
             Priority
           </Text>
           <View className="flex-row rounded-pill bg-foreground/[0.06] p-1">
@@ -171,7 +171,7 @@ export function GoalDetailDrawer({
               >
                 <Text
                   className={cn(
-                    "text-[12px]",
+                    "text-[15px]",
                     priority === p.value
                       ? "font-sans-semibold text-primary-foreground"
                       : "font-sans-medium text-foreground/45",
@@ -182,7 +182,7 @@ export function GoalDetailDrawer({
               </Pressable>
             ))}
           </View>
-          <Text className="mt-1 text-[10px] leading-4 text-foreground/30">
+          <Text className="mt-1 text-[13px] leading-5 text-foreground/30">
             When one account is earmarked for several goals and can&rsquo;t cover them all, the
             higher priority stays funded.
           </Text>
@@ -193,7 +193,7 @@ export function GoalDetailDrawer({
         </PillButton>
 
         {/* earmarks */}
-        <Text className="mt-1.5 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/30">
+        <Text className="mt-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
           Money behind this goal
         </Text>
         {accounts.isLoading || allocations.isLoading ? (
@@ -201,7 +201,7 @@ export function GoalDetailDrawer({
             <ActivityIndicator size="small" color={colors.mutedForeground} />
           </View>
         ) : assetAccounts.length === 0 ? (
-          <Text className="text-[12px] text-foreground/35">
+          <Text className="text-[15px] text-foreground/35">
             No accounts yet — add one in the Ledger first.
           </Text>
         ) : (
@@ -218,8 +218,8 @@ export function GoalDetailDrawer({
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1 pr-3">
-                    <Text className="font-sans-medium text-[13px] text-foreground">{a.name}</Text>
-                    <Text className="mt-0.5 text-[11px] text-foreground/30">
+                    <Text className="font-sans-medium text-[15px] text-foreground">{a.name}</Text>
+                    <Text className="mt-0.5 text-[14px] text-foreground/30">
                       Holds Rs. {formatLKRAbbrev(balance)}
                     </Text>
                   </View>
@@ -230,7 +230,7 @@ export function GoalDetailDrawer({
                       placeholder="0"
                       placeholderTextColor="rgba(128,128,128,0.4)"
                       keyboardType="numeric"
-                      className="h-9 w-[110px] rounded-[8px] bg-muted px-2.5 text-right text-[13px] text-foreground"
+                      className="h-9 w-[110px] rounded-[8px] bg-muted px-2.5 text-right text-[15px] text-foreground"
                     />
                     {dirty ? (
                       <Pressable
@@ -242,7 +242,7 @@ export function GoalDetailDrawer({
                         {setAllocation.isPending ? (
                           <ActivityIndicator size="small" color="#FFFFFF" />
                         ) : (
-                          <Check size={14} color="#FFFFFF" strokeWidth={2.5} />
+                          <Check size={16} color="#FFFFFF" strokeWidth={2.5} />
                         )}
                       </Pressable>
                     ) : (
@@ -254,7 +254,7 @@ export function GoalDetailDrawer({
             );
           })
         )}
-        <Text className="text-[10px] leading-4 text-foreground/30">
+        <Text className="text-[13px] leading-5 text-foreground/30">
           Earmarking doesn&rsquo;t move any money — it just records which part of an account is
           meant for this goal. One account can back several goals.
         </Text>
@@ -263,8 +263,8 @@ export function GoalDetailDrawer({
           onPress={confirmDelete}
           className="mt-1.5 flex-row items-center justify-center gap-2 py-2"
         >
-          <Trash2 size={14} color="#EF4444" strokeWidth={2} />
-          <Text className="font-sans-medium text-[13px] text-destructive/90">Delete this goal</Text>
+          <Trash2 size={16} color="#EF4444" strokeWidth={2} />
+          <Text className="font-sans-medium text-[15px] text-destructive/90">Delete this goal</Text>
         </Pressable>
       </View>
     </Drawer>

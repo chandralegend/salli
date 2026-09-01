@@ -163,13 +163,13 @@ export default function LedgerScreen() {
         header={
           <>
             <View className="flex-row items-center px-5 pt-2.5">
-              <Text className="flex-1 font-sans-bold text-[22px] text-foreground">Ledger</Text>
+              <Text className="flex-1 font-sans-bold text-[26px] text-foreground">Ledger</Text>
               <AnimatedPressable
                 onPress={() => (tab === "Accounts" ? setAddAccountOpen(true) : setModalVisible(true))}
                 haptic="light"
-                className="h-[34px] w-[34px] items-center justify-center rounded-full bg-salli-accent"
+                className="h-11 w-11 items-center justify-center rounded-full bg-salli-accent"
               >
-                <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+                <Plus size={18} color="#FFFFFF" strokeWidth={2.5} />
               </AnimatedPressable>
             </View>
 
@@ -184,13 +184,13 @@ export default function LedgerScreen() {
         <>
           <View className="flex-row items-center gap-2 px-4 pb-2 pt-2.5">
             <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
-              <Search size={13} color={colors.mutedForeground} strokeWidth={2} />
+              <Search size={15} color={colors.mutedForeground} strokeWidth={2} />
               <TextInput
                 value={search}
                 onChangeText={setSearch}
                 placeholder="Search entries..."
                 placeholderTextColor="rgba(128,128,128,0.4)"
-                className="flex-1 text-[13px] text-foreground"
+                className="flex-1 text-[15px] text-foreground"
               />
             </View>
             <AnimatedPressable
@@ -198,11 +198,11 @@ export default function LedgerScreen() {
               className="h-[38px] flex-row items-center gap-1.5 rounded-[10px] border border-foreground/[0.08] bg-card px-3"
             >
               {sortDir === "desc" ? (
-                <ArrowDown size={13} color={colors.mutedForeground} strokeWidth={2} />
+                <ArrowDown size={15} color={colors.mutedForeground} strokeWidth={2} />
               ) : (
-                <ArrowUp size={13} color={colors.mutedForeground} strokeWidth={2} />
+                <ArrowUp size={15} color={colors.mutedForeground} strokeWidth={2} />
               )}
-              <Text className="font-sans-medium text-[12px] text-foreground/40">
+              <Text className="font-sans-medium text-[15px] text-foreground/40">
                 {sortDir === "desc" ? "Newest" : "Oldest"}
               </Text>
             </AnimatedPressable>
@@ -216,12 +216,12 @@ export default function LedgerScreen() {
           <View className="gap-1.5 px-4">
             {grouped.length === 0 ? (
               <Card className="items-center p-6">
-                <Text className="text-[13px] text-foreground/35">No entries yet — post your first one.</Text>
+                <Text className="text-[15px] text-foreground/35">No entries yet — post your first one.</Text>
               </Card>
             ) : (
               grouped.map(([date, dayEntries]) => (
                 <View key={date}>
-                  <Text className="px-0.5 pb-1 pt-1.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                  <Text className="px-0.5 pb-1 pt-1.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
                     {dateGroupLabel(date)}
                   </Text>
                   <View className="gap-1.5">
@@ -241,18 +241,18 @@ export default function LedgerScreen() {
                           <View className={cn("mt-0.5 h-9 w-[3px] rounded-pill", isIncome ? "bg-salli-accent" : "bg-foreground/15")} />
                           <View className="flex-1">
                             <View className="mb-1 flex-row items-start justify-between gap-2">
-                              <Text numberOfLines={1} className={cn("flex-1 font-sans-semibold text-[13px] text-foreground", reversed && "line-through")}>
+                              <Text numberOfLines={1} className={cn("flex-1 font-sans-semibold text-[15px] text-foreground", reversed && "line-through")}>
                                 {entry.description}
                               </Text>
-                              <Text className={cn("font-sans-bold text-[13px]", isIncome ? "text-foreground" : "text-foreground/60")}>
+                              <Text className={cn("font-sans-bold text-[15px]", isIncome ? "text-foreground" : "text-foreground/60")}>
                                 {isIncome ? "+" : "−"}Rs. {formatLKR(debit?.amount ?? "0", 0)}
                               </Text>
                             </View>
-                            <Text numberOfLines={1} className="mb-1 text-[10px] text-foreground/20">
+                            <Text numberOfLines={1} className="mb-1 text-[13px] text-foreground/20">
                               DR: {debitAcc?.name ?? "—"} · CR: {creditAcc?.name ?? "—"}
                             </Text>
                             <View className={cn("self-start rounded-[4px] px-1.5 py-0.5", entry.source === "statement" ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
-                              <Text className={cn("text-[10px] font-sans-medium capitalize", entry.source === "statement" ? "text-salli-accent" : "text-foreground/35")}>
+                              <Text className={cn("text-[13px] font-sans-medium capitalize", entry.source === "statement" ? "text-salli-accent" : "text-foreground/35")}>
                                 {reversed ? "(reversed)" : entry.source}
                               </Text>
                             </View>
@@ -272,13 +272,13 @@ export default function LedgerScreen() {
         <>
           <View className="px-4 pb-2 pt-2.5">
             <View className="h-[38px] flex-row items-center gap-2 rounded-[10px] border border-foreground/[0.08] bg-card px-3">
-              <Search size={13} color={colors.mutedForeground} strokeWidth={2} />
+              <Search size={15} color={colors.mutedForeground} strokeWidth={2} />
               <TextInput
                 value={acctSearch}
                 onChangeText={setAcctSearch}
                 placeholder="Search accounts..."
                 placeholderTextColor="rgba(128,128,128,0.4)"
-                className="flex-1 text-[13px] text-foreground"
+                className="flex-1 text-[15px] text-foreground"
               />
             </View>
           </View>
@@ -291,7 +291,7 @@ export default function LedgerScreen() {
           <View className="gap-3 px-4">
             {groupedAccounts.length === 0 ? (
               <Card className="items-center p-6">
-                <Text className="text-[13px] text-foreground/35">No accounts match.</Text>
+                <Text className="text-[15px] text-foreground/35">No accounts match.</Text>
               </Card>
             ) : (
               groupedAccounts.map((group) => {
@@ -299,7 +299,7 @@ export default function LedgerScreen() {
                 const isAsset = group.type === "asset";
                 return (
                   <View key={group.type}>
-                    <Text className="mb-1.5 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                    <Text className="mb-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
                       {ACCT_TYPE_LABEL[group.type]} · {group.items.length} account{group.items.length === 1 ? "" : "s"}
                     </Text>
                     <View className="gap-1.5">
@@ -318,26 +318,26 @@ export default function LedgerScreen() {
                                 isAsset ? "border border-salli-accent/15 bg-salli-accent/10" : "bg-foreground/[0.06]",
                               )}
                             >
-                              <Icon size={14} color={isAsset ? colors.accent : colors.mutedForeground} strokeWidth={2} />
+                              <Icon size={16} color={isAsset ? colors.accent : colors.mutedForeground} strokeWidth={2} />
                             </View>
                             <View className="flex-1">
                               <View className="mb-0.5 flex-row items-center gap-1.5">
-                                <Text numberOfLines={1} className="font-sans-semibold text-[13px] text-foreground">{a.name}</Text>
+                                <Text numberOfLines={1} className="font-sans-semibold text-[15px] text-foreground">{a.name}</Text>
                                 <View className={cn("rounded-[4px] px-1.5 py-px", isAsset ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
-                                  <Text className={cn("text-[9px] font-sans-semibold uppercase tracking-wide", isAsset ? "text-salli-accent" : "text-foreground/40")}>
+                                  <Text className={cn("text-[12px] font-sans-semibold uppercase tracking-wide", isAsset ? "text-salli-accent" : "text-foreground/40")}>
                                     {a.type}
                                   </Text>
                                 </View>
                               </View>
-                              <Text className="text-[11px] text-foreground/30">
+                              <Text className="text-[14px] text-foreground/30">
                                 {a.code} · {a.currency} · {a.is_active ? "Active" : "Inactive"}
                               </Text>
                             </View>
                             <View className="flex-row items-center gap-1.5">
-                              <Text className={cn("font-sans-bold text-[13px]", isAsset ? "text-foreground" : "text-foreground/60")}>
+                              <Text className={cn("font-sans-bold text-[15px]", isAsset ? "text-foreground" : "text-foreground/60")}>
                                 {bal !== undefined ? `Rs. ${formatLKRAbbrev(bal)}` : "—"}
                               </Text>
-                              <ChevronRight size={13} color={colors.mutedForeground} strokeWidth={2} />
+                              <ChevronRight size={15} color={colors.mutedForeground} strokeWidth={2} />
                             </View>
                           </AnimatedPressable>
                         );
@@ -354,7 +354,7 @@ export default function LedgerScreen() {
       {tab === "Income Stmt" ? (
         <View className="px-4 pt-4">
           <Card className="bg-salli-navy-card p-5">
-            <Text className="mb-1 text-[11px] font-sans-medium uppercase tracking-wide text-white/40">
+            <Text className="mb-1 text-[14px] font-sans-medium uppercase tracking-wide text-white/40">
               Net Income · {from} → {to}
             </Text>
             <Text className="font-sans-extrabold text-[32px] tracking-tight text-white">

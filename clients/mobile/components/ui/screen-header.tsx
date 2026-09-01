@@ -26,13 +26,13 @@ export function ScreenHeader({ title, back, trailing, large }: ScreenHeaderProps
           onPress={() => router.back()}
           accessibilityRole="button"
           accessibilityLabel="Back"
-          className="h-9 w-9 items-center justify-center rounded-full bg-foreground/[0.08]"
+          className="h-11 w-11 items-center justify-center rounded-full bg-foreground/[0.08]"
         >
-          <ChevronLeft size={16} color={colors.foreground} strokeWidth={2} />
+          <ChevronLeft size={24} color={colors.foreground} strokeWidth={2.2} />
         </AnimatedPressable>
       ) : null}
       <Text
-        className={`flex-1 font-sans-bold text-foreground ${large ? "text-[22px]" : "text-[20px]"}`}
+        className={`flex-1 font-sans-bold text-foreground ${large ? "text-[30px]" : "text-[24px]"}`}
       >
         {title}
       </Text>

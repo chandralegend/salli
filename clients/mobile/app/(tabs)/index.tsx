@@ -100,7 +100,7 @@ export default function DashboardScreen() {
               </TourTarget>
             </View>
             <View className="flex-1 flex-row items-center justify-center gap-2.5">
-              <Text className="font-sans-semibold text-[14px] text-foreground">{currentPeriodLabel}</Text>
+              <Text className="font-sans-semibold text-[16px] text-foreground">{currentPeriodLabel}</Text>
             </View>
             <View className="flex-row gap-2">
               <IconButton
@@ -118,11 +118,11 @@ export default function DashboardScreen() {
         }
       >
         <View className="items-center px-6 pb-5 pt-4">
-          <Text className="mb-1.5 text-[12px] font-sans-medium uppercase tracking-wide text-foreground/45">
+          <Text className="mb-1.5 text-[15px] font-sans-medium uppercase tracking-wide text-foreground/45">
             Net Worth
           </Text>
           <View className="flex-row items-baseline gap-1">
-            <Text className="font-sans-bold text-[24px] tracking-tight text-foreground/45">Rs.</Text>
+            <Text className="font-sans-bold text-[28px] tracking-tight text-foreground/45">Rs.</Text>
             <Text className="font-sans-extrabold text-[52px] tracking-tighter text-foreground">
               {netWorth ? formatLKRAbbrev(netWorth.current_net_worth) : "—"}
             </Text>
@@ -130,7 +130,7 @@ export default function DashboardScreen() {
           {momChange != null ? (
             <View className="mt-2.5 flex-row items-center gap-1.5 rounded-pill border border-foreground/10 bg-foreground/[0.08] px-3 py-1">
               <ArrowUpRight size={9} color={colors.foreground} strokeWidth={2.5} />
-              <Text className="font-sans-semibold text-[11px] text-foreground/70">
+              <Text className="font-sans-semibold text-[14px] text-foreground/70">
                 {momChange >= 0 ? "+" : ""}
                 {formatPct(momChange)} vs last mo
               </Text>
@@ -146,50 +146,50 @@ export default function DashboardScreen() {
           <View className="overflow-hidden rounded-[10px] bg-foreground/[0.06]" style={{ gap: 1 }}>
             <View className="flex-row" style={{ gap: 1 }}>
               <View className="flex-1 bg-card p-4">
-                <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">
+                <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">
                   Income
                 </Text>
-                <Text className="text-[24px] font-sans-bold tracking-tight text-foreground">
+                <Text className="text-[28px] font-sans-bold tracking-tight text-foreground">
                   {incomeYtd != null ? formatLKRAbbrev(incomeYtd) : "—"}
                 </Text>
-                <Text className="mt-0.5 text-[10px] font-sans text-foreground/20">YTD</Text>
+                <Text className="mt-0.5 text-[13px] font-sans text-foreground/20">YTD</Text>
               </View>
               <View className="flex-1 bg-card p-4">
-                <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">
+                <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">
                   Expenses
                 </Text>
-                <Text className="text-[24px] font-sans-bold tracking-tight text-foreground/70">
+                <Text className="text-[28px] font-sans-bold tracking-tight text-foreground/70">
                   {expensesYtd != null ? formatLKRAbbrev(expensesYtd) : "—"}
                 </Text>
-                <Text className="mt-0.5 text-[10px] font-sans text-foreground/20">YTD</Text>
+                <Text className="mt-0.5 text-[13px] font-sans text-foreground/20">YTD</Text>
               </View>
             </View>
             <View className="flex-row" style={{ gap: 1 }}>
               <TourTarget id="dashboard-tax-tile" className="flex-1">
                 <View className="bg-card p-4">
-                  <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">
+                  <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">
                     Tax
                   </Text>
-                  <Text className="text-[24px] font-sans-bold tracking-tight text-foreground">
+                  <Text className="text-[28px] font-sans-bold tracking-tight text-foreground">
                     {tax ? formatLKRAbbrev(tax.tax_payable) : "—"}
                   </Text>
-                  <Text className="mt-0.5 text-[10px] font-sans text-foreground/20">AY 25/26</Text>
+                  <Text className="mt-0.5 text-[13px] font-sans text-foreground/20">AY 25/26</Text>
                 </View>
               </TourTarget>
               <TourTarget id="dashboard-freedom-tile" className="flex-1">
                 <View className="bg-card p-4">
-                  <Text className="mb-1 text-[10px] font-sans-medium uppercase tracking-wide text-foreground/40">
+                  <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">
                     Freedom Score
                   </Text>
                   {fiScore ? (
-                    <Text className="text-[24px] font-sans-bold tracking-tight text-foreground">
+                    <Text className="text-[28px] font-sans-bold tracking-tight text-foreground">
                       {Number(fiScore.overall_score).toFixed(0)}
-                      <Text className="font-sans text-[12px] text-foreground/30">/100</Text>
+                      <Text className="font-sans text-[15px] text-foreground/30">/100</Text>
                     </Text>
                   ) : (
-                    <Text className="text-[24px] font-sans-bold tracking-tight text-foreground">—</Text>
+                    <Text className="text-[28px] font-sans-bold tracking-tight text-foreground">—</Text>
                   )}
-                  <Text className="mt-0.5 text-[10px] font-sans text-foreground/20">
+                  <Text className="mt-0.5 text-[13px] font-sans text-foreground/20">
                     {fiScore ? `Grade ${fiScore.grade}` : ""}
                   </Text>
                 </View>
@@ -203,16 +203,16 @@ export default function DashboardScreen() {
             onPress={() => router.push("/(tabs)/more/statements")}
             className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-foreground/10 bg-card"
           >
-            <Upload size={13} color={colors.mutedForeground} strokeWidth={2} />
-            <Text className="font-sans-medium text-[11px] text-foreground/70">Upload</Text>
+            <Upload size={15} color={colors.mutedForeground} strokeWidth={2} />
+            <Text className="font-sans-medium text-[14px] text-foreground/70">Upload</Text>
           </AnimatedPressable>
           <AnimatedPressable
             onPress={enterBuddy}
             haptic="light"
             className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control bg-salli-accent"
           >
-            <Sparkles size={13} color="rgba(255,255,255,0.8)" strokeWidth={1.8} />
-            <Text className="font-sans-semibold text-[11px] text-white">Ask Salli AI</Text>
+            <Sparkles size={15} color="rgba(255,255,255,0.8)" strokeWidth={1.8} />
+            <Text className="font-sans-semibold text-[14px] text-white">Ask Salli AI</Text>
           </AnimatedPressable>
         </View>
 
@@ -222,29 +222,29 @@ export default function DashboardScreen() {
           <AnimatedPressable onPress={() => router.push("/(tabs)/more/budget")}>
             <Card className="mx-4 mb-3.5 p-3.5">
               <View className="mb-2.5 flex-row items-center justify-between">
-                <Text className="font-sans-semibold text-[14px] text-foreground">Monthly Budget</Text>
+                <Text className="font-sans-semibold text-[16px] text-foreground">Monthly Budget</Text>
                 <View className="flex-row items-center gap-1">
-                  <Text className="text-[12px] text-foreground/30">Jul 2026</Text>
-                  <ChevronRight size={14} color={colors.mutedForeground} strokeWidth={2} />
+                  <Text className="text-[15px] text-foreground/30">Jul 2026</Text>
+                  <ChevronRight size={16} color={colors.mutedForeground} strokeWidth={2} />
                 </View>
               </View>
             <View className="flex-row overflow-hidden rounded-[8px] bg-foreground/[0.06]" style={{ gap: 1 }}>
               <View className="flex-1 bg-muted px-3 py-2.5">
-                <Text className="mb-1 text-[10px] font-sans-medium tracking-wide text-foreground/35">SPENT</Text>
-                <Text className="font-sans-bold text-[15px] tracking-tight text-foreground">
+                <Text className="mb-1 text-[13px] font-sans-medium tracking-wide text-foreground/35">SPENT</Text>
+                <Text className="font-sans-bold text-[17px] tracking-tight text-foreground">
                   Rs. {formatLKRAbbrev(budgetSummary.total_actual)}
                 </Text>
               </View>
               <View className="flex-1 bg-muted px-3 py-2.5">
-                <Text className="mb-1 text-[10px] font-sans-medium tracking-wide text-foreground/35">LEFT</Text>
-                <Text className="font-sans-bold text-[15px] tracking-tight text-foreground">
+                <Text className="mb-1 text-[13px] font-sans-medium tracking-wide text-foreground/35">LEFT</Text>
+                <Text className="font-sans-bold text-[17px] tracking-tight text-foreground">
                   Rs.{" "}
                   {formatLKRAbbrev(Number(budgetSummary.total_limit) - Number(budgetSummary.total_actual))}
                 </Text>
               </View>
               <View className="flex-1 bg-muted px-3 py-2.5">
-                <Text className="mb-1 text-[10px] font-sans-medium tracking-wide text-foreground/35">LIMIT</Text>
-                <Text className="font-sans-bold text-[15px] tracking-tight text-foreground/40">
+                <Text className="mb-1 text-[13px] font-sans-medium tracking-wide text-foreground/35">LIMIT</Text>
+                <Text className="font-sans-bold text-[17px] tracking-tight text-foreground/40">
                   Rs. {formatLKRAbbrev(budgetSummary.total_limit)}
                 </Text>
               </View>
@@ -255,9 +255,9 @@ export default function DashboardScreen() {
 
         <View className="px-4 pb-3">
           <View className="mb-2.5 flex-row items-center justify-between">
-            <Text className="font-sans-semibold text-[15px] text-foreground">Accounts</Text>
+            <Text className="font-sans-semibold text-[17px] text-foreground">Accounts</Text>
             <AnimatedPressable onPress={() => router.push("/(tabs)/ledger")} hitSlop={8}>
-              <Text className="font-sans-medium text-[13px] text-salli-accent">See all</Text>
+              <Text className="font-sans-medium text-[15px] text-salli-accent">See all</Text>
             </AnimatedPressable>
           </View>
           {topAccounts.length > 0 ? (
@@ -266,41 +266,41 @@ export default function DashboardScreen() {
                 <AnimatedPressable key={acc.id} onPress={() => setSelectedAccountId(acc.id)}>
                   <Card className="flex-row items-center gap-3 rounded-[10px] border-foreground/[0.08] p-3.5">
                     <View className="h-10 w-10 items-center justify-center rounded-[8px] bg-salli-accent">
-                      <Text className="font-sans-bold text-[16px] text-white">{acc.name.charAt(0)}</Text>
+                      <Text className="font-sans-bold text-[18px] text-white">{acc.name.charAt(0)}</Text>
                     </View>
                     <View className="flex-1">
-                      <Text className="font-sans-semibold text-[14px] text-foreground">{acc.name}</Text>
-                      <Text className="text-[12px] capitalize text-foreground/35">
+                      <Text className="font-sans-semibold text-[16px] text-foreground">{acc.name}</Text>
+                      <Text className="text-[15px] capitalize text-foreground/35">
                         {acc.type} · {acc.currency}
                       </Text>
                     </View>
                     {balances[acc.id] != null ? (
-                      <Text className="font-sans-semibold text-[14px] text-foreground">
+                      <Text className="font-sans-semibold text-[16px] text-foreground">
                         Rs. {formatLKRAbbrev(balances[acc.id])}
                       </Text>
                     ) : null}
-                    <ChevronRight size={16} color={colors.mutedForeground} strokeWidth={2} />
+                    <ChevronRight size={18} color={colors.mutedForeground} strokeWidth={2} />
                   </Card>
                 </AnimatedPressable>
               ))}
             </View>
           ) : (
             <Card className="items-center p-5">
-              <Text className="text-[13px] text-foreground/35">No accounts yet.</Text>
+              <Text className="text-[15px] text-foreground/35">No accounts yet.</Text>
             </Card>
           )}
         </View>
 
         <View className="px-4">
           <View className="mb-2.5 flex-row items-center justify-between">
-            <Text className="font-sans-semibold text-[15px] text-foreground">Recent Entries</Text>
+            <Text className="font-sans-semibold text-[17px] text-foreground">Recent Entries</Text>
             <AnimatedPressable onPress={() => router.push("/(tabs)/ledger")} hitSlop={8}>
-              <Text className="font-sans-medium text-[13px] text-salli-accent">See all</Text>
+              <Text className="font-sans-medium text-[15px] text-salli-accent">See all</Text>
             </AnimatedPressable>
           </View>
           {entries.length === 0 ? (
             <Card className="items-center p-5">
-              <Text className="text-[13px] text-foreground/35">
+              <Text className="text-[15px] text-foreground/35">
                 No transactions yet — upload a statement to get started.
               </Text>
             </Card>
@@ -320,20 +320,20 @@ export default function DashboardScreen() {
                   >
                     <View className="h-[38px] w-[38px] items-center justify-center rounded-[8px] bg-foreground/[0.06]">
                       <EntryIcon
-                        size={17}
+                        size={19}
                         color={isIncome ? colors.accent : colors.mutedForeground}
                         strokeWidth={2}
                       />
                     </View>
                     <View className="flex-1">
-                      <Text numberOfLines={1} className="font-sans-semibold text-[13px] text-foreground">
+                      <Text numberOfLines={1} className="font-sans-semibold text-[15px] text-foreground">
                         {entry.description}
                       </Text>
-                      <Text numberOfLines={1} className="text-[11px] text-foreground/30">
+                      <Text numberOfLines={1} className="text-[14px] text-foreground/30">
                         {isIncome ? "Income" : "Expense"} · {entry.entry_date}
                       </Text>
                     </View>
-                    <Text className={cn("font-sans-bold text-[14px]", isIncome ? "text-foreground" : "text-foreground/50")}>
+                    <Text className={cn("font-sans-bold text-[16px]", isIncome ? "text-foreground" : "text-foreground/50")}>
                       {isIncome ? "+" : "−"}Rs. {formatLKR(debit?.amount ?? "0", 0)}
                     </Text>
                   </Card>

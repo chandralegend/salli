@@ -64,11 +64,11 @@ export function ModeChoiceStep({
                 active ? "bg-salli-accent" : "bg-foreground/[0.08]",
               )}
             >
-              <opt.icon size={18} color={active ? "#FFFFFF" : colors.mutedForeground} strokeWidth={2} />
+              <opt.icon size={20} color={active ? "#FFFFFF" : colors.mutedForeground} strokeWidth={2} />
             </View>
             <View className="min-w-0 flex-1">
-              <Text className="font-sans-semibold text-[14px] text-foreground">{opt.title}</Text>
-              <Text className="text-[11px] leading-4 text-foreground/35">{opt.detail}</Text>
+              <Text className="font-sans-semibold text-[16px] text-foreground">{opt.title}</Text>
+              <Text className="text-[14px] leading-5 text-foreground/35">{opt.detail}</Text>
             </View>
             <View
               className={cn(
@@ -82,13 +82,13 @@ export function ModeChoiceStep({
         );
       })}
 
-      <Text className="px-0.5 pt-1 text-[11px] leading-4 text-foreground/25">
+      <Text className="px-0.5 pt-1 text-[14px] leading-5 text-foreground/25">
         You can switch anytime — just swipe from either mode to jump to the other.
       </Text>
 
       <PillButton className="mt-1" loading={loading} onPress={onContinue}>
-        <Text className="font-sans-bold text-[15px] text-primary-foreground">{continueLabel}</Text>
-        <ChevronRight size={13} color={colors.primaryForeground} strokeWidth={2.5} />
+        <Text className="font-sans-bold text-[17px] text-primary-foreground">{continueLabel}</Text>
+        <ChevronRight size={15} color={colors.primaryForeground} strokeWidth={2.5} />
       </PillButton>
     </View>
   );

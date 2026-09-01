@@ -10,6 +10,7 @@ import { useBillingPortal, useEntitlements } from "@/hooks/useSettings";
 import { useThemeColors } from "@/lib/theme";
 import { useToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { TopUpCard } from "@/components/settings/TopUpCard";
 
 type Plan = {
   key: string;
@@ -102,6 +103,10 @@ export default function BillingScreen() {
               );
             })()}
           </View>
+        </View>
+
+        <View className="mt-4">
+          <TopUpCard />
         </View>
 
         <Text className="mb-2 mt-4 pl-0.5 text-[11px] font-sans-semibold uppercase tracking-wide text-foreground/30">

@@ -30,6 +30,7 @@ import { EdgeSwipeModeSwitcher } from "@/components/layout/EdgeSwipeModeSwitcher
 import { TourOverlay } from "@/components/tour/TourOverlay";
 import { ToastHost } from "@/components/ui/toast-host";
 import { useAuth } from "../lib/auth";
+import { usePurchasesIdentity } from "../hooks/usePurchases";
 import { useSalliStore } from "../lib/store";
 import { ThemeProvider, useAppTheme, useThemeColors } from "../lib/theme";
 
@@ -54,6 +55,10 @@ function AppShell() {
   // deep links) and Supabase's onAuthStateChange keeps it fresh for the whole
   // session, rather than only while the index guard is mounted.
   useAuth();
+  // Keeps RevenueCat's app_user_id equal to the Supabase user id for the life
+  // of the app. Mounted here rather than on the billing screen because a
+  // purchase can complete while that screen is not open.
+  usePurchasesIdentity();
 
   const loadMode = useSalliStore((s) => s.loadMode);
   useEffect(() => {

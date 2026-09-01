@@ -22,6 +22,7 @@ export function useAuth() {
   const token = useSalliStore((s) => s.token);
   const authReady = useSalliStore((s) => s.authReady);
   const setToken = useSalliStore((s) => s.setToken);
+  const setUserId = useSalliStore((s) => s.setUserId);
   const setAuthReady = useSalliStore((s) => s.setAuthReady);
 
   useEffect(() => {
@@ -31,6 +32,9 @@ export function useAuth() {
       AsyncStorage.getItem(DEV_TOKEN_KEY).then((stored) => {
         if (!cancelled) {
           setToken(stored);
+          // With no Supabase configured the backend treats the bearer token as
+          // the user id, so the two are the same string here.
+          setUserId(stored);
           setAuthReady(true);
         }
       });
@@ -41,19 +45,21 @@ export function useAuth() {
     supabase.auth.getSession().then(({ data }) => {
       if (!cancelled) {
         setToken(data.session?.access_token ?? null);
+        setUserId(data.session?.user?.id ?? null);
         setAuthReady(true);
       }
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setToken(session?.access_token ?? null);
+      setUserId(session?.user?.id ?? null);
     });
 
     return () => {
       cancelled = true;
       sub.subscription.unsubscribe();
     };
-  }, [setToken, setAuthReady]);
+  }, [setToken, setUserId, setAuthReady]);
 
   return { token, authReady };
 }
@@ -62,6 +68,7 @@ export function useAuth() {
 export async function devLogin(rawToken: string): Promise<void> {
   await AsyncStorage.setItem(DEV_TOKEN_KEY, rawToken);
   useSalliStore.getState().setToken(rawToken);
+  useSalliStore.getState().setUserId(rawToken);
 }
 
 export async function signInWithPassword(email: string, password: string) {

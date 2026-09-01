@@ -17,6 +17,13 @@ type SalliStore = {
    * rather than React context so interceptors/fetch wrappers can read it synchronously. */
   token: string | null;
   setToken: (token: string | null) => void;
+  /** The signed-in user's id — the same value the backend derives from the JWT's
+   *  `sub`, and in dev-login the token itself. Kept beside the token rather than
+   *  decoded on demand because RevenueCat needs it as `app_user_id`: if the two
+   *  ever disagree, a purchase is attributed to a user that does not exist and
+   *  the credits are simply lost. */
+  userId: string | null;
+  setUserId: (userId: string | null) => void;
 
   /** True once the initial session check has resolved (avoids a login-screen flash). */
   authReady: boolean;
@@ -62,6 +69,8 @@ type SalliStore = {
 export const useSalliStore = create<SalliStore>((set) => ({
   token: null,
   setToken: (token) => set({ token }),
+  userId: null,
+  setUserId: (userId) => set({ userId }),
 
   authReady: false,
   setAuthReady: (authReady) => set({ authReady }),

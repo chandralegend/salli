@@ -3,6 +3,7 @@ import { Mic, Paperclip, Send, SquarePen, Trash2 } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ApprovalGateCard } from "@/components/agent/ApprovalGateCard";
 import { AssistantMarkdown } from "@/components/agent/AssistantMarkdown";
+import { MessageActions } from "@/components/agent/MessageActions";
 import { ToolActivityBlock } from "@/components/agent/ToolActivityBlock";
 import { Drawer } from "@/components/ui/drawer";
 import { SalliBackground } from "@/components/ui/SalliBackground";
@@ -40,6 +42,26 @@ export default function BuddyScreen() {
   const insets = useSafeAreaInsets();
   const isTablet = useIsTablet();
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  // Whether a keyboard is currently covering the bottom of the screen.
+  //
+  // The composer reserves insets.bottom for the home indicator, which is right
+  // until a keyboard covers the home indicator — then that reservation is
+  // ~34pt of dead space between the composer and the keyboard, and the
+  // composer visibly detaches from it. Every polished chat app collapses this;
+  // measuring against ChatGPT, its gap is roughly a third of what ours was.
+  const [keyboardUp, setKeyboardUp] = useState(false);
+  useEffect(() => {
+    // iOS gets the Will* pair so the padding animates with the keyboard rather
+    // than snapping after it has finished moving. Android only fires Did*.
+    const showEvt = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvt = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const show = Keyboard.addListener(showEvt, () => setKeyboardUp(true));
+    const hide = Keyboard.addListener(hideEvt, () => setKeyboardUp(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
   const chatColumnStyle = {
     width: "100%" as const,
     maxWidth: isTablet ? TABLET_CHAT_WIDTH : undefined,
@@ -96,9 +118,7 @@ export default function BuddyScreen() {
         {messages.length === 0 ? (
           <View className="flex-1 justify-end px-4 pb-3">
             <View style={chatColumnStyle}>
-              <View className="max-w-[78%] rounded-[14px] rounded-bl-[6px] px-4 py-3" style={{ backgroundColor: colors.bubbleAgent }}>
-                <Text className="text-[14px] leading-5 text-foreground">{WELCOME_MESSAGE}</Text>
-              </View>
+              <Text className="px-1 text-[15px] leading-[22px] text-foreground">{WELCOME_MESSAGE}</Text>
             </View>
           </View>
         ) : (
@@ -118,9 +138,17 @@ export default function BuddyScreen() {
                   </View>
                 </View>
               ) : (
-                <View className="pr-8">
+                /* No bubble, and no width cap, on the assistant side.
+                   ChatGPT, Claude and Gemini all render the reply as plain
+                   text across the column and reserve the bubble for the user,
+                   because the two halves are not symmetric: a user message is
+                   a short line, a reply is markdown that can carry headings,
+                   lists, tables and code. A 78%-wide tinted box made every
+                   table scroll and every code block wrap, and read as a
+                   quoted aside rather than as the answer. */
+                <View>
                   <ToolActivityBlock parts={item.parts} />
-                  <View className="gap-1.5">
+                  <View className="gap-2">
                     {item.parts.map((part, i) =>
                       part.kind === "tool_call" ? null : part.kind === "approval" ? (
                         <ApprovalGateCard
@@ -130,16 +158,24 @@ export default function BuddyScreen() {
                           onResolve={resolveApproval}
                         />
                       ) : (
-                        <View
-                          key={i}
-                          className="max-w-[78%] rounded-[14px] rounded-bl-[6px] px-4 py-3"
-                          style={{ backgroundColor: colors.bubbleAgent }}
-                        >
+                        <View key={i} className="px-1">
                           <AssistantMarkdown content={part.content} />
                         </View>
                       ),
                     )}
                   </View>
+                  {/* One action row for the whole message, not one per part —
+                      a reply split across several text parts by streaming is
+                      still one answer to copy. Hidden while streaming so the
+                      button does not appear under a half-written reply. */}
+                  {streaming && item.id === messages[messages.length - 1]?.id ? null : (
+                    <MessageActions
+                      text={item.parts
+                        .filter((part) => part.kind === "text")
+                        .map((part) => (part as { content: string }).content)
+                        .join("\n\n")}
+                    />
+                  )}
                 </View>
               )
             }
@@ -157,7 +193,7 @@ export default function BuddyScreen() {
           </View>
         ) : null}
 
-        <View className="px-3.5 pt-2" style={{ paddingBottom: insets.bottom + 16 }}>
+        <View className="px-3.5 pt-2" style={{ paddingBottom: keyboardUp ? 8 : insets.bottom + 16 }}>
           <View
             className="flex-row items-center gap-2 rounded-[16px] border border-foreground/10 bg-card py-1.5 pl-2 pr-1.5"
             style={chatColumnStyle}

@@ -91,7 +91,22 @@ const paddlePricePro = optEnv("PADDLE_PRICE_PRO");
 // the adapter keys its price map on "<plan>:<cycle>", so a missing yearly ID makes
 // every annual checkout/plan-change 503 rather than falling back to monthly.
 const paddlePriceProYearly = optEnv("PADDLE_PRICE_PRO_YEARLY");
-// Speech-to-text for the mobile app's Voice Mode; absent it, /agent/transcribe 503s.
+// Credit top-ups are one-time Paddle transactions, not subscription add-ons —
+// _change_body sends `items` as the complete list, so an add-on item would be
+// deleted by the next plan change.
+const paddlePriceCredits10k = optEnv("PADDLE_PRICE_CREDITS_10K");
+const paddlePriceCredits25k = optEnv("PADDLE_PRICE_CREDITS_25K");
+const paddlePriceCredits60k = optEnv("PADDLE_PRICE_CREDITS_60K");
+
+// RevenueCat — the iOS half of buying credits. Paddle's external checkout is
+// US-only, so Sri Lankan users must go through StoreKit. The product ids are
+// public (they ship in the app bundle); only the webhook signing secret is a
+// credential. Without that secret the webhook route stays disabled outright
+// rather than accepting unsigned deliveries.
+const revenuecatWebhookSecret = optEnv("REVENUECAT_WEBHOOK_SECRET");
+const revenuecatProductCredits10k = optEnv("REVENUECAT_PRODUCT_CREDITS_10K");
+const revenuecatProductCredits25k = optEnv("REVENUECAT_PRODUCT_CREDITS_25K");
+const revenuecatProductCredits60k = optEnv("REVENUECAT_PRODUCT_CREDITS_60K");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Providers (auth via env: SUPABASE_ACCESS_TOKEN, VERCEL_API_TOKEN, RENDER_API_KEY)
@@ -205,6 +220,17 @@ if (paddleApiKey) apiEnv.PADDLE_API_KEY = pulumi.secret(paddleApiKey);
 if (paddleWebhookSecret) apiEnv.PADDLE_WEBHOOK_SECRET = pulumi.secret(paddleWebhookSecret);
 if (paddlePricePro) apiEnv.PADDLE_PRICE_PRO = paddlePricePro;
 if (paddlePriceProYearly) apiEnv.PADDLE_PRICE_PRO_YEARLY = paddlePriceProYearly;
+if (paddlePriceCredits10k) apiEnv.PADDLE_PRICE_CREDITS_10K = paddlePriceCredits10k;
+if (paddlePriceCredits25k) apiEnv.PADDLE_PRICE_CREDITS_25K = paddlePriceCredits25k;
+if (paddlePriceCredits60k) apiEnv.PADDLE_PRICE_CREDITS_60K = paddlePriceCredits60k;
+if (revenuecatWebhookSecret)
+  apiEnv.REVENUECAT_WEBHOOK_SECRET = pulumi.secret(revenuecatWebhookSecret);
+if (revenuecatProductCredits10k)
+  apiEnv.REVENUECAT_PRODUCT_CREDITS_10K = revenuecatProductCredits10k;
+if (revenuecatProductCredits25k)
+  apiEnv.REVENUECAT_PRODUCT_CREDITS_25K = revenuecatProductCredits25k;
+if (revenuecatProductCredits60k)
+  apiEnv.REVENUECAT_PRODUCT_CREDITS_60K = revenuecatProductCredits60k;
 
 const apiEnvVars = pulumi
   .output(apiEnv)

@@ -56,11 +56,11 @@ export default function SupportPage() {
           </p>
           <div className="mt-8">
             <MagneticButton
-              href="mailto:hello@salli.lk"
+              href="mailto:hello@leafmonkey.org"
               className="inline-flex items-center gap-2.5 rounded-full bg-cream px-8 py-4.5 text-[17px] font-bold text-ink"
             >
               <Mail size={18} />
-              hello@salli.lk
+              hello@leafmonkey.org
             </MagneticButton>
           </div>
         </Reveal>

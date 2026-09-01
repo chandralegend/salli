@@ -59,7 +59,7 @@ export default function CookiesPage() {
 
       <h2>7. Contact</h2>
       <p>
-        Questions? Email <a href="mailto:hello@salli.lk">hello@salli.lk</a>.
+        Questions? Email <a href="mailto:hello@leafmonkey.org">hello@leafmonkey.org</a>.
       </p>
     </LegalLayout>
   );

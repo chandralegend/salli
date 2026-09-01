@@ -115,7 +115,7 @@ export default function PrivacyPage() {
         <li>Withdraw consent for optional communications.</li>
       </ul>
       <p>
-        To exercise any of these, email <a href="mailto:hello@salli.lk">hello@salli.lk</a>.
+        To exercise any of these, email <a href="mailto:hello@leafmonkey.org">hello@leafmonkey.org</a>.
       </p>
 
       <h2>8. Cookies</h2>
@@ -146,7 +146,7 @@ export default function PrivacyPage() {
       <h2>12. Contact</h2>
       <p>
         Questions about this policy or your data? Email{" "}
-        <a href="mailto:hello@salli.lk">hello@salli.lk</a>.
+        <a href="mailto:hello@leafmonkey.org">hello@leafmonkey.org</a>.
       </p>
     </LegalLayout>
   );

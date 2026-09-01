@@ -73,7 +73,7 @@ export default function SecurityPage() {
       <p>
         If you believe you&apos;ve found a security vulnerability in Salli, please tell us before
         disclosing it publicly. Email{" "}
-        <a href="mailto:hello@salli.lk">hello@salli.lk</a> with the subject line &ldquo;Security&rdquo; and as
+        <a href="mailto:hello@leafmonkey.org">hello@leafmonkey.org</a> with the subject line &ldquo;Security&rdquo; and as
         much detail as you can share. We take reports seriously and will respond promptly.
       </p>
 

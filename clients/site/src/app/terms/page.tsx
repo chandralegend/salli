@@ -128,7 +128,7 @@ export default function TermsPage() {
       <h2>13. Contact</h2>
       <p>
         Questions about these Terms? Reach us at{" "}
-        <a href="mailto:hello@salli.lk">hello@salli.lk</a>.
+        <a href="mailto:hello@leafmonkey.org">hello@leafmonkey.org</a>.
       </p>
     </LegalLayout>
   );

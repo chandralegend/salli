@@ -1,3 +1,22 @@
+# React Native's Xcode script phases resolve some of react-native's own
+# *transitive* dependencies by bare specifier from the app root — notably
+# `require.resolve('@react-native/codegen/package.json')` in
+# node_modules/react-native/scripts/react_native_pods_utils/script_phases.sh.
+#
+# pnpm's default layout exposes only direct dependencies at the root, so that
+# resolve fails and a local `xcodebuild` dies in the ReactCodegen target with
+# "Cannot find module '@react-native/codegen/package.json'". EAS Build is
+# unaffected — it applies its own pnpm hoisting — which is exactly why App
+# Store builds kept succeeding while no iOS build worked on a dev machine.
+#
+# Hoisting this one scope rather than setting nodeLinker: hoisted, because this
+# only *adds* root-level links and so cannot change how anything already
+# resolves, whereas flattening the whole tree would alter what the working
+# release pipeline installs from. Lives here and not in .npmrc: pnpm 11 no
+# longer reads pnpm-specific settings from .npmrc.
+publicHoistPattern:
+  - '@react-native/*'
+
 allowBuilds:
   # Optional native profiling addon pulled in transitively by eas-cli; not
   # needed for `eas build`/`eas submit` (both are just network API calls), and

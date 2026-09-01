@@ -107,9 +107,9 @@ resource, so this is done by hand once.)
 When DNS is ready, set the domains in `Pulumi.prod.yaml` and re-run:
 
 ```yaml
-salli:appDomain:  app.salli.lk
-salli:siteDomain: salli.lk
-salli:apiDomain:  api.salli.lk
+salli:appDomain:  app.example.com
+salli:siteDomain: example.com
+salli:apiDomain:  api.example.com
 ```
 
 That updates `ALLOWED_ORIGINS` on Render and the `NEXT_PUBLIC_*` URLs on Vercel.

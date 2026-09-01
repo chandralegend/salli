@@ -21,9 +21,9 @@ config:
   salli:siteUrl: https://salli-site-chandra-irugalbandaras-projects.vercel.app
 
   # Custom domains (leave blank until DNS is ready; wire later)
-  salli:appDomain: ""                         # e.g. app.salli.lk
-  salli:siteDomain: ""                        # e.g. salli.lk
-  salli:apiDomain: ""                         # e.g. api.salli.lk
+  salli:appDomain: ""                         # e.g. app.example.com
+  salli:siteDomain: ""                        # e.g. example.com
+  salli:apiDomain: ""                         # e.g. api.example.com
 
   # ── Vercel ───────────────────────────────────────────────────────────────
   # Your Vercel Team ID or slug (Team Settings → General). Required on Team plan.

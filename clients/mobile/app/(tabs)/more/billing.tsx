@@ -151,7 +151,7 @@ export default function BillingScreen() {
                     purchasing mechanism other than in-app purchase, and that
                     applies everywhere except the US, EU and South Korea — which
                     is to say, everywhere Salli actually has users. Naming
-                    salli.lk here, as this did, was a call to action.
+                    the website here, as this did, was a call to action.
 
                     Listing what the plan includes is not steering; offering a
                     way to buy it outside the app is. When mobile purchasing

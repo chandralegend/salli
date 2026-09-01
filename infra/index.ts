@@ -256,7 +256,7 @@ function vercelEnv(
   );
 }
 
-// Marketing site (clients/site → salli.lk later)
+// Marketing site (clients/site → salli.leafmonkey.org)
 const site = new vercel.Project(
   siteName,
   {
@@ -269,7 +269,7 @@ const site = new vercel.Project(
 );
 vercelEnv("site-app-url", site.id, "NEXT_PUBLIC_APP_URL", appUrl);
 
-// SaaS web app (clients/web → app.salli.lk later)
+// SaaS web app (clients/web → salli-web.vercel.app)
 const web = new vercel.Project(
   webName,
   {

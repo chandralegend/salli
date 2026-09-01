@@ -4,9 +4,9 @@ Salli is a single repo serving three surfaces on three hosts. The domain layout:
 
 | Surface              | Path           | Domain          | Host                     |
 | -------------------- | -------------- | --------------- | ------------------------ |
-| Marketing site       | `clients/site` | `salli.lk`      | Vercel (static export)   |
-| SaaS web app         | `clients/web`  | `app.salli.lk`  | Vercel (Next.js)         |
-| API (FastAPI)        | `src/salli`    | `api.salli.lk`  | Container host / Supabase |
+| Marketing site       | `clients/site` | `salli.leafmonkey.org` | Vercel (static export)   |
+| SaaS web app         | `clients/web`  | `salli-web.vercel.app` | Vercel (Next.js)         |
+| API (FastAPI)        | `src/salli`    | `salli-api.onrender.com` | Render (Docker) |
 
 The marketing site is a separate, self-contained Next.js project — it shares **no** code with
 `clients/web` (design tokens and the logo are copied in), so each builds
@@ -17,7 +17,7 @@ independently from its own root directory.
 Create **two** Vercel projects, both pointing at this same Git repository. They differ only in
 **Root Directory** and the domain assigned to them.
 
-### Project 1 — Marketing site (`salli.lk`)
+### Project 1 — Marketing site (`salli.leafmonkey.org`)
 
 | Setting             | Value                          |
 | ------------------- | ------------------------------ |
@@ -26,29 +26,29 @@ Create **two** Vercel projects, both pointing at this same Git repository. They 
 | Build Command       | `pnpm build` (default)         |
 | Output Directory    | (leave default — auto-detected) |
 | Install Command     | (default; `pnpm install`)      |
-| Domains             | `salli.lk`, `www.salli.lk`     |
+| Domains             | `salli.leafmonkey.org`         |
 
 Environment variables:
 
 ```
-NEXT_PUBLIC_APP_URL=https://app.salli.lk
+NEXT_PUBLIC_APP_URL=https://salli-web.vercel.app
 ```
 
 `next.config.ts` sets `output: "export"`, so Vercel produces a static site (`out/`). The
 "Sign in" / "Get started" links resolve to `${NEXT_PUBLIC_APP_URL}/login` and `/signup`.
 
-### Project 2 — SaaS app (`app.salli.lk`)
+### Project 2 — SaaS app (`salli-web.vercel.app`)
 
 | Setting             | Value                          |
 | ------------------- | ------------------------------ |
 | Root Directory      | `clients/web`                  |
 | Framework Preset    | Next.js                        |
-| Domains             | `app.salli.lk`                 |
+| Domains             | `salli-web.vercel.app`         |
 
 Environment variables (at minimum):
 
 ```
-NEXT_PUBLIC_API_URL=https://api.salli.lk
+NEXT_PUBLIC_API_URL=https://salli-api.onrender.com
 ```
 
 (plus any Supabase / auth public keys the app already requires).
@@ -62,8 +62,8 @@ NEXT_PUBLIC_API_URL=https://api.salli.lk
 
 The API is **not** on Vercel — it's a long-lived FastAPI/uvicorn service with Postgres and the
 LangGraph checkpointer. Deploy it to a container host (or alongside Supabase) and point
-`api.salli.lk` at it. The web app reaches it via `NEXT_PUBLIC_API_URL`; CORS on the API must allow
-`https://app.salli.lk`.
+the API host at it. The web app reaches it via `NEXT_PUBLIC_API_URL`; CORS on the API must allow
+the web app's origin.
 
 ## pnpm built-dependencies gate
 

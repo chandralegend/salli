@@ -39,6 +39,10 @@ export type Entitlements = {
   status: string;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
+  /** How a plan change must be routed, server-owned. Only "in_place" means
+   *  there is a live provider subscription to manage — a comped or manually
+   *  granted plan reports "checkout" and has no portal to open. */
+  change_mode: "in_place" | "checkout" | "blocked";
   usage: Usage[];
   /** The number the UI shows. `usage` covers only the resetting allowance, so a
    *  user who has topped up would read as empty while holding purchased credits. */

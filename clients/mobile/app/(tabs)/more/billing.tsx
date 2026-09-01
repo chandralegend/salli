@@ -33,7 +33,12 @@ export default function BillingScreen() {
   });
 
   const currentPlan = entitlements.data?.plan ?? "free";
-  const isPaid = currentPlan !== "free";
+  // Not `plan !== "free"`. A comped or manually granted subscription is paid by
+  // that measure but has no Paddle customer behind it, so opening the portal
+  // fails with a toast the user can do nothing about. `change_mode` is the
+  // server's own answer to "is there a live provider subscription here", and
+  // only "in_place" means yes.
+  const isPaid = entitlements.data?.change_mode === "in_place";
 
   const portal = useBillingPortal();
 
@@ -140,13 +145,17 @@ export default function BillingScreen() {
                       <Text className="text-[13px] font-sans-semibold text-foreground/40">Current Plan</Text>
                     </View>
                   )
-                ) : (
-                  <View className="items-center rounded-pill border border-foreground/10 bg-foreground/[0.06] py-2.5">
-                    <Text className="text-[13px] font-sans-semibold text-foreground/40">
-                      Manage your plan at salli.lk
-                    </Text>
-                  </View>
-                )}
+                ) : null}
+                {/* Deliberately no call to action on a plan the user is not on.
+                    App Store rule 3.1.1 forbids directing customers to a
+                    purchasing mechanism other than in-app purchase, and that
+                    applies everywhere except the US, EU and South Korea — which
+                    is to say, everywhere Salli actually has users. Naming
+                    salli.lk here, as this did, was a call to action.
+
+                    Listing what the plan includes is not steering; offering a
+                    way to buy it outside the app is. When mobile purchasing
+                    exists, a real buy button belongs here. */}
               </Card>
             );
           })}

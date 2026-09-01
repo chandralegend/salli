@@ -33,7 +33,11 @@ export function QuotaBanner({
       <TriangleAlert size={15} color="#d97706" strokeWidth={2} />
       <Text className="flex-1 text-[12px] text-foreground/70">
         {detail} ·{" "}
-        <Text className="font-sans-semibold text-primary underline">Top up</Text>
+        {/* "Top up" is the web CTA; mobile has no purchase path, so promising
+            one is both a dead end and — since the only way to act on it is off
+            the app — steering. This routes to the balance, which is a thing
+            mobile can actually show. */}
+        <Text className="font-sans-semibold text-primary underline">See balance</Text>
       </Text>
     </Pressable>
   );

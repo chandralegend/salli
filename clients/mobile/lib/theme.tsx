@@ -73,7 +73,7 @@ const COLORS = {
     accentBright: "#FF784E",
     accentAi: "#CBB9FF",
     accentSoft: "rgba(241,90,50,0.18)",
-    bubbleUser: "rgba(241,90,50,0.16)",
+    bubbleUser: "#CBB9FF",
     success: "#1b6b47",
   },
   light: {
@@ -89,7 +89,7 @@ const COLORS = {
     accentBright: "#FF784E",
     accentAi: "#CBB9FF",
     accentSoft: "rgba(241,90,50,0.12)",
-    bubbleUser: "rgba(241,90,50,0.13)",
+    bubbleUser: "#CBB9FF",
     success: "#1b6b47",
   },
 } as const;

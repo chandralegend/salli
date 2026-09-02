@@ -20,7 +20,7 @@ import { ToolActivityBlock } from "@/components/agent/ToolActivityBlock";
 import { Drawer } from "@/components/ui/drawer";
 import { type ChatMessage, useAgentChat } from "@/hooks/useAgentChat";
 import { useIsTablet } from "@/lib/responsive";
-import { useThemeColors } from "@/lib/theme";
+import { useHardShadow, useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 /** Buddy Mode's opening line — no suggestion chips, no mascot/avatar: Salli's
@@ -38,6 +38,7 @@ const TABLET_CHAT_WIDTH = 640;
 export default function BuddyScreen() {
   const router = useRouter();
   const colors = useThemeColors();
+  const shadow = useHardShadow();
   const insets = useSafeAreaInsets();
   const isTablet = useIsTablet();
   const listRef = useRef<FlatList<ChatMessage>>(null);
@@ -129,10 +130,12 @@ export default function BuddyScreen() {
               item.role === "user" ? (
                 <View className="flex-row justify-end">
                   <View
-                    className="max-w-[78%] rounded-card rounded-br-[6px] px-4 py-3"
-                    style={{ backgroundColor: colors.bubbleUser }}
+                    className="max-w-[78%] rounded-card border-2 border-foreground px-4 py-3"
+                    style={[{ backgroundColor: colors.bubbleUser }, shadow]}
                   >
-                    <Text className="text-[16px] leading-5 text-foreground">{item.content}</Text>
+                    <Text className="text-[16px] leading-[22px]" style={{ color: "#000000" }}>
+                      {item.content}
+                    </Text>
                   </View>
                 </View>
               ) : (
@@ -213,19 +216,21 @@ export default function BuddyScreen() {
                 onPress={() => send(input)}
                 disabled={streaming}
                 className={cn(
-                  "h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent",
+                  "h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-ai",
                   streaming && "opacity-40",
                 )}
               >
-                <Send size={17} color="#FFFFFF" strokeWidth={2.5} />
+                {/* Black on lavender: the lavender is theme-invariant, so an
+                    ink-derived glyph would disappear on it in dark mode. */}
+                <Send size={18} color="#000000" strokeWidth={2.5} />
               </Pressable>
             ) : (
               <Pressable
                 onPress={() => router.push("/voice")}
-                className="h-11 w-11 items-center justify-center rounded-full bg-foreground/[0.06]"
+                className="h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-ai"
                 accessibilityLabel="Start voice mode"
               >
-                <Mic size={17} color={colors.mutedForeground} strokeWidth={2} />
+                <Mic size={18} color="#000000" strokeWidth={2} />
               </Pressable>
             )}
           </View>

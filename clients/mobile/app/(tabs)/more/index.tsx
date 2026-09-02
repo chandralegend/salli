@@ -17,6 +17,7 @@ import {
 } from "lucide-react-native";
 import { Text, View } from "react-native";
 
+import { AffordabilityCard } from "@/components/AffordabilityCard";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
@@ -162,6 +163,14 @@ export default function MoreScreen() {
           <Text className="text-[15px] text-muted-foreground">Reminders →</Text>
         </AnimatedPressable>
       ) : null}
+
+      {/* Moved off Home with the declutter. Kept as its own block above the
+          feature list rather than as a list row, because it opens a drawer
+          rather than navigating — and because it is the one thing here people
+          come looking for by name. */}
+      <View className="mb-3.5">
+        <AffordabilityCard />
+      </View>
 
       <View className="px-4">
         <Text className="mb-1 pl-0.5 text-[13px] font-sans-semibold uppercase tracking-wide text-muted-foreground">

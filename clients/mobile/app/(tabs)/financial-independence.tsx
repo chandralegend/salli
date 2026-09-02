@@ -440,8 +440,11 @@ export default function FinancialIndependenceScreen() {
                     }
                   />
                 </View>
+                {/* No "Grade" prefix: the engine returns a phrase, not a
+                    letter (FI-ready / Strong / On track / Building / Just
+                    starting), so it read "Grade On track" for every value. */}
                 {fiScore.data?.grade ? (
-                  <Text className="mt-0.5 text-[14px] text-muted-foreground">Grade {fiScore.data.grade}</Text>
+                  <Text className="mt-0.5 text-[14px] text-muted-foreground">{fiScore.data.grade}</Text>
                 ) : null}
               </View>
               {fiScore.data ? (

@@ -116,6 +116,25 @@ export default function DashboardScreen() {
   const spendLeft = budgetSummary
     ? Number(budgetSummary.total_limit) - Number(budgetSummary.total_actual)
     : null;
+  /**
+   * Whether the budget being summarised actually covers today.
+   *
+   * `budgetSummary` is the most recent budget, not necessarily the current
+   * month's — the agent, asked about rent, reported "the budget I'm seeing is
+   * for August 2026 only" while Home was saying "left to spend this month".
+   * Claiming the wrong period is the same failure as the month-over-month
+   * figure: a confident sentence about numbers that are not what it says.
+   */
+  const budgetPeriodLabel = (() => {
+    if (!budgetSummary) return null;
+    const start = new Date(budgetSummary.period_start);
+    const end = new Date(budgetSummary.period_end);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+    const now = new Date();
+    if (now >= start && now <= end) return "this month";
+    return `in ${start.toLocaleDateString("en-US", { month: "long" })}`;
+  })();
+
   const spendFraction = budgetSummary
     ? Math.min(1, Number(budgetSummary.total_actual) / Math.max(1, Number(budgetSummary.total_limit)))
     : 0;
@@ -167,7 +186,7 @@ export default function DashboardScreen() {
               <Text className="font-sans text-[20px] leading-[26px] tracking-tight text-foreground">
                 You still have{" "}
                 <Text className="font-sans-extrabold">Rs. {formatLKRAbbrev(spendLeft)}</Text> left to
-                spend this month.
+                spend {budgetPeriodLabel ?? "this month"}.
               </Text>
               <View className="mt-4 h-[11px] overflow-hidden rounded-pill bg-foreground/20">
                 <View

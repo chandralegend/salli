@@ -243,7 +243,7 @@ export default function ReportsScreen() {
             <Text className="mb-3 font-sans-semibold text-[15px] text-foreground">
               Income vs Expense · {range.label}
             </Text>
-            <View className="gap-2.5">
+            <View className="gap-3.5">
               <View>
                 <View className="mb-1.5 flex-row justify-between">
                   <Text className="text-[15px] text-foreground/50">Income</Text>
@@ -417,7 +417,7 @@ export default function ReportsScreen() {
               <Text className="px-0.5 pb-1.5 pt-3.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                 Monthly Trend
               </Text>
-              <View className="gap-1.5">
+              <View className="gap-3.5">
                 {trendChron
                   .map((point, i) => {
                     const value = Number(point.net_worth);

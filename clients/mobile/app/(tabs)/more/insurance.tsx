@@ -228,7 +228,7 @@ export default function InsuranceScreen() {
         {tab === "Coverage Report" ? (
           <View className="gap-2.5 px-4 pt-3">
             {report.data?.lines.length ? (
-              <View className="gap-1.5">
+              <View className="gap-3.5">
                 {report.data.lines.map((line, i) => {
                   const target = Number(line.target_amount);
                   const actual = Number(line.actual_coverage);

@@ -59,7 +59,7 @@ export default function ForgotPasswordScreen() {
           </ActionButton>
         </View>
       ) : (
-        <View className="gap-2.5">
+        <View className="gap-3.5">
           <TextField
             className="rounded-card px-[18px] py-[14px]"
             label="Email"

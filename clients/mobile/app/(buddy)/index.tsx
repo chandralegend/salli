@@ -153,7 +153,7 @@ export default function BuddyScreen() {
                    quoted aside rather than as the answer. */
                 <View>
                   <ToolActivityBlock parts={item.parts} />
-                  <View className="gap-2">
+                  <View className="gap-3.5">
                     {item.parts.map((part, i) =>
                       part.kind === "tool_call" ? null : part.kind === "approval" ? (
                         <ApprovalGateCard

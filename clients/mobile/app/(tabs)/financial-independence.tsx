@@ -827,7 +827,7 @@ export default function FinancialIndependenceScreen() {
           </ActionButton>
         }
       >
-        <View className="gap-2">
+        <View className="gap-3.5">
           <TextField label="Goal name" value={newName} onChangeText={setNewName} placeholder="e.g. Buy a home" />
           <View className="flex-row gap-2">
             <TextField className="flex-1" label="Target amount" value={newAmount} onChangeText={setNewAmount} keyboardType="numeric" placeholder="0" />

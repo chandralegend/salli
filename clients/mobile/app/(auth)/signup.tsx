@@ -66,7 +66,7 @@ export default function SignupScreen() {
           </ActionButton>
         </View>
       ) : (
-        <View className="gap-2.5">
+        <View className="gap-3.5">
           {isSupabaseConfigured() ? <SocialAuthButtons onError={setError} /> : null}
 
           <TextField

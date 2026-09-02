@@ -174,7 +174,7 @@ export function AccountDetailModal({
                 <Text className="text-[15px] text-muted-foreground">No entries in this period.</Text>
               </Card>
             ) : (
-              <View className="gap-1.5">
+              <View className="gap-3.5">
                 {rows.map((t) => {
                   const inflow = t.delta >= 0;
                   return (

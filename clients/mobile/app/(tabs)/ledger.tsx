@@ -226,7 +226,7 @@ export default function LedgerScreen() {
                   <Text className="px-0.5 pb-1 pt-1.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                     {dateGroupLabel(date)}
                   </Text>
-                  <View className="gap-1.5">
+                  <View className="gap-3.5">
                     {dayEntries.map((entry) => {
                       const debit = entry.postings.find((p) => p.direction === 1);
                       const credit = entry.postings.find((p) => p.direction === -1);
@@ -314,7 +314,7 @@ export default function LedgerScreen() {
                     <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                       {ACCT_TYPE_LABEL[group.type]} · {group.items.length} account{group.items.length === 1 ? "" : "s"}
                     </Text>
-                    <View className="gap-1.5">
+                    <View className="gap-3.5">
                       {group.items.map((a) => {
                         const bal = balances.data?.[a.id];
                         return (

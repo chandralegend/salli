@@ -50,7 +50,7 @@ export function ModelPickerCard() {
         model you pick here.
       </Text>
 
-      <View className="gap-2">
+      <View className="gap-3.5">
         {models.data.models.map((m) => {
           const active = m.id === selected;
           return (

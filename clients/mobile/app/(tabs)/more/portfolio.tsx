@@ -244,7 +244,7 @@ export default function PortfolioScreen() {
                       <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                         {titleCase(assetClass)}
                       </Text>
-                      <View className="gap-1.5">
+                      <View className="gap-3.5">
                         {items.map((h) => {
                           const gain = Number(h.current_value) - Number(h.cost_basis);
                           const pct = totalValue > 0 ? Number(h.current_value) / totalValue : 0;
@@ -326,7 +326,7 @@ export default function PortfolioScreen() {
                 <Text className="mb-2 mt-3.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                   By Asset Class
                 </Text>
-                <View className="gap-2">
+                <View className="gap-3.5">
                   {allocation.map((a, i) => {
                     const color = colorForClass[a.asset_class] ?? SLICE_COLORS[0];
                     const count = countByClass[a.asset_class] ?? 0;
@@ -456,7 +456,7 @@ export default function PortfolioScreen() {
                       <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                         {items.length} {items.length === 1 ? "holding" : "holdings"}
                       </Text>
-                      <View className="gap-1.5">
+                      <View className="gap-3.5">
                         {items.map((h) => {
                           const hGain = Number(h.current_value) - Number(h.cost_basis);
                           return (

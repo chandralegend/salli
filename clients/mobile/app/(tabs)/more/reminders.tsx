@@ -193,7 +193,7 @@ export default function RemindersScreen() {
         <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
           {title}
         </Text>
-        <View className="gap-1.5">
+        <View className="gap-3.5">
           {data.map((r) => (
             <Row key={r.id} r={r} kind={kind} />
           ))}

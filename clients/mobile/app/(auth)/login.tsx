@@ -51,7 +51,7 @@ export default function LoginScreen() {
         </Text>
       </View>
 
-      <View className="gap-2.5">
+      <View className="gap-3.5">
         {supabaseReady ? <SocialAuthButtons onError={setError} /> : null}
 
         <TextField

@@ -59,7 +59,7 @@ export function TopUpCard() {
         after your monthly allowance runs out.
       </Text>
 
-      <View className="gap-2">
+      <View className="gap-3.5">
         {packs.data.map((p) => {
           const credits = CREDITS_BY_PRODUCT[p.identifier];
           const busy = buy.isPending;

@@ -247,7 +247,7 @@ export default function DebtScreen() {
             <Text className="mb-2 mt-3 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               {filter === "Paid Off" ? "Paid Off" : "Active Debts"}
             </Text>
-            <View className="gap-1.5">
+            <View className="gap-3.5">
               {visibleDebts.length === 0 ? (
                 <Card className="p-4">
                   <Text className="text-center text-[15px] text-muted-foreground">No debts match this filter.</Text>
@@ -426,7 +426,7 @@ export default function DebtScreen() {
             <Text className="mb-2 mt-4 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               Payoff Order · {strategyLabel}
             </Text>
-            <View className="gap-1.5">
+            <View className="gap-3.5">
               {orderedDebts.map((debt, i) => {
                 const focus = i === 0;
                 return (

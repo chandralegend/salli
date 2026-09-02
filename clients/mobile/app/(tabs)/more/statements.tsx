@@ -386,7 +386,7 @@ function ReviewTab({
               </Text>
             </Card>
           ) : (
-            <View className="gap-1.5">
+            <View className="gap-3.5">
               {visible.map((t) => {
                 const matchedRow = isMatched(t);
                 const isApproved = approved.has(t.id);
@@ -600,7 +600,7 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
       <Text className="px-1.5 pb-1.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
         Ledger Bank &amp; Cash Accounts
       </Text>
-      <View className="gap-1.5">
+      <View className="gap-3.5">
         {bankAccounts.map((a) => {
           const active = a.is_active;
           const bal = balances.data?.[a.id];

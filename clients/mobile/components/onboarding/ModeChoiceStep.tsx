@@ -46,7 +46,7 @@ export function ModeChoiceStep({
 }) {
   const colors = useThemeColors();
   return (
-    <View className="gap-2">
+    <View className="gap-3.5">
       {MODE_OPTIONS.map((opt) => {
         const active = value === opt.value;
         return (

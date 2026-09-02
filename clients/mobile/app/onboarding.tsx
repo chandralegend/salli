@@ -338,7 +338,7 @@ export default function OnboardingScreen() {
             <Text className="mb-3 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               We&apos;ll set up together in ~5 min
             </Text>
-            <View className="gap-1.5">
+            <View className="gap-3.5">
               {WELCOME_ITEMS.map((item, i) => (
                 <View key={item.title} className="flex-row items-center gap-3 rounded-card border-2 border-foreground bg-card px-4 py-3">
                   <View className={cn("h-8 w-8 items-center justify-center rounded-card", i === 0 ? "bg-salli-accent" : "bg-foreground/[0.08]")}>
@@ -380,7 +380,7 @@ export default function OnboardingScreen() {
           <StepHeader index={0} onBack={() => setStep(0)} />
           <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" contentContainerStyle={stepColumnStyle}>
             <StepTitle title="About You" subtitle="Used to compute your IRD tax and FIRE plan." />
-            <View className="gap-2">
+            <View className="gap-3.5">
               <TextField label="Full Name *" active value={fullName} onChangeText={setFullName} placeholder="Your full name" />
               <TextField
                 label="Date of Birth *"
@@ -449,7 +449,7 @@ export default function OnboardingScreen() {
           <StepHeader index={1} onBack={handleBack} />
           <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" contentContainerStyle={stepColumnStyle}>
             <StepTitle title="Income Sources" subtitle="Select all that apply — we map each to a ledger account." />
-            <View className="gap-2">
+            <View className="gap-3.5">
               {INCOME_SOURCES.map((source) => {
                 const selected = selectedSources.has(source.key);
                 return (
@@ -533,7 +533,7 @@ export default function OnboardingScreen() {
                 <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                   If markets drop 20%, I would
                 </Text>
-                <View className="gap-1.5">
+                <View className="gap-3.5">
                   {DRAWDOWN_OPTIONS.map((o) => {
                     const active = drawdown === o.value;
                     return (
@@ -702,7 +702,7 @@ export default function OnboardingScreen() {
         <StepHeader index={4} onBack={handleBack} />
         <ScrollView className="flex-1 px-5" contentContainerStyle={stepColumnStyle}>
           <StepTitle title="Review Setup" subtitle="Confirm — we'll post opening balances as ledger entries." />
-          <View className="gap-2">
+          <View className="gap-3.5">
             {(
               [
                 {

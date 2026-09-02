@@ -424,7 +424,7 @@ function AccountPickerSheet({
       {candidates.length === 0 ? (
         <Text className="px-1 pb-4 text-[15px] text-muted-foreground">No matching accounts for this entry type yet.</Text>
       ) : (
-        <View className="gap-1.5">
+        <View className="gap-3.5">
           {candidates.map((a) => {
             const meta = TYPE_META[a.type];
             const Icon = meta.Icon;

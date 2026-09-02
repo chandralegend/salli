@@ -112,7 +112,7 @@ export default function BillingScreen() {
         <Text className="mb-2 mt-4 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
           Plans
         </Text>
-        <View className="gap-2.5">
+        <View className="gap-3.5">
           {(plans.data ?? []).map((plan) => {
             const isCurrent = plan.key === currentPlan;
             return (

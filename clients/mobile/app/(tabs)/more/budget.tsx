@@ -212,7 +212,7 @@ export default function BudgetScreen() {
                 <Text className="text-[14px] text-muted-foreground">{currentMonthLabel()}</Text>
               </View>
 
-              <View className="gap-1.5">
+              <View className="gap-3.5">
                 {summary.data.lines.map((line, i) => {
                   const actual = Number(line.actual_amount);
                   const lim = Number(line.limit_amount);
@@ -320,7 +320,7 @@ export default function BudgetScreen() {
             </Pressable>
           </View>
 
-          <View className="gap-1.5">
+          <View className="gap-3.5">
             {expenseAccounts.length === 0 ? (
               <Card className="items-center p-6">
                 <Text className="text-[15px] text-muted-foreground">No expense accounts to budget yet.</Text>

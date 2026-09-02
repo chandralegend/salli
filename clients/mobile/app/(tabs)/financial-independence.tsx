@@ -151,32 +151,6 @@ function ProgressBar({ pct }: { pct: number }) {
 
 /** Conic-style progress ring (mockup's FI Score badge): a thin accent arc that
  * fills to `score`%, with the integer score centered in the hole. */
-function ScoreRing({ score }: { score: number }) {
-  const colors = useThemeColors();
-  const size = 48;
-  const sw = 6;
-  const r = (size - sw) / 2;
-  const c = 2 * Math.PI * r;
-  const pct = Math.min(100, Math.max(0, score)) / 100;
-  return (
-    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-      <Svg width={size} height={size} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
-        <Circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.07)" strokeWidth={sw} fill="none" />
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke={colors.accent}
-          strokeWidth={sw}
-          fill="none"
-          strokeDasharray={`${c * pct} ${c}`}
-          strokeLinecap="round"
-        />
-      </Svg>
-      <Text className="font-sans-bold text-[16px] text-foreground">{score.toFixed(0)}</Text>
-    </View>
-  );
-}
 
 export default function FinancialIndependenceScreen() {
   const colors = useThemeColors();
@@ -241,7 +215,9 @@ export default function FinancialIndependenceScreen() {
         <>
           <TourTarget id="freedom-header">
             <View className="flex-row items-center px-5 pb-1 pt-2.5">
-              <Text className="flex-1 font-sans-bold text-[22px] text-foreground">Freedom</Text>
+              <Text style={{ letterSpacing: -0.8 }} className="flex-1 font-sans-extrabold text-[27px] text-foreground">
+                Freedom
+              </Text>
               <InfoButton
                 size={20}
                 title="Freedom"
@@ -266,104 +242,88 @@ export default function FinancialIndependenceScreen() {
       ) : null}
 
       {tab === "Overview" && !fiScore.isLoading ? (
-        <View className="gap-2.5 px-4 pt-3">
-          {/* TIER 1 — Freedom Number (navy hero card) */}
-          <View className="rounded-card border border-foreground/[0.08] bg-salli-hero p-[18px]">
-            <View className="mb-2 flex-row items-center gap-1.5">
-              <Text className="text-[11px] font-mono uppercase tracking-widest text-white/50">
-                Freedom Number
-              </Text>
-              <InfoButton
-                onDark
-                title="Freedom Number"
-                description={
-                  "The total you'd need invested for returns alone to cover your yearly spending — indefinitely.\n\n" +
-                  "It's your annual expenses divided by your safe withdrawal rate. At a 4% rate, spending Rs. 100,000 a year means a Freedom Number of Rs. 2,500,000.\n\n" +
-                  "Spend less, and the target falls as well as getting closer."
-                }
+        <View className="px-4 pt-3">
+          {/* The score as a sentence, leading the screen.
+              It used to lead with the Freedom Number in an inverted hero card
+              and a pair of 32px stat tiles — three big figures competing before
+              you learned the one thing this screen is about. The score is the
+              summary; the number it implies comes after it. */}
+          <View className="px-1">
+            <Text className="font-sans text-[29px] leading-[34px] tracking-tight text-foreground">
+              You&rsquo;re{" "}
+              <Text className="font-sans-extrabold">
+                {fiScore.data ? `${Number(fiScore.data.overall_score).toFixed(0)}/100` : "—"}
+              </Text>{" "}
+              of the way there.
+            </Text>
+            <Text className="mt-2 text-[16px] text-muted-foreground">
+              {fiScore.data?.grade ? `${fiScore.data.grade}. ` : ""}
+              {projections.data ? `About ${yearsToFi.toFixed(0)} years to go.` : ""}
+            </Text>
+            <View className="mt-4 h-[11px] overflow-hidden rounded-pill bg-foreground/20">
+              <View
+                className="h-full rounded-pill bg-salli-accent"
+                style={{
+                  width: `${Math.min(100, Math.max(0, Number(fiScore.data?.overall_score ?? 0)))}%`,
+                }}
               />
-            </View>
-            <View className="mb-2.5 rounded-card border border-white/10 bg-white/[0.06] px-2.5 py-1.5">
-              <Text className="text-[14px] leading-5 text-white/45">
-                The savings target where investment returns cover your lifestyle — permanently.
-              </Text>
-            </View>
-            <View className="mb-1.5 flex-row items-baseline gap-1">
-              <Text className="font-sans-bold text-[26px] text-white/45">Rs.</Text>
-              <Text className="font-sans-extrabold text-[42px] leading-[42px] tracking-tighter text-white">
-                {projections.data ? formatLKRAbbrev(projections.data.fi_number) : "—"}
-              </Text>
-            </View>
-            <View className="mb-3.5 flex-row items-center gap-1.5">
-              <Text className="text-[14px] text-white/30">4% SWR</Text>
-              {targetAge ? (
-                <>
-                  <Text className="text-[14px] text-white/15">·</Text>
-                  <Text className="text-[14px] text-white/30">Target age {targetAge}</Text>
-                </>
-              ) : null}
-            </View>
-            <View className="flex-row gap-1.5">
-              <View className="flex-1 rounded-card bg-white/[0.06] px-2.5 py-2">
-                <Text className="mb-1 text-[13px] text-white/30">Funded</Text>
-                <Text className="font-sans-bold text-[17px] leading-[20px] text-salli-accent">
-                  {fiScore.data ? formatPct(fiScore.data.progress_to_fi) : "—"}
-                </Text>
-              </View>
-              <View className="flex-1 rounded-card bg-white/[0.06] px-2.5 py-2">
-                <Text className="mb-1 text-[13px] text-white/30">Net Worth</Text>
-                <Text className="font-sans-bold text-[17px] leading-[20px] text-white">
-                  {fiScore.data ? `Rs. ${formatLKRAbbrev(fiScore.data.net_worth)}` : "—"}
-                </Text>
-              </View>
-              <View className="flex-1 rounded-card bg-white/[0.06] px-2.5 py-2">
-                <Text className="mb-1 text-[13px] text-white/30">Target</Text>
-                <Text className="font-sans-bold text-[17px] leading-[20px] text-white/40">
-                  {projections.data ? `Rs. ${formatLKRAbbrev(projections.data.fi_number)}` : "—"}
-                </Text>
-              </View>
             </View>
           </View>
 
-          {/* TIER 2 — Key metrics */}
-          <View className="flex-row gap-2">
-            <Card className="flex-1 p-3.5">
-              <View className="mb-1.5 flex-row items-center gap-1.5">
-                <Text className="text-[14px] font-sans-medium text-muted-foreground">Years to Freedom</Text>
-                <InfoButton
-                  size={11}
-                  title="Years to Freedom"
-                  description={
-                    "How long until you reach your Freedom Number, if you keep saving at your current rate and investments grow at the assumed return.\n\n" +
-                    "It moves fastest when you raise your savings rate — that both adds to the pot and lowers the target, because you're living on less."
-                  }
-                />
+          <View className="my-4 h-px bg-foreground/15" />
+
+          {/* The score's own components, which this screen has never shown.
+              `components` has been on the payload all along — label, score and
+              weight per driver — and without it the number was unexplained:
+              you could see 58/100 and nothing about what would move it. */}
+          {fiScore.data?.components?.length ? (
+            <>
+              <Text className="mb-3 px-1 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+                What moves the score
+              </Text>
+              <View className="gap-3.5">
+                {fiScore.data.components.map((c) => (
+                  <View
+                    key={c.label}
+                    className="flex-row items-center gap-3 rounded-card border-2 border-foreground bg-card px-[15px] py-3.5"
+                  >
+                    <Text numberOfLines={1} className="flex-1 font-sans-bold text-[16px] text-foreground">
+                      {c.label}
+                    </Text>
+                    <View className="h-[11px] w-[96px] overflow-hidden rounded-pill bg-foreground/20">
+                      <View
+                        className="h-full rounded-pill bg-salli-accent"
+                        style={{ width: `${Math.min(100, Math.max(0, Number(c.score)))}%` }}
+                      />
+                    </View>
+                    <Text className="w-[34px] text-right font-sans-extrabold text-[15px] text-foreground">
+                      {Number(c.score).toFixed(0)}
+                    </Text>
+                  </View>
+                ))}
               </View>
-              <Text className="mb-1 font-sans-extrabold text-[32px] leading-[34px] tracking-tight text-foreground">
-                {projections.data ? yearsToFi.toFixed(1) : "—"}
-              </Text>
-              <Text className="text-[13px] text-muted-foreground">
-                {projections.data ? `Freedom by ${freedomYear} · base case` : "base case"}
-              </Text>
-            </Card>
-            <Card className="flex-1 p-3.5">
-              <View className="mb-1.5 flex-row items-center gap-1.5">
-                <Text className="text-[14px] font-sans-medium text-muted-foreground">Savings Rate</Text>
-                <InfoButton
-                  size={11}
-                  title="Savings Rate"
-                  description={
-                    "The share of your income you don't spend, from your actual ledger entries.\n\n" +
-                    "It's the single biggest lever on your Freedom date: it raises what you put away and lowers what you need, at the same time."
-                  }
-                />
-              </View>
-              <Text className="mb-1 font-sans-extrabold text-[32px] leading-[34px] tracking-tight text-foreground">
-                {fiScore.data ? formatPct(fiScore.data.savings_rate, 0) : "—"}
-              </Text>
-              <Text className="text-[13px] text-muted-foreground">% of income saved · aim 40%+</Text>
-            </Card>
-          </View>
+              <View className="my-4 h-px bg-foreground/15" />
+            </>
+          ) : null}
+
+          {/* The Freedom Number, now a sentence rather than the loudest block
+              on the screen. It is a target, not a status. */}
+          <AnimatedPressable onPress={() => setTab("Strategy")} className="px-1">
+            <Text className="font-sans text-[20px] leading-[26px] tracking-tight text-foreground">
+              You&rsquo;d need{" "}
+              <Text className="font-sans-extrabold">
+                Rs. {projections.data ? formatLKRAbbrev(projections.data.fi_number) : "—"}
+              </Text>{" "}
+              invested for returns alone to cover your spending.
+            </Text>
+            <Text className="mt-2 text-[14px] text-muted-foreground">
+              At a 4% withdrawal rate
+              {targetAge ? ` · target age ${targetAge}` : ""}
+              {projections.data ? ` · on track for ${freedomYear}` : ""}
+            </Text>
+          </AnimatedPressable>
+
+          <View className="my-4 h-px bg-foreground/15" />
 
           {/* Where the money actually goes — by category tag, and split needs
               vs wants. Sits above Goals because it answers the question people
@@ -425,51 +385,6 @@ export default function FinancialIndependenceScreen() {
             )}
           </Card>
 
-          {/* TIER 4 — FI Score */}
-          <Card className="p-4">
-            <View className="mb-3 flex-row items-center justify-between">
-              <View>
-                <View className="flex-row items-center gap-1.5">
-                  <Text className="font-sans-semibold text-[16px] text-foreground">Freedom Score</Text>
-                  <InfoButton
-                    size={14}
-                    title="Freedom Score"
-                    description={
-                      "A 0–100 read on your overall financial health, combining your savings rate, emergency fund, debt level, and progress toward Freedom.\n\n" +
-                      "It's a way to see whether things are improving over time — not a benchmark against anyone else."
-                    }
-                  />
-                </View>
-                {/* No "Grade" prefix: the engine returns a phrase, not a
-                    letter (FI-ready / Strong / On track / Building / Just
-                    starting), so it read "Grade On track" for every value. */}
-                {fiScore.data?.grade ? (
-                  <Text className="mt-0.5 text-[14px] text-muted-foreground">{fiScore.data.grade}</Text>
-                ) : null}
-              </View>
-              {fiScore.data ? (
-                <ScoreRing score={Number(fiScore.data.overall_score)} />
-              ) : (
-                <View className="h-12 w-12 items-center justify-center rounded-full bg-foreground/[0.07]">
-                  <Text className="text-muted-foreground">—</Text>
-                </View>
-              )}
-            </View>
-            <View className="flex-row gap-1.5">
-              <View className="flex-1 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-2.5 py-2.5">
-                <Text className="mb-1.5 text-[13px] text-muted-foreground">Savings Rate</Text>
-                <Text className="font-sans-bold text-[20px] leading-[24px] text-foreground">
-                  {fiScore.data ? formatPct(fiScore.data.savings_rate, 0) : "—"}
-                </Text>
-              </View>
-              <View className="flex-1 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-2.5 py-2.5">
-                <Text className="mb-1.5 text-[13px] text-muted-foreground">Debt-to-Asset</Text>
-                <Text className="font-sans-bold text-[20px] leading-[24px] text-foreground">
-                  {fiScore.data ? formatPct(fiScore.data.debt_to_asset, 0) : "—"}
-                </Text>
-              </View>
-            </View>
-          </Card>
         </View>
       ) : null}
 

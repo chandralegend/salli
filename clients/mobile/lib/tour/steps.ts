@@ -25,13 +25,18 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     id: "quick-add",
-    targetId: "tabbar-quickadd",
+    // Was "tabbar-quickadd" — the centre "+" tab. That tab is gone; Add now
+    // sits on Home and carries the same tap/long-press pair.
+    targetId: "dashboard-quickadd",
     route: "/(tabs)",
     title: "Add anything, fast",
     body: "Tap for a form. Long-press to speak or type free-form and let Salli draft the entry.",
   },
   {
     id: "tax-tile",
+    // Still "dashboard-tax-tile", but it is no longer a tile — it is the tax
+    // line under the Freedom score. The id is kept so stored tour progress
+    // stays valid.
     targetId: "dashboard-tax-tile",
     route: "/(tabs)",
     title: "Tax, computed — not guessed",

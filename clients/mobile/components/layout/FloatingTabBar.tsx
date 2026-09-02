@@ -1,17 +1,13 @@
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
-import * as Haptics from "expo-haptics";
-import { LayoutGrid, Plus, Sparkles, Table, TrendingUp } from "lucide-react-native";
-import { useEffect, useRef, useState } from "react";
+import { LayoutGrid, Sparkles, Table, TrendingUp } from "lucide-react-native";
+import { useEffect, useRef } from "react";
 import { Animated, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { TourTarget } from "@/components/tour/TourTarget";
 import { useModeSwitch } from "@/hooks/useModeSwitch";
-import { VoiceCaptureSheet } from "../VoiceCaptureSheet";
-import type { EntryDraft } from "../../hooks/useLedger";
-import { useSalliStore } from "../../lib/store";
 import { useAppTheme, useThemeColors } from "../../lib/theme";
 
 const ROUTE_META: Record<string, { Icon: typeof LayoutGrid; label: string }> = {
@@ -51,56 +47,55 @@ function NavTab({
       accessibilityRole="button"
       accessibilityState={isFocused ? { selected: true } : {}}
       accessibilityLabel={accessibilityLabel}
-      className="flex-1 items-center justify-center gap-0.5"
+      className="flex-1 items-center justify-center gap-1"
     >
-      <View className="items-center justify-center rounded-full px-4 py-1">
-        <Animated.View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderRadius: 9999,
-            opacity: highlight,
-            backgroundColor: colors.accentSoft,
-          }}
-        />
-        <Icon size={22} color={isFocused ? colors.accent : colors.mutedForeground} strokeWidth={isFocused ? 2.2 : 1.9} />
-      </View>
+      <Icon
+        size={23}
+        color={isFocused ? colors.accent : colors.mutedForeground}
+        strokeWidth={isFocused ? 2.3 : 1.9}
+      />
       <Text
-        style={{ color: isFocused ? colors.accent : colors.mutedForeground, fontSize: 10 }}
-        className={isFocused ? "font-sans-semibold" : "font-sans-medium"}
+        style={{ color: isFocused ? colors.accent : colors.mutedForeground, fontSize: 11.5 }}
+        className={isFocused ? "font-sans-bold" : "font-sans-medium"}
       >
         {label}
       </Text>
+      {/* A short underline instead of a pill behind the icon. The pill used
+          accentSoft, a translucent orange wash — on the cream canvas it read as
+          a smudge rather than a state, and it competed with the hard-edged
+          geometry everywhere else. */}
+      <Animated.View
+        style={{
+          width: 22,
+          height: 3,
+          borderRadius: 2,
+          backgroundColor: colors.accent,
+          opacity: highlight,
+        }}
+      />
     </AnimatedPressable>
   );
 }
 
 /**
- * Fixed, edge-to-edge bottom nav bar — attached flush to the viewport/safe
- * area (not a detached floating pill), with an active-state accent pill +
- * label and a branded "+" that deep-links to Ledger's New Entry form.
+ * Fixed, edge-to-edge bottom nav bar: four tabs, a 2px ink top border, and the
+ * active tab marked by an orange icon, label and underline.
+ *
+ * The centre "+" is deliberately gone. It was a fifth slot in a four-place bar
+ * that navigated somewhere rather than being a destination, and its
+ * long-press-to-capture was invisible to anyone who never tried it. Both the
+ * tap and the long-press now live on Home's Add button.
  */
 export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const router = useRouter();
   const { enterBuddy } = useModeSwitch();
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
-  const requestQuickAddEntry = useSalliStore((s) => s.requestQuickAddEntry);
-  const [captureOpen, setCaptureOpen] = useState(false);
 
-  const openNewEntry = (draft?: EntryDraft) => {
-    requestQuickAddEntry(draft ?? null);
-    navigation.navigate("ledger");
-  };
 
   // Filter by name (not position) — "more" is a hidden route (href: null) that
   // still appears in state.routes, so positional slicing would misplace it.
   const visibleRoutes = state.routes.filter((r) => r.name in ROUTE_META);
-  const leftRoutes = visibleRoutes.slice(0, 2);
-  const rightRoutes = visibleRoutes.slice(2);
 
   const renderTab = (route: (typeof state.routes)[number]) => {
     const { options } = descriptors[route.key];
@@ -151,49 +146,19 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
         left: 0,
         right: 0,
         backgroundColor: colors.card,
-        borderTopWidth: 1,
-        borderTopColor: colors.border,
+        // 2px ink, matching every other border in the app. A hairline read as
+        // a seam; the bar should look like a block the content sits above.
+        borderTopWidth: 2,
+        borderTopColor: colors.foreground,
         paddingBottom: insets.bottom,
       }}
     >
-      <View className="flex-row items-center px-2" style={{ height: 56 }}>
-        {leftRoutes.map(renderTab)}
-
-        <TourTarget id="tabbar-quickadd" className="flex-1 items-center justify-center">
-          <AnimatedPressable
-            onPress={() => openNewEntry()}
-            haptic="medium"
-            onLongPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              setCaptureOpen(true);
-            }}
-            delayLongPress={300}
-            accessibilityRole="button"
-            accessibilityLabel="New entry — long-press for voice/text quick add"
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              backgroundColor: colors.accent,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Plus size={24} color="#FFFFFF" strokeWidth={2.6} />
-          </AnimatedPressable>
-        </TourTarget>
-
-        {rightRoutes.map(renderTab)}
+      {/* Four tabs, no centre "+". Add moved to Home, and it kept the
+          long-press-to-capture that used to live here — so the entry point is
+          relocated, not retired. */}
+      <View className="flex-row items-center px-2" style={{ height: 58 }}>
+        {visibleRoutes.map(renderTab)}
       </View>
-
-      <VoiceCaptureSheet
-        visible={captureOpen}
-        onClose={() => setCaptureOpen(false)}
-        onDraft={(draft) => {
-          setCaptureOpen(false);
-          openNewEntry(draft);
-        }}
-      />
     </View>
   );
 }

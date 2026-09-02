@@ -270,7 +270,7 @@ export default function FinancialIndependenceScreen() {
           {/* TIER 1 — Freedom Number (navy hero card) */}
           <View className="rounded-card border border-foreground/[0.08] bg-salli-hero p-[18px]">
             <View className="mb-2 flex-row items-center gap-1.5">
-              <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-white/50">
+              <Text className="text-[11px] font-mono uppercase tracking-widest text-white/50">
                 Freedom Number
               </Text>
               <InfoButton
@@ -479,7 +479,7 @@ export default function FinancialIndependenceScreen() {
           {projections.data ? (
             <View className="rounded-card border border-foreground/[0.08] bg-salli-hero p-[16px]">
               <View className="mb-3 flex-row items-center justify-between">
-                <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-white/50">
+                <Text className="text-[11px] font-mono uppercase tracking-widest text-white/50">
                   Portfolio Projection
                 </Text>
                 <Text className="text-[14px] text-white/30">
@@ -532,7 +532,7 @@ export default function FinancialIndependenceScreen() {
             <>
               {/* Allocation — tappable donut (slices open a detail drawer) */}
               <Card className="p-4">
-                <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+                <Text className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                   Allocation{surplus.data ? ` · Rs. ${formatLKRAbbrev(surplus.data.monthly_surplus)}/mo surplus` : ""}
                 </Text>
                 <View className="my-2 h-[156px] w-[156px] items-center justify-center self-center">
@@ -694,7 +694,7 @@ export default function FinancialIndependenceScreen() {
             <View className="gap-2 px-4 pt-3.5">
               {/* summary hero */}
               <View className="rounded-card border border-foreground/[0.08] bg-salli-hero p-[16px]">
-                <Text className="mb-1.5 text-[14px] font-sans-semibold uppercase tracking-wide text-white/50">
+                <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/50">
                   Goals Progress
                 </Text>
                 <View className="mb-3 flex-row items-baseline gap-1.5">
@@ -715,7 +715,7 @@ export default function FinancialIndependenceScreen() {
                 </View>
               </View>
 
-              <Text className="mb-0.5 mt-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+              <Text className="mb-0.5 mt-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                 Your Goals
               </Text>
 
@@ -851,17 +851,17 @@ export default function FinancialIndependenceScreen() {
                 <>
                   <View className="mb-3 flex-row gap-2">
                     <View className="flex-1 rounded-card border-2 border-foreground bg-card p-3">
-                      <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Allocation</Text>
+                      <Text className="mb-1 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Allocation</Text>
                       <Text className="font-sans-extrabold text-[26px] leading-6 text-foreground">{formatPct(b.target_pct, 0)}</Text>
                     </View>
                     <View className="flex-1 rounded-card border-2 border-foreground bg-card p-3">
-                      <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Routed / month</Text>
+                      <Text className="mb-1 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Routed / month</Text>
                       <Text className="font-sans-extrabold text-[26px] leading-6 text-foreground">
                         {route !== null ? `Rs. ${formatLKRAbbrev(route)}` : "—"}
                       </Text>
                     </View>
                   </View>
-                  <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">How it works</Text>
+                  <Text className="mb-1 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">How it works</Text>
                   <Text className="text-[15px] leading-5 text-foreground/60">{b.description}</Text>
                 </>
               );

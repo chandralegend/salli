@@ -163,7 +163,7 @@ function OverviewTab({
   return (
     <View className="px-4 pt-3">
       <Card className="bg-salli-hero p-[18px]">
-        <Text className="mb-2 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
+        <Text className="mb-2 text-[11px] font-mono uppercase tracking-widest text-white/50">
           {isRefund ? "Refund Due" : "Net Tax Payable"} · AY {data.pack_year}
         </Text>
         <View className="mb-1 flex-row items-baseline gap-1">
@@ -191,12 +191,12 @@ function OverviewTab({
         onPress={handleSetReminder}
         disabled={reminders.create.isPending}
         className={cn(
-          "mt-2.5 h-[38px] flex-row items-center justify-center gap-1.5 rounded-pill bg-salli-accent",
+          "mt-2.5 h-[52px] flex-row items-center justify-center gap-2 rounded-card border-2 border-foreground bg-salli-accent",
           reminders.create.isPending && "opacity-60",
         )}
       >
         <Bell size={15} color="#FFFFFF" strokeWidth={2} />
-        <Text className="font-sans-semibold text-[15px] text-white">
+        <Text className="font-sans-bold text-[17px] text-white">
           {reminders.create.isPending ? "Setting reminder…" : "Set filing reminder"}
         </Text>
       </Pressable>
@@ -318,7 +318,7 @@ function DeductionsTab({ data }: { data: TaxComputationFull }) {
     <View className="pt-3">
       <View className="px-4">
         <Card className="bg-salli-hero p-[18px]">
-          <Text className="mb-2 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
+          <Text className="mb-2 text-[11px] font-mono uppercase tracking-widest text-white/50">
             Total Deductions &amp; Credits
           </Text>
           <View className="mb-1 flex-row items-baseline gap-1">
@@ -339,7 +339,7 @@ function DeductionsTab({ data }: { data: TaxComputationFull }) {
         </Card>
       </View>
 
-      <Text className="px-[18px] pb-1.5 pt-3.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+      <Text className="px-[18px] pb-1.5 pt-3.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
         Personal Relief
       </Text>
       <View className="px-4">
@@ -361,7 +361,7 @@ function DeductionsTab({ data }: { data: TaxComputationFull }) {
         </Card>
       </View>
 
-      <Text className="px-[18px] pb-1.5 pt-3.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+      <Text className="px-[18px] pb-1.5 pt-3.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
         Tax Credits
       </Text>
       <View className="gap-1.5 px-4">
@@ -443,7 +443,7 @@ function HistoryTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
       <Card className="bg-salli-hero p-[18px]">
         <View className="flex-row items-start justify-between">
           <View>
-            <Text className="mb-2 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
+            <Text className="mb-2 text-[11px] font-mono uppercase tracking-widest text-white/50">
               Tax {rows.length > 1 ? `· ${rows.length}-Year Total` : "· Estimated"}
             </Text>
             <View className="flex-row items-baseline gap-1">
@@ -481,7 +481,7 @@ function HistoryTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
         )}
       </Card>
 
-      <Text className="px-1.5 pb-1.5 pt-3.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+      <Text className="px-1.5 pb-1.5 pt-3.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
         Assessment Years
       </Text>
       <View className="gap-1.5">

@@ -176,7 +176,7 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
     >
       <>
         <View className="mb-1 flex-row items-center gap-3">
-          <Text className="flex-1 font-sans-bold text-[22px] text-foreground">New Entry</Text>
+          <Text style={{ letterSpacing: -0.7 }} className="flex-1 font-sans-extrabold text-[23px] text-foreground">New Entry</Text>
           <View className="rounded-pill border border-foreground/10 bg-foreground/[0.07] px-3.5 py-1.5">
             <Text className="font-sans-medium text-[15px] text-muted-foreground">
               {new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
@@ -193,9 +193,11 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
         />
 
         <Card className="mt-4 bg-salli-hero px-5 pb-4 pt-5">
-          <Text className="mb-2.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/40">Amount</Text>
-          <View className="mb-3.5 flex-row items-baseline gap-1.5">
-            <Text className="font-sans-semibold text-[26px] text-white/35">Rs.</Text>
+          <Text className="mb-2.5 text-[11px] font-mono uppercase tracking-widest text-white/60">Amount · LKR</Text>
+          {/* No "Rs." prefix — the label above already reads "AMOUNT · LKR",
+              and at 42px the prefix pushed the input onto a second line, so
+              the figure rendered underneath its own currency mark. */}
+          <View className="mb-3.5 flex-row items-end">
             <TextField
               label=""
               value={amount}
@@ -204,9 +206,15 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
               placeholder="0"
               placeholderTextColor="rgba(255,255,255,0.25)"
               className="flex-1 border-0 bg-transparent p-0"
-              style={{ fontSize: 44, fontFamily: "JetBrainsMono_700Bold", letterSpacing: -2, color: "#FFFFFF" }}
+              style={{
+                fontSize: 42,
+                fontFamily: "Archivo_800ExtraBold",
+                letterSpacing: -1.9,
+                color: "#FFFFFF",
+                paddingVertical: 0,
+              }}
             />
-            <Text className="mb-1 font-sans-regular text-[16px] text-white/20">.00</Text>
+            <Text className="pb-1.5 font-sans-extrabold text-[24px] text-white/35">.00</Text>
           </View>
 
           {type === "transfer" ? (
@@ -238,7 +246,7 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
           placeholder="What was this for?"
         />
 
-        <Text className="mb-1.5 mt-3.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+        <Text className="mb-1.5 mt-3.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
           Double-Entry Accounts
         </Text>
         <View>
@@ -351,7 +359,7 @@ function AccountRow({
         <Icon size={15} color={filled ? colors.accent : "rgba(148,163,184,0.6)"} strokeWidth={2.5} />
       </View>
       <View className="flex-1">
-        <Text className="mb-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
+        <Text className="mb-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
           {label}
           {meta ? ` · ${meta.label}` : ""}
         </Text>

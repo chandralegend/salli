@@ -26,13 +26,16 @@ export function ScreenHeader({ title, back, trailing, large }: ScreenHeaderProps
           onPress={() => router.back()}
           accessibilityRole="button"
           accessibilityLabel="Back"
-          className="h-11 w-11 items-center justify-center rounded-full bg-foreground/[0.08]"
+          className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
         >
-          <ChevronLeft size={24} color={colors.foreground} strokeWidth={2.2} />
+          <ChevronLeft size={21} color={colors.foreground} strokeWidth={2} />
         </AnimatedPressable>
       ) : null}
       <Text
-        className={`flex-1 font-sans-bold text-foreground ${large ? "text-[30px]" : "text-[24px]"}`}
+        // .apphead .title — 27px/800 at -0.03em. `large` keeps a slightly
+        // bigger variant for top-level screens.
+        style={{ letterSpacing: -0.8 }}
+        className={`flex-1 font-sans-extrabold text-foreground ${large ? "text-[29px]" : "text-[27px]"}`}
       >
         {title}
       </Text>

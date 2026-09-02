@@ -109,7 +109,7 @@ export function AccountDetailModal({
                 <View className="flex-1">
                   <View className="mb-1.5 flex-row items-center gap-2">
                     <View className="rounded-badge border-[1.5px] border-salli-accent bg-salli-accent/25 px-2 py-0.5">
-                      <Text className="text-[13px] font-sans-semibold uppercase tracking-wide text-salli-accent">
+                      <Text className="text-[11px] font-mono uppercase tracking-widest text-salli-accent">
                         {account.type}
                       </Text>
                     </View>
@@ -165,7 +165,7 @@ export function AccountDetailModal({
               ))}
             </View>
 
-            <Text className="mb-1.5 mt-3.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+            <Text className="mb-1.5 mt-3.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               Entries · {visibleTxs.length}
             </Text>
 

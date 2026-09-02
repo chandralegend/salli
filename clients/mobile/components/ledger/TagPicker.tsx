@@ -99,7 +99,7 @@ export function TagPicker({
   }
 
   const label = cn(
-    "mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide",
+    "mb-1.5 text-[11px] font-mono uppercase tracking-widest",
     onDark ? "text-white/35" : "text-muted-foreground",
   );
 
@@ -181,7 +181,7 @@ export function TagPicker({
               <Pressable
                 onPress={addCategory}
                 disabled={!draft.trim()}
-                className="h-10 w-10 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent"
+                className="h-10 w-10 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
               >
                 <Check size={15} color="#FFFFFF" strokeWidth={3} />
               </Pressable>

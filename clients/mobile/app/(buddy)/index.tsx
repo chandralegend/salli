@@ -108,16 +108,20 @@ export default function BuddyScreen() {
       {/* No hamburger/new-chat icons in the header — tapping the title opens
           the same session-history drawer that used to sit behind a menu icon,
           per the spec's "no hamburger menu on Buddy Mode". */}
-      <Pressable onPress={openSessions} className="items-center py-2.5">
-        <Text className="font-sans-semibold text-[17px] text-foreground">Buddy Mode</Text>
-        <Text className="mt-0.5 text-[14px] text-muted-foreground">Swipe left for Pro Mode</Text>
+      {/* .apphead, column variant: 17px/800 name, 13.5px caption, 2px gap.
+          Reads "Salli" rather than "Buddy Mode" — the mode is what you swiped
+          into, not who you are talking to, and the caption already names the
+          way back. */}
+      <Pressable onPress={openSessions} className="items-center gap-0.5 pb-3 pt-1.5">
+        <Text className="font-sans-extrabold text-[17px] text-foreground">Salli</Text>
+        <Text className="text-[13.5px] text-muted-foreground">Swipe left for Pro Mode</Text>
       </Pressable>
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
         {messages.length === 0 ? (
           <View className="flex-1 justify-end px-4 pb-3">
             <View style={chatColumnStyle}>
-              <Text className="px-1 text-[17px] leading-[28px] text-foreground">{WELCOME_MESSAGE}</Text>
+              <Text className="px-1 text-[16.5px] leading-[25px] text-foreground">{WELCOME_MESSAGE}</Text>
             </View>
           </View>
         ) : (
@@ -133,7 +137,7 @@ export default function BuddyScreen() {
                     className="max-w-[78%] rounded-card border-2 border-foreground px-4 py-3"
                     style={[{ backgroundColor: colors.bubbleUser }, shadow]}
                   >
-                    <Text className="text-[16px] leading-[22px]" style={{ color: "#000000" }}>
+                    <Text className="text-[16.5px] leading-[23px]" style={{ color: "#000000" }}>
                       {item.content}
                     </Text>
                   </View>
@@ -207,7 +211,7 @@ export default function BuddyScreen() {
               onChangeText={setInput}
               placeholder="Tell me what's up..."
               placeholderTextColor="rgba(128,128,128,0.4)"
-              className="flex-1 text-[16px] text-foreground"
+              className="flex-1 text-[16.5px] text-foreground"
               multiline
               onSubmitEditing={() => send(input)}
             />
@@ -216,7 +220,9 @@ export default function BuddyScreen() {
                 onPress={() => send(input)}
                 disabled={streaming}
                 className={cn(
-                  "h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-ai",
+                  // 42px rounded square, radius 10 — the mockup's composer
+                  // button is square, matching the field it sits inside.
+                  "h-[42px] w-[42px] items-center justify-center rounded-[10px] border-2 border-foreground bg-salli-ai",
                   streaming && "opacity-40",
                 )}
               >
@@ -227,7 +233,7 @@ export default function BuddyScreen() {
             ) : (
               <Pressable
                 onPress={() => router.push("/voice")}
-                className="h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-ai"
+                className="h-[42px] w-[42px] items-center justify-center rounded-[10px] border-2 border-foreground bg-salli-ai"
                 accessibilityLabel="Start voice mode"
               >
                 <Mic size={18} color="#000000" strokeWidth={2} />
@@ -248,7 +254,7 @@ export default function BuddyScreen() {
             className="flex-row items-center gap-1.5 rounded-pill bg-salli-accent px-3 py-1.5"
           >
             <SquarePen size={15} color="#FFFFFF" strokeWidth={2} />
-            <Text className="font-sans-semibold text-[15px] text-white">New chat</Text>
+            <Text className="font-sans-bold text-[17px] text-white">New chat</Text>
           </Pressable>
         </View>
         {(sessions.data ?? []).length === 0 ? (

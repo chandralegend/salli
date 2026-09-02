@@ -110,7 +110,7 @@ export default function SettingsScreen() {
     <PageShell header={<ScreenHeader title="Settings" back />}>
       <View className="gap-2.5 px-4 pt-3">
         <Card className="flex-row items-center gap-3 p-4">
-          <View className="h-12 w-12 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent">
+          <View className="h-12 w-12 items-center justify-center rounded-[11px] border-2 border-foreground bg-card">
             <Text className="font-sans-bold text-[22px] text-white">
               {(profile?.display_name ?? "?").charAt(0).toUpperCase()}
             </Text>
@@ -269,7 +269,7 @@ export default function SettingsScreen() {
 
         <Card className="overflow-hidden p-0">
           <View className="px-4 pb-2 pt-3">
-            <Text className="text-[13px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+            <Text className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               Danger Zone
             </Text>
           </View>

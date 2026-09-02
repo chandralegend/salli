@@ -30,7 +30,9 @@ export function IconButton({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       className={cn(
-        "h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-card",
+        // .sqbtn from the mockup: a rounded square, not a circle. Every
+        // header control in every frame is this shape.
+        "h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card",
         className,
       )}
     >

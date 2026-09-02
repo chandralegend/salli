@@ -167,9 +167,9 @@ export default function LedgerScreen() {
               <AnimatedPressable
                 onPress={() => (tab === "Accounts" ? setAddAccountOpen(true) : setModalVisible(true))}
                 haptic="light"
-                className="h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent"
+                className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
               >
-                <Plus size={18} color="#FFFFFF" strokeWidth={2.5} />
+                <Plus size={21} color={colors.accent} strokeWidth={2.4} />
               </AnimatedPressable>
             </View>
 
@@ -221,7 +221,7 @@ export default function LedgerScreen() {
             ) : (
               grouped.map(([date, dayEntries]) => (
                 <View key={date}>
-                  <Text className="px-0.5 pb-1 pt-1.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+                  <Text className="px-0.5 pb-1 pt-1.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                     {dateGroupLabel(date)}
                   </Text>
                   <View className="gap-1.5">
@@ -299,7 +299,7 @@ export default function LedgerScreen() {
                 const isAsset = group.type === "asset";
                 return (
                   <View key={group.type}>
-                    <Text className="mb-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+                    <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                       {ACCT_TYPE_LABEL[group.type]} · {group.items.length} account{group.items.length === 1 ? "" : "s"}
                     </Text>
                     <View className="gap-1.5">
@@ -357,7 +357,7 @@ export default function LedgerScreen() {
       {tab === "Income Stmt" ? (
         <View className="px-4 pt-4">
           <Card className="bg-salli-hero p-5">
-            <Text className="mb-1 text-[14px] font-sans-medium uppercase tracking-wide text-white/40">
+            <Text className="mb-1 text-[11px] font-mono uppercase tracking-widest text-white/40">
               Net Income · {from} → {to}
             </Text>
             <Text className="font-sans-extrabold text-[32px] tracking-tight text-white">

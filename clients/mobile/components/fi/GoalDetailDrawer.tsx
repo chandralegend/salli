@@ -121,7 +121,7 @@ export function GoalDetailDrawer({
         {/* what is actually behind this goal */}
         <View className="rounded-card border border-foreground/[0.08] bg-muted p-3.5">
           <View className="flex-row items-baseline justify-between">
-            <Text className="text-[14px] font-sans-medium uppercase tracking-wide text-muted-foreground">
+            <Text className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               Funded
             </Text>
             <Text className="font-sans-bold text-[17px] text-foreground">
@@ -156,7 +156,7 @@ export function GoalDetailDrawer({
         />
 
         <View>
-          <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
+          <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
             Priority
           </Text>
           <View className="flex-row rounded-pill bg-foreground/[0.06] p-1">
@@ -193,7 +193,7 @@ export function GoalDetailDrawer({
         </ActionButton>
 
         {/* earmarks */}
-        <Text className="mt-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
+        <Text className="mt-1.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
           Money behind this goal
         </Text>
         {accounts.isLoading || allocations.isLoading ? (

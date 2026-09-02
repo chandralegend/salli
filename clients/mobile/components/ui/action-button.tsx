@@ -78,7 +78,7 @@ export function ActionButton({
       {loading ? (
         <ActivityIndicator color={textColor} />
       ) : typeof children === "string" ? (
-        <Text style={{ color: textColor }} className="text-[18px] font-sans-semibold">
+        <Text style={{ color: textColor }} className="text-[17px] font-sans-bold">
           {children}
         </Text>
       ) : (

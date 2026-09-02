@@ -335,7 +335,7 @@ export default function OnboardingScreen() {
           </View>
 
           <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-            <Text className="mb-3 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+            <Text className="mb-3 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               We&apos;ll set up together in ~5 min
             </Text>
             <View className="gap-1.5">
@@ -391,7 +391,7 @@ export default function OnboardingScreen() {
               />
 
               <View>
-                <Text className="mb-1.5 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Tax Residency *</Text>
+                <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Tax Residency *</Text>
                 <View className="flex-row rounded-pill border-2 border-foreground bg-card p-1">
                   {(["resident", "non_resident"] as const).map((value) => (
                     <Pressable
@@ -408,7 +408,7 @@ export default function OnboardingScreen() {
               </View>
 
               <View>
-                <Text className="mb-1.5 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Employment *</Text>
+                <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Employment *</Text>
                 <View className="flex-row flex-wrap gap-1.5">
                   {EMPLOYMENT_OPTIONS.map((opt) => (
                     <FilterChip
@@ -519,7 +519,7 @@ export default function OnboardingScreen() {
             <StepTitle title="Risk Profile" subtitle="Shapes your FIRE strategy's asset allocation." />
             <View className="gap-3.5">
               <View>
-                <Text className="mb-1.5 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
+                <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                   Time horizon: {timeHorizon} years
                 </Text>
                 <View className="flex-row flex-wrap gap-1.5">
@@ -530,7 +530,7 @@ export default function OnboardingScreen() {
               </View>
 
               <View>
-                <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
+                <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                   If markets drop 20%, I would
                 </Text>
                 <View className="gap-1.5">
@@ -563,7 +563,7 @@ export default function OnboardingScreen() {
               </View>
 
               <View>
-                <Text className="mb-1.5 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Income stability</Text>
+                <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Income stability</Text>
                 <View className="flex-row flex-wrap gap-1.5">
                   {STABILITY_OPTIONS.map((o) => (
                     <FilterChip
@@ -577,7 +577,7 @@ export default function OnboardingScreen() {
               </View>
 
               <View>
-                <Text className="mb-1.5 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Investment experience</Text>
+                <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Investment experience</Text>
                 <View className="flex-row flex-wrap gap-1.5">
                   {EXPERIENCE_OPTIONS.map((o) => (
                     <FilterChip

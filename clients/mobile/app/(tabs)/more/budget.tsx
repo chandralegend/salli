@@ -162,7 +162,7 @@ export default function BudgetScreen() {
             <View className="px-4 pt-3.5">
               {/* hero — spend vs limit */}
               <Card className="bg-salli-hero p-[18px]">
-                <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-white/40">
+                <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/40">
                   Monthly Budget
                 </Text>
                 <View className="mb-2.5 flex-row items-start justify-between">
@@ -206,7 +206,7 @@ export default function BudgetScreen() {
 
               {/* category limits */}
               <View className="mb-2 mt-3 flex-row items-center justify-between">
-                <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+                <Text className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                   Category Limits
                 </Text>
                 <Text className="text-[14px] text-muted-foreground">{currentMonthLabel()}</Text>
@@ -264,7 +264,7 @@ export default function BudgetScreen() {
             <View className="p-[18px] pb-4">
               <View className="mb-2.5 flex-row items-start justify-between">
                 <View>
-                  <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-white/40">
+                  <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/40">
                     Monthly Limit
                   </Text>
                   <View className="flex-row items-baseline gap-1.5">
@@ -312,7 +312,7 @@ export default function BudgetScreen() {
 
           {/* category limits */}
           <View className="mb-2 mt-3 flex-row items-center justify-between">
-            <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+            <Text className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               Category Limits
             </Text>
             <Pressable onPress={autoSplit}>

@@ -40,7 +40,7 @@ export function TourCard({
       style={placement === "top" ? { top: insets.top + 12 } : { bottom: insets.bottom + 12 }}
     >
       <View className="mb-2 flex-row items-center justify-between">
-        <Text className="text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
+        <Text className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
           {index + 1} of {total}
         </Text>
         <Pressable onPress={onSkip} hitSlop={8} className="h-[26px] w-[26px] items-center justify-center rounded-full bg-foreground/[0.08]">

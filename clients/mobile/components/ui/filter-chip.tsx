@@ -23,14 +23,14 @@ export function FilterChip({
     <AnimatedPressable
       onPress={onPress}
       className={cn(
-        "rounded-pill border-2 border-foreground px-3.5 py-1.5",
+        "rounded-pill border-[1.5px] border-foreground px-3 py-1.5",
         active ? "bg-foreground" : "bg-card",
         className,
       )}
     >
       <Text
         className={cn(
-          "text-[15px]",
+          "text-[13.5px]",
           capitalize && "capitalize",
           active ? "font-sans-semibold text-primary-foreground" : "font-sans-medium text-foreground/65",
         )}

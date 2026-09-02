@@ -185,7 +185,7 @@ export default function ReportsScreen() {
       {tab === "Balance Sheet" ? (
         <View className="px-4 pt-2.5">
           <Card className="bg-salli-hero p-[18px]">
-            <Text className="mb-1.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
+            <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/50">
               Net Worth Snapshot
             </Text>
             <View className="mb-1 flex-row items-baseline gap-1">
@@ -309,7 +309,7 @@ export default function ReportsScreen() {
       ) : tab === "Income Stmt" ? (
         <View className="px-4 pt-2.5">
           <Card className="bg-salli-hero p-[18px]">
-            <Text className="mb-1.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
+            <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/50">
               Net Income · {range.label}
             </Text>
             <View className="mb-2.5 flex-row items-baseline gap-1">
@@ -376,7 +376,7 @@ export default function ReportsScreen() {
           <Card className="bg-salli-hero p-[18px]">
             <View className="mb-3.5 flex-row items-start justify-between">
               <View className="flex-1">
-                <Text className="mb-1.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
+                <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/50">
                   Current Net Worth
                 </Text>
                 <View className="flex-row items-baseline gap-1">
@@ -414,7 +414,7 @@ export default function ReportsScreen() {
             </Card>
           ) : (
             <>
-              <Text className="px-0.5 pb-1.5 pt-3.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+              <Text className="px-0.5 pb-1.5 pt-3.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                 Monthly Trend
               </Text>
               <View className="gap-1.5">

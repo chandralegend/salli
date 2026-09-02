@@ -81,7 +81,7 @@ export function EntryDetailSheet({
       >
         <View className={cn("h-[38px] w-[3px] rounded-pill", strong ? "bg-salli-accent" : "bg-foreground/15")} />
         <View className="flex-1">
-          <Text className="mb-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
+          <Text className="mb-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
             {kind} · {a?.type ?? "—"}
           </Text>
           <Text className="font-sans-semibold text-[15px] text-foreground">
@@ -133,7 +133,7 @@ export function EntryDetailSheet({
 
       {/* amount hero */}
       <View className="mb-3 rounded-card border border-foreground/[0.08] bg-salli-hero p-[18px]">
-        <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-white/40" numberOfLines={1}>
+        <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/40" numberOfLines={1}>
           {entry?.description}
         </Text>
         <View className="mb-1.5 flex-row items-baseline gap-1.5">
@@ -148,7 +148,7 @@ export function EntryDetailSheet({
         </Text>
       </View>
 
-      <Text className="mb-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+      <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
         Double-Entry Postings
       </Text>
       <View className="mb-3">

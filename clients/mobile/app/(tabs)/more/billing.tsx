@@ -58,7 +58,7 @@ export default function BillingScreen() {
       <View className="px-4 pt-3">
         <View className="overflow-hidden rounded-card border border-foreground/10">
           <View className="bg-salli-hero px-4 pb-4 pt-3.5">
-            <Text className="mb-3 text-[14px] font-sans-medium uppercase tracking-wide text-white/50 capitalize">
+            <Text className="mb-3 text-[11px] font-mono uppercase tracking-widest text-white/50 capitalize">
               {entitlements.data?.plan_name ?? "Free"} Plan
             </Text>
             {(() => {
@@ -109,7 +109,7 @@ export default function BillingScreen() {
           <TopUpCard />
         </View>
 
-        <Text className="mb-2 mt-4 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+        <Text className="mb-2 mt-4 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
           Plans
         </Text>
         <View className="gap-2.5">

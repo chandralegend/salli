@@ -151,9 +151,9 @@ export default function PortfolioScreen() {
                 </View>
                 <Pressable
                   onPress={() => setAddOpen(true)}
-                  className="h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent"
+                  className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
                 >
-                  <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+                  <Plus size={21} color={colors.accent} strokeWidth={2.4} />
                 </Pressable>
               </View>
             }
@@ -167,7 +167,7 @@ export default function PortfolioScreen() {
               Add your first holding to track value, cost and allocation.
             </Text>
             <ActionButton className="mt-3" variant="accent" onPress={() => setAddOpen(true)}>
-              <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+              <Plus size={21} color={colors.accent} strokeWidth={2.4} />
               <Text className="font-sans-semibold text-[16px] text-white">New Holding</Text>
             </ActionButton>
           </View>
@@ -176,7 +176,7 @@ export default function PortfolioScreen() {
             <View className="px-4 pt-3">
             {/* Navy hero — total value + cost/gain */}
             <Card className="bg-salli-hero p-[18px]">
-              <Text className="mb-2 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
+              <Text className="mb-2 text-[11px] font-mono uppercase tracking-widest text-white/50">
                 Total Portfolio Value
               </Text>
               <View className="mb-1.5 flex-row items-baseline gap-1">
@@ -241,7 +241,7 @@ export default function PortfolioScreen() {
                 <View className="mt-3 gap-3">
                   {Object.entries(grouped).map(([assetClass, items]) => (
                     <View key={assetClass}>
-                      <Text className="mb-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+                      <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                         {titleCase(assetClass)}
                       </Text>
                       <View className="gap-1.5">
@@ -289,7 +289,7 @@ export default function PortfolioScreen() {
               <>
                 {/* Donut hero — tappable slices open the asset-class drawer */}
                 <Card className="mt-3 p-4">
-                  <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+                  <Text className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                     Allocation by asset class
                   </Text>
                   <View className="my-3 h-[168px] w-[168px] items-center justify-center self-center">
@@ -323,7 +323,7 @@ export default function PortfolioScreen() {
                 </Card>
 
                 {/* By asset class — value, share, progress */}
-                <Text className="mb-2 mt-3.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+                <Text className="mb-2 mt-3.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                   By Asset Class
                 </Text>
                 <View className="gap-2">
@@ -412,7 +412,7 @@ export default function PortfolioScreen() {
             elevation: 6,
           }}
         >
-          <Plus size={22} color="#FFFFFF" strokeWidth={2.5} />
+          <Plus size={21} color={colors.accent} strokeWidth={2.4} />
         </Pressable>
       ) : null}
 
@@ -434,13 +434,13 @@ export default function PortfolioScreen() {
                     <>
                       <View className="mb-3 flex-row gap-2">
                         <View className="flex-1 rounded-card border-2 border-foreground bg-card p-3">
-                          <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Value</Text>
+                          <Text className="mb-1 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Value</Text>
                           <Text className="font-sans-extrabold text-[22px] leading-6 text-foreground">
                             Rs. {formatLKRAbbrev(a.current_value)}
                           </Text>
                         </View>
                         <View className="flex-1 rounded-card border-2 border-foreground bg-card p-3">
-                          <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Share</Text>
+                          <Text className="mb-1 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Share</Text>
                           <Text className="font-sans-extrabold text-[22px] leading-6" style={{ color }}>
                             {formatPct(a.pct_of_portfolio, 1)}
                           </Text>
@@ -453,7 +453,7 @@ export default function PortfolioScreen() {
                           {cost > 0 ? ` · ${formatPct(gain / cost, 1)}` : ""}
                         </Text>
                       </View>
-                      <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
+                      <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                         {items.length} {items.length === 1 ? "holding" : "holdings"}
                       </Text>
                       <View className="gap-1.5">
@@ -631,7 +631,7 @@ function HoldingDrawer({
               </View>
 
               {/* asset class chips */}
-              <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Asset Class *</Text>
+              <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Asset Class *</Text>
               <ChipSelect
                 className="mb-3"
                 options={ASSET_CLASSES}

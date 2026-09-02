@@ -306,7 +306,7 @@ function ReviewTab({
       <Card className="bg-salli-hero p-4">
         <View className="mb-3 flex-row items-start justify-between">
           <View className="flex-1">
-            <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-white/45">
+            <Text className="mb-1 text-[11px] font-mono uppercase tracking-widest text-white/45">
               {bank ? `${bank} · Import` : "Bank Statement · Import"}
             </Text>
             <Text className="text-[15px] text-white/40">{period || "Parsed statement"}</Text>
@@ -372,7 +372,7 @@ function ReviewTab({
             })}
           </View>
 
-          <Text className="mb-1.5 mt-3 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+          <Text className="mb-1.5 mt-3 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
             {status === "Matched" ? "Matched" : status === "Skipped" ? "Skipped" : "Needs Review"}
             {upload.period_start ? ` · ${upload.period_start}` : ""}
           </Text>
@@ -502,7 +502,7 @@ function HistoryTab({
       <Card className="bg-salli-hero p-[18px]">
         <View className="flex-row items-start justify-between">
           <View>
-            <Text className="mb-2 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
+            <Text className="mb-2 text-[11px] font-mono uppercase tracking-widest text-white/50">
               This Import
             </Text>
             <View className="flex-row items-baseline gap-1.5">
@@ -529,7 +529,7 @@ function HistoryTab({
         </View>
       </Card>
 
-      <Text className="px-1.5 pb-1.5 pt-3.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+      <Text className="px-1.5 pb-1.5 pt-3.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
         Imported This Session
       </Text>
       <Card className="flex-row items-center gap-2.5 p-3.5">
@@ -597,7 +597,7 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
 
   return (
     <View className="px-4 pt-4">
-      <Text className="px-1.5 pb-1.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+      <Text className="px-1.5 pb-1.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
         Ledger Bank &amp; Cash Accounts
       </Text>
       <View className="gap-1.5">

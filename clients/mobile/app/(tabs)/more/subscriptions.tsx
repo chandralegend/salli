@@ -67,9 +67,9 @@ export default function SubscriptionsScreen() {
             trailing={
               <Pressable
                 onPress={openAdd}
-                className="h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent"
+                className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
               >
-                <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+                <Plus size={21} color={colors.accent} strokeWidth={2.4} />
               </Pressable>
             }
           />
@@ -78,7 +78,7 @@ export default function SubscriptionsScreen() {
         {/* hero — monthly recurring cost */}
         <View className="px-4 pt-3">
           <Card className="bg-salli-hero p-[18px]">
-            <Text className="mb-1.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
+            <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/50">
               Monthly Recurring
             </Text>
             <View className="mb-1 flex-row items-baseline gap-1">
@@ -125,7 +125,7 @@ export default function SubscriptionsScreen() {
           </Card>
         </View>
 
-        <Text className="mb-1.5 mt-3 px-4 pl-[18px] text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+        <Text className="mb-1.5 mt-3 px-4 pl-[18px] text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
           Active Subscriptions
         </Text>
 
@@ -289,7 +289,7 @@ function AddEditSubscriptionDrawer({
         />
       </View>
 
-      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
+      <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
         Billing Cycle *
       </Text>
       <ChipSelect className="mb-1" options={FREQUENCIES} value={frequency} onChange={setFrequency} capitalize />

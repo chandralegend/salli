@@ -36,7 +36,7 @@ export function StatTile({
     >
       <Text
         className={cn(
-          "mb-1 text-[12px] font-sans-medium uppercase tracking-wide",
+          "mb-1 text-[11px] font-mono uppercase tracking-widest",
           onDark ? "text-white/40" : "text-muted-foreground",
           labelClassName,
         )}

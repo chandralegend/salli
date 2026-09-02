@@ -33,7 +33,7 @@ const POLICY_TYPES = ["life", "health", "motor", "property", "other"] as const;
 const PREMIUM_FREQUENCIES = ["monthly", "quarterly", "yearly"] as const;
 
 const FieldLabel = ({ children }: { children: string }) => (
-  <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">{children}</Text>
+  <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">{children}</Text>
 );
 
 export default function InsuranceScreen() {
@@ -80,9 +80,9 @@ export default function InsuranceScreen() {
             trailing={
               <Pressable
                 onPress={openAdd}
-                className="h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent"
+                className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
               >
-                <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+                <Plus size={21} color={colors.accent} strokeWidth={2.4} />
               </Pressable>
             }
           />
@@ -91,7 +91,7 @@ export default function InsuranceScreen() {
         {/* hero — coverage vs gap */}
         <View className="px-4 pt-3">
           <Card className="bg-salli-hero p-[18px]">
-            <Text className="mb-1.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
+            <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/50">
               Total Coverage
             </Text>
             <View className="mb-1 flex-row items-baseline gap-1">
@@ -521,7 +521,7 @@ function SetTargetDrawer({
     >
       <View className="gap-3 pb-2">
         <View>
-          <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
+          <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
             Policy type
           </Text>
           <View className="flex-row flex-wrap gap-1.5">

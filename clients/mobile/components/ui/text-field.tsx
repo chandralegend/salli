@@ -28,7 +28,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
     <>
       <Text
         className={cn(
-          "mb-1 text-[13px] font-sans-medium uppercase tracking-wide",
+          "mb-1 text-[11px] font-mono uppercase tracking-widest",
           active ? "text-salli-accent" : "text-muted-foreground",
         )}
       >

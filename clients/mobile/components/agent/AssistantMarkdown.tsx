@@ -10,8 +10,12 @@ export function AssistantMarkdown({ content }: { content: string }) {
   return (
     <Markdown
       style={{
-        body: { color: colors.foreground, fontSize: 13, lineHeight: 20, fontFamily: "Archivo_400Regular" },
-        strong: { color: colors.foreground, fontFamily: "Archivo_600SemiBold" },
+        // 16.5/25 — `.msg-ai` in the mockup. This was 13/20, which is why
+        // Buddy Mode still looked cramped after the app-wide type rescale:
+        // these sizes are inline numbers, so no className sweep could reach
+        // them. The assistant's reply is the main reading surface in the app.
+        body: { color: colors.foreground, fontSize: 16.5, lineHeight: 25, fontFamily: "Archivo_400Regular" },
+        strong: { color: colors.foreground, fontFamily: "Archivo_700Bold" },
         em: { fontStyle: "italic" },
         bullet_list: { marginTop: 2 },
         ordered_list: { marginTop: 2 },
@@ -21,11 +25,12 @@ export function AssistantMarkdown({ content }: { content: string }) {
           backgroundColor: "rgba(127,127,127,0.15)",
           borderWidth: 0,
           borderRadius: 4,
-          paddingHorizontal: 4,
-          fontFamily: "Archivo_500Medium",
+          paddingHorizontal: 5,
+          fontSize: 15,
+          fontFamily: "JetBrainsMono_400Regular",
         },
-        heading1: { color: colors.foreground, fontFamily: "Archivo_700Bold", fontSize: 15 },
-        heading2: { color: colors.foreground, fontFamily: "Archivo_600SemiBold", fontSize: 14 },
+        heading1: { color: colors.foreground, fontFamily: "Archivo_800ExtraBold", fontSize: 20 },
+        heading2: { color: colors.foreground, fontFamily: "Archivo_700Bold", fontSize: 18 },
         link: { color: colors.accent },
       }}
     >

@@ -150,14 +150,14 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
         style={{ minHeight: 110, textAlignVertical: "top" }}
       />
 
-      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">How bad is it?</Text>
+      <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">How bad is it?</Text>
       <ChipSelect className="mb-1.5" options={SEVERITIES} value={severity} onChange={setSeverity} capitalize />
       <Text className="mb-3 text-[14px] text-muted-foreground">{SEVERITY_HINT[severity]}</Text>
 
-      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Where in Salli?</Text>
+      <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Where in Salli?</Text>
       <ChipSelect className="mb-3" options={AREAS} value={area} onChange={setArea} />
 
-      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Screenshot (optional)</Text>
+      <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Screenshot (optional)</Text>
       {attachment ? (
         <View className="mb-1 flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card px-3.5 py-2.5">
           <Paperclip size={15} color={colors.mutedForeground} strokeWidth={2} />

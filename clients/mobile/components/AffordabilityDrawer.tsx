@@ -92,7 +92,7 @@ function Result({ impact, mutedColor, destructiveColor }: { impact: PurchaseImpa
     <View className="mt-4">
       <View className="flex-row gap-3">
         <View className="flex-1">
-          <Text className="text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Costs you</Text>
+          <Text className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Costs you</Text>
           {headline?.months_delay === null ? (
             <>
               <Text className="mt-1.5 font-sans-bold text-[26px] text-foreground">Not yet knowable</Text>
@@ -108,7 +108,7 @@ function Result({ impact, mutedColor, destructiveColor }: { impact: PurchaseImpa
           )}
         </View>
         <View className="flex-1">
-          <Text className="text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Emergency fund</Text>
+          <Text className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Emergency fund</Text>
           <Text className={efBreached ? "mt-1.5 font-sans-bold text-[26px] text-destructive" : "mt-1.5 font-sans-bold text-[26px] text-foreground"}>
             {efAfter.toFixed(1)} mo
           </Text>

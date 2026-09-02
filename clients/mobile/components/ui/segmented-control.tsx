@@ -34,7 +34,7 @@ export function SegmentedControl<T extends string>({
           >
             <Text
               className={cn(
-                "text-[15px]",
+                "text-[14.5px]",
                 capitalize && "capitalize",
                 active ? "font-sans-semibold text-primary-foreground" : "font-sans-medium text-foreground/55",
               )}

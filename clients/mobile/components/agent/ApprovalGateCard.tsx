@@ -146,7 +146,7 @@ export function ApprovalGateCard({
               onPress={() => onResolve("approved")}
               className="h-[38px] flex-1 items-center justify-center rounded-card bg-salli-accent"
             >
-              <Text className="font-sans-semibold text-[15px] text-white">{copy.approveLabel}</Text>
+              <Text className="font-sans-bold text-[17px] text-white">{copy.approveLabel}</Text>
             </Pressable>
           </View>
         </>

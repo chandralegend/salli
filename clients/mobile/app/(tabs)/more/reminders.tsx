@@ -190,7 +190,7 @@ export default function RemindersScreen() {
   const Section = ({ title, data, kind }: { title: string; data: Reminder[]; kind: RowKind }) =>
     data.length === 0 ? null : (
       <View className="mb-1">
-        <Text className="mb-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
+        <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
           {title}
         </Text>
         <View className="gap-1.5">
@@ -212,9 +212,9 @@ export default function RemindersScreen() {
               onPress={() => setDrawerOpen(true)}
               accessibilityRole="button"
               accessibilityLabel="New reminder"
-              className="h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent"
+              className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
             >
-              <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+              <Plus size={21} color={colors.accent} strokeWidth={2.4} />
             </Pressable>
           }
         />
@@ -391,7 +391,7 @@ function NewReminderDrawer({
                 {duePreview ? duePreview : "Enter a date as YYYY-MM-DD."}
               </Text>
 
-              <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
+              <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                 Type
               </Text>
               <ChipSelect className="mb-4" options={REMINDER_TYPES} value={type} onChange={setType} />

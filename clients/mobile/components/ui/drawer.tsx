@@ -140,7 +140,7 @@ export function Drawer({
             alignSelf: "center",
           },
         ]}
-        className={cn("rounded-t-[16px] border-t-2 border-foreground bg-background px-4 pt-2.5", className)}
+        className={cn("rounded-t-[16px] bg-background px-4 pt-2.5", className)}
       >
         <View {...pan.panHandlers} className="items-center pb-1 pt-0.5">
           <View className="h-1 w-10 rounded-full bg-foreground/20" />

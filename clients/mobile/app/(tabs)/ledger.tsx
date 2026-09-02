@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import {
   ArrowDown,
   ArrowUp,
@@ -11,13 +12,12 @@ import {
   ShoppingBag,
   TrendingUp,
 } from "lucide-react-native";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Text, TextInput, View } from "react-native";
 
 import { AccountDetailModal } from "@/components/AccountDetailModal";
 import { AddEditAccountDrawer } from "@/components/AddEditAccountDrawer";
 import { EntryDetailSheet } from "@/components/EntryDetailSheet";
-import { NewEntryModal } from "@/components/NewEntryModal";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { PostingChip } from "@/components/ui/posting-chip";
 import { Card } from "@/components/ui/card";
@@ -33,10 +33,8 @@ import {
   useIncomeStatement,
   useLedgerMutations,
   useTrialBalance,
-  type EntryDraft,
 } from "@/hooks/useLedger";
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
-import { useSalliStore } from "@/lib/store";
 import { useHardShadow, useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -80,6 +78,7 @@ function dateGroupLabel(iso: string): string {
 }
 
 export default function LedgerScreen() {
+  const router = useRouter();
   const colors = useThemeColors();
   const shadow = useHardShadow();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Journal");
@@ -87,12 +86,10 @@ export default function LedgerScreen() {
   const [search, setSearch] = useState("");
   const [acctFilter, setAcctFilter] = useState<(typeof ACCT_FILTERS)[number]>("All");
   const [acctSearch, setAcctSearch] = useState("");
-  const [modalVisible, setModalVisible] = useState(false);
   const [addAccountOpen, setAddAccountOpen] = useState(false);
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
-  const [entryDraft, setEntryDraft] = useState<EntryDraft | null>(null);
 
   const accounts = useAccounts();
   const entries = useEntries();
@@ -109,16 +106,11 @@ export default function LedgerScreen() {
   };
   const refreshControl = useThemedRefreshControl(refreshing, onRefresh);
 
-  const quickAddEntryRequest = useSalliStore((s) => s.quickAddEntryRequest);
-  useEffect(() => {
-    if (quickAddEntryRequest > 0) {
-      // Snapshot any AI draft attached to this request (null for a plain "+").
-      setEntryDraft(useSalliStore.getState().quickAddDraft);
-      setTab("Journal");
-      setModalVisible(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quickAddEntryRequest]);
+  // No quick-add listener any more. Ledger used to own the entry sheet, so
+  // every route to it went "navigate here, bump a counter in the store, let
+  // this screen notice". Now that new entry is its own route both callers push
+  // it directly — and keeping the listener would have double-pushed, since
+  // Home bumps the counter (to carry the AI draft) *and* navigates.
 
   const filteredEntries = useMemo(() => {
     let list = entries.data ?? [];
@@ -165,9 +157,11 @@ export default function LedgerScreen() {
         header={
           <>
             <View className="flex-row items-center px-5 pt-2.5">
-              <Text className="flex-1 font-sans-bold text-[26px] text-foreground">Ledger</Text>
+              <Text style={{ letterSpacing: -0.8 }} className="flex-1 font-sans-extrabold text-[27px] text-foreground">
+                Ledger
+              </Text>
               <AnimatedPressable
-                onPress={() => (tab === "Accounts" ? setAddAccountOpen(true) : setModalVisible(true))}
+                onPress={() => (tab === "Accounts" ? setAddAccountOpen(true) : router.push("/new-entry"))}
                 haptic="light"
                 className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
               >
@@ -390,12 +384,6 @@ export default function LedgerScreen() {
         </View>
       ) : null}
 
-      <NewEntryModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        accounts={accounts.data ?? []}
-        initialDraft={entryDraft}
-      />
       <EntryDetailSheet
         entry={selectedEntry}
         accounts={(accounts.data ?? []) as Account[]}

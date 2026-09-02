@@ -185,7 +185,13 @@ export function useLedgerMutations() {
     debitAccountId: string;
     creditAccountId: string;
     amount: string;
+    /** Both postings' currency. Defaults to LKR, which is what this used to
+     *  hardcode — an entry against the USD account was posted as LKR, so the
+     *  amount was recorded against the wrong unit and no screen could tell.
+     *  The caller now has to have asked. */
+    currency?: string;
   }) => {
+    const currency = input.currency || "LKR";
     await addEntryEntriesPost({
       body: {
         entry_date: input.entry_date,
@@ -193,8 +199,8 @@ export function useLedgerMutations() {
         source: "manual",
         postings: [
           // Direction enum: DEBIT = 1, CREDIT = -1 (not 2).
-          { account_id: input.debitAccountId, direction: 1, amount: input.amount, currency: "LKR" },
-          { account_id: input.creditAccountId, direction: -1, amount: input.amount, currency: "LKR" },
+          { account_id: input.debitAccountId, direction: 1, amount: input.amount, currency },
+          { account_id: input.creditAccountId, direction: -1, amount: input.amount, currency },
         ],
       },
       throwOnError: true,

@@ -73,8 +73,11 @@ export default function DashboardScreen() {
   /** Tap opens the form, long-press opens voice/free-text capture — the exact
    *  pair the centre "+" tab used to carry, moved here with it. */
   const openNewEntry = (draft?: Parameters<typeof requestQuickAddEntry>[0]) => {
+    // The draft goes through the store because the capture sheet produces it
+    // asynchronously; the navigation is direct now that new entry is a route
+    // rather than a sheet Ledger had to be asked to open.
     requestQuickAddEntry(draft ?? null);
-    router.push("/(tabs)/ledger");
+    router.push("/new-entry");
   };
 
   const currentPeriodLabel = new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" });

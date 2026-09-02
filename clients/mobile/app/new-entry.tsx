@@ -1,5 +1,7 @@
 import {
+  Calendar,
   ChevronDown,
+  ChevronLeft,
   CreditCard,
   PiggyBank,
   Plus,
@@ -8,35 +10,43 @@ import {
   Wallet,
   X,
 } from "lucide-react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
 
 import { AddEditAccountDrawer } from "@/components/AddEditAccountDrawer";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
+import { PageShell } from "@/components/ui/page-shell";
 import { PostingChip } from "@/components/ui/posting-chip";
 import { ActionButton } from "@/components/ui/action-button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { TextField } from "@/components/ui/text-field";
 import type { Account } from "@/hooks/useDashboard";
+import { useAccounts } from "@/hooks/useLedger";
 import { useLedgerMutations, type EntryDraft } from "@/hooks/useLedger";
 import type { AccountHint } from "@/lib/api/types.gen";
 import { formatLKR } from "@/lib/format";
-import { useThemeColors } from "@/lib/theme";
+import { useSalliStore } from "@/lib/store";
+import { useHardShadow, useThemeColors } from "@/lib/theme";
 import { useToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 type EntryType = "income" | "expense" | "transfer";
-type Side = "debit" | "credit";
 
-type NewEntryModalProps = {
-  visible: boolean;
-  onClose: () => void;
-  accounts: Account[];
-  /** AI-parsed draft to pre-fill the form when opened via voice/text quick-add. */
-  initialDraft?: EntryDraft | null;
-};
+/** YYYY-MM-DD in the device's own timezone.
+ *
+ *  Not `toISOString().slice(0, 10)`, which converts to UTC first — in Colombo
+ *  (UTC+5:30) an entry dated today, saved before 05:30, would post as
+ *  yesterday. The ledger's dates are calendar dates, not instants. */
+function toIsoDate(d: Date): string {
+  const m = `${d.getMonth() + 1}`.padStart(2, "0");
+  const day = `${d.getDate()}`.padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+type Side = "debit" | "credit";
 
 const TYPE_META: Record<Account["type"], { Icon: typeof Wallet; label: string }> = {
   asset: { Icon: Wallet, label: "Asset" },
@@ -46,10 +56,30 @@ const TYPE_META: Record<Account["type"], { Icon: typeof Wallet; label: string }>
   expense: { Icon: ShoppingBag, label: "Expense" },
 };
 
-/** Add Journal Entry — mockup's "New Entry" screen, as a modal so it can be
- * deep-linked from the tab-bar "+" button from any tab. */
-export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewEntryModalProps) {
+/**
+ * New entry — a screen, not a sheet.
+ *
+ * It was a bottom sheet mounted by Ledger, which meant the form was always
+ * partly off-screen behind a keyboard and could only be reached by first
+ * navigating to Ledger and setting a flag in the store. As a route it is a
+ * plain push from anywhere, and the whole form is visible at once — which
+ * matters because posting a balanced entry is a four-field decision, not a
+ * one-line capture.
+ *
+ * Date and currency are new here, and both were bugs rather than omissions:
+ * `entry_date` was hardcoded to today (so nothing could be back-dated) and
+ * every posting was written as LKR regardless of the account's own currency.
+ */
+export default function NewEntryScreen() {
+  const router = useRouter();
   const colors = useThemeColors();
+  const shadow = useHardShadow();
+  const accounts = useAccounts().data ?? [];
+  // The AI draft from voice/free-text capture, left in the store by whoever
+  // navigated here. Read once on mount so a re-render cannot re-apply it over
+  // edits the user has since made.
+  const [initialDraft] = useState(() => useSalliStore.getState().quickAddDraft);
+  const onClose = () => router.back();
   const { postEntry } = useLedgerMutations();
   const showToast = useToast();
 
@@ -66,32 +96,26 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
   // underneath stays mounted throughout, so nothing typed so far is lost.
   const [pendingAccountSide, setPendingAccountSide] = useState<Side | null>(null);
   const [saving, setSaving] = useState(false);
+  const [entryDate, setEntryDate] = useState(new Date());
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [currency, setCurrency] = useState("LKR");
+  const [currencyPickerOpen, setCurrencyPickerOpen] = useState(false);
 
-  // On each open, apply the AI draft (voice/text quick-add) or start blank. The
-  // modal instance is persistent, so this also clears stale state between opens.
-  // Set account ids directly (not via handleType, which would clear them).
+  // Seed from the AI draft exactly once, on mount. As a sheet this had to
+  // re-run on every open to clear stale state; a screen is mounted fresh each
+  // time, so the effect is gone — and with it the risk of re-applying the
+  // draft over edits the user has already made.
   useEffect(() => {
-    if (!visible) return;
-    setPicker(null);
-    setPendingAccountSide(null);
-    if (initialDraft) {
-      setType(initialDraft.entry_type);
-      setAmount(initialDraft.amount ?? "");
-      setDescription(initialDraft.description ?? "");
-      setDebitAccountId(initialDraft.debit_account_id ?? null);
-      setCreditAccountId(initialDraft.credit_account_id ?? null);
-      setDebitHint(initialDraft.debit_account_hint ?? null);
-      setCreditHint(initialDraft.credit_account_hint ?? null);
-    } else {
-      setType("expense");
-      setAmount("");
-      setDescription("");
-      setDebitAccountId(null);
-      setCreditAccountId(null);
-      setDebitHint(null);
-      setCreditHint(null);
-    }
-  }, [visible, initialDraft]);
+    if (!initialDraft) return;
+    setType(initialDraft.entry_type);
+    setAmount(initialDraft.amount ?? "");
+    setDescription(initialDraft.description ?? "");
+    setDebitAccountId(initialDraft.debit_account_id ?? null);
+    setCreditAccountId(initialDraft.credit_account_id ?? null);
+    setDebitHint(initialDraft.debit_account_hint ?? null);
+    setCreditHint(initialDraft.credit_account_hint ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const debitCandidates = useMemo(
     () =>
@@ -134,11 +158,14 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
     setSaving(true);
     try {
       await postEntry({
-        entry_date: new Date().toISOString().slice(0, 10),
+        // The chosen date, not today. This used to be `new Date()` with the
+        // date shown as a decorative pill, so no entry could be back-dated.
+        entry_date: toIsoDate(entryDate),
         description,
         debitAccountId,
         creditAccountId,
         amount,
+        currency,
       });
       reset();
       onClose();
@@ -164,26 +191,37 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
     ? { name: pendingHint?.name, type: pendingHint?.type ?? defaultTypeForSide(pendingAccountSide) }
     : undefined;
 
+  const currencies = useMemo(() => {
+    // Offered currencies come from the user's own accounts — there is no point
+    // offering a unit they hold nothing in. LKR is always present as the base.
+    const set = new Set<string>(["LKR"]);
+    accounts.forEach((a) => set.add(a.currency));
+    return [...set];
+  }, [accounts]);
+
   return (
-    <Drawer
-      visible={visible}
-      onClose={onClose}
-      footer={
-        <ActionButton loading={saving} disabled={!canSubmit} onPress={handlePost}>
-          Post Entry
-        </ActionButton>
-      }
-    >
-      <>
-        <View className="mb-1 flex-row items-center gap-3">
-          <Text style={{ letterSpacing: -0.7 }} className="flex-1 font-sans-extrabold text-[23px] text-foreground">New Entry</Text>
-          <View className="rounded-pill border border-foreground/10 bg-foreground/[0.07] px-3.5 py-1.5">
-            <Text className="font-sans-medium text-[15px] text-muted-foreground">
-              {new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <PageShell
+        header={
+          <View className="flex-row items-center gap-3 px-4 pt-1">
+            <AnimatedPressable
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+              className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
+            >
+              <ChevronLeft size={21} color={colors.foreground} strokeWidth={2} />
+            </AnimatedPressable>
+            <Text
+              style={{ letterSpacing: -0.7 }}
+              className="flex-1 font-sans-extrabold text-[23px] text-foreground"
+            >
+              New entry
             </Text>
           </View>
-        </View>
-
+        }
+      >
+      <View className="px-4">
         <SegmentedControl
           className="mt-3.5"
           options={["income", "expense", "transfer"] as EntryType[]}
@@ -246,6 +284,47 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
           placeholder="What was this for?"
         />
 
+        {/* Date and currency side by side, as the mockup has them. Both are new
+            controls for values that were previously decided for you: the date
+            was always today, and every posting was written as LKR whatever the
+            account held. */}
+        <View className="mt-2.5 flex-row gap-2.5">
+          <Pressable
+            onPress={() => setDatePickerOpen(true)}
+            className="flex-1 flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card px-3.5 py-3"
+          >
+            <View className="flex-1">
+              <Text className="mb-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+                Date
+              </Text>
+              <Text className="font-sans-semibold text-[15px] text-foreground">
+                {entryDate.toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </Text>
+            </View>
+            <Calendar size={17} color={colors.mutedForeground} strokeWidth={2} />
+          </Pressable>
+          <Pressable
+            onPress={() => currencies.length > 1 && setCurrencyPickerOpen(true)}
+            className="flex-1 flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card px-3.5 py-3"
+          >
+            <View className="flex-1">
+              <Text className="mb-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+                Currency
+              </Text>
+              <Text className="font-sans-semibold text-[15px] text-foreground">{currency}</Text>
+            </View>
+            {/* No chevron when there is nothing to choose between — a control
+                that cannot change should not look like it can. */}
+            {currencies.length > 1 ? (
+              <ChevronDown size={17} color={colors.mutedForeground} strokeWidth={2} />
+            ) : null}
+          </Pressable>
+        </View>
+
         <Text className="mb-1.5 mt-3.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
           Double-Entry Accounts
         </Text>
@@ -276,7 +355,97 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
               : "Pick a debit and credit account to balance this entry."}
           </Text>
         </View>
-      </>
+
+        <ActionButton
+          className="mt-5"
+          loading={saving}
+          disabled={!canSubmit}
+          onPress={handlePost}
+        >
+          Post entry
+        </ActionButton>
+        <Text className="mb-6 mt-2.5 text-center text-[13.5px] text-muted-foreground">
+          Both sides balance. This cannot be edited once posted.
+        </Text>
+      </View>
+      </PageShell>
+
+      {/* Native picker. On iOS it sits in a sheet with an explicit Done, since
+          the inline calendar has no commit affordance of its own; on Android
+          the OS dialog handles that itself. */}
+      {datePickerOpen && Platform.OS === "android" ? (
+        <DateTimePicker
+          value={entryDate}
+          mode="date"
+          maximumDate={new Date()}
+          onChange={(_, picked) => {
+            setDatePickerOpen(false);
+            if (picked) setEntryDate(picked);
+          }}
+        />
+      ) : null}
+      <Drawer
+        visible={datePickerOpen && Platform.OS === "ios"}
+        onClose={() => setDatePickerOpen(false)}
+        title="Entry date"
+      >
+        <DateTimePicker
+          value={entryDate}
+          mode="date"
+          display="inline"
+          // Future-dated entries are not something the ledger should invite:
+          // you are recording what happened, not scheduling it.
+          maximumDate={new Date()}
+          onChange={(_, picked) => {
+            if (picked) setEntryDate(picked);
+          }}
+        />
+        <ActionButton className="mb-4 mt-2" onPress={() => setDatePickerOpen(false)}>
+          Done
+        </ActionButton>
+      </Drawer>
+
+      <Drawer
+        visible={currencyPickerOpen}
+        onClose={() => setCurrencyPickerOpen(false)}
+        title="Currency"
+      >
+        <View className="mb-4 gap-3.5">
+          {currencies.map((c) => {
+            const held = accounts.filter((a) => a.currency === c).length;
+            return (
+              <Pressable
+                key={c}
+                onPress={() => {
+                  setCurrency(c);
+                  setCurrencyPickerOpen(false);
+                }}
+                className={cn(
+                  "flex-row items-center justify-between rounded-card border-2 border-foreground px-4 py-3.5",
+                  c === currency ? "bg-foreground" : "bg-card",
+                )}
+              >
+                <Text
+                  className={cn(
+                    "font-sans-bold text-[17px]",
+                    c === currency ? "text-primary-foreground" : "text-foreground",
+                  )}
+                >
+                  {c}
+                </Text>
+                <Text
+                  className={cn(
+                    "text-[13.5px]",
+                    c === currency ? "text-primary-foreground/70" : "text-muted-foreground",
+                  )}
+                >
+                  {held} account{held === 1 ? "" : "s"}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Drawer>
 
       <AccountPickerSheet
         visible={picker !== null}
@@ -296,9 +465,9 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
         }}
       />
 
-      {/* Lives inside NewEntryModal (not the Ledger screen's Accounts-tab
-          instance) so creating an account never unmounts the in-progress
-          entry — amount/description/type are untouched throughout. */}
+      {/* Lives on this screen (not on Ledger's Accounts tab) so creating an
+          account never unmounts the in-progress entry — amount, description
+          and type are untouched throughout. */}
       <AddEditAccountDrawer
         visible={pendingAccountSide !== null}
         prefill={pendingPrefill}
@@ -309,7 +478,7 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
           setPendingAccountSide(null);
         }}
       />
-    </Drawer>
+    </View>
   );
 }
 

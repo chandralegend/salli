@@ -75,13 +75,13 @@ export function EntryDetailSheet({
     return (
       <View
         className={cn(
-          "flex-row items-center gap-2.5 border border-foreground/[0.08] bg-card px-3.5 py-3",
+          "flex-row items-center gap-2.5 border-2 border-foreground bg-card px-3.5 py-3",
           first ? "rounded-t-[14px] border-b-0" : "rounded-b-[14px]",
         )}
       >
         <View className={cn("h-[38px] w-[3px] rounded-pill", strong ? "bg-salli-accent" : "bg-foreground/15")} />
         <View className="flex-1">
-          <Text className="mb-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
+          <Text className="mb-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
             {kind} · {a?.type ?? "—"}
           </Text>
           <Text className="font-sans-semibold text-[15px] text-foreground">
@@ -107,7 +107,7 @@ export function EntryDetailSheet({
             onPress={handleReverse}
             disabled={reversed || reversing}
             className={cn(
-              "h-[50px] flex-1 flex-row items-center justify-center gap-2 rounded-pill border border-foreground/10 bg-card",
+              "h-[50px] flex-1 flex-row items-center justify-center gap-2 rounded-pill border-2 border-foreground bg-card",
               (reversed || reversing) && "opacity-40",
             )}
           >
@@ -124,8 +124,8 @@ export function EntryDetailSheet({
       }
     >
       <View className="mb-3 flex-row justify-end">
-        <View className="rounded-badge bg-foreground/[0.07] px-2 py-0.5">
-          <Text className="text-[13px] font-sans-medium capitalize text-foreground/40">
+        <View className="rounded-badge border-[1.5px] border-foreground bg-foreground/[0.07] px-2 py-0.5">
+          <Text className="text-[13px] font-sans-medium capitalize text-muted-foreground">
             {reversed ? "reversed" : entry?.source}
           </Text>
         </View>
@@ -148,7 +148,7 @@ export function EntryDetailSheet({
         </Text>
       </View>
 
-      <Text className="mb-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+      <Text className="mb-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
         Double-Entry Postings
       </Text>
       <View className="mb-3">
@@ -157,7 +157,7 @@ export function EntryDetailSheet({
       </View>
 
       {classifiable?.id && !reversed ? (
-        <View className="mb-3 rounded-card border border-foreground/[0.08] bg-card p-3.5">
+        <View className="mb-3 rounded-card border-2 border-foreground bg-card p-3.5">
           <TagPicker
             key={classifiable.id}
             postingId={classifiable.id}
@@ -168,7 +168,7 @@ export function EntryDetailSheet({
 
       <View className="flex-row items-start gap-2 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
         <Lock size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
-        <Text className="flex-1 text-[14px] leading-5 text-foreground/30">
+        <Text className="flex-1 text-[14px] leading-5 text-muted-foreground">
           {/* Tags are the exception, and deliberately so: the amounts never
               change, but a miscategorised expense has to be fixable. */}
           Amounts are immutable · correct via a reversing entry · tags stay editable

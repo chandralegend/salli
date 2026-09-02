@@ -167,7 +167,7 @@ export default function LedgerScreen() {
               <AnimatedPressable
                 onPress={() => (tab === "Accounts" ? setAddAccountOpen(true) : setModalVisible(true))}
                 haptic="light"
-                className="h-11 w-11 items-center justify-center rounded-full bg-salli-accent"
+                className="h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent"
               >
                 <Plus size={18} color="#FFFFFF" strokeWidth={2.5} />
               </AnimatedPressable>
@@ -183,7 +183,7 @@ export default function LedgerScreen() {
       {tab === "Journal" ? (
         <>
           <View className="flex-row items-center gap-2 px-4 pb-2 pt-2.5">
-            <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-card border border-foreground/[0.08] bg-card px-3">
+            <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card px-3">
               <Search size={15} color={colors.mutedForeground} strokeWidth={2} />
               <TextInput
                 value={search}
@@ -195,14 +195,14 @@ export default function LedgerScreen() {
             </View>
             <AnimatedPressable
               onPress={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
-              className="h-[38px] flex-row items-center gap-1.5 rounded-card border border-foreground/[0.08] bg-card px-3"
+              className="h-[38px] flex-row items-center gap-1.5 rounded-card border-2 border-foreground bg-card px-3"
             >
               {sortDir === "desc" ? (
                 <ArrowDown size={15} color={colors.mutedForeground} strokeWidth={2} />
               ) : (
                 <ArrowUp size={15} color={colors.mutedForeground} strokeWidth={2} />
               )}
-              <Text className="font-sans-medium text-[15px] text-foreground/40">
+              <Text className="font-sans-medium text-[15px] text-muted-foreground">
                 {sortDir === "desc" ? "Newest" : "Oldest"}
               </Text>
             </AnimatedPressable>
@@ -216,12 +216,12 @@ export default function LedgerScreen() {
           <View className="gap-1.5 px-4">
             {grouped.length === 0 ? (
               <Card className="items-center p-6">
-                <Text className="text-[15px] text-foreground/35">No entries yet — post your first one.</Text>
+                <Text className="text-[15px] text-muted-foreground">No entries yet — post your first one.</Text>
               </Card>
             ) : (
               grouped.map(([date, dayEntries]) => (
                 <View key={date}>
-                  <Text className="px-0.5 pb-1 pt-1.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                  <Text className="px-0.5 pb-1 pt-1.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
                     {dateGroupLabel(date)}
                   </Text>
                   <View className="gap-1.5">
@@ -236,7 +236,7 @@ export default function LedgerScreen() {
                         <AnimatedPressable
                           key={entry.id}
                           onPress={() => setSelectedEntry(entry)}
-                          className={cn("flex-row gap-2.5 rounded-card border border-foreground/[0.08] bg-card p-3", reversed && "opacity-40")}
+                          className={cn("flex-row gap-2.5 rounded-card border-2 border-foreground bg-card p-3", reversed && "opacity-40")}
                         >
                           <View className={cn("mt-0.5 h-9 w-[3px] rounded-pill", isIncome ? "bg-salli-accent" : "bg-foreground/15")} />
                           <View className="flex-1">
@@ -248,11 +248,11 @@ export default function LedgerScreen() {
                                 {isIncome ? "+" : "−"}Rs. {formatLKR(debit?.amount ?? "0", 0)}
                               </Text>
                             </View>
-                            <Text numberOfLines={1} className="mb-1 text-[13px] text-foreground/20">
+                            <Text numberOfLines={1} className="mb-1 text-[13px] text-muted-foreground">
                               DR: {debitAcc?.name ?? "—"} · CR: {creditAcc?.name ?? "—"}
                             </Text>
-                            <View className={cn("self-start rounded-badge px-1.5 py-0.5", entry.source === "statement" ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
-                              <Text className={cn("text-[13px] font-sans-medium capitalize", entry.source === "statement" ? "text-salli-accent" : "text-foreground/35")}>
+                            <View className={cn("self-start rounded-badge border-[1.5px] border-foreground px-1.5 py-0.5", entry.source === "statement" ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
+                              <Text className={cn("text-[13px] font-sans-medium capitalize", entry.source === "statement" ? "text-salli-accent" : "text-muted-foreground")}>
                                 {reversed ? "(reversed)" : entry.source}
                               </Text>
                             </View>
@@ -271,7 +271,7 @@ export default function LedgerScreen() {
       {tab === "Accounts" ? (
         <>
           <View className="px-4 pb-2 pt-2.5">
-            <View className="h-[38px] flex-row items-center gap-2 rounded-card border border-foreground/[0.08] bg-card px-3">
+            <View className="h-[38px] flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card px-3">
               <Search size={15} color={colors.mutedForeground} strokeWidth={2} />
               <TextInput
                 value={acctSearch}
@@ -291,7 +291,7 @@ export default function LedgerScreen() {
           <View className="gap-3 px-4">
             {groupedAccounts.length === 0 ? (
               <Card className="items-center p-6">
-                <Text className="text-[15px] text-foreground/35">No accounts match.</Text>
+                <Text className="text-[15px] text-muted-foreground">No accounts match.</Text>
               </Card>
             ) : (
               groupedAccounts.map((group) => {
@@ -299,7 +299,7 @@ export default function LedgerScreen() {
                 const isAsset = group.type === "asset";
                 return (
                   <View key={group.type}>
-                    <Text className="mb-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                    <Text className="mb-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
                       {ACCT_TYPE_LABEL[group.type]} · {group.items.length} account{group.items.length === 1 ? "" : "s"}
                     </Text>
                     <View className="gap-1.5">
@@ -309,31 +309,34 @@ export default function LedgerScreen() {
                           <AnimatedPressable
                             key={a.id}
                             onPress={() => setSelectedAccountId(a.id)}
-                            className={cn("flex-row items-center gap-2.5 rounded-card border border-foreground/[0.08] bg-card p-3", !a.is_active && "opacity-45")}
+                            className={cn("flex-row items-center gap-2.5 rounded-card border-2 border-foreground bg-card p-3", !a.is_active && "opacity-45")}
                           >
-                            <View className={cn("h-10 w-[3px] rounded-pill", isAsset && a.is_active ? "bg-salli-accent" : "bg-foreground/12")} />
+                            {/* No type badge and no colour rail. Both repeated
+                                what the section heading above already says
+                                ("ASSETS · 11 ACCOUNTS"), and the badge had no
+                                shrink, so on a long account name it pushed out
+                                of the flex child and rendered on top of the
+                                balance. The icon still carries asset-vs-other. */}
                             <View
                               className={cn(
-                                "h-9 w-9 items-center justify-center rounded-card",
-                                isAsset ? "border border-salli-accent/15 bg-salli-accent/10" : "bg-foreground/[0.06]",
+                                "h-10 w-10 items-center justify-center rounded-card border-2",
+                                isAsset ? "border-salli-accent bg-salli-accent/10" : "border-foreground bg-muted",
                               )}
                             >
-                              <Icon size={16} color={isAsset ? colors.accent : colors.mutedForeground} strokeWidth={2} />
+                              <Icon size={18} color={isAsset ? colors.accent : colors.mutedForeground} strokeWidth={2} />
                             </View>
-                            <View className="flex-1">
-                              <View className="mb-0.5 flex-row items-center gap-1.5">
-                                <Text numberOfLines={1} className="font-sans-semibold text-[15px] text-foreground">{a.name}</Text>
-                                <View className={cn("rounded-badge px-1.5 py-px", isAsset ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
-                                  <Text className={cn("text-[12px] font-sans-semibold uppercase tracking-wide", isAsset ? "text-salli-accent" : "text-foreground/40")}>
-                                    {a.type}
-                                  </Text>
-                                </View>
-                              </View>
-                              <Text className="text-[14px] text-foreground/30">
-                                {a.code} · {a.currency} · {a.is_active ? "Active" : "Inactive"}
+                            <View className="min-w-0 flex-1">
+                              <Text numberOfLines={1} className="font-sans-semibold text-[16px] text-foreground">
+                                {a.name}
+                              </Text>
+                              <Text numberOfLines={1} className="mt-0.5 text-[14px] text-muted-foreground">
+                                {a.code} · {a.currency}
+                                {a.is_active ? "" : " · Inactive"}
                               </Text>
                             </View>
-                            <View className="flex-row items-center gap-1.5">
+                            {/* shrink-0: the balance is the one thing on the row
+                                that must never be clipped or overlapped. */}
+                            <View className="shrink-0 flex-row items-center gap-1.5">
                               <Text className={cn("font-sans-bold text-[15px]", isAsset ? "text-foreground" : "text-foreground/60")}>
                                 {bal !== undefined ? `Rs. ${formatLKRAbbrev(bal)}` : "—"}
                               </Text>

@@ -12,7 +12,7 @@ const ACCOUNT_TYPES: Account["type"][] = ["asset", "liability", "equity", "incom
 const CURRENCIES = ["LKR", "USD", "EUR", "GBP", "AUD"] as const;
 
 const FieldLabel = ({ children }: { children: string }) => (
-  <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">{children}</Text>
+  <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">{children}</Text>
 );
 
 /** Bottom-sheet for creating a new account or editing an existing one. When

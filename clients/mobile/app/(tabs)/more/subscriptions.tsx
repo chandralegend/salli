@@ -67,7 +67,7 @@ export default function SubscriptionsScreen() {
             trailing={
               <Pressable
                 onPress={openAdd}
-                className="h-11 w-11 items-center justify-center rounded-full bg-salli-accent"
+                className="h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent"
               >
                 <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
               </Pressable>
@@ -125,14 +125,14 @@ export default function SubscriptionsScreen() {
           </Card>
         </View>
 
-        <Text className="mb-1.5 mt-3 px-4 pl-[18px] text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+        <Text className="mb-1.5 mt-3 px-4 pl-[18px] text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
           Active Subscriptions
         </Text>
 
         <View className="gap-2 px-4">
           {active.length === 0 ? (
             <Card className="items-center p-6">
-              <Text className="text-[15px] text-foreground/35">No subscriptions tracked yet.</Text>
+              <Text className="text-[15px] text-muted-foreground">No subscriptions tracked yet.</Text>
             </Card>
           ) : (
             active.map((s) => {
@@ -146,7 +146,7 @@ export default function SubscriptionsScreen() {
                     </View>
                     <View className="flex-1">
                       <Text className="font-sans-semibold text-[15px] text-foreground">{s.name}</Text>
-                      <Text className="text-[14px] capitalize text-foreground/30">
+                      <Text className="text-[14px] capitalize text-muted-foreground">
                         {s.frequency} · next {s.next_due_date}
                       </Text>
                     </View>
@@ -289,7 +289,7 @@ function AddEditSubscriptionDrawer({
         />
       </View>
 
-      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">
+      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
         Billing Cycle *
       </Text>
       <ChipSelect className="mb-1" options={FREQUENCIES} value={frequency} onChange={setFrequency} capitalize />

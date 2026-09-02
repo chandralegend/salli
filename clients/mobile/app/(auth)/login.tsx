@@ -46,7 +46,7 @@ export default function LoginScreen() {
     <AuthShell>
       <View className="items-center pb-9">
         <Logo size={52} className="text-foreground" />
-        <Text className="mt-4 text-center text-[16px] leading-5 text-foreground/45">
+        <Text className="mt-4 text-center text-[16px] leading-5 text-muted-foreground">
           AI-powered personal finance{"\n"}Built for Sri Lanka
         </Text>
       </View>
@@ -98,7 +98,7 @@ export default function LoginScreen() {
 
         <View className="my-1 flex-row items-center gap-3">
           <View className="h-px flex-1 bg-foreground/10" />
-          <Text className="text-[15px] text-foreground/20">or</Text>
+          <Text className="text-[15px] text-muted-foreground">or</Text>
           <View className="h-px flex-1 bg-foreground/10" />
         </View>
 
@@ -112,7 +112,7 @@ export default function LoginScreen() {
 
         {!supabaseReady ? (
           <Pressable className="items-center py-2" onPress={handleDevLogin}>
-            <Text className="text-[15px] text-foreground/30">Dev login (skip auth)</Text>
+            <Text className="text-[15px] text-muted-foreground">Dev login (skip auth)</Text>
           </Pressable>
         ) : null}
       </View>

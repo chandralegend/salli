@@ -52,7 +52,7 @@ export function SpendingBreakdown({ surplus }: { surplus: FiSurplus | undefined 
     return (
       <Card className="p-4">
         <Text className="font-sans-semibold text-[16px] text-foreground">Where it goes</Text>
-        <Text className="mt-1 text-[15px] leading-5 text-foreground/35">
+        <Text className="mt-1 text-[15px] leading-5 text-muted-foreground">
           No spending in the last year yet. Once you have some, it&rsquo;ll break down here.
         </Text>
       </Card>
@@ -72,7 +72,7 @@ export function SpendingBreakdown({ surplus }: { surplus: FiSurplus | undefined 
           }
         />
       </View>
-      <Text className="mt-0.5 text-[14px] text-foreground/35">Monthly average</Text>
+      <Text className="mt-0.5 text-[14px] text-muted-foreground">Monthly average</Text>
 
       {/* needs vs wants */}
       {needs.length > 0 ? (
@@ -90,7 +90,7 @@ export function SpendingBreakdown({ surplus }: { surplus: FiSurplus | undefined 
             {needs.map((n) => (
               <View key={n.slug} className="flex-row items-center gap-1.5">
                 <View className={cn("h-2 w-2 rounded-full", NEED_META[n.slug].bar)} />
-                <Text className="text-[14px] text-foreground/45">{NEED_META[n.slug].label}</Text>
+                <Text className="text-[14px] text-muted-foreground">{NEED_META[n.slug].label}</Text>
                 <Text className={cn("text-[14px] font-sans-semibold", NEED_META[n.slug].text)}>
                   {Math.round((n.amount / needTotal) * 100)}%
                 </Text>
@@ -100,7 +100,7 @@ export function SpendingBreakdown({ surplus }: { surplus: FiSurplus | undefined 
         </View>
       ) : (
         <View className="mt-3 rounded-card bg-foreground/[0.04] px-3 py-2.5">
-          <Text className="text-[14px] leading-5 text-foreground/40">
+          <Text className="text-[14px] leading-5 text-muted-foreground">
             Tag a few expenses as Needs, Wants or Savings to see how your spending splits.
           </Text>
         </View>

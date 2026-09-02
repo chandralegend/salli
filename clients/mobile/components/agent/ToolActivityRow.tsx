@@ -41,7 +41,7 @@ export function ToolActivityRow({ row }: { row: ActivityRow }) {
           {row.label}
         </Text>
         {row.state === "running" ? (
-          <Text className="text-[13px] text-foreground/30">{row.status}</Text>
+          <Text className="text-[13px] text-muted-foreground">{row.status}</Text>
         ) : null}
       </View>
     </View>

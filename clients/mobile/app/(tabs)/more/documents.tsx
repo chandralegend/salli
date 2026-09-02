@@ -37,7 +37,7 @@ export default function DocumentsScreen() {
     >
 
       <View className="mt-3 flex-row items-center gap-2 px-4">
-        <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-card border border-foreground/[0.08] bg-card px-3">
+        <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card px-3">
           <Search size={15} color="rgba(128,128,128,0.4)" strokeWidth={2} />
           <TextInput
             value={search}
@@ -52,7 +52,7 @@ export default function DocumentsScreen() {
       <View className="gap-1.5 px-4 pt-3">
         {filtered.length === 0 ? (
           <Card className="items-center p-6">
-            <Text className="text-center text-[15px] text-foreground/35">
+            <Text className="text-center text-[15px] text-muted-foreground">
               {tab === "Memories" ? "Tell the agent to remember something…" : "Ask the agent to save a note…"}
             </Text>
           </Card>
@@ -69,14 +69,14 @@ export default function DocumentsScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="font-sans-semibold text-[15px] text-foreground">{d.title}</Text>
-                  <Text numberOfLines={1} className="text-[14px] text-foreground/30">
+                  <Text numberOfLines={1} className="text-[14px] text-muted-foreground">
                     {d.content}
                   </Text>
-                  <Text className="mt-0.5 text-[13px] text-foreground/20">{d.created_at?.slice(0, 10)}</Text>
+                  <Text className="mt-0.5 text-[13px] text-muted-foreground">{d.created_at?.slice(0, 10)}</Text>
                 </View>
                 <View className="items-end">
-                  <View className="rounded-badge bg-foreground/[0.07] px-2 py-0.5">
-                    <Text className="text-[13px] font-sans-medium capitalize text-foreground/40">{d.source.replace("_", " ")}</Text>
+                  <View className="rounded-badge border-[1.5px] border-foreground bg-foreground/[0.07] px-2 py-0.5">
+                    <Text className="text-[13px] font-sans-medium capitalize text-muted-foreground">{d.source.replace("_", " ")}</Text>
                   </View>
                   <Pressable onPress={() => deleteDoc.mutate(d.id)} className="mt-1.5">
                     <Trash2 size={15} color={colors.mutedForeground} strokeWidth={2} />
@@ -90,7 +90,7 @@ export default function DocumentsScreen() {
 
       <Drawer visible={Boolean(viewing)} onClose={() => setViewing(null)} title={viewing?.title ?? ""}>
         <Text className="text-[15px] leading-5 text-foreground">{viewing?.content}</Text>
-        <Pressable onPress={() => setViewing(null)} className="mt-6 items-center rounded-pill border border-foreground/10 bg-card py-3">
+        <Pressable onPress={() => setViewing(null)} className="mt-6 items-center rounded-pill border-2 border-foreground bg-card py-3">
           <Text className="text-[15px] font-sans-medium text-foreground/50">Close</Text>
         </Pressable>
       </Drawer>

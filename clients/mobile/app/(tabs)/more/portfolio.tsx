@@ -146,12 +146,12 @@ export default function PortfolioScreen() {
             back
             trailing={
               <View className="flex-row items-center gap-2">
-                <View className="rounded-pill border border-foreground/[0.08] bg-card px-3 py-1.5">
-                  <Text className="text-[14px] text-foreground/40">Manual values only</Text>
+                <View className="rounded-pill border-2 border-foreground bg-card px-3 py-1.5">
+                  <Text className="text-[14px] text-muted-foreground">Manual values only</Text>
                 </View>
                 <Pressable
                   onPress={() => setAddOpen(true)}
-                  className="h-11 w-11 items-center justify-center rounded-full bg-salli-accent"
+                  className="h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent"
                 >
                   <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
                 </Pressable>
@@ -163,7 +163,7 @@ export default function PortfolioScreen() {
         {empty ? (
           <View className="items-center gap-2 px-8 pt-16">
             <Text className="text-center font-sans-semibold text-[17px] text-foreground">No holdings yet</Text>
-            <Text className="text-center text-[15px] text-foreground/35">
+            <Text className="text-center text-[15px] text-muted-foreground">
               Add your first holding to track value, cost and allocation.
             </Text>
             <ActionButton className="mt-3" variant="accent" onPress={() => setAddOpen(true)}>
@@ -226,7 +226,7 @@ export default function PortfolioScreen() {
             {tab === "Holdings" ? (
               <>
                 <View className="mt-2.5 flex-row gap-2">
-                  <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-card border border-foreground/[0.08] bg-card px-3">
+                  <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card px-3">
                     <Search size={15} color={colors.mutedForeground} strokeWidth={2} />
                     <TextInput
                       value={search}
@@ -241,7 +241,7 @@ export default function PortfolioScreen() {
                 <View className="mt-3 gap-3">
                   {Object.entries(grouped).map(([assetClass, items]) => (
                     <View key={assetClass}>
-                      <Text className="mb-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                      <Text className="mb-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
                         {titleCase(assetClass)}
                       </Text>
                       <View className="gap-1.5">
@@ -263,7 +263,7 @@ export default function PortfolioScreen() {
                                 </View>
                                 <View className="flex-1">
                                   <Text className="font-sans-semibold text-[15px] text-foreground">{h.name}</Text>
-                                  <Text className="text-[14px] text-foreground/30">{formatPct(pct, 0)} of portfolio</Text>
+                                  <Text className="text-[14px] text-muted-foreground">{formatPct(pct, 0)} of portfolio</Text>
                                 </View>
                                 <View className="items-end">
                                   <Text className="font-sans-semibold text-[15px] text-foreground">
@@ -281,7 +281,7 @@ export default function PortfolioScreen() {
                     </View>
                   ))}
                   {visible.length === 0 ? (
-                    <Text className="pt-6 text-center text-[15px] text-foreground/35">No holdings match “{search}”.</Text>
+                    <Text className="pt-6 text-center text-[15px] text-muted-foreground">No holdings match “{search}”.</Text>
                   ) : null}
                 </View>
               </>
@@ -289,7 +289,7 @@ export default function PortfolioScreen() {
               <>
                 {/* Donut hero — tappable slices open the asset-class drawer */}
                 <Card className="mt-3 p-4">
-                  <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                  <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
                     Allocation by asset class
                   </Text>
                   <View className="my-3 h-[168px] w-[168px] items-center justify-center self-center">
@@ -304,10 +304,10 @@ export default function PortfolioScreen() {
                       <Text className="font-sans-extrabold text-[20px] leading-6 text-foreground">
                         {summary.data ? `Rs. ${formatLKRAbbrev(summary.data.total_value)}` : "—"}
                       </Text>
-                      <Text className="text-[13px] text-foreground/35">total value</Text>
+                      <Text className="text-[13px] text-muted-foreground">total value</Text>
                     </View>
                   </View>
-                  <Text className="mb-3 text-center text-[14px] text-foreground/30">Tap a slice for asset-class detail</Text>
+                  <Text className="mb-3 text-center text-[14px] text-muted-foreground">Tap a slice for asset-class detail</Text>
                   <View className="flex-row flex-wrap justify-center gap-x-4 gap-y-1.5">
                     {allocation.map((a) => (
                       <View key={a.asset_class} className="flex-row items-center gap-1.5">
@@ -323,7 +323,7 @@ export default function PortfolioScreen() {
                 </Card>
 
                 {/* By asset class — value, share, progress */}
-                <Text className="mb-2 mt-3.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                <Text className="mb-2 mt-3.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
                   By Asset Class
                 </Text>
                 <View className="gap-2">
@@ -343,7 +343,7 @@ export default function PortfolioScreen() {
                               </View>
                               <View>
                                 <Text className="font-sans-semibold text-[15px] text-foreground">{titleCase(a.asset_class)}</Text>
-                                <Text className="text-[14px] text-foreground/30">
+                                <Text className="text-[14px] text-muted-foreground">
                                   {count} {count === 1 ? "holding" : "holdings"}
                                 </Text>
                               </View>
@@ -388,7 +388,7 @@ export default function PortfolioScreen() {
                 {/* Disclaimer */}
                 <View className="mt-2.5 flex-row items-start gap-2 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
                   <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
-                  <Text className="flex-1 text-[14px] leading-5 text-foreground/30">
+                  <Text className="flex-1 text-[14px] leading-5 text-muted-foreground">
                     Values are manually entered · no live market feed
                   </Text>
                 </View>
@@ -433,27 +433,27 @@ export default function PortfolioScreen() {
                   return (
                     <>
                       <View className="mb-3 flex-row gap-2">
-                        <View className="flex-1 rounded-card border border-foreground/[0.08] bg-card p-3">
-                          <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">Value</Text>
+                        <View className="flex-1 rounded-card border-2 border-foreground bg-card p-3">
+                          <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Value</Text>
                           <Text className="font-sans-extrabold text-[22px] leading-6 text-foreground">
                             Rs. {formatLKRAbbrev(a.current_value)}
                           </Text>
                         </View>
-                        <View className="flex-1 rounded-card border border-foreground/[0.08] bg-card p-3">
-                          <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">Share</Text>
+                        <View className="flex-1 rounded-card border-2 border-foreground bg-card p-3">
+                          <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Share</Text>
                           <Text className="font-sans-extrabold text-[22px] leading-6" style={{ color }}>
                             {formatPct(a.pct_of_portfolio, 1)}
                           </Text>
                         </View>
                       </View>
-                      <View className="mb-3 flex-row items-center justify-between rounded-card border border-foreground/[0.08] bg-card px-3.5 py-2.5">
+                      <View className="mb-3 flex-row items-center justify-between rounded-card border-2 border-foreground bg-card px-3.5 py-2.5">
                         <Text className="text-[15px] text-foreground/50">Unrealized gain</Text>
                         <Text className={cn("font-sans-bold text-[15px]", gain >= 0 ? "text-salli-accent" : "text-destructive")}>
                           {gain >= 0 ? "+" : "-"}Rs. {formatLKRAbbrev(gain)}
                           {cost > 0 ? ` · ${formatPct(gain / cost, 1)}` : ""}
                         </Text>
                       </View>
-                      <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">
+                      <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
                         {items.length} {items.length === 1 ? "holding" : "holdings"}
                       </Text>
                       <View className="gap-1.5">
@@ -463,7 +463,7 @@ export default function PortfolioScreen() {
                             <View key={h.id} className="flex-row items-center justify-between rounded-card bg-card px-3 py-2.5">
                               <View>
                                 <Text className="font-sans-semibold text-[15px] text-foreground">{h.name}</Text>
-                                <Text className="text-[14px] text-foreground/30">{h.symbol.toUpperCase()}</Text>
+                                <Text className="text-[14px] text-muted-foreground">{h.symbol.toUpperCase()}</Text>
                               </View>
                               <View className="items-end">
                                 <Text className="font-sans-semibold text-[15px] text-foreground">Rs. {formatLKRAbbrev(h.current_value)}</Text>
@@ -631,7 +631,7 @@ function HoldingDrawer({
               </View>
 
               {/* asset class chips */}
-              <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">Asset Class *</Text>
+              <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Asset Class *</Text>
               <ChipSelect
                 className="mb-3"
                 options={ASSET_CLASSES}

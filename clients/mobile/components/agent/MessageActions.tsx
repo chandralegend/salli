@@ -37,7 +37,7 @@ export function MessageActions({ text }: { text: string }) {
         }}
         hitSlop={8}
         accessibilityLabel={copied ? "Copied" : "Copy message"}
-        className="h-7 w-7 items-center justify-center rounded-badge"
+        className="h-7 w-7 items-center justify-center rounded-badge border-[1.5px] border-foreground"
       >
         {copied ? (
           <Check size={16} color={colors.accent} strokeWidth={2.2} />

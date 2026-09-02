@@ -19,7 +19,7 @@ export function SegmentedControl<T extends string>({
   className?: string;
 }) {
   return (
-    <View className={cn("flex-row rounded-pill border border-foreground/[0.07] bg-card p-1", className)}>
+    <View className={cn("flex-row rounded-card border-2 border-foreground bg-card p-1", className)}>
       {options.map((opt) => {
         const active = opt === value;
         return (
@@ -28,15 +28,15 @@ export function SegmentedControl<T extends string>({
             onPress={() => onChange(opt)}
             haptic="selection"
             className={cn(
-              "h-9 flex-1 items-center justify-center rounded-pill",
-              active && "border border-foreground/10 bg-background",
+              "h-9 flex-1 items-center justify-center rounded-[8px]",
+              active && "bg-foreground",
             )}
           >
             <Text
               className={cn(
                 "text-[15px]",
                 capitalize && "capitalize",
-                active ? "font-sans-semibold text-foreground" : "font-sans-medium text-foreground/30",
+                active ? "font-sans-semibold text-primary-foreground" : "font-sans-medium text-foreground/55",
               )}
             >
               {opt}

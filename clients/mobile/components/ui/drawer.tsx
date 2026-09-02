@@ -140,7 +140,7 @@ export function Drawer({
             alignSelf: "center",
           },
         ]}
-        className={cn("rounded-t-[24px] border-t border-foreground/10 bg-background px-4 pt-2.5", className)}
+        className={cn("rounded-t-[16px] border-t-2 border-foreground bg-background px-4 pt-2.5", className)}
       >
         <View {...pan.panHandlers} className="items-center pb-1 pt-0.5">
           <View className="h-1 w-10 rounded-full bg-foreground/20" />
@@ -152,7 +152,7 @@ export function Drawer({
             <Pressable
               onPress={dismiss}
               hitSlop={8}
-              className="h-10 w-10 items-center justify-center rounded-full bg-foreground/[0.08]"
+              className="h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-card"
             >
               <X size={16} color={colors.mutedForeground} strokeWidth={2} />
             </Pressable>

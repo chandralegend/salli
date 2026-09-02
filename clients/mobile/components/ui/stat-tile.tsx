@@ -29,15 +29,15 @@ export function StatTile({
   return (
     <View
       className={cn(
-        "rounded-card border px-2.5 py-2.5",
-        onDark ? "border-white/10 bg-white/[0.09]" : "border-foreground/10 bg-muted",
+        "rounded-card border-2 px-2.5 py-2.5",
+        onDark ? "border-white/70 bg-white/[0.06]" : "border-foreground bg-card",
         className,
       )}
     >
       <Text
         className={cn(
           "mb-1 text-[12px] font-sans-medium uppercase tracking-wide",
-          onDark ? "text-white/40" : "text-foreground/40",
+          onDark ? "text-white/40" : "text-muted-foreground",
           labelClassName,
         )}
       >
@@ -60,7 +60,7 @@ export function StatTile({
         <Text
           className={cn(
             "mt-0.5 text-[12px] font-sans",
-            onDark ? "text-white/20" : "text-foreground/20",
+            onDark ? "text-white/20" : "text-muted-foreground",
             hintClassName,
           )}
         >

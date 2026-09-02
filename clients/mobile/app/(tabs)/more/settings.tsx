@@ -110,14 +110,14 @@ export default function SettingsScreen() {
     <PageShell header={<ScreenHeader title="Settings" back />}>
       <View className="gap-2.5 px-4 pt-3">
         <Card className="flex-row items-center gap-3 p-4">
-          <View className="h-12 w-12 items-center justify-center rounded-full bg-salli-accent">
+          <View className="h-12 w-12 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent">
             <Text className="font-sans-bold text-[22px] text-white">
               {(profile?.display_name ?? "?").charAt(0).toUpperCase()}
             </Text>
           </View>
           <View className="flex-1">
             <Text className="font-sans-semibold text-[17px] text-foreground">{profile?.display_name ?? "—"}</Text>
-            <Text className="mt-0.5 text-[15px] text-foreground/35">{profile?.email ?? ""}</Text>
+            <Text className="mt-0.5 text-[15px] text-muted-foreground">{profile?.email ?? ""}</Text>
           </View>
           <View className="rounded-card border border-foreground/10 bg-foreground/[0.06] px-2.5 py-1">
             <Text className="font-sans-semibold text-[14px] text-foreground/50 capitalize">
@@ -193,7 +193,7 @@ export default function SettingsScreen() {
           <View className="flex-row items-center justify-between border-b border-foreground/[0.06] px-4 py-3.5">
             <View className="flex-1 pr-3">
               <Text className="font-sans-medium text-[16px] text-foreground">Daily briefing</Text>
-              <Text className="mt-0.5 text-[14px] leading-5 text-foreground/35">
+              <Text className="mt-0.5 text-[14px] leading-5 text-muted-foreground">
                 A wealth-advisor run each morning. Spends credits from your balance.
               </Text>
             </View>
@@ -241,7 +241,7 @@ export default function SettingsScreen() {
                     <Text
                       className={cn(
                         "text-[15px]",
-                        active ? "font-sans-semibold text-primary-foreground" : "font-sans-medium text-foreground/40",
+                        active ? "font-sans-semibold text-primary-foreground" : "font-sans-medium text-muted-foreground",
                       )}
                     >
                       {opt.label}
@@ -261,7 +261,7 @@ export default function SettingsScreen() {
 
         <AnimatedPressable
           onPress={handleSignOut}
-          className="flex-row items-center justify-between rounded-card border border-foreground/10 bg-card p-4"
+          className="flex-row items-center justify-between rounded-card border-2 border-foreground bg-card p-4"
         >
           <Text className="font-sans-medium text-[16px] text-foreground">Sign Out</Text>
           <LogOut size={18} color={colors.mutedForeground} strokeWidth={2} />
@@ -269,7 +269,7 @@ export default function SettingsScreen() {
 
         <Card className="overflow-hidden p-0">
           <View className="px-4 pb-2 pt-3">
-            <Text className="text-[13px] font-sans-semibold uppercase tracking-wide text-foreground/25">
+            <Text className="text-[13px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
               Danger Zone
             </Text>
           </View>

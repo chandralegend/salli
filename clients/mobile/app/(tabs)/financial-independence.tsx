@@ -329,7 +329,7 @@ export default function FinancialIndependenceScreen() {
           <View className="flex-row gap-2">
             <Card className="flex-1 p-3.5">
               <View className="mb-1.5 flex-row items-center gap-1.5">
-                <Text className="text-[14px] font-sans-medium text-foreground/40">Years to Freedom</Text>
+                <Text className="text-[14px] font-sans-medium text-muted-foreground">Years to Freedom</Text>
                 <InfoButton
                   size={11}
                   title="Years to Freedom"
@@ -342,13 +342,13 @@ export default function FinancialIndependenceScreen() {
               <Text className="mb-1 font-sans-extrabold text-[32px] leading-[34px] tracking-tight text-foreground">
                 {projections.data ? yearsToFi.toFixed(1) : "—"}
               </Text>
-              <Text className="text-[13px] text-foreground/20">
+              <Text className="text-[13px] text-muted-foreground">
                 {projections.data ? `Freedom by ${freedomYear} · base case` : "base case"}
               </Text>
             </Card>
             <Card className="flex-1 p-3.5">
               <View className="mb-1.5 flex-row items-center gap-1.5">
-                <Text className="text-[14px] font-sans-medium text-foreground/40">Savings Rate</Text>
+                <Text className="text-[14px] font-sans-medium text-muted-foreground">Savings Rate</Text>
                 <InfoButton
                   size={11}
                   title="Savings Rate"
@@ -361,7 +361,7 @@ export default function FinancialIndependenceScreen() {
               <Text className="mb-1 font-sans-extrabold text-[32px] leading-[34px] tracking-tight text-foreground">
                 {fiScore.data ? formatPct(fiScore.data.savings_rate, 0) : "—"}
               </Text>
-              <Text className="text-[13px] text-foreground/20">% of income saved · aim 40%+</Text>
+              <Text className="text-[13px] text-muted-foreground">% of income saved · aim 40%+</Text>
             </Card>
           </View>
 
@@ -390,10 +390,10 @@ export default function FinancialIndependenceScreen() {
               </Pressable>
             </View>
             {allGoals.length === 0 ? (
-              <Text className="text-[15px] text-foreground/35">No goals yet — add one in the Goals tab.</Text>
+              <Text className="text-[15px] text-muted-foreground">No goals yet — add one in the Goals tab.</Text>
             ) : (
               <>
-                <Text className="mb-3 text-[14px] text-foreground/30">
+                <Text className="mb-3 text-[14px] text-muted-foreground">
                   {completeGoals.length} of {allGoals.length} complete
                 </Text>
                 <View className="gap-3">
@@ -407,7 +407,7 @@ export default function FinancialIndependenceScreen() {
                           <Text
                             className={cn(
                               "flex-1 font-sans-medium text-[15px]",
-                              done ? "text-foreground/40 line-through" : "text-foreground",
+                              done ? "text-muted-foreground line-through" : "text-foreground",
                             )}
                           >
                             {goal.name}
@@ -441,26 +441,26 @@ export default function FinancialIndependenceScreen() {
                   />
                 </View>
                 {fiScore.data?.grade ? (
-                  <Text className="mt-0.5 text-[14px] text-foreground/30">Grade {fiScore.data.grade}</Text>
+                  <Text className="mt-0.5 text-[14px] text-muted-foreground">Grade {fiScore.data.grade}</Text>
                 ) : null}
               </View>
               {fiScore.data ? (
                 <ScoreRing score={Number(fiScore.data.overall_score)} />
               ) : (
                 <View className="h-12 w-12 items-center justify-center rounded-full bg-foreground/[0.07]">
-                  <Text className="text-foreground/40">—</Text>
+                  <Text className="text-muted-foreground">—</Text>
                 </View>
               )}
             </View>
             <View className="flex-row gap-1.5">
               <View className="flex-1 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-2.5 py-2.5">
-                <Text className="mb-1.5 text-[13px] text-foreground/35">Savings Rate</Text>
+                <Text className="mb-1.5 text-[13px] text-muted-foreground">Savings Rate</Text>
                 <Text className="font-sans-bold text-[20px] leading-[24px] text-foreground">
                   {fiScore.data ? formatPct(fiScore.data.savings_rate, 0) : "—"}
                 </Text>
               </View>
               <View className="flex-1 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-2.5 py-2.5">
-                <Text className="mb-1.5 text-[13px] text-foreground/35">Debt-to-Asset</Text>
+                <Text className="mb-1.5 text-[13px] text-muted-foreground">Debt-to-Asset</Text>
                 <Text className="font-sans-bold text-[20px] leading-[24px] text-foreground">
                   {fiScore.data ? formatPct(fiScore.data.debt_to_asset, 0) : "—"}
                 </Text>
@@ -517,7 +517,7 @@ export default function FinancialIndependenceScreen() {
 
           {!strategy.data ? (
             <Card className="items-center gap-3 p-6">
-              <Text className="text-center text-[15px] text-foreground/40">
+              <Text className="text-center text-[15px] text-muted-foreground">
                 No FIRE strategy yet — generate one from your financial profile.
               </Text>
               <ActionButton variant="accent" loading={generateStrategy.isPending} onPress={() => generateStrategy.mutate()}>
@@ -529,7 +529,7 @@ export default function FinancialIndependenceScreen() {
             <>
               {/* Allocation — tappable donut (slices open a detail drawer) */}
               <Card className="p-4">
-                <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+                <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
                   Allocation{surplus.data ? ` · Rs. ${formatLKRAbbrev(surplus.data.monthly_surplus)}/mo surplus` : ""}
                 </Text>
                 <View className="my-2 h-[156px] w-[156px] items-center justify-center self-center">
@@ -538,10 +538,10 @@ export default function FinancialIndependenceScreen() {
                     <Text className="font-sans-extrabold text-[18px] leading-5 text-foreground">
                       {surplus.data ? `Rs. ${formatLKRAbbrev(surplus.data.monthly_surplus)}` : "—"}
                     </Text>
-                    <Text className="text-[13px] text-foreground/35">surplus/mo</Text>
+                    <Text className="text-[13px] text-muted-foreground">surplus/mo</Text>
                   </View>
                 </View>
-                <Text className="text-center text-[14px] text-foreground/30">Tap a slice to see how each bucket works</Text>
+                <Text className="text-center text-[14px] text-muted-foreground">Tap a slice to see how each bucket works</Text>
               </Card>
 
               {/* Salli AI's Strategy — collapsible. Shown whenever there's a
@@ -557,7 +557,7 @@ export default function FinancialIndependenceScreen() {
                       <PiggyBank size={16} color={colors.accent} strokeWidth={2} />
                     </View>
                     <Text className="flex-1 font-sans-semibold text-[15px] text-foreground">Salli AI&apos;s Strategy</Text>
-                    <Text className="text-[13px] capitalize text-foreground/30">
+                    <Text className="text-[13px] capitalize text-muted-foreground">
                       {strategy.data.fire_style} · v{strategy.data.version}
                     </Text>
                     {strategyOpen ? (
@@ -638,18 +638,18 @@ export default function FinancialIndependenceScreen() {
                       <Lock size={14} color={colors.mutedForeground} strokeWidth={2} />
                       <View className="flex-1">
                         <Text className="font-sans-medium text-[15px] text-foreground">{rec.title}</Text>
-                        <Text className="text-[13px] capitalize text-foreground/35">{rec.category}</Text>
+                        <Text className="text-[13px] capitalize text-muted-foreground">{rec.category}</Text>
                       </View>
                     </View>
                   ) : (
                     <View key={rec.id} className="mb-2 rounded-card border border-foreground/10 bg-muted p-3">
                       <View className="mb-1 flex-row items-center gap-1.5">
-                        <View className="rounded-badge bg-salli-accent/15 px-1.5 py-0.5">
+                        <View className="rounded-badge border-[1.5px] border-salli-accent bg-salli-accent/15 px-1.5 py-0.5">
                           <Text className="text-[12px] font-sans-semibold text-salli-accent">P{rec.priority}</Text>
                         </View>
                         <Text className="flex-1 font-sans-medium text-[15px] text-foreground">{rec.title}</Text>
                       </View>
-                      <Text className="text-[14px] leading-5 text-foreground/35">{rec.rationale}</Text>
+                      <Text className="text-[14px] leading-5 text-muted-foreground">{rec.rationale}</Text>
                     </View>
                   ),
                 )}
@@ -667,7 +667,7 @@ export default function FinancialIndependenceScreen() {
                 ) : null}
               </>
             ) : (
-              <Text className="mb-3 text-[15px] text-foreground/35">
+              <Text className="mb-3 text-[15px] text-muted-foreground">
                 Run the advisor for a prioritized, engine-backed action plan.
               </Text>
             )}
@@ -712,13 +712,13 @@ export default function FinancialIndependenceScreen() {
                 </View>
               </View>
 
-              <Text className="mb-0.5 mt-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+              <Text className="mb-0.5 mt-1.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
                 Your Goals
               </Text>
 
               {all.length === 0 ? (
                 <Card className="items-center p-6">
-                  <Text className="text-[15px] text-foreground/35">No goals yet — add your first one.</Text>
+                  <Text className="text-[15px] text-muted-foreground">No goals yet — add your first one.</Text>
                 </Card>
               ) : (
                 all.map((goal) => {
@@ -746,7 +746,7 @@ export default function FinancialIndependenceScreen() {
                             <Text className={cn("font-sans-semibold text-[15px] text-foreground", done && "line-through")}>
                               {goal.name}
                             </Text>
-                            <Text className="mt-0.5 text-[14px] text-foreground/30">
+                            <Text className="mt-0.5 text-[14px] text-muted-foreground">
                               {done ? `Rs. ${formatLKRAbbrev(goal.current_amount)} · Completed` : year ? `Target ${year}` : "No target date"}
                             </Text>
                           </View>
@@ -756,7 +756,7 @@ export default function FinancialIndependenceScreen() {
                             sit inside this `!done` branch, so a completed goal
                             could never be removed. */}
                         {done ? (
-                          <View className="rounded-badge bg-salli-accent/15 px-2 py-0.5">
+                          <View className="rounded-badge border-[1.5px] border-salli-accent bg-salli-accent/15 px-2 py-0.5">
                             <Text className="text-[13px] font-sans-semibold text-salli-accent">Done</Text>
                           </View>
                         ) : (
@@ -767,11 +767,11 @@ export default function FinancialIndependenceScreen() {
                         <>
                           <ProgressBar pct={goal.progress} />
                           <View className="mt-1.5 flex-row justify-between">
-                            <Text className="text-[14px] text-foreground/40">Rs. {formatLKRAbbrev(goal.current_amount)} saved</Text>
-                            <Text className="text-[14px] text-foreground/40">of Rs. {formatLKRAbbrev(goal.target_amount)}</Text>
+                            <Text className="text-[14px] text-muted-foreground">Rs. {formatLKRAbbrev(goal.current_amount)} saved</Text>
+                            <Text className="text-[14px] text-muted-foreground">of Rs. {formatLKRAbbrev(goal.target_amount)}</Text>
                           </View>
                           {Number(goal.allocated_amount) === 0 ? (
-                            <Text className="mt-1.5 text-[14px] text-foreground/30">
+                            <Text className="mt-1.5 text-[14px] text-muted-foreground">
                               Tap to choose which account is saving for this.
                             </Text>
                           ) : Number(goal.shortfall) > 0 ? (
@@ -794,14 +794,14 @@ export default function FinancialIndependenceScreen() {
                 <View className="h-[34px] w-[34px] items-center justify-center rounded-card bg-foreground/[0.04]">
                   <Plus size={17} color={colors.mutedForeground} strokeWidth={2.5} />
                 </View>
-                <Text className="font-sans-medium text-[15px] text-foreground/40">Add a goal</Text>
+                <Text className="font-sans-medium text-[15px] text-muted-foreground">Add a goal</Text>
               </Pressable>
             </View>
           );
         })()
       ) : null}
 
-      <Text className="mt-4 px-8 text-center text-[14px] leading-5 text-foreground/25">
+      <Text className="mt-4 px-8 text-center text-[14px] leading-5 text-muted-foreground">
         Planning estimates only · Not financial advice · Numbers from deterministic engine
       </Text>
 
@@ -847,18 +847,18 @@ export default function FinancialIndependenceScreen() {
               return (
                 <>
                   <View className="mb-3 flex-row gap-2">
-                    <View className="flex-1 rounded-card border border-foreground/[0.08] bg-card p-3">
-                      <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">Allocation</Text>
+                    <View className="flex-1 rounded-card border-2 border-foreground bg-card p-3">
+                      <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Allocation</Text>
                       <Text className="font-sans-extrabold text-[26px] leading-6 text-foreground">{formatPct(b.target_pct, 0)}</Text>
                     </View>
-                    <View className="flex-1 rounded-card border border-foreground/[0.08] bg-card p-3">
-                      <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">Routed / month</Text>
+                    <View className="flex-1 rounded-card border-2 border-foreground bg-card p-3">
+                      <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Routed / month</Text>
                       <Text className="font-sans-extrabold text-[26px] leading-6 text-foreground">
                         {route !== null ? `Rs. ${formatLKRAbbrev(route)}` : "—"}
                       </Text>
                     </View>
                   </View>
-                  <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/35">How it works</Text>
+                  <Text className="mb-1 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">How it works</Text>
                   <Text className="text-[15px] leading-5 text-foreground/60">{b.description}</Text>
                 </>
               );

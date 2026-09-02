@@ -92,7 +92,7 @@ export function ApprovalGateCard({
   }
 
   return (
-    <View className="rounded-card border border-foreground/[0.12] bg-card p-3.5">
+    <View className="rounded-card border-2 border-foreground bg-card p-3.5">
       <View className="mb-2.5 flex-row items-start gap-2.5">
         <View className="h-8 w-8 items-center justify-center rounded-full bg-foreground/[0.08]">
           <ShieldCheck size={17} color={colors.accent} strokeWidth={2} />
@@ -111,7 +111,7 @@ export function ApprovalGateCard({
             <View key={f.label} className="flex-row items-center justify-between gap-3">
               <View className="flex-row items-center gap-1.5">
                 <f.icon size={14} color={colors.mutedForeground} strokeWidth={2} />
-                <Text className="text-[14px] capitalize text-foreground/40">{f.label}</Text>
+                <Text className="text-[14px] capitalize text-muted-foreground">{f.label}</Text>
               </View>
               <Text className="flex-1 text-right text-[15px] font-sans-medium text-foreground" numberOfLines={1}>
                 {f.value}
@@ -133,14 +133,14 @@ export function ApprovalGateCard({
       ) : (
         <>
           <Pressable onPress={() => setDetailsOpen(true)} className="mb-2 items-center py-1.5">
-            <Text className="text-[15px] font-sans-medium text-foreground/40">Review details</Text>
+            <Text className="text-[15px] font-sans-medium text-muted-foreground">Review details</Text>
           </Pressable>
           <View className="flex-row gap-2">
             <Pressable
               onPress={() => onResolve("denied")}
               className="h-[38px] flex-1 items-center justify-center rounded-card border border-foreground/10 bg-foreground/[0.06]"
             >
-              <Text className="font-sans-semibold text-[15px] text-foreground/45">Deny</Text>
+              <Text className="font-sans-semibold text-[15px] text-muted-foreground">Deny</Text>
             </Pressable>
             <Pressable
               onPress={() => onResolve("approved")}
@@ -156,7 +156,7 @@ export function ApprovalGateCard({
         <View className="gap-2 pb-2">
           {Object.entries(params).map(([k, v]) => (
             <View key={k} className="flex-row justify-between gap-3 border-b border-foreground/[0.06] pb-2">
-              <Text className="text-[15px] capitalize text-foreground/40">{k.replace(/_/g, " ")}</Text>
+              <Text className="text-[15px] capitalize text-muted-foreground">{k.replace(/_/g, " ")}</Text>
               <Text className="flex-1 text-right text-[15px] font-sans-medium text-foreground">
                 {typeof v === "object" ? JSON.stringify(v) : String(v)}
               </Text>

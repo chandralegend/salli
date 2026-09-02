@@ -45,7 +45,7 @@ export default function SignupScreen() {
         <Text className="mt-[22px] font-sans-bold text-[30px] tracking-tight text-foreground">
           Create account
         </Text>
-        <Text className="mt-2.5 text-center text-[15px] text-foreground/45">
+        <Text className="mt-2.5 text-center text-[15px] text-muted-foreground">
           Set up your Salli account to get started.
         </Text>
       </View>
@@ -58,7 +58,7 @@ export default function SignupScreen() {
           <Text className="text-center font-sans-semibold text-[18px] text-foreground">
             Check your inbox
           </Text>
-          <Text className="text-center text-[15px] text-foreground/40">
+          <Text className="text-center text-[15px] text-muted-foreground">
             We&apos;ve sent a confirmation link to {email}.
           </Text>
           <ActionButton className="mt-3 h-[54px] w-full" onPress={() => router.replace("/(auth)/login")}>
@@ -106,7 +106,7 @@ export default function SignupScreen() {
           </ActionButton>
 
           <Pressable className="items-center py-2" onPress={() => router.replace("/(auth)/login")}>
-            <Text className="text-[15px] text-foreground/40">
+            <Text className="text-[15px] text-muted-foreground">
               Already have an account? <Text className="text-salli-accent">Sign in</Text>
             </Text>
           </Pressable>

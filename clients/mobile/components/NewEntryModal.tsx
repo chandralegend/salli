@@ -178,7 +178,7 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
         <View className="mb-1 flex-row items-center gap-3">
           <Text className="flex-1 font-sans-bold text-[22px] text-foreground">New Entry</Text>
           <View className="rounded-pill border border-foreground/10 bg-foreground/[0.07] px-3.5 py-1.5">
-            <Text className="font-sans-medium text-[15px] text-foreground/45">
+            <Text className="font-sans-medium text-[15px] text-muted-foreground">
               {new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
             </Text>
           </View>
@@ -192,7 +192,7 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
           capitalize
         />
 
-        <Card className="mt-4 border-foreground/[0.08] bg-salli-hero px-5 pb-4 pt-5">
+        <Card className="mt-4 bg-salli-hero px-5 pb-4 pt-5">
           <Text className="mb-2.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/40">Amount</Text>
           <View className="mb-3.5 flex-row items-baseline gap-1.5">
             <Text className="font-sans-semibold text-[26px] text-white/35">Rs.</Text>
@@ -238,7 +238,7 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
           placeholder="What was this for?"
         />
 
-        <Text className="mb-1.5 mt-3.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+        <Text className="mb-1.5 mt-3.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
           Double-Entry Accounts
         </Text>
         <View>
@@ -262,7 +262,7 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
 
         <View className="mb-2 mt-3 flex-row items-center gap-2 px-0.5">
           <View className={cn("h-2 w-2 rounded-full", canSubmit ? "bg-salli-accent" : "bg-foreground/20")} />
-          <Text className="flex-1 text-[14px] leading-5 text-foreground/30">
+          <Text className="flex-1 text-[14px] leading-5 text-muted-foreground">
             {debitAccount && creditAccount
               ? `Entry balanced · Dr = Cr = Rs. ${formatLKR(amountNum, 0)} · immutable once posted`
               : "Pick a debit and credit account to balance this entry."}
@@ -338,7 +338,7 @@ function AccountRow({
     <Pressable
       onPress={onPress}
       className={cn(
-        "flex-row items-center gap-2.5 border border-foreground/[0.08] bg-card px-3.5 py-3",
+        "flex-row items-center gap-2.5 border-2 border-foreground bg-card px-3.5 py-3",
         position === "top" ? "rounded-t-card border-b-0" : "rounded-b-card",
       )}
     >
@@ -351,11 +351,11 @@ function AccountRow({
         <Icon size={15} color={filled ? colors.accent : "rgba(148,163,184,0.6)"} strokeWidth={2.5} />
       </View>
       <View className="flex-1">
-        <Text className="mb-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
+        <Text className="mb-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
           {label}
           {meta ? ` · ${meta.label}` : ""}
         </Text>
-        <Text className={cn("font-sans-semibold text-[15px]", filled ? "text-foreground" : "text-foreground/35")}>
+        <Text className={cn("font-sans-semibold text-[15px]", filled ? "text-foreground" : "text-muted-foreground")}>
           {account ? `${account.code} · ${account.name}` : `Select ${label.toLowerCase()}`}
         </Text>
       </View>
@@ -364,7 +364,7 @@ function AccountRow({
           className={cn(
             "font-sans-semibold text-[15px]",
             side === "debit" ? "text-foreground" : "text-foreground/55",
-            !filled && "text-foreground/25",
+            !filled && "text-muted-foreground",
           )}
         >
           {filled ? `Rs. ${formatLKR(amount, 0)}` : "—"}
@@ -414,7 +414,7 @@ function AccountPickerSheet({
       </AnimatedPressable>
 
       {candidates.length === 0 ? (
-        <Text className="px-1 pb-4 text-[15px] text-foreground/40">No matching accounts for this entry type yet.</Text>
+        <Text className="px-1 pb-4 text-[15px] text-muted-foreground">No matching accounts for this entry type yet.</Text>
       ) : (
         <View className="gap-1.5">
           {candidates.map((a) => {
@@ -447,11 +447,11 @@ function AccountPickerSheet({
                   >
                     {a.code} · {a.name}
                   </Text>
-                  <Text className="mt-0.5 text-[14px] text-foreground/35">{meta.label}</Text>
+                  <Text className="mt-0.5 text-[14px] text-muted-foreground">{meta.label}</Text>
                 </View>
                 {a.currency !== "LKR" && (
-                  <View className="rounded-badge bg-foreground/[0.07] px-1.5 py-px">
-                    <Text className="text-[13px] font-sans-medium text-foreground/45">{a.currency}</Text>
+                  <View className="rounded-badge border-[1.5px] border-foreground bg-foreground/[0.07] px-1.5 py-px">
+                    <Text className="text-[13px] font-sans-medium text-muted-foreground">{a.currency}</Text>
                   </View>
                 )}
               </Pressable>

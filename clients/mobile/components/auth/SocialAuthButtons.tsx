@@ -171,7 +171,7 @@ export function SocialAuthButtons({ onError }: { onError: (message: string) => v
 
       <View className="my-1 flex-row items-center gap-3">
         <View className="h-px flex-1 bg-foreground/20" />
-        <Text className="text-[15px] text-foreground/45">or</Text>
+        <Text className="text-[15px] text-muted-foreground">or</Text>
         <View className="h-px flex-1 bg-foreground/20" />
       </View>
     </View>

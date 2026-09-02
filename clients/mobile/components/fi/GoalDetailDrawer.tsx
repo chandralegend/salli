@@ -121,18 +121,18 @@ export function GoalDetailDrawer({
         {/* what is actually behind this goal */}
         <View className="rounded-card border border-foreground/[0.08] bg-muted p-3.5">
           <View className="flex-row items-baseline justify-between">
-            <Text className="text-[14px] font-sans-medium uppercase tracking-wide text-foreground/35">
+            <Text className="text-[14px] font-sans-medium uppercase tracking-wide text-muted-foreground">
               Funded
             </Text>
             <Text className="font-sans-bold text-[17px] text-foreground">
               Rs. {formatLKRAbbrev(goal.current_amount)}
-              <Text className="text-[15px] font-sans text-foreground/35">
+              <Text className="text-[15px] font-sans text-muted-foreground">
                 {" "}
                 of {formatLKRAbbrev(goal.target_amount)}
               </Text>
             </Text>
           </View>
-          <Text className="mt-1 text-[14px] leading-5 text-foreground/35">
+          <Text className="mt-1 text-[14px] leading-5 text-muted-foreground">
             Comes from the live balance of the accounts you earmark below, so it moves only when
             your money does.
           </Text>
@@ -156,7 +156,7 @@ export function GoalDetailDrawer({
         />
 
         <View>
-          <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
+          <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
             Priority
           </Text>
           <View className="flex-row rounded-pill bg-foreground/[0.06] p-1">
@@ -174,7 +174,7 @@ export function GoalDetailDrawer({
                     "text-[15px]",
                     priority === p.value
                       ? "font-sans-semibold text-primary-foreground"
-                      : "font-sans-medium text-foreground/45",
+                      : "font-sans-medium text-muted-foreground",
                   )}
                 >
                   {p.label}
@@ -182,7 +182,7 @@ export function GoalDetailDrawer({
               </Pressable>
             ))}
           </View>
-          <Text className="mt-1 text-[13px] leading-5 text-foreground/30">
+          <Text className="mt-1 text-[13px] leading-5 text-muted-foreground">
             When one account is earmarked for several goals and can&rsquo;t cover them all, the
             higher priority stays funded.
           </Text>
@@ -193,7 +193,7 @@ export function GoalDetailDrawer({
         </ActionButton>
 
         {/* earmarks */}
-        <Text className="mt-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
+        <Text className="mt-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
           Money behind this goal
         </Text>
         {accounts.isLoading || allocations.isLoading ? (
@@ -201,7 +201,7 @@ export function GoalDetailDrawer({
             <ActivityIndicator size="small" color={colors.mutedForeground} />
           </View>
         ) : assetAccounts.length === 0 ? (
-          <Text className="text-[15px] text-foreground/35">
+          <Text className="text-[15px] text-muted-foreground">
             No accounts yet — add one in the Ledger first.
           </Text>
         ) : (
@@ -214,12 +214,12 @@ export function GoalDetailDrawer({
             return (
               <View
                 key={a.id}
-                className="rounded-card border border-foreground/[0.08] bg-card p-3"
+                className="rounded-card border-2 border-foreground bg-card p-3"
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1 pr-3">
                     <Text className="font-sans-medium text-[15px] text-foreground">{a.name}</Text>
-                    <Text className="mt-0.5 text-[14px] text-foreground/30">
+                    <Text className="mt-0.5 text-[14px] text-muted-foreground">
                       Holds Rs. {formatLKRAbbrev(balance)}
                     </Text>
                   </View>
@@ -254,7 +254,7 @@ export function GoalDetailDrawer({
             );
           })
         )}
-        <Text className="text-[13px] leading-5 text-foreground/30">
+        <Text className="text-[13px] leading-5 text-muted-foreground">
           Earmarking doesn&rsquo;t move any money — it just records which part of an account is
           meant for this goal. One account can back several goals.
         </Text>

@@ -19,7 +19,7 @@ function ParamRows({ params }: { params: Record<string, unknown> }) {
     <View className="mt-2 gap-1 border-t border-foreground/[0.06] pt-2">
       {entries.map(([key, value]) => (
         <View key={key} className="flex-row justify-between gap-3">
-          <Text className="text-[14px] capitalize text-foreground/35">{key.replace(/_/g, " ")}</Text>
+          <Text className="text-[14px] capitalize text-muted-foreground">{key.replace(/_/g, " ")}</Text>
           <Text numberOfLines={1} className="flex-1 text-right text-[14px] text-foreground/55">
             {typeof value === "object" ? JSON.stringify(value) : String(value)}
           </Text>
@@ -45,19 +45,19 @@ export default function AuditLogScreen() {
     <PageShell header={<ScreenHeader title="Audit Log" back />}>
       {/* summary strip */}
       <View className="mt-3 flex-row gap-2 px-4">
-        <View className="flex-1 items-center rounded-card border border-foreground/[0.08] bg-card px-2.5 py-3">
+        <View className="flex-1 items-center rounded-card border-2 border-foreground bg-card px-2.5 py-3">
           <Text className="font-sans-bold text-[26px] leading-none text-foreground">{all.length}</Text>
-          <Text className="mt-1 text-[13px] font-sans-medium text-foreground/40">Total</Text>
+          <Text className="mt-1 text-[13px] font-sans-medium text-muted-foreground">Total</Text>
         </View>
-        <View className="flex-1 items-center rounded-card border border-foreground/[0.08] bg-card px-2.5 py-3">
+        <View className="flex-1 items-center rounded-card border-2 border-foreground bg-card px-2.5 py-3">
           <Text className="font-sans-bold text-[26px] leading-none text-salli-accent">{approved}</Text>
-          <Text className="mt-1 text-[13px] font-sans-medium text-foreground/40">Approved</Text>
+          <Text className="mt-1 text-[13px] font-sans-medium text-muted-foreground">Approved</Text>
         </View>
-        <View className="flex-1 items-center rounded-card border border-foreground/[0.08] bg-card px-2.5 py-3">
+        <View className="flex-1 items-center rounded-card border-2 border-foreground bg-card px-2.5 py-3">
           <Text className={cn("font-sans-bold text-[26px] leading-none", denied > 0 ? "text-destructive" : "text-foreground")}>
             {denied}
           </Text>
-          <Text className="mt-1 text-[13px] font-sans-medium text-foreground/40">Denied</Text>
+          <Text className="mt-1 text-[13px] font-sans-medium text-muted-foreground">Denied</Text>
         </View>
       </View>
 
@@ -68,10 +68,10 @@ export default function AuditLogScreen() {
             onPress={() => setFilter(f)}
             className={cn(
               "rounded-pill px-3.5 py-1",
-              filter === f ? "bg-salli-accent" : "border border-foreground/[0.08] bg-card",
+              filter === f ? "bg-salli-accent" : "border-2 border-foreground bg-card",
             )}
           >
-            <Text className={cn("text-[15px]", filter === f ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/40")}>
+            <Text className={cn("text-[15px]", filter === f ? "font-sans-semibold text-white" : "font-sans-medium text-muted-foreground")}>
               {f}
             </Text>
           </Pressable>
@@ -82,7 +82,7 @@ export default function AuditLogScreen() {
         {visible.length === 0 ? (
           <Card className="items-center gap-2 p-6">
             <ShieldCheck size={22} color={colors.mutedForeground} strokeWidth={1.8} />
-            <Text className="text-center text-[15px] text-foreground/35">
+            <Text className="text-center text-[15px] text-muted-foreground">
               {all.length === 0 ? "No AI write actions recorded yet." : `No ${filter.toLowerCase()} actions.`}
             </Text>
           </Card>
@@ -106,13 +106,13 @@ export default function AuditLogScreen() {
                   <Text className="font-sans-semibold text-[15px] capitalize text-foreground">
                     {e.action.replace(/_/g, " ")}
                   </Text>
-                  <View className={cn("rounded-badge px-2 py-0.5", e.decision === "approved" ? "bg-salli-accent/15" : "bg-destructive/15")}>
+                  <View className={cn("rounded-badge border-[1.5px] border-foreground px-2 py-0.5", e.decision === "approved" ? "bg-salli-accent/15" : "bg-destructive/15")}>
                     <Text className={cn("text-[13px] font-sans-semibold capitalize", e.decision === "approved" ? "text-salli-accent" : "text-destructive")}>
                       {e.decision}
                     </Text>
                   </View>
                 </View>
-                <Text className="mt-0.5 text-[14px] text-foreground/30">{e.created_at}</Text>
+                <Text className="mt-0.5 text-[14px] text-muted-foreground">{e.created_at}</Text>
                 <ParamRows params={e.params} />
               </View>
             </Card>

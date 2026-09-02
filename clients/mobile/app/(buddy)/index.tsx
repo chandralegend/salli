@@ -109,7 +109,7 @@ export default function BuddyScreen() {
           per the spec's "no hamburger menu on Buddy Mode". */}
       <Pressable onPress={openSessions} className="items-center py-2.5">
         <Text className="font-sans-semibold text-[17px] text-foreground">Buddy Mode</Text>
-        <Text className="mt-0.5 text-[14px] text-foreground/35">Swipe left for Pro Mode</Text>
+        <Text className="mt-0.5 text-[14px] text-muted-foreground">Swipe left for Pro Mode</Text>
       </Pressable>
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -193,7 +193,7 @@ export default function BuddyScreen() {
 
         <View className="px-3.5 pt-2" style={{ paddingBottom: keyboardUp ? 8 : insets.bottom + 16 }}>
           <View
-            className="flex-row items-center gap-2 rounded-card border border-foreground/10 bg-card py-1.5 pl-2 pr-1.5"
+            className="flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card py-1.5 pl-2 pr-1.5"
             style={chatColumnStyle}
           >
             <Pressable className="h-11 w-11 items-center justify-center" accessibilityLabel="Attach a file">
@@ -213,7 +213,7 @@ export default function BuddyScreen() {
                 onPress={() => send(input)}
                 disabled={streaming}
                 className={cn(
-                  "h-11 w-11 items-center justify-center rounded-full bg-salli-accent",
+                  "h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent",
                   streaming && "opacity-40",
                 )}
               >
@@ -248,7 +248,7 @@ export default function BuddyScreen() {
         </View>
         {(sessions.data ?? []).length === 0 ? (
           <View className="items-center px-1 py-10">
-            <Text className="text-[15px] text-foreground/35">No conversations yet.</Text>
+            <Text className="text-[15px] text-muted-foreground">No conversations yet.</Text>
           </View>
         ) : (
           (sessions.data ?? []).map((s) => (
@@ -260,7 +260,7 @@ export default function BuddyScreen() {
                 <Text numberOfLines={1} className="font-sans-medium text-[16px] text-foreground">
                   {s.title || "New conversation"}
                 </Text>
-                <Text className="mt-0.5 text-[14px] text-foreground/30">
+                <Text className="mt-0.5 text-[14px] text-muted-foreground">
                   {new Date(s.last_active_at).toLocaleDateString()}
                 </Text>
               </Pressable>

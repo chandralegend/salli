@@ -56,13 +56,13 @@ const FEATURES: {
 function QuickStatCard({ label, value, hint, onPress }: { label: string; value: string; hint: string; onPress: () => void }) {
   const colors = useThemeColors();
   return (
-    <AnimatedPressable onPress={onPress} className="w-[48%] rounded-card border border-foreground/[0.08] bg-card p-3.5">
+    <AnimatedPressable onPress={onPress} className="w-[48%] rounded-card border-2 border-foreground bg-card p-3.5">
       <View className="mb-1.5 flex-row items-center justify-between">
-        <Text className="text-[14px] font-sans-medium text-foreground/40">{label}</Text>
+        <Text className="text-[14px] font-sans-medium text-muted-foreground">{label}</Text>
         <ChevronRight size={14} color={colors.mutedForeground} strokeWidth={2} />
       </View>
       <Text className="mb-0.5 font-sans-bold text-[18px] text-foreground">{value}</Text>
-      <Text className="text-[13px] text-foreground/25">{hint}</Text>
+      <Text className="text-[13px] text-muted-foreground">{hint}</Text>
     </AnimatedPressable>
   );
 }
@@ -96,8 +96,8 @@ export default function MoreScreen() {
       }
     >
 
-      <Card className="mx-4 mb-3 flex-row items-center gap-3 rounded-card border-foreground/[0.08] p-3.5">
-        <View className="h-11 w-11 items-center justify-center rounded-full bg-salli-accent">
+      <Card className="mx-4 mb-3 flex-row items-center gap-3 rounded-card p-3.5">
+        <View className="h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent">
           <Text className="font-sans-bold text-[19px] text-white">
             {(profile?.display_name ?? "?").charAt(0).toUpperCase()}
           </Text>
@@ -106,7 +106,7 @@ export default function MoreScreen() {
           <Text className="font-sans-semibold text-[16px] text-foreground">
             {profile?.display_name ?? "Set your name"}
           </Text>
-          <Text className="mt-0.5 text-[14px] text-foreground/35">{profile?.email ?? ""}</Text>
+          <Text className="mt-0.5 text-[14px] text-muted-foreground">{profile?.email ?? ""}</Text>
         </View>
       </Card>
 
@@ -153,21 +153,21 @@ export default function MoreScreen() {
       {overdueCount > 0 ? (
         <AnimatedPressable
           onPress={() => router.push("/(tabs)/more/reminders")}
-          className="mx-4 mb-3 flex-row items-center gap-2.5 rounded-card border border-foreground/10 bg-card px-3.5 py-2.5"
+          className="mx-4 mb-3 flex-row items-center gap-2.5 rounded-card border-2 border-foreground bg-card px-3.5 py-2.5"
         >
           <View className="h-2 w-2 rounded-full bg-foreground" />
           <Text className="flex-1 font-sans-medium text-[15px] text-foreground">
             {overdueCount} overdue reminder{overdueCount === 1 ? "" : "s"}
           </Text>
-          <Text className="text-[15px] text-foreground/30">Reminders →</Text>
+          <Text className="text-[15px] text-muted-foreground">Reminders →</Text>
         </AnimatedPressable>
       ) : null}
 
       <View className="px-4">
-        <Text className="mb-1 pl-0.5 text-[13px] font-sans-semibold uppercase tracking-wide text-foreground/25">
+        <Text className="mb-1 pl-0.5 text-[13px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
           All Features
         </Text>
-        <Card className="overflow-hidden rounded-card border-foreground/[0.08]">
+        <Card className="overflow-hidden rounded-card ">
           {FEATURES.map((f, i) => (
             <AnimatedPressable
               key={f.key}
@@ -179,18 +179,18 @@ export default function MoreScreen() {
               </View>
               <View className="flex-1">
                 <Text className="font-sans-medium text-[15px] text-foreground">{f.title}</Text>
-                <Text className="text-[14px] text-foreground/30">{f.detail}</Text>
+                <Text className="text-[14px] text-muted-foreground">{f.detail}</Text>
               </View>
               {f.key === "billing" && credits ? (
-                <View className="mr-2 rounded-badge bg-foreground/[0.07] px-2 py-0.5">
-                  <Text className="text-[13px] font-sans-medium text-foreground/40">
+                <View className="mr-2 rounded-badge border-[1.5px] border-foreground bg-foreground/[0.07] px-2 py-0.5">
+                  <Text className="text-[13px] font-sans-medium text-muted-foreground">
                     {credits.total.toLocaleString()}
                   </Text>
                 </View>
               ) : null}
               {f.badge ? (
-                <View className="mr-2 rounded-badge bg-foreground/[0.07] px-2 py-0.5">
-                  <Text className="text-[13px] font-sans-medium text-foreground/40">{f.badge}</Text>
+                <View className="mr-2 rounded-badge border-[1.5px] border-foreground bg-foreground/[0.07] px-2 py-0.5">
+                  <Text className="text-[13px] font-sans-medium text-muted-foreground">{f.badge}</Text>
                 </View>
               ) : null}
               {f.key === "reminders" && overdueCount > 0 ? (

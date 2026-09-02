@@ -36,11 +36,11 @@ export function TourCard({
 
   return (
     <View
-      className="absolute inset-x-3 rounded-card border border-foreground/10 bg-card p-4"
+      className="absolute inset-x-3 rounded-card border-2 border-foreground bg-card p-4"
       style={placement === "top" ? { top: insets.top + 12 } : { bottom: insets.bottom + 12 }}
     >
       <View className="mb-2 flex-row items-center justify-between">
-        <Text className="text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
+        <Text className="text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
           {index + 1} of {total}
         </Text>
         <Pressable onPress={onSkip} hitSlop={8} className="h-[26px] w-[26px] items-center justify-center rounded-full bg-foreground/[0.08]">

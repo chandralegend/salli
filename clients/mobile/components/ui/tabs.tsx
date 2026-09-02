@@ -74,7 +74,7 @@ export function Tabs<T extends string>({
 
   return (
     <View className={cn("px-4", className)}>
-      <View className="rounded-pill bg-foreground/[0.06] p-1">
+      <View className="rounded-card border-2 border-foreground bg-card p-1">
         {/* Unpadded inner row so a child's measured `x` and the pill's `left`
             share one origin — with padding on this row the two would disagree. */}
         <View className="flex-row">
@@ -85,7 +85,7 @@ export function Tabs<T extends string>({
               width,
               top: 0,
               bottom: 0,
-              borderRadius: 999,
+              borderRadius: 8,
               backgroundColor: colors.primary,
             }}
           />
@@ -107,7 +107,7 @@ export function Tabs<T extends string>({
                     "text-[15px]",
                     active
                       ? "font-sans-semibold text-primary-foreground"
-                      : "font-sans-medium text-foreground/45",
+                      : "font-sans-medium text-muted-foreground",
                   )}
                 >
                   {item}

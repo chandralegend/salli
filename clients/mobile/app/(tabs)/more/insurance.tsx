@@ -33,7 +33,7 @@ const POLICY_TYPES = ["life", "health", "motor", "property", "other"] as const;
 const PREMIUM_FREQUENCIES = ["monthly", "quarterly", "yearly"] as const;
 
 const FieldLabel = ({ children }: { children: string }) => (
-  <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">{children}</Text>
+  <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">{children}</Text>
 );
 
 export default function InsuranceScreen() {
@@ -80,7 +80,7 @@ export default function InsuranceScreen() {
             trailing={
               <Pressable
                 onPress={openAdd}
-                className="h-11 w-11 items-center justify-center rounded-full bg-salli-accent"
+                className="h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent"
               >
                 <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
               </Pressable>
@@ -148,7 +148,7 @@ export default function InsuranceScreen() {
           <View className="gap-1.5 px-4 pt-3">
             {activePolicies.length === 0 ? (
               <Card className="items-center p-6">
-                <Text className="text-[15px] text-foreground/35">No policies yet.</Text>
+                <Text className="text-[15px] text-muted-foreground">No policies yet.</Text>
               </Card>
             ) : (
               activePolicies.map((p) => (
@@ -159,7 +159,7 @@ export default function InsuranceScreen() {
                     </View>
                     <View className="flex-1">
                       <Text className="font-sans-semibold text-[15px] text-foreground">{p.name}</Text>
-                      <Text className="text-[14px] capitalize text-foreground/30">
+                      <Text className="text-[14px] capitalize text-muted-foreground">
                         {p.policy_type} · {p.provider} · expires {p.expiry_date}
                       </Text>
                     </View>
@@ -185,10 +185,10 @@ export default function InsuranceScreen() {
           <View className="gap-1.5 px-4 pt-3">
             {(targets.data ?? []).length === 0 ? (
               <Card className="items-center gap-1.5 p-6">
-                <Text className="text-center text-[15px] text-foreground/45">
+                <Text className="text-center text-[15px] text-muted-foreground">
                   No coverage targets yet
                 </Text>
-                <Text className="text-center text-[15px] leading-5 text-foreground/30">
+                <Text className="text-center text-[15px] leading-5 text-muted-foreground">
                   Declare how much cover you think you need, and the Coverage Report will show
                   where you fall short.
                 </Text>
@@ -218,7 +218,7 @@ export default function InsuranceScreen() {
               <View className="h-8 w-8 items-center justify-center rounded-card bg-foreground/[0.04]">
                 <Plus size={15} color={colors.mutedForeground} strokeWidth={2.5} />
               </View>
-              <Text className="font-sans-medium text-[15px] text-foreground/45">
+              <Text className="font-sans-medium text-[15px] text-muted-foreground">
                 Set a coverage target
               </Text>
             </Pressable>
@@ -249,7 +249,7 @@ export default function InsuranceScreen() {
                           style={{ width: `${pct}%` }}
                         />
                       </View>
-                      <Text className="text-[14px] text-foreground/30">
+                      <Text className="text-[14px] text-muted-foreground">
                         Rs. {formatLKRAbbrev(actual)} of Rs. {formatLKRAbbrev(target)} target
                       </Text>
                     </Card>
@@ -258,7 +258,7 @@ export default function InsuranceScreen() {
               </View>
             ) : (
               <Card className="items-center p-6">
-                <Text className="text-[15px] text-foreground/35">No coverage targets declared.</Text>
+                <Text className="text-[15px] text-muted-foreground">No coverage targets declared.</Text>
               </Card>
             )}
 
@@ -285,7 +285,7 @@ export default function InsuranceScreen() {
                     )}
                   >
                     <Text className="text-[15px] text-foreground">{e.policy_name}</Text>
-                    <Text className={cn("text-[15px]", e.days_until_expiry <= 30 ? "text-destructive" : "text-foreground/40")}>
+                    <Text className={cn("text-[15px]", e.days_until_expiry <= 30 ? "text-destructive" : "text-muted-foreground")}>
                       {e.days_until_expiry} days
                     </Text>
                   </View>
@@ -521,7 +521,7 @@ function SetTargetDrawer({
     >
       <View className="gap-3 pb-2">
         <View>
-          <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
+          <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
             Policy type
           </Text>
           <View className="flex-row flex-wrap gap-1.5">
@@ -531,7 +531,7 @@ function SetTargetDrawer({
                 onPress={() => setPolicyType(t)}
                 className={cn(
                   "rounded-pill px-3 py-1.5",
-                  policyType === t ? "bg-salli-accent" : "border border-foreground/10 bg-card",
+                  policyType === t ? "bg-salli-accent" : "border-2 border-foreground bg-card",
                 )}
               >
                 <Text
@@ -557,7 +557,7 @@ function SetTargetDrawer({
           placeholder="e.g. 5000000"
         />
 
-        <Text className="text-[14px] leading-5 text-foreground/30">
+        <Text className="text-[14px] leading-5 text-muted-foreground">
           {replacing
             ? "You already have a target for this type — saving replaces it."
             : "The Coverage Report compares this against the policies you hold and shows the shortfall."}

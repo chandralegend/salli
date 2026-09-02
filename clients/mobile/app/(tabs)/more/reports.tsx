@@ -263,7 +263,7 @@ export default function ReportsScreen() {
                 </View>
               </View>
               <View className="flex-row justify-between border-t border-foreground/[0.07] pt-2">
-                <Text className="text-[15px] font-sans-medium text-foreground/40">Saved this month</Text>
+                <Text className="text-[15px] font-sans-medium text-muted-foreground">Saved this month</Text>
                 <Text className="font-sans-bold text-[15px] text-foreground">Rs. {formatLKR(saved, 0)}</Text>
               </View>
             </View>
@@ -297,7 +297,7 @@ export default function ReportsScreen() {
                   ))}
                   {total ? (
                     <View className="flex-row justify-between bg-foreground/[0.02] py-2.5">
-                      <Text className="font-sans-semibold text-[15px] capitalize text-foreground/40">Total {section}</Text>
+                      <Text className="font-sans-semibold text-[15px] capitalize text-muted-foreground">Total {section}</Text>
                       <Text className="font-sans-bold text-[15px] text-foreground">Rs. {formatLKR(total, 0)}</Text>
                     </View>
                   ) : null}
@@ -352,7 +352,7 @@ export default function ReportsScreen() {
                     </View>
                   ))}
                   <View className="flex-row justify-between bg-foreground/[0.02] py-2.5">
-                    <Text className="font-sans-semibold text-[15px] capitalize text-foreground/40">Total {section}</Text>
+                    <Text className="font-sans-semibold text-[15px] capitalize text-muted-foreground">Total {section}</Text>
                     <Text className="font-sans-bold text-[15px] text-foreground">Rs. {formatLKR(total, 0)}</Text>
                   </View>
                 </View>
@@ -362,7 +362,7 @@ export default function ReportsScreen() {
 
           {income.data && Object.keys(income.data.income).length === 0 && Object.keys(income.data.expenses).length === 0 ? (
             <Card className="mt-2.5 items-center p-6">
-              <Text className="text-[15px] text-foreground/35">No income or expenses this period.</Text>
+              <Text className="text-[15px] text-muted-foreground">No income or expenses this period.</Text>
             </Card>
           ) : income.data ? (
             <View className="mt-2.5 flex-row items-center justify-between rounded-card border border-salli-accent/20 bg-salli-accent/[0.08] px-4 py-3.5">
@@ -410,11 +410,11 @@ export default function ReportsScreen() {
 
           {trend.length === 0 ? (
             <Card className="mt-2.5 items-center p-6">
-              <Text className="text-[15px] text-foreground/35">No history yet.</Text>
+              <Text className="text-[15px] text-muted-foreground">No history yet.</Text>
             </Card>
           ) : (
             <>
-              <Text className="px-0.5 pb-1.5 pt-3.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+              <Text className="px-0.5 pb-1.5 pt-3.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
                 Monthly Trend
               </Text>
               <View className="gap-1.5">
@@ -432,7 +432,7 @@ export default function ReportsScreen() {
                       <View>
                         <Text className="font-sans-semibold text-[15px] text-foreground">{monthLabel(point.date)}</Text>
                         {delta !== null ? (
-                          <Text className="mt-0.5 text-[14px] text-foreground/30">
+                          <Text className="mt-0.5 text-[14px] text-muted-foreground">
                             {delta >= 0 ? "+" : "−"}Rs. {formatLKRAbbrev(Math.abs(delta))} this month
                           </Text>
                         ) : null}

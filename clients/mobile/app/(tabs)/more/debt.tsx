@@ -174,7 +174,7 @@ export default function DebtScreen() {
               title="Debt"
               back
               trailing={
-                <Pressable onPress={openAdd} className="h-11 w-11 items-center justify-center rounded-full bg-salli-accent">
+                <Pressable onPress={openAdd} className="h-11 w-11 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent">
                   <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
                 </Pressable>
               }
@@ -188,7 +188,7 @@ export default function DebtScreen() {
         {allDebts.length === 0 ? (
           <View className="items-center gap-2 px-8 pt-16">
             <Text className="text-center font-sans-semibold text-[17px] text-foreground">No debts tracked</Text>
-            <Text className="text-center text-[15px] text-foreground/35">
+            <Text className="text-center text-[15px] text-muted-foreground">
               Add a loan with the ＋ above to see a payoff plan here.
             </Text>
           </View>
@@ -226,7 +226,7 @@ export default function DebtScreen() {
             </Card>
 
             <View className="mt-3 flex-row items-center gap-2">
-              <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-card border border-foreground/[0.08] bg-card px-3">
+              <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card px-3">
                 <Search size={15} color={colors.mutedForeground} strokeWidth={2} />
                 <TextInput
                   value={search}
@@ -244,13 +244,13 @@ export default function DebtScreen() {
               ))}
             </View>
 
-            <Text className="mb-2 mt-3 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+            <Text className="mb-2 mt-3 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
               {filter === "Paid Off" ? "Paid Off" : "Active Debts"}
             </Text>
             <View className="gap-1.5">
               {visibleDebts.length === 0 ? (
                 <Card className="p-4">
-                  <Text className="text-center text-[15px] text-foreground/35">No debts match this filter.</Text>
+                  <Text className="text-center text-[15px] text-muted-foreground">No debts match this filter.</Text>
                 </Card>
               ) : (
                 visibleDebts.map((debt) => (
@@ -263,25 +263,25 @@ export default function DebtScreen() {
                       <View className="mb-1 flex-row items-start justify-between">
                         <View>
                           <Text className="font-sans-semibold text-[15px] text-foreground">{debt.name}</Text>
-                          <Text className="mt-0.5 text-[14px] text-foreground/30">APR {formatPct(debt.apr, 1)}</Text>
+                          <Text className="mt-0.5 text-[14px] text-muted-foreground">APR {formatPct(debt.apr, 1)}</Text>
                         </View>
-                        <View className={cn("rounded-badge px-2 py-0.5", debt.is_active ? "bg-salli-accent/15" : "bg-foreground/10")}>
-                          <Text className={cn("text-[14px] font-sans-semibold", debt.is_active ? "text-salli-accent" : "text-foreground/40")}>
+                        <View className={cn("rounded-badge border-[1.5px] border-foreground px-2 py-0.5", debt.is_active ? "bg-salli-accent/15" : "bg-foreground/10")}>
+                          <Text className={cn("text-[14px] font-sans-semibold", debt.is_active ? "text-salli-accent" : "text-muted-foreground")}>
                             {debt.is_active ? "Active" : "Paid Off"}
                           </Text>
                         </View>
                       </View>
                       <View className="mt-1.5 flex-row gap-3">
                         <View className="flex-1">
-                          <Text className="mb-0.5 text-[13px] text-foreground/30">Principal</Text>
+                          <Text className="mb-0.5 text-[13px] text-muted-foreground">Principal</Text>
                           <Text className="font-sans-semibold text-[15px] text-foreground">Rs. {formatLKRAbbrev(debt.principal)}</Text>
                         </View>
                         <View className="flex-1">
-                          <Text className="mb-0.5 text-[13px] text-foreground/30">Min/mo</Text>
+                          <Text className="mb-0.5 text-[13px] text-muted-foreground">Min/mo</Text>
                           <Text className="font-sans-semibold text-[15px] text-foreground">Rs. {formatLKRAbbrev(debt.minimum_payment)}</Text>
                         </View>
                         <View className="flex-1">
-                          <Text className="mb-0.5 text-[13px] text-foreground/30">Extra/mo</Text>
+                          <Text className="mb-0.5 text-[13px] text-muted-foreground">Extra/mo</Text>
                           <Text className="font-sans-semibold text-[15px] text-salli-accent">+Rs. {formatLKRAbbrev(extra)}</Text>
                         </View>
                       </View>
@@ -295,7 +295,7 @@ export default function DebtScreen() {
             </View>
 
             <Card className="mt-2.5 p-4">
-              <Text className="mb-2.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+              <Text className="mb-2.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
                 Payoff Strategy
               </Text>
               <SegmentedControl
@@ -307,7 +307,7 @@ export default function DebtScreen() {
               />
               <Pressable onPress={() => setTab("Strategy")} className="flex-row items-center justify-between rounded-card border border-foreground/[0.07] bg-muted px-3.5 py-2.5">
                 <View>
-                  <Text className="mb-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/30">
+                  <Text className="mb-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">
                     Extra Monthly Payment
                   </Text>
                   <Text className="font-sans-semibold text-[18px] text-foreground">Rs. {formatLKR(extra, 0)}</Text>
@@ -318,16 +318,16 @@ export default function DebtScreen() {
 
             <View className="mt-2.5 flex-row gap-2">
               <Card className="flex-1 p-3.5">
-                <Text className="mb-1.5 text-[14px] text-foreground/40">Months to Payoff</Text>
+                <Text className="mb-1.5 text-[14px] text-muted-foreground">Months to Payoff</Text>
                 <Text className="font-sans-extrabold text-[32px] tracking-tight text-foreground">
                   {totalMonths ?? "—"}
                 </Text>
                 {totalMonths ? (
-                  <Text className="mt-0.5 text-[14px] text-foreground/25">{(totalMonths / 12).toFixed(1)} years</Text>
+                  <Text className="mt-0.5 text-[14px] text-muted-foreground">{(totalMonths / 12).toFixed(1)} years</Text>
                 ) : null}
               </Card>
               <Card className="flex-1 p-3.5">
-                <Text className="mb-1.5 text-[14px] text-foreground/40">Total Interest</Text>
+                <Text className="mb-1.5 text-[14px] text-muted-foreground">Total Interest</Text>
                 <Text className="font-sans-bold text-[22px] tracking-tight text-foreground">
                   Rs. {plan.data ? formatLKRAbbrev(plan.data.total_interest_paid) : "—"}
                 </Text>
@@ -339,13 +339,13 @@ export default function DebtScreen() {
               </Card>
             </View>
 
-            <Text className="mt-3 px-2 text-center text-[14px] leading-5 text-foreground/25">
+            <Text className="mt-3 px-2 text-center text-[14px] leading-5 text-muted-foreground">
               Planning estimate only · Assumes fixed APR and on-time payments
             </Text>
           </View>
         ) : tab === "Strategy" ? (
           <View className="px-4 pt-3">
-            <Text className="mb-2 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+            <Text className="mb-2 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
               Payoff Method
             </Text>
             <SegmentedControl
@@ -395,7 +395,7 @@ export default function DebtScreen() {
 
             <View className="mt-3 flex-row gap-2">
               <Card className="flex-1 p-3.5">
-                <Text className="mb-1.5 text-[14px] text-foreground/40">Months to Payoff</Text>
+                <Text className="mb-1.5 text-[14px] text-muted-foreground">Months to Payoff</Text>
                 <View className="flex-row items-baseline gap-1.5">
                   <Text className="font-sans-extrabold text-[32px] tracking-tight text-foreground">
                     {totalMonths ?? "—"}
@@ -405,13 +405,13 @@ export default function DebtScreen() {
                   ) : null}
                 </View>
                 {basePlan.data?.months_to_payoff != null ? (
-                  <Text className="mt-0.5 text-[14px] text-foreground/25">
+                  <Text className="mt-0.5 text-[14px] text-muted-foreground">
                     vs {basePlan.data.months_to_payoff} at minimum
                   </Text>
                 ) : null}
               </Card>
               <Card className="flex-1 p-3.5">
-                <Text className="mb-1.5 text-[14px] text-foreground/40">Total Interest</Text>
+                <Text className="mb-1.5 text-[14px] text-muted-foreground">Total Interest</Text>
                 <Text className="font-sans-bold text-[22px] tracking-tight text-foreground">
                   Rs. {plan.data ? formatLKRAbbrev(plan.data.total_interest_paid) : "—"}
                 </Text>
@@ -423,7 +423,7 @@ export default function DebtScreen() {
               </Card>
             </View>
 
-            <Text className="mb-2 mt-4 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+            <Text className="mb-2 mt-4 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
               Payoff Order · {strategyLabel}
             </Text>
             <View className="gap-1.5">
@@ -444,18 +444,18 @@ export default function DebtScreen() {
                     </View>
                     <View className="flex-1">
                       <Text className="font-sans-semibold text-[15px] text-foreground">{debt.name}</Text>
-                      <Text className="mt-0.5 text-[14px] text-foreground/30">
+                      <Text className="mt-0.5 text-[14px] text-muted-foreground">
                         APR {formatPct(debt.apr, 1)} · {focus ? "targeting now" : "minimum only"}
                       </Text>
                     </View>
                     <View className="items-end">
                       <Text className="font-sans-bold text-[15px] text-foreground">Rs. {formatLKRAbbrev(debt.principal)}</Text>
                       {focus ? (
-                        <View className="mt-0.5 rounded-badge bg-salli-accent/15 px-1.5 py-0.5">
+                        <View className="mt-0.5 rounded-badge border-[1.5px] border-salli-accent bg-salli-accent/15 px-1.5 py-0.5">
                           <Text className="text-[13px] font-sans-medium text-salli-accent">Focus</Text>
                         </View>
                       ) : (
-                        <Text className="mt-0.5 text-[13px] text-foreground/25">Queued</Text>
+                        <Text className="mt-0.5 text-[13px] text-muted-foreground">Queued</Text>
                       )}
                     </View>
                   </View>
@@ -465,7 +465,7 @@ export default function DebtScreen() {
 
             <View className="mt-3 flex-row items-start gap-2 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
               <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
-              <Text className="flex-1 text-[14px] leading-5 text-foreground/30">
+              <Text className="flex-1 text-[14px] leading-5 text-muted-foreground">
                 Planning estimate · assumes fixed APR &amp; on-time payments
               </Text>
             </View>
@@ -504,7 +504,7 @@ export default function DebtScreen() {
               </View>
             </Card>
 
-            <Text className="mb-2 mt-4 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+            <Text className="mb-2 mt-4 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
               {showAllRows
                 ? `Amortization · all ${monthlyRows.length}`
                 : `Amortization · first ${Math.min(12, monthlyRows.length)} of ${monthlyRows.length}`}
@@ -512,15 +512,15 @@ export default function DebtScreen() {
 
             {monthlyRows.length === 0 ? (
               <Card className="p-4">
-                <Text className="text-center text-[15px] text-foreground/35">No schedule to display.</Text>
+                <Text className="text-center text-[15px] text-muted-foreground">No schedule to display.</Text>
               </Card>
             ) : (
               <>
                 <View className="flex-row px-2 pb-1.5">
-                  <Text className="w-[42px] text-[13px] font-sans-semibold tracking-wide text-foreground/25">MO</Text>
-                  <Text className="flex-1 text-right text-[13px] font-sans-semibold tracking-wide text-foreground/25">PAYMENT</Text>
-                  <Text className="flex-1 text-right text-[13px] font-sans-semibold tracking-wide text-foreground/25">INTEREST</Text>
-                  <Text className="flex-[1.1] text-right text-[13px] font-sans-semibold tracking-wide text-foreground/25">BALANCE</Text>
+                  <Text className="w-[42px] text-[13px] font-sans-semibold tracking-wide text-muted-foreground">MO</Text>
+                  <Text className="flex-1 text-right text-[13px] font-sans-semibold tracking-wide text-muted-foreground">PAYMENT</Text>
+                  <Text className="flex-1 text-right text-[13px] font-sans-semibold tracking-wide text-muted-foreground">INTEREST</Text>
+                  <Text className="flex-[1.1] text-right text-[13px] font-sans-semibold tracking-wide text-muted-foreground">BALANCE</Text>
                 </View>
                 <Card className="overflow-hidden p-0">
                   {visibleRows.map((row, i) => (
@@ -530,7 +530,7 @@ export default function DebtScreen() {
                     >
                       <Text className="w-[42px] pl-2 text-[15px] font-sans-semibold text-foreground">{row.month}</Text>
                       <Text className="flex-1 text-right text-[15px] font-sans-medium text-foreground">Rs. {formatLKRAbbrev(row.payment)}</Text>
-                      <Text className="flex-1 text-right text-[15px] text-foreground/40">Rs. {formatLKRAbbrev(row.interest)}</Text>
+                      <Text className="flex-1 text-right text-[15px] text-muted-foreground">Rs. {formatLKRAbbrev(row.interest)}</Text>
                       <Text className="flex-[1.1] pr-2 text-right text-[15px] font-sans-semibold text-foreground">Rs. {formatLKRAbbrev(row.balance)}</Text>
                     </View>
                   ))}
@@ -691,7 +691,7 @@ function AddEditDebtDrawer({
       </View>
 
       {principal && aprPct ? (
-        <View className="mb-4 flex-row items-center justify-between rounded-card border border-foreground/[0.08] bg-card px-3.5 py-2.5">
+        <View className="mb-4 flex-row items-center justify-between rounded-card border-2 border-foreground bg-card px-3.5 py-2.5">
           <Text className="text-[15px] text-foreground/50">Interest / mo (approx)</Text>
           <Text className="font-sans-bold text-[16px] text-foreground">
             Rs. {formatLKR((principalNum * (aprNum / 100)) / 12, 0)}

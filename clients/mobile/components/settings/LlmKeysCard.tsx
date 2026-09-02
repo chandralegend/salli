@@ -98,7 +98,7 @@ export function LlmKeysCard() {
         ) : null}
       </View>
 
-      <Text className="mt-1.5 text-[15px] leading-5 text-foreground/40">
+      <Text className="mt-1.5 text-[15px] leading-5 text-muted-foreground">
         Add your own API key and you pay your provider directly — Salli stops counting your monthly
         AI usage. Your key is encrypted, never shown again, and you can remove it any time.
       </Text>
@@ -120,7 +120,7 @@ export function LlmKeysCard() {
                   <Text className="font-sans-medium text-[15px] text-foreground">{p.label}</Text>
                   {existing && !isEditing ? (
                     <View className="flex-row items-center gap-2.5">
-                      <Text className="font-mono text-[15px] text-foreground/45">
+                      <Text className="font-mono text-[15px] text-muted-foreground">
                         ····{existing.last4}
                       </Text>
                       <Pressable onPress={() => handleRemove(p.id)} hitSlop={8} disabled={isBusy}>
@@ -144,7 +144,7 @@ export function LlmKeysCard() {
                   ) : null}
                 </View>
 
-                <Text className="mt-0.5 text-[14px] leading-5 text-foreground/30">{p.hint}</Text>
+                <Text className="mt-0.5 text-[14px] leading-5 text-muted-foreground">{p.hint}</Text>
 
                 {existing && !existing.readable ? (
                   <View className="mt-2 flex-row items-center gap-2 rounded-card bg-[#FEF3C7] px-3 py-2">

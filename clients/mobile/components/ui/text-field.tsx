@@ -29,12 +29,12 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
       <Text
         className={cn(
           "mb-1 text-[13px] font-sans-medium uppercase tracking-wide",
-          active ? "text-salli-accent" : "text-foreground/45",
+          active ? "text-salli-accent" : "text-muted-foreground",
         )}
       >
         {label}
         {optionalHint ? (
-          <Text className="text-[13px] font-sans normal-case tracking-normal text-foreground/40">
+          <Text className="text-[13px] font-sans normal-case tracking-normal text-muted-foreground">
             {" "}
             · {optionalHint}
           </Text>

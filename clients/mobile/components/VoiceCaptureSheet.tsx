@@ -53,7 +53,7 @@ export function VoiceCaptureSheet({
     >
       <View className="mb-2.5 flex-row items-center gap-2">
         <Mic size={16} color={colors.mutedForeground} strokeWidth={2} />
-        <Text className="flex-1 text-[15px] leading-5 text-foreground/40">
+        <Text className="flex-1 text-[15px] leading-5 text-muted-foreground">
           Type it, or tap the mic on your keyboard to speak.
         </Text>
       </View>
@@ -69,7 +69,7 @@ export function VoiceCaptureSheet({
         onSubmitEditing={submit}
       />
 
-      <Text className="mt-2.5 px-0.5 text-[14px] leading-5 text-foreground/30">
+      <Text className="mt-2.5 px-0.5 text-[14px] leading-5 text-muted-foreground">
         AI fills the entry for you to review — nothing is posted until you confirm.
       </Text>
     </Drawer>

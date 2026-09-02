@@ -291,7 +291,7 @@ function ReviewTab({
           <Upload size={26} color={colors.accent} strokeWidth={1.8} />
         </View>
         <Text className="text-center font-sans-semibold text-[18px] text-foreground">Import a bank statement</Text>
-        <Text className="text-center text-[15px] leading-5 text-foreground/40">
+        <Text className="text-center text-[15px] leading-5 text-muted-foreground">
           PDF, CSV, or XLSX — any Sri Lankan bank. Salli parses it and drafts ledger entries for your review.
         </Text>
         <ActionButton className="mt-2" loading={uploading} onPress={onUpload}>
@@ -340,12 +340,12 @@ function ReviewTab({
         </View>
       ) : imported === 0 ? (
         <Card className="mt-3 items-center p-6">
-          <Text className="text-[15px] text-foreground/35">No transactions parsed from this file.</Text>
+          <Text className="text-[15px] text-muted-foreground">No transactions parsed from this file.</Text>
         </Card>
       ) : (
         <>
           <View className="mt-3 flex-row items-center gap-2">
-            <View className="h-9 flex-1 flex-row items-center gap-2 rounded-card border border-foreground/[0.08] bg-card px-3">
+            <View className="h-9 flex-1 flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card px-3">
               <Search size={15} color={colors.mutedForeground} strokeWidth={2} />
               <TextInput
                 value={search}
@@ -372,14 +372,14 @@ function ReviewTab({
             })}
           </View>
 
-          <Text className="mb-1.5 mt-3 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+          <Text className="mb-1.5 mt-3 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
             {status === "Matched" ? "Matched" : status === "Skipped" ? "Skipped" : "Needs Review"}
             {upload.period_start ? ` · ${upload.period_start}` : ""}
           </Text>
 
           {visible.length === 0 ? (
             <Card className="items-center p-6">
-              <Text className="text-[15px] text-foreground/35">
+              <Text className="text-[15px] text-muted-foreground">
                 {status === "Skipped"
                   ? "Transactions aren't skipped on the server yet."
                   : "Nothing here for this filter."}
@@ -414,7 +414,7 @@ function ReviewTab({
                       <Text className="font-sans-semibold text-[15px] text-foreground" numberOfLines={1}>
                         {t.description}
                       </Text>
-                      <Text className="mt-0.5 text-[14px] text-foreground/30" numberOfLines={1}>
+                      <Text className="mt-0.5 text-[14px] text-muted-foreground" numberOfLines={1}>
                         {txnSubtitle(t, bank)}
                       </Text>
                     </View>
@@ -429,7 +429,7 @@ function ReviewTab({
                       </Text>
                       <View
                         className={cn(
-                          "rounded-badge px-1.5 py-0.5",
+                          "rounded-badge border-[1.5px] border-foreground px-1.5 py-0.5",
                           isApproved
                             ? "bg-salli-accent"
                             : matchedRow
@@ -440,7 +440,7 @@ function ReviewTab({
                         <Text
                           className={cn(
                             "text-[13px] font-sans-semibold",
-                            isApproved ? "text-white" : matchedRow ? "text-foreground/45" : "text-salli-accent",
+                            isApproved ? "text-white" : matchedRow ? "text-muted-foreground" : "text-salli-accent",
                           )}
                         >
                           {isApproved ? "Approved" : matchedRow ? "Matched" : "Unmatched"}
@@ -486,7 +486,7 @@ function HistoryTab({
           <FileText size={24} color={colors.mutedForeground} strokeWidth={1.6} />
         </View>
         <Text className="text-center font-sans-semibold text-[17px] text-foreground">No imports yet</Text>
-        <Text className="text-center text-[15px] leading-5 text-foreground/40">
+        <Text className="text-center text-[15px] leading-5 text-muted-foreground">
           Past statements aren't stored on the server. Import one to review and post it — it will appear here for the
           rest of your session.
         </Text>
@@ -529,7 +529,7 @@ function HistoryTab({
         </View>
       </Card>
 
-      <Text className="px-1.5 pb-1.5 pt-3.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+      <Text className="px-1.5 pb-1.5 pt-3.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
         Imported This Session
       </Text>
       <Card className="flex-row items-center gap-2.5 p-3.5">
@@ -540,22 +540,22 @@ function HistoryTab({
           <Text className="font-sans-semibold text-[15px] text-foreground" numberOfLines={1}>
             {bank || "Bank statement"}
           </Text>
-          <Text className="mt-0.5 text-[14px] text-foreground/30" numberOfLines={1}>
+          <Text className="mt-0.5 text-[14px] text-muted-foreground" numberOfLines={1}>
             {period ? `${period} · ` : ""}
             {imported} txns
           </Text>
         </View>
         <View className="items-end">
-          <View className="rounded-badge bg-salli-accent/15 px-2 py-0.5">
+          <View className="rounded-badge border-[1.5px] border-salli-accent bg-salli-accent/15 px-2 py-0.5">
             <Text className="text-[13px] font-sans-semibold text-salli-accent">{matched} matched</Text>
           </View>
-          <Text className="mt-1 text-[13px] text-foreground/25">{unmatched} unmatched</Text>
+          <Text className="mt-1 text-[13px] text-muted-foreground">{unmatched} unmatched</Text>
         </View>
       </Card>
 
       <View className="mt-2.5 flex-row items-start gap-2 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
         <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
-        <Text className="flex-1 text-[14px] leading-5 text-foreground/30">
+        <Text className="flex-1 text-[14px] leading-5 text-muted-foreground">
           Posted entries live in your Ledger. A persistent statement history isn't tracked by the server yet.
         </Text>
       </View>
@@ -588,7 +588,7 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
           <Landmark size={24} color={colors.mutedForeground} strokeWidth={1.6} />
         </View>
         <Text className="text-center font-sans-semibold text-[17px] text-foreground">No asset accounts yet</Text>
-        <Text className="text-center text-[15px] leading-5 text-foreground/40">
+        <Text className="text-center text-[15px] leading-5 text-muted-foreground">
           Imports post against ledger asset accounts. Add one in the Ledger to map a bank account here.
         </Text>
       </View>
@@ -597,7 +597,7 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
 
   return (
     <View className="px-4 pt-4">
-      <Text className="px-1.5 pb-1.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+      <Text className="px-1.5 pb-1.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
         Ledger Bank &amp; Cash Accounts
       </Text>
       <View className="gap-1.5">
@@ -634,23 +634,23 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
                 <Text className="font-sans-semibold text-[15px] text-foreground" numberOfLines={1}>
                   {a.name}
                 </Text>
-                <Text className="mt-0.5 text-[14px] text-foreground/30" numberOfLines={1}>
+                <Text className="mt-0.5 text-[14px] text-muted-foreground" numberOfLines={1}>
                   {a.currency} · maps to {a.code}
                 </Text>
               </View>
               <View className="items-end">
-                <View className={cn("rounded-badge px-2 py-0.5", active ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
+                <View className={cn("rounded-badge border-[1.5px] border-foreground px-2 py-0.5", active ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
                   <Text
                     className={cn(
                       "text-[13px] font-sans-semibold",
-                      active ? "text-salli-accent" : "text-foreground/40",
+                      active ? "text-salli-accent" : "text-muted-foreground",
                     )}
                   >
                     {active ? "Active" : "Inactive"}
                   </Text>
                 </View>
                 {bal != null ? (
-                  <Text className="mt-1 text-[13px] text-foreground/25">Rs. {formatLKR(bal, 0)}</Text>
+                  <Text className="mt-1 text-[13px] text-muted-foreground">Rs. {formatLKR(bal, 0)}</Text>
                 ) : null}
               </View>
             </Card>
@@ -660,7 +660,7 @@ function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
 
       <View className="mt-3 flex-row items-start gap-2 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
         <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
-        <Text className="flex-1 text-[14px] leading-5 text-foreground/30">
+        <Text className="flex-1 text-[14px] leading-5 text-muted-foreground">
           Each account maps to a ledger asset code so imported transactions post automatically.
         </Text>
       </View>
@@ -697,7 +697,7 @@ function OptionsMenu({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable className="flex-1 bg-black/50" onPress={onClose}>
         <View
-          className="absolute right-4 top-[104px] w-[236px] overflow-hidden rounded-card border border-foreground/12 bg-card"
+          className="absolute right-4 top-[104px] w-[236px] overflow-hidden rounded-card border-2 border-foreground bg-card"
           style={{ shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 12 }}
         >
           {items.map((item, i) => (

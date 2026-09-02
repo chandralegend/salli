@@ -108,7 +108,7 @@ export function AccountDetailModal({
               <View className="mb-3.5 flex-row items-start justify-between">
                 <View className="flex-1">
                   <View className="mb-1.5 flex-row items-center gap-2">
-                    <View className="rounded-badge bg-salli-accent/25 px-2 py-0.5">
+                    <View className="rounded-badge border-[1.5px] border-salli-accent bg-salli-accent/25 px-2 py-0.5">
                       <Text className="text-[13px] font-sans-semibold uppercase tracking-wide text-salli-accent">
                         {account.type}
                       </Text>
@@ -155,23 +155,23 @@ export function AccountDetailModal({
                   onPress={() => setPeriod(p)}
                   className={cn(
                     "rounded-pill px-3 py-1.5",
-                    period === p ? "bg-salli-accent" : "border border-foreground/[0.08] bg-card",
+                    period === p ? "bg-salli-accent" : "border-2 border-foreground bg-card",
                   )}
                 >
-                  <Text className={cn("text-[15px]", period === p ? "font-sans-semibold text-white" : "font-sans-medium text-foreground/40")}>
+                  <Text className={cn("text-[15px]", period === p ? "font-sans-semibold text-white" : "font-sans-medium text-muted-foreground")}>
                     {p}
                   </Text>
                 </Pressable>
               ))}
             </View>
 
-            <Text className="mb-1.5 mt-3.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+            <Text className="mb-1.5 mt-3.5 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
               Entries · {visibleTxs.length}
             </Text>
 
             {rows.length === 0 ? (
               <Card className="items-center p-6">
-                <Text className="text-[15px] text-foreground/35">No entries in this period.</Text>
+                <Text className="text-[15px] text-muted-foreground">No entries in this period.</Text>
               </Card>
             ) : (
               <View className="gap-1.5">
@@ -196,7 +196,7 @@ export function AccountDetailModal({
                         <Text numberOfLines={1} className="font-sans-semibold text-[15px] text-foreground">
                           {t.description}
                         </Text>
-                        <Text className="mt-0.5 text-[14px] capitalize text-foreground/30">
+                        <Text className="mt-0.5 text-[14px] capitalize text-muted-foreground">
                           {t.entry_date} · {t.source}
                         </Text>
                       </View>

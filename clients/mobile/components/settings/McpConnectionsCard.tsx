@@ -84,7 +84,7 @@ export function McpConnectionsCard() {
         )}
       </View>
 
-      <Text className="mt-1.5 text-[15px] leading-5 text-foreground/40">
+      <Text className="mt-1.5 text-[15px] leading-5 text-muted-foreground">
         Let Claude, ChatGPT, or any other MCP-capable AI read and manage your Salli account — the
         same access Salli AI has in-app, authorized the same way you sign in anywhere else.
       </Text>
@@ -92,7 +92,7 @@ export function McpConnectionsCard() {
       {enabled.data ? (
         <>
           <View className="mt-4">
-            <Text className="mb-1.5 text-[14px] text-foreground/35">MCP server URL</Text>
+            <Text className="mb-1.5 text-[14px] text-muted-foreground">MCP server URL</Text>
             <View className="flex-row items-center gap-2">
               <View className="flex-1 rounded-card bg-muted px-3 py-2">
                 <Text className="font-mono text-[15px] text-foreground/70" numberOfLines={1}>
@@ -103,13 +103,13 @@ export function McpConnectionsCard() {
                 <Copy size={15} color={colors.mutedForeground} strokeWidth={2} />
               </Pressable>
             </View>
-            <Text className="mt-1.5 text-[14px] leading-5 text-foreground/30">
+            <Text className="mt-1.5 text-[14px] leading-5 text-muted-foreground">
               Paste this into Claude&rsquo;s or ChatGPT&rsquo;s &ldquo;add custom connector&rdquo; screen.
             </Text>
           </View>
 
           <View className="mt-4">
-            <Text className="mb-2 text-[14px] text-foreground/35">Connected apps</Text>
+            <Text className="mb-2 text-[14px] text-muted-foreground">Connected apps</Text>
             {connections.isLoading ? (
               <ActivityIndicator size="small" color={colors.mutedForeground} />
             ) : connections.data && connections.data.length > 0 ? (
@@ -121,7 +121,7 @@ export function McpConnectionsCard() {
                   >
                     <View className="flex-1">
                       <Text className="font-sans-medium text-[15px] text-foreground">{c.client_name}</Text>
-                      <Text className="text-[14px] text-foreground/35">Connected {formatShortDate(c.connected_at)}</Text>
+                      <Text className="text-[14px] text-muted-foreground">Connected {formatShortDate(c.connected_at)}</Text>
                     </View>
                     <Pressable
                       onPress={() => handleRevoke(c.token_id)}
@@ -141,7 +141,7 @@ export function McpConnectionsCard() {
                 ))}
               </View>
             ) : (
-              <Text className="text-[15px] text-foreground/30">No apps connected yet.</Text>
+              <Text className="text-[15px] text-muted-foreground">No apps connected yet.</Text>
             )}
           </View>
         </>

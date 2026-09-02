@@ -20,7 +20,7 @@ export function ToolActivityBlock({ parts }: { parts: AssistantPart[] }) {
     return (
       <View className="mb-1 flex-row items-center gap-1.5 pl-0.5">
         <Check size={11} color={colors.accent} strokeWidth={2.5} />
-        <Text className="text-[14px] text-foreground/30">{label}</Text>
+        <Text className="text-[14px] text-muted-foreground">{label}</Text>
       </View>
     );
   }

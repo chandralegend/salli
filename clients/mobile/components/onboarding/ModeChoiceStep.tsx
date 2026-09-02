@@ -68,7 +68,7 @@ export function ModeChoiceStep({
             </View>
             <View className="min-w-0 flex-1">
               <Text className="font-sans-semibold text-[16px] text-foreground">{opt.title}</Text>
-              <Text className="text-[14px] leading-5 text-foreground/35">{opt.detail}</Text>
+              <Text className="text-[14px] leading-5 text-muted-foreground">{opt.detail}</Text>
             </View>
             <View
               className={cn(
@@ -82,7 +82,7 @@ export function ModeChoiceStep({
         );
       })}
 
-      <Text className="px-0.5 pt-1 text-[14px] leading-5 text-foreground/25">
+      <Text className="px-0.5 pt-1 text-[14px] leading-5 text-muted-foreground">
         You can switch anytime — just swipe from either mode to jump to the other.
       </Text>
 

@@ -109,7 +109,7 @@ export default function BillingScreen() {
           <TopUpCard />
         </View>
 
-        <Text className="mb-2 mt-4 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-foreground/30">
+        <Text className="mb-2 mt-4 pl-0.5 text-[14px] font-sans-semibold uppercase tracking-wide text-muted-foreground">
           Plans
         </Text>
         <View className="gap-2.5">
@@ -123,7 +123,7 @@ export default function BillingScreen() {
                     {plan.monthly_price_usd === 0 ? "Free" : `$${plan.monthly_price_usd}/mo`}
                   </Text>
                 </View>
-                <Text className="mb-2.5 text-[15px] text-foreground/40">{plan.description}</Text>
+                <Text className="mb-2.5 text-[15px] text-muted-foreground">{plan.description}</Text>
                 <View className="mb-3 gap-1.5">
                   {plan.features.map((f, i) => (
                     <View key={i} className="flex-row items-start gap-2">
@@ -147,7 +147,7 @@ export default function BillingScreen() {
                     </Pressable>
                   ) : (
                     <View className="items-center rounded-pill border border-foreground/10 bg-foreground/[0.06] py-2.5">
-                      <Text className="text-[15px] font-sans-semibold text-foreground/40">Current Plan</Text>
+                      <Text className="text-[15px] font-sans-semibold text-muted-foreground">Current Plan</Text>
                     </View>
                   )
                 ) : null}

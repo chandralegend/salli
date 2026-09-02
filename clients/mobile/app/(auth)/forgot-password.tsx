@@ -38,7 +38,7 @@ export default function ForgotPasswordScreen() {
         <Text className="mt-[22px] font-sans-bold text-[30px] tracking-tight text-foreground">
           Forgot password?
         </Text>
-        <Text className="mt-2.5 text-center text-[15px] text-foreground/45">
+        <Text className="mt-2.5 text-center text-[15px] text-muted-foreground">
           We&apos;ll email you a link to reset it.
         </Text>
       </View>
@@ -51,7 +51,7 @@ export default function ForgotPasswordScreen() {
           <Text className="text-center font-sans-semibold text-[18px] text-foreground">
             Check your inbox
           </Text>
-          <Text className="text-center text-[15px] text-foreground/40">
+          <Text className="text-center text-[15px] text-muted-foreground">
             We&apos;ve sent a reset link to {email}.
           </Text>
           <ActionButton className="mt-3 h-[54px] w-full" onPress={() => router.replace("/(auth)/login")}>
@@ -82,7 +82,7 @@ export default function ForgotPasswordScreen() {
           </ActionButton>
 
           <Pressable className="items-center py-2" onPress={() => router.back()}>
-            <Text className="text-[15px] text-foreground/40">Back to sign in</Text>
+            <Text className="text-[15px] text-muted-foreground">Back to sign in</Text>
           </Pressable>
         </View>
       )}

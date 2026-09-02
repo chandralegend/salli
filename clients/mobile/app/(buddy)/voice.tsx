@@ -129,7 +129,7 @@ export default function VoiceScreen() {
               <Text
                 className={cn(
                   "mt-3 text-center text-[15px] leading-5",
-                  error || quotaBanner ? "text-destructive" : "text-foreground/35",
+                  error || quotaBanner ? "text-destructive" : "text-muted-foreground",
                 )}
                 style={{ maxWidth: isTablet ? 420 : undefined }}
               >

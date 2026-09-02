@@ -100,7 +100,7 @@ export function TagPicker({
 
   const label = cn(
     "mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide",
-    onDark ? "text-white/35" : "text-foreground/30",
+    onDark ? "text-white/35" : "text-muted-foreground",
   );
 
   function Chip({
@@ -122,7 +122,7 @@ export function TagPicker({
             ? "bg-salli-accent"
             : onDark
               ? "bg-white/[0.08]"
-              : "border border-foreground/10 bg-card",
+              : "border-2 border-foreground bg-card",
         )}
       >
         {active ? <Check size={11} color="#FFFFFF" strokeWidth={3} /> : null}
@@ -181,7 +181,7 @@ export function TagPicker({
               <Pressable
                 onPress={addCategory}
                 disabled={!draft.trim()}
-                className="h-10 w-10 items-center justify-center rounded-full bg-salli-accent"
+                className="h-10 w-10 items-center justify-center rounded-full border-2 border-foreground bg-salli-accent"
               >
                 <Check size={15} color="#FFFFFF" strokeWidth={3} />
               </Pressable>
@@ -202,7 +202,7 @@ export function TagPicker({
               <Text
                 className={cn(
                   "text-[15px] font-sans-medium",
-                  onDark ? "text-white/45" : "text-foreground/40",
+                  onDark ? "text-white/45" : "text-muted-foreground",
                 )}
               >
                 New
@@ -232,7 +232,7 @@ export function TagPicker({
         <Text
           className={cn(
             "flex-1 text-[13px] leading-5",
-            onDark ? "text-white/30" : "text-foreground/30",
+            onDark ? "text-white/30" : "text-muted-foreground",
           )}
         >
           Tagging doesn&rsquo;t change the amount — it only records what this spending was for, so

@@ -133,7 +133,7 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
         </>
       }
     >
-      <Text className="mb-3 text-[15px] leading-5 text-foreground/40">
+      <Text className="mb-3 text-[15px] leading-5 text-muted-foreground">
         Tell us what went wrong. We attach a small technical snapshot — never your balances,
         amounts, or account names.
       </Text>
@@ -150,16 +150,16 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
         style={{ minHeight: 110, textAlignVertical: "top" }}
       />
 
-      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">How bad is it?</Text>
+      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">How bad is it?</Text>
       <ChipSelect className="mb-1.5" options={SEVERITIES} value={severity} onChange={setSeverity} capitalize />
-      <Text className="mb-3 text-[14px] text-foreground/30">{SEVERITY_HINT[severity]}</Text>
+      <Text className="mb-3 text-[14px] text-muted-foreground">{SEVERITY_HINT[severity]}</Text>
 
-      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">Where in Salli?</Text>
+      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Where in Salli?</Text>
       <ChipSelect className="mb-3" options={AREAS} value={area} onChange={setArea} />
 
-      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-foreground/40">Screenshot (optional)</Text>
+      <Text className="mb-2 pl-0.5 text-[13px] font-sans-medium uppercase tracking-wide text-muted-foreground">Screenshot (optional)</Text>
       {attachment ? (
-        <View className="mb-1 flex-row items-center gap-2 rounded-card border border-foreground/10 bg-card px-3.5 py-2.5">
+        <View className="mb-1 flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card px-3.5 py-2.5">
           <Paperclip size={15} color={colors.mutedForeground} strokeWidth={2} />
           <Text className="flex-1 text-[15px] text-foreground/70" numberOfLines={1}>{attachment.name}</Text>
           <Pressable onPress={() => setAttachment(null)} hitSlop={8}>
@@ -175,17 +175,17 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
           <Text className="text-[15px] font-sans-medium text-foreground/50">Attach a screenshot</Text>
         </Pressable>
       )}
-      <Text className="mb-3 text-[14px] leading-5 text-foreground/30">
+      <Text className="mb-3 text-[14px] leading-5 text-muted-foreground">
         Take a screenshot yourself and pick the file — Salli never captures your screen.
       </Text>
 
       <Pressable
         onPress={() => setContactOk((v) => !v)}
-        className="mb-1 flex-row items-start justify-between gap-3 rounded-card border border-foreground/10 bg-card p-3"
+        className="mb-1 flex-row items-start justify-between gap-3 rounded-card border-2 border-foreground bg-card p-3"
       >
         <View className="flex-1">
           <Text className="text-[15px] font-sans-medium text-foreground">You can email me about this</Text>
-          <Text className="mt-0.5 text-[14px] text-foreground/35">
+          <Text className="mt-0.5 text-[14px] text-muted-foreground">
             We&apos;ll use the address on your account — it&apos;s never attached to the ticket.
           </Text>
         </View>

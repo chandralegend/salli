@@ -27,13 +27,33 @@ import { cn } from "@/lib/utils";
 /** Buddy Mode's opening line — no suggestion chips, no mascot/avatar: Salli's
  * identity here comes from typography, conversation, motion, and the brand
  * mark only, per the UI refresh spec. */
-/** One line per mood, so the face is never the only thing carrying the state. */
-const MOOD_CAPTION: Record<BloubMood, string> = {
-  neutral: "Ask me anything about your money.",
-  curious: "Go on\u2026",
-  excited: "Working on it\u2026",
-  surprised: "This one needs you.",
+/**
+ * What the conversation is doing. Deliberately separate from which face is
+ * showing: the caption is tied to state, the expression is not, so the resting
+ * rotation below can change the face every few seconds without the headline
+ * churning underneath it.
+ */
+type ChatState = "idle" | "typing" | "working" | "needsYou";
+
+/** One line per state, so the face is never the only thing carrying it. */
+const STATE_CAPTION: Record<ChatState, string> = {
+  idle: "Ask me anything about your money.",
+  typing: "Go on\u2026",
+  working: "Working on it\u2026",
+  needsYou: "This one needs you.",
 };
+
+/**
+ * The faces Salli cycles through while nothing is happening.
+ *
+ * `excited` and `surprised` are deliberately excluded: they are reactions to
+ * something, and showing them unprompted would have the face claiming a state
+ * the conversation is not in. `curious` is excluded for the same reason — it is
+ * the answer to you typing. What is left reads as present and waiting, which is
+ * the truth while idle.
+ */
+const RESTING_MOODS: BloubMood[] = ["neutral", "attentive", "shy"];
+const RESTING_INTERVAL_MS = 4500;
 
 /** On tablet, chat content (messages + composer) is capped to a readable
  * column and centered instead of stretching edge-to-edge across the screen —
@@ -111,21 +131,41 @@ export default function BuddyScreen() {
   }, [messages]);
 
   /**
-   * What the face is doing, from what the conversation is doing.
-   *
    * Ordered by urgency: a pending approval outranks streaming, because it is
-   * the only state that is actually blocked on the person. Typing beats idle.
+   * the only state actually blocked on the person. Typing beats idle.
    */
   const awaitingApproval = messages.some((m) =>
     m.role === "assistant" ? m.parts.some((part) => part.kind === "approval" && !part.resolved) : false,
   );
-  const mood: BloubMood = awaitingApproval
-    ? "surprised"
+  const chatState: ChatState = awaitingApproval
+    ? "needsYou"
     : streaming
-      ? "excited"
+      ? "working"
       : input.trim()
-        ? "curious"
-        : "neutral";
+        ? "typing"
+        : "idle";
+
+  // While idle, drift between the resting faces rather than holding one. A
+  // single fixed expression made the empty state read as an illustration; the
+  // change is what makes it read as someone waiting.
+  const [restingIndex, setRestingIndex] = useState(0);
+  useEffect(() => {
+    if (chatState !== "idle") return;
+    const timer = setInterval(
+      () => setRestingIndex((i) => (i + 1) % RESTING_MOODS.length),
+      RESTING_INTERVAL_MS,
+    );
+    return () => clearInterval(timer);
+  }, [chatState]);
+
+  const mood: BloubMood =
+    chatState === "needsYou"
+      ? "surprised"
+      : chatState === "working"
+        ? "excited"
+        : chatState === "typing"
+          ? "curious"
+          : RESTING_MOODS[restingIndex];
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
@@ -169,7 +209,7 @@ export default function BuddyScreen() {
                   it then reacts to the conversation. */}
               <Bloub mood={mood} size={188} />
               <Text className="mt-7 px-6 text-center text-[19px] font-sans-semibold leading-[26px] text-foreground">
-                {MOOD_CAPTION[mood]}
+                {STATE_CAPTION[chatState]}
               </Text>
               {/* Said once, here, rather than on every scroll of every
                   conversation — and it names what is over there instead of the

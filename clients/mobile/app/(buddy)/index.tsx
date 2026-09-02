@@ -15,6 +15,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ApprovalGateCard } from "@/components/agent/ApprovalGateCard";
 import { AssistantMarkdown } from "@/components/agent/AssistantMarkdown";
+import { Bloub } from "@/components/agent/Bloub";
+import type { BloubMood } from "@/components/agent/bloub-geometry";
 import { MessageActions } from "@/components/agent/MessageActions";
 import { ToolActivityBlock } from "@/components/agent/ToolActivityBlock";
 import { Drawer } from "@/components/ui/drawer";
@@ -26,8 +28,13 @@ import { cn } from "@/lib/utils";
 /** Buddy Mode's opening line — no suggestion chips, no mascot/avatar: Salli's
  * identity here comes from typography, conversation, motion, and the brand
  * mark only, per the UI refresh spec. */
-const WELCOME_MESSAGE =
-  "Hey, I'm Salli. I'm here to help you feel more in control of your money. What's on your mind today?";
+/** One line per mood, so the face is never the only thing carrying the state. */
+const MOOD_CAPTION: Record<BloubMood, string> = {
+  neutral: "Ask me anything about your money.",
+  curious: "Go on\u2026",
+  excited: "Working on it\u2026",
+  surprised: "This one needs you.",
+};
 
 /** On tablet, chat content (messages + composer) is capped to a readable
  * column and centered instead of stretching edge-to-edge across the screen —
@@ -71,6 +78,7 @@ export default function BuddyScreen() {
   const [input, setInput] = useState("");
   const [sessionsOpen, setSessionsOpen] = useState(false);
 
+
   const {
     messages,
     streaming,
@@ -103,6 +111,23 @@ export default function BuddyScreen() {
     listRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
 
+  /**
+   * What the face is doing, from what the conversation is doing.
+   *
+   * Ordered by urgency: a pending approval outranks streaming, because it is
+   * the only state that is actually blocked on the person. Typing beats idle.
+   */
+  const awaitingApproval = messages.some((m) =>
+    m.role === "assistant" ? m.parts.some((part) => part.kind === "approval" && !part.resolved) : false,
+  );
+  const mood: BloubMood = awaitingApproval
+    ? "surprised"
+    : streaming
+      ? "excited"
+      : input.trim()
+        ? "curious"
+        : "neutral";
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
       {/* No hamburger/new-chat icons in the header — tapping the title opens
@@ -119,9 +144,18 @@ export default function BuddyScreen() {
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
         {messages.length === 0 ? (
-          <View className="flex-1 justify-end px-4 pb-3">
-            <View style={chatColumnStyle}>
-              <Text className="px-1 text-[16.5px] leading-[25px] text-foreground">{WELCOME_MESSAGE}</Text>
+          <View className="flex-1 justify-center px-4 pb-3">
+            <View style={chatColumnStyle} className="items-center">
+              {/* Salli's face instead of a paragraph, centred rather than sat
+                  just above the composer. The old opening line said the same
+                  thing every time and read as a message that had already been
+                  sent; the face says "something is here and listening" without
+                  any reading at all, and it is the one element that then reacts
+                  to the conversation instead of scrolling away with it. */}
+              <Bloub mood={mood} size={188} />
+              <Text className="mt-6 px-6 text-center text-[16.5px] leading-[25px] text-muted-foreground">
+                {MOOD_CAPTION[mood]}
+              </Text>
             </View>
           </View>
         ) : (
@@ -201,7 +235,7 @@ export default function BuddyScreen() {
         <View className="px-3.5 pt-2" style={{ paddingBottom: keyboardUp ? 8 : insets.bottom + 16 }}>
           <View
             className="flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card py-1.5 pl-2 pr-1.5"
-            style={chatColumnStyle}
+            style={[chatColumnStyle, shadow]}
           >
             <Pressable className="h-11 w-11 items-center justify-center" accessibilityLabel="Attach a file">
               <Paperclip size={19} color={colors.mutedForeground} strokeWidth={1.8} />

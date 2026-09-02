@@ -1,11 +1,12 @@
-import { Lock, RotateCcw, Share2 } from "lucide-react-native";
+import { RotateCcw, Share2 } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, Share, Text, View } from "react-native";
 
 import { TagPicker } from "@/components/ledger/TagPicker";
 import { Drawer } from "@/components/ui/drawer";
+import { PostingChip } from "@/components/ui/posting-chip";
 import type { Account, JournalEntry } from "@/hooks/useDashboard";
-import { formatLKR, formatLKRAbbrev } from "@/lib/format";
+import { formatLKR } from "@/lib/format";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -64,32 +65,29 @@ export function EntryDetailSheet({
   const Posting = ({
     kind,
     posting,
-    first,
   }: {
     kind: "Debit" | "Credit";
     posting?: JournalEntry["postings"][number];
-    first?: boolean;
   }) => {
     const a = acct(posting?.account_id);
-    const strong = kind === "Debit";
+    // Two separate flat cards led by a DR/CR chip, as the mockup has it — not
+    // one joined block with a colour rail. The chip states the side in the
+    // ledger's own vocabulary; the rail only hinted at it, and "Debit ·
+    // expense" spent a whole mono line saying what the chip says in two
+    // characters.
     return (
-      <View
-        className={cn(
-          "flex-row items-center gap-2.5 border-2 border-foreground bg-card px-3.5 py-3",
-          first ? "rounded-t-[14px] border-b-0" : "rounded-b-[14px]",
-        )}
-      >
-        <View className={cn("h-[38px] w-[3px] rounded-pill", strong ? "bg-salli-accent" : "bg-foreground/15")} />
-        <View className="flex-1">
-          <Text className="mb-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-            {kind} · {a?.type ?? "—"}
+      <View className="flex-row items-center gap-3 rounded-card border-2 border-foreground bg-card px-3.5 py-3">
+        <PostingChip side={kind === "Debit" ? "DR" : "CR"} />
+        <View className="min-w-0 flex-1">
+          <Text numberOfLines={1} className="font-sans-bold text-[16px] text-foreground">
+            {a?.name ?? "—"}
           </Text>
-          <Text className="font-sans-semibold text-[15px] text-foreground">
-            {a ? `${a.code} · ${a.name}` : "—"}
+          <Text className="mt-0.5 text-[13.5px] text-muted-foreground">
+            {a ? `${a.code} · ${a.type}` : "—"}
           </Text>
         </View>
-        <Text className={cn("font-sans-bold text-[15px]", strong ? "text-foreground" : "text-foreground/60")}>
-          Rs. {formatLKR(posting?.amount ?? "0", 0)}
+        <Text className="shrink-0 font-sans-extrabold text-[16px] text-foreground">
+          {formatLKR(posting?.amount ?? "0", 2)}
         </Text>
       </View>
     );
@@ -107,73 +105,73 @@ export function EntryDetailSheet({
             onPress={handleReverse}
             disabled={reversed || reversing}
             className={cn(
-              "h-[50px] flex-1 flex-row items-center justify-center gap-2 rounded-pill border-2 border-foreground bg-card",
+              "h-[52px] flex-1 flex-row items-center justify-center gap-2 rounded-card border-2 border-foreground bg-card",
               (reversed || reversing) && "opacity-40",
             )}
           >
-            <RotateCcw size={17} color={colors.mutedForeground} strokeWidth={2} />
-            <Text className="font-sans-semibold text-[16px] text-foreground/60">
+            <RotateCcw size={19} color={colors.accent} strokeWidth={2} />
+            <Text className="font-sans-bold text-[17px] text-salli-accent">
               {reversed ? "Reversed" : reversing ? "Reversing…" : "Reverse"}
             </Text>
           </Pressable>
-          <Pressable onPress={handleShare} className="h-[50px] flex-1 flex-row items-center justify-center gap-2 rounded-pill bg-primary">
-            <Share2 size={17} color={colors.primaryForeground} strokeWidth={2} />
-            <Text className="font-sans-semibold text-[16px] text-primary-foreground">Share</Text>
+          <Pressable onPress={handleShare} className="h-[52px] flex-1 flex-row items-center justify-center gap-2 rounded-card border-2 border-foreground bg-primary">
+            <Share2 size={19} color={colors.primaryForeground} strokeWidth={2} />
+            <Text className="font-sans-bold text-[17px] text-primary-foreground">Share</Text>
           </Pressable>
         </View>
       }
     >
-      <View className="mb-3 flex-row justify-end">
-        <View className="rounded-badge border-[1.5px] border-foreground bg-foreground/[0.07] px-2 py-0.5">
-          <Text className="text-[13px] font-sans-medium capitalize text-muted-foreground">
-            {reversed ? "reversed" : entry?.source}
-          </Text>
-        </View>
-      </View>
-
-      {/* amount hero */}
-      <View className="mb-3 rounded-card border border-foreground/[0.08] bg-salli-hero p-[18px]">
-        <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/40" numberOfLines={1}>
-          {entry?.description}
-        </Text>
-        <View className="mb-1.5 flex-row items-baseline gap-1.5">
-          <Text className="font-sans-semibold text-[20px] text-white/35">Rs.</Text>
-          <Text className="font-sans-extrabold text-[38px] leading-none tracking-tighter text-white">
-            {formatLKRAbbrev(amount)}
-          </Text>
-        </View>
-        <Text className="text-[14px] text-white/30">
-          {entry?.entry_date}
-          {entry?.external_ref ? ` · Ref ${entry.external_ref}` : ""}
-        </Text>
-      </View>
-
-      <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-        Double-Entry Postings
+      {/* Description, meta, then the figure as plain text on the sheet — no
+          dark hero card. The mockup drops it, and it was doing the same job
+          twice: the amount is already the largest thing here, so wrapping it
+          in an inverted block made a summary out of a detail view. Source and
+          reversal state move into the meta line instead of a floating badge. */}
+      <Text className="font-sans-extrabold text-[21px] text-foreground" style={{ letterSpacing: -0.4 }}>
+        {entry?.description}
       </Text>
-      <View className="mb-3">
-        <Posting kind="Debit" posting={debit} first />
+      <Text className="mt-1 text-[13.5px] text-muted-foreground">
+        {entry?.entry_date} · {entry?.source}
+        {entry?.external_ref ? ` · ref ${entry.external_ref}` : ""}
+        {reversed ? " · reversed" : ""}
+      </Text>
+
+      <Text className="mt-5 font-sans-extrabold text-[38px] text-foreground" style={{ letterSpacing: -1.5 }}>
+        Rs. {formatLKR(String(amount), 2)}
+      </Text>
+
+      <View className="my-5 h-px bg-foreground/15" />
+
+      <Text className="mb-3 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+        Postings
+      </Text>
+      <View className="gap-3">
+        <Posting kind="Debit" posting={debit} />
         <Posting kind="Credit" posting={credit} />
       </View>
 
+      {/* Separated by a rule and sitting directly on the sheet, like every
+          other section here. Boxed in its own card it read as a third posting
+          and butted straight up against the credit row above it. */}
       {classifiable?.id && !reversed ? (
-        <View className="mb-3 rounded-card border-2 border-foreground bg-card p-3.5">
+        <>
+          <View className="my-5 h-px bg-foreground/15" />
           <TagPicker
             key={classifiable.id}
             postingId={classifiable.id}
             value={classifiable.tags ?? {}}
           />
-        </View>
+        </>
       ) : null}
 
-      <View className="flex-row items-start gap-2 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
-        <Lock size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
-        <Text className="flex-1 text-[14px] leading-5 text-muted-foreground">
-          {/* Tags are the exception, and deliberately so: the amounts never
-              change, but a miscategorised expense has to be fixable. */}
-          Amounts are immutable · correct via a reversing entry · tags stay editable
-        </Text>
-      </View>
+      {/* A centred footnote, per the mockup, rather than a boxed callout with a
+          padlock. The rule it states is permanent and applies to every entry,
+          so it is context — not a warning that needs its own container. Tags
+          are the deliberate exception: amounts never change, but a
+          miscategorised expense has to be fixable. */}
+      <Text className="mt-5 text-center text-[13.5px] leading-5 text-muted-foreground">
+        Posted entries are never edited — a reversal is the correction. Tags stay
+        editable.
+      </Text>
     </Drawer>
   );
 }

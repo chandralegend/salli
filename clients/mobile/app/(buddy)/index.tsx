@@ -130,33 +130,57 @@ export default function BuddyScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
-      {/* No hamburger/new-chat icons in the header — tapping the title opens
-          the same session-history drawer that used to sit behind a menu icon,
-          per the spec's "no hamburger menu on Buddy Mode". */}
-      {/* .apphead, column variant: 17px/800 name, 13.5px caption, 2px gap.
-          Reads "Salli" rather than "Buddy Mode" — the mode is what you swiped
-          into, not who you are talking to, and the caption already names the
-          way back. */}
-      <Pressable onPress={openSessions} className="items-center gap-0.5 pb-3 pt-1.5">
-        <Text className="font-sans-extrabold text-[17px] text-foreground">Salli</Text>
-        <Text className="text-[13.5px] text-muted-foreground">Swipe left for Pro Mode</Text>
-      </Pressable>
+      {/* The header holds the face once a conversation exists, and nothing
+          before that. It used to carry a "Salli" title and a "Swipe left for
+          Pro Mode" caption — a name over a screen that is unmistakably Salli's,
+          and navigation copy repeated on every scroll of every conversation.
+          Both now live in the empty state, said once, where there is room to
+          say them properly.
+
+          The face is still the way into chat history, as the title was: in the
+          empty state the big one is the tap target, and here the small one is,
+          so history is reachable in both states. */}
+      {messages.length > 0 ? (
+        <Pressable
+          onPress={openSessions}
+          accessibilityRole="button"
+          accessibilityLabel="Chat history"
+          className="items-center pb-2.5 pt-1.5"
+        >
+          <Bloub mood={mood} size={34} enterFrom={1.9} />
+        </Pressable>
+      ) : (
+        <View className="pt-1.5" />
+      )}
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
         {messages.length === 0 ? (
           <View className="flex-1 justify-center px-4 pb-3">
-            <View style={chatColumnStyle} className="items-center">
-              {/* Salli's face instead of a paragraph, centred rather than sat
-                  just above the composer. The old opening line said the same
-                  thing every time and read as a message that had already been
-                  sent; the face says "something is here and listening" without
-                  any reading at all, and it is the one element that then reacts
-                  to the conversation instead of scrolling away with it. */}
+            <Pressable
+              style={chatColumnStyle}
+              className="items-center"
+              onPress={openSessions}
+              accessibilityRole="button"
+              accessibilityLabel="Chat history"
+            >
+              {/* Salli's face instead of a paragraph. The old opening line said
+                  the same thing every time and read as a message that had
+                  already been sent; the face says "something is here and
+                  listening" with no reading at all, and unlike a line of text
+                  it then reacts to the conversation. */}
               <Bloub mood={mood} size={188} />
-              <Text className="mt-6 px-6 text-center text-[16.5px] leading-[25px] text-muted-foreground">
+              <Text className="mt-7 px-6 text-center text-[19px] font-sans-semibold leading-[26px] text-foreground">
                 {MOOD_CAPTION[mood]}
               </Text>
-            </View>
+              {/* Said once, here, rather than on every scroll of every
+                  conversation — and it names what is over there instead of the
+                  mode's internal label. "Pro Mode" and "manual" describe how
+                  the app is built; the ledger and the tax figures are what you
+                  actually went looking for. */}
+              <Text className="mt-2.5 px-6 text-center text-[15px] leading-[21px] text-muted-foreground">
+                Swipe left for your ledger, tax and reports.
+              </Text>
+            </Pressable>
           </View>
         ) : (
           <FlatList<ChatMessage>

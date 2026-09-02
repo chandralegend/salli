@@ -34,16 +34,28 @@ const EYE_HOLE = "#F9F9F9";
 export function Bloub({
   mood = "neutral",
   size = 176,
+  enterFrom,
 }: {
   mood?: BloubMood;
   size?: number;
+  /**
+   * Scale to enter from, springing to 1 on mount.
+   *
+   * Used by the header instance so that sending a message reads as the big
+   * face shrinking into the header, rather than one face vanishing and a
+   * different one appearing. It is not a true shared-element transition — the
+   * two live in different containers — but entering from ~2x at the moment the
+   * large one unmounts is indistinguishable from one at a glance, and costs
+   * none of the layout gymnastics a real one would.
+   */
+  enterFrom?: number;
 }) {
   const colors = useThemeColors();
   const geo = BLOUB[mood];
 
   const drift = useRef(new Animated.Value(0)).current;
   const breath = useRef(new Animated.Value(0)).current;
-  const pop = useRef(new Animated.Value(1)).current;
+  const pop = useRef(new Animated.Value(enterFrom ?? 1)).current;
 
   // The authored animation: linear, alternating, 2.967s. Reproduced exactly.
   useEffect(() => {
@@ -91,17 +103,25 @@ export function Bloub({
     return () => loop.stop();
   }, [breath, mood]);
 
-  // A single pop on mood change. Skipped on first mount so the face does not
+  // A single pop on mood change. On first mount it either settles from
+  // `enterFrom` (the minimise) or does nothing at all, so an idle face does not
   // announce itself before the conversation has started.
   const mounted = useRef(false);
   useEffect(() => {
     if (!mounted.current) {
       mounted.current = true;
+      if (enterFrom == null) return;
+      Animated.spring(pop, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 9,
+        bounciness: 7,
+      }).start();
       return;
     }
     pop.setValue(0.94);
     Animated.spring(pop, { toValue: 1, useNativeDriver: true, speed: 14, bounciness: 12 }).start();
-  }, [mood, pop]);
+  }, [mood, pop, enterFrom]);
 
   const bodyScale = useMemo(
     () =>

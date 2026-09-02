@@ -1,7 +1,6 @@
 import {
   ChevronDown,
   CreditCard,
-  Landmark,
   PiggyBank,
   Plus,
   ShoppingBag,
@@ -16,6 +15,7 @@ import { AddEditAccountDrawer } from "@/components/AddEditAccountDrawer";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
+import { PostingChip } from "@/components/ui/posting-chip";
 import { ActionButton } from "@/components/ui/action-button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { TextField } from "@/components/ui/text-field";
@@ -338,7 +338,6 @@ function AccountRow({
 }) {
   const colors = useThemeColors();
   const meta = account ? TYPE_META[account.type] : null;
-  const Icon = meta?.Icon ?? (side === "debit" ? ShoppingBag : Landmark);
   const filled = Boolean(account);
   const label = SIDE_LABEL[entryType][side];
 
@@ -350,14 +349,12 @@ function AccountRow({
         position === "top" ? "rounded-t-card border-b-0" : "rounded-b-card",
       )}
     >
-      <View
-        className={cn(
-          "h-8 w-8 items-center justify-center rounded-card",
-          filled ? "border border-salli-accent/20 bg-salli-accent/10" : "bg-foreground/[0.06]",
-        )}
-      >
-        <Icon size={15} color={filled ? colors.accent : "rgba(148,163,184,0.6)"} strokeWidth={2.5} />
-      </View>
+      {/* The mockup leads each account row with its DR/CR chip rather than a
+          type glyph. The glyph could only restate the account's type, which
+          the label beside it already says — and the chip is the one thing that
+          makes the double-entry model visible on the screen that creates it.
+          The section is literally headed "DOUBLE-ENTRY ACCOUNTS". */}
+      <PostingChip side={side === "debit" ? "DR" : "CR"} className={filled ? undefined : "opacity-40"} />
       <View className="flex-1">
         <Text className="mb-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
           {label}

@@ -353,7 +353,7 @@ export default function LedgerScreen() {
 
       {tab === "Income Stmt" ? (
         <View className="px-4 pt-4">
-          <Card className="bg-salli-navy-card p-5">
+          <Card className="bg-salli-hero p-5">
             <Text className="mb-1 text-[14px] font-sans-medium uppercase tracking-wide text-white/40">
               Net Income · {from} → {to}
             </Text>

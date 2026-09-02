@@ -77,7 +77,7 @@ export default function SubscriptionsScreen() {
       >
         {/* hero — monthly recurring cost */}
         <View className="px-4 pt-3">
-          <Card className="bg-salli-navy-card p-[18px]">
+          <Card className="bg-salli-hero p-[18px]">
             <Text className="mb-1.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
               Monthly Recurring
             </Text>

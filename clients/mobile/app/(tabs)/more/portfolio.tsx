@@ -175,7 +175,7 @@ export default function PortfolioScreen() {
           <>
             <View className="px-4 pt-3">
             {/* Navy hero — total value + cost/gain */}
-            <Card className="bg-salli-navy-card p-[18px]">
+            <Card className="bg-salli-hero p-[18px]">
               <Text className="mb-2 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
                 Total Portfolio Value
               </Text>

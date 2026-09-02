@@ -1,10 +1,11 @@
 import * as AppleAuthentication from "expo-apple-authentication";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { isAppleAuthAvailable, signInWithApple, signInWithGoogle } from "@/lib/auth";
-import { useThemeColors, useThemeMode } from "@/lib/theme";
+import { useHardShadow, useThemeColors, useThemeMode } from "@/lib/theme";
 
 /** Official 4-color Google "G" mark — Google's brand guidelines for a custom
  * "Sign in with Google" button (there's no first-party RN component) require
@@ -52,6 +53,7 @@ function GoogleIcon() {
 export function SocialAuthButtons({ onError }: { onError: (message: string) => void }) {
   const colors = useThemeColors();
   const { isDark } = useThemeMode();
+  const shadow = useHardShadow();
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [busyProvider, setBusyProvider] = useState<"google" | "apple" | null>(null);
 
@@ -100,11 +102,19 @@ export function SocialAuthButtons({ onError }: { onError: (message: string) => v
       {appleAvailable ? (
         <View
           pointerEvents={busyProvider ? "none" : "auto"}
-          style={{
-            height: 54,
-            position: "relative",
-            opacity: busyProvider && busyProvider !== "apple" ? 0.5 : 1,
-          }}
+          style={[
+            {
+              height: 54,
+              position: "relative",
+              borderRadius: 12,
+              opacity: busyProvider && busyProvider !== "apple" ? 0.5 : 1,
+            },
+            // The shadow rides the wrapper, not the button: Apple's component
+            // must be used verbatim and takes no style props beyond
+            // cornerRadius, so without this it would be the one element in the
+            // row sitting flat while Google floats.
+            busyProvider ? undefined : shadow,
+          ]}
         >
           {/* Theme-aware, per Apple's own guidance: BLACK on a light
               background, WHITE on a dark one. It used to be hard-coded WHITE,
@@ -118,7 +128,7 @@ export function SocialAuthButtons({ onError }: { onError: (message: string) => v
                 ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
                 : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
             }
-            cornerRadius={16}
+            cornerRadius={12}
             style={{ height: 54, width: "100%" }}
             onPress={handleApple}
           />
@@ -134,11 +144,20 @@ export function SocialAuthButtons({ onError }: { onError: (message: string) => v
         </View>
       ) : null}
 
-      <Pressable
+      {/* Google has no first-party RN button, so this follows Google's own
+          branding rules (exact 4-colour mark, "Continue with Google") while
+          taking the app's brutalist frame. Apple's button above cannot be
+          restyled at all — it is theirs verbatim — so matching height and
+          radius is the only way the pair reads as one row. */}
+      <AnimatedPressable
         onPress={handleGoogle}
         disabled={busyProvider !== null}
-        className="h-[54px] flex-row items-center justify-center gap-2.5 rounded-card border border-foreground/15 bg-foreground/[0.04]"
-        style={{ opacity: busyProvider && busyProvider !== "google" ? 0.5 : 1 }}
+        press="sink"
+        className="h-[54px] flex-row items-center justify-center gap-2.5 rounded-card border-2 border-foreground bg-card"
+        style={[
+          { opacity: busyProvider && busyProvider !== "google" ? 0.5 : 1 },
+          busyProvider ? undefined : shadow,
+        ]}
       >
         {busyProvider === "google" ? (
           <ActivityIndicator color={colors.foreground} />
@@ -148,12 +167,12 @@ export function SocialAuthButtons({ onError }: { onError: (message: string) => v
             <Text className="font-sans-semibold text-[17px] text-foreground">Continue with Google</Text>
           </>
         )}
-      </Pressable>
+      </AnimatedPressable>
 
       <View className="my-1 flex-row items-center gap-3">
-        <View className="h-px flex-1 bg-foreground/10" />
-        <Text className="text-[15px] text-foreground/20">or</Text>
-        <View className="h-px flex-1 bg-foreground/10" />
+        <View className="h-px flex-1 bg-foreground/20" />
+        <Text className="text-[15px] text-foreground/45">or</Text>
+        <View className="h-px flex-1 bg-foreground/20" />
       </View>
     </View>
   );

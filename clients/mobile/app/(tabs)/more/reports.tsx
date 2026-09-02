@@ -184,7 +184,7 @@ export default function ReportsScreen() {
 
       {tab === "Balance Sheet" ? (
         <View className="px-4 pt-2.5">
-          <Card className="bg-salli-navy-card p-[18px]">
+          <Card className="bg-salli-hero p-[18px]">
             <Text className="mb-1.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
               Net Worth Snapshot
             </Text>
@@ -308,7 +308,7 @@ export default function ReportsScreen() {
         </View>
       ) : tab === "Income Stmt" ? (
         <View className="px-4 pt-2.5">
-          <Card className="bg-salli-navy-card p-[18px]">
+          <Card className="bg-salli-hero p-[18px]">
             <Text className="mb-1.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
               Net Income · {range.label}
             </Text>
@@ -373,7 +373,7 @@ export default function ReportsScreen() {
         </View>
       ) : (
         <View className="px-4 pt-2.5">
-          <Card className="bg-salli-navy-card p-[18px]">
+          <Card className="bg-salli-hero p-[18px]">
             <View className="mb-3.5 flex-row items-start justify-between">
               <View className="flex-1">
                 <Text className="mb-1.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">

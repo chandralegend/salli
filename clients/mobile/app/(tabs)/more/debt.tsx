@@ -194,7 +194,7 @@ export default function DebtScreen() {
           </View>
         ) : tab === "Overview" ? (
           <View className="px-4 pt-3">
-            <Card className="bg-salli-navy-card p-[18px]">
+            <Card className="bg-salli-hero p-[18px]">
               <Text className="mb-2 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
                 Total Outstanding
               </Text>
@@ -371,7 +371,7 @@ export default function DebtScreen() {
               </Text>
             </View>
 
-            <Card className="mt-3 bg-salli-navy-card p-4">
+            <Card className="mt-3 bg-salli-hero p-4">
               <View className="mb-3 flex-row items-start justify-between">
                 <View>
                   <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-white/40">
@@ -473,7 +473,7 @@ export default function DebtScreen() {
         ) : (
           // Schedule
           <View className="px-4 pt-3">
-            <Card className="bg-salli-navy-card p-4">
+            <Card className="bg-salli-hero p-4">
               <View className="flex-row items-start justify-between">
                 <View>
                   <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-white/40">

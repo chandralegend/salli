@@ -11,8 +11,15 @@ type TextFieldProps = TextInputProps & {
   className?: string;
 };
 
-/** The mockup's recurring boxed field: uppercase tracked-out label, value/input
- * below it, #1a1a1a fill, hairline border (blue when `active`). */
+/**
+ * The recurring boxed field: uppercase tracked-out label above the input.
+ *
+ * Brutalist, so the field IS its 2px ink border — but deliberately with no hard
+ * shadow. A shadow on an input reads as "pressable", and there are up to six of
+ * these stacked on the onboarding steps; six floating blocks in a column is
+ * noise. Focus is shown by swapping the border to brand orange, which on a 2px
+ * border is far more legible than it was on a hairline.
+ */
 export const TextField = forwardRef<TextInput, TextFieldProps>(function TextField(
   { label, optionalHint, active, rightIcon, className, style, ...props },
   ref,
@@ -22,12 +29,12 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
       <Text
         className={cn(
           "mb-1 text-[13px] font-sans-medium uppercase tracking-wide",
-          active ? "text-salli-accent" : "text-foreground/30",
+          active ? "text-salli-accent" : "text-foreground/45",
         )}
       >
         {label}
         {optionalHint ? (
-          <Text className="text-[13px] font-sans normal-case tracking-normal text-foreground/25">
+          <Text className="text-[13px] font-sans normal-case tracking-normal text-foreground/40">
             {" "}
             · {optionalHint}
           </Text>
@@ -46,8 +53,8 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
   return (
     <View
       className={cn(
-        "rounded-card border bg-card px-4 py-3",
-        active ? "border-salli-accent" : "border-foreground/10",
+        "rounded-card border-2 bg-card px-4 py-3",
+        active ? "border-salli-accent" : "border-foreground",
         rightIcon ? "flex-row items-center justify-between" : undefined,
         className,
       )}

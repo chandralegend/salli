@@ -15,8 +15,8 @@
  * for RN Modal content, which portals outside this styled tree).
  */
 :root {
-  --color-background: 255 255 255; /* pure white canvas */
-  --color-foreground: 0 0 0; /* iOS label */
+  --color-background: 245 243 239; /* #F5F3EF — warm cream canvas */
+  --color-foreground: 0 0 0; /* ink: text AND 2px borders */
 
   /* Card sits at the same white as the canvas and is separated by its hairline
      border, not by a fill. A tinted card on a white page is what made the old
@@ -27,23 +27,29 @@
   --color-popover: 255 255 255;
   --color-popover-foreground: 0 0 0;
 
-  --color-primary: 0 0 0; /* CTA pill = inverse of canvas (black pill) */
-  --color-primary-foreground: 255 255 255;
+  --color-primary: 0 0 0; /* solid CTA + hero blocks = inverse of canvas */
+  --color-primary-foreground: 245 243 239;
 
-  --color-muted: 242 242 247; /* iOS systemGroupedBackground — nested cells */
-  --color-muted-foreground: 108 108 112; /* iOS secondaryLabel, flattened */
+  --color-muted: 237 234 228; /* cream, one step down — nested cells */
+  --color-muted-foreground: 138 135 133;
 
   /* Kept a true red, deliberately distinct from salli-accent below, so a
      destructive action never looks like a CTA. */
   --color-destructive: 220 38 38; /* #DC2626 */
 
-  /* Salli brand accent — fixed red-orange, same value in both themes. */
+  /* Brand accent — fixed red-orange. Reserved for STATE: progress fills, the
+     active tab. Not for AI actions; see --color-salli-ai. */
   --color-salli-accent: 241 90 50; /* #F15A32 */
+
+  /* AI accent — lavender, fixed in both themes. Reserved for AI actions
+     (Ask Salli, the mic, user chat bubbles) so an AI affordance never reads as
+     spending state. */
+  --color-salli-ai: 203 185 255; /* #CBB9FF */
 }
 
 .dark {
-  --color-background: 0 0 0; /* true black canvas */
-  --color-foreground: 255 255 255; /* iOS label (dark) */
+  --color-background: 14 14 14; /* #0E0E0E — near-black canvas */
+  --color-foreground: 255 255 255; /* ink inverts: borders go white too */
 
   /* Unlike light mode, dark surfaces DO carry a fill: iOS raises them on
      systemGray6 against a black canvas, which is what makes a card look like
@@ -54,13 +60,14 @@
   --color-popover: 28 28 30;
   --color-popover-foreground: 255 255 255;
 
-  --color-primary: 255 255 255; /* CTA pill = inverse of canvas */
-  --color-primary-foreground: 0 0 0;
+  --color-primary: 255 255 255; /* solid CTA + hero blocks = inverse of canvas */
+  --color-primary-foreground: 14 14 14;
 
-  --color-muted: 44 44 46; /* iOS systemGray5 (dark) — one step above card */
-  --color-muted-foreground: 152 152 159; /* iOS secondaryLabel, flattened */
+  --color-muted: 44 44 46; /* one step above card */
+  --color-muted-foreground: 152 152 159;
 
   --color-destructive: 239 68 68; /* #EF4444 */
 
   --color-salli-accent: 241 90 50; /* #F15A32 — same as light, brand is fixed */
+  --color-salli-ai: 203 185 255; /* #CBB9FF — same as light */
 }

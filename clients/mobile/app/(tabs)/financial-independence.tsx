@@ -268,7 +268,7 @@ export default function FinancialIndependenceScreen() {
       {tab === "Overview" && !fiScore.isLoading ? (
         <View className="gap-2.5 px-4 pt-3">
           {/* TIER 1 — Freedom Number (navy hero card) */}
-          <View className="rounded-card border border-foreground/[0.08] bg-salli-navy-card p-[18px]">
+          <View className="rounded-card border border-foreground/[0.08] bg-salli-hero p-[18px]">
             <View className="mb-2 flex-row items-center gap-1.5">
               <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-white/50">
                 Freedom Number
@@ -474,7 +474,7 @@ export default function FinancialIndependenceScreen() {
         <View className="gap-3 px-4 pt-3.5">
           {/* Portfolio projection chart */}
           {projections.data ? (
-            <View className="rounded-card border border-foreground/[0.08] bg-salli-navy-card p-[16px]">
+            <View className="rounded-card border border-foreground/[0.08] bg-salli-hero p-[16px]">
               <View className="mb-3 flex-row items-center justify-between">
                 <Text className="text-[14px] font-sans-semibold uppercase tracking-wide text-white/50">
                   Portfolio Projection
@@ -690,7 +690,7 @@ export default function FinancialIndependenceScreen() {
           return (
             <View className="gap-2 px-4 pt-3.5">
               {/* summary hero */}
-              <View className="rounded-card border border-foreground/[0.08] bg-salli-navy-card p-[16px]">
+              <View className="rounded-card border border-foreground/[0.08] bg-salli-hero p-[16px]">
                 <Text className="mb-1.5 text-[14px] font-sans-semibold uppercase tracking-wide text-white/50">
                   Goals Progress
                 </Text>

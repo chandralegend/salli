@@ -161,7 +161,7 @@ export default function BudgetScreen() {
           return (
             <View className="px-4 pt-3.5">
               {/* hero — spend vs limit */}
-              <Card className="bg-salli-navy-card p-[18px]">
+              <Card className="bg-salli-hero p-[18px]">
                 <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-white/40">
                   Monthly Budget
                 </Text>
@@ -260,7 +260,7 @@ export default function BudgetScreen() {
       ) : (
         <View className="px-4 pt-3.5">
           {/* hero */}
-          <Card className="bg-salli-navy-card p-0">
+          <Card className="bg-salli-hero p-0">
             <View className="p-[18px] pb-4">
               <View className="mb-2.5 flex-row items-start justify-between">
                 <View>

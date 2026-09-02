@@ -57,7 +57,7 @@ export default function BillingScreen() {
     <PageShell header={<ScreenHeader title="Billing" back />}>
       <View className="px-4 pt-3">
         <View className="overflow-hidden rounded-card border border-foreground/10">
-          <View className="bg-salli-navy-card px-4 pb-4 pt-3.5">
+          <View className="bg-salli-hero px-4 pb-4 pt-3.5">
             <Text className="mb-3 text-[14px] font-sans-medium uppercase tracking-wide text-white/50 capitalize">
               {entitlements.data?.plan_name ?? "Free"} Plan
             </Text>

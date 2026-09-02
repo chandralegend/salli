@@ -104,7 +104,7 @@ export function AccountDetailModal({
         ) : (
           <View className="gap-0">
             {/* hero */}
-            <Card className="bg-salli-navy-card p-[18px]">
+            <Card className="bg-salli-hero p-[18px]">
               <View className="mb-3.5 flex-row items-start justify-between">
                 <View className="flex-1">
                   <View className="mb-1.5 flex-row items-center gap-2">

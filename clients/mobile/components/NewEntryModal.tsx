@@ -192,7 +192,7 @@ export function NewEntryModal({ visible, onClose, accounts, initialDraft }: NewE
           capitalize
         />
 
-        <Card className="mt-4 border-foreground/[0.08] bg-salli-navy-card px-5 pb-4 pt-5">
+        <Card className="mt-4 border-foreground/[0.08] bg-salli-hero px-5 pb-4 pt-5">
           <Text className="mb-2.5 text-[14px] font-sans-medium uppercase tracking-wide text-white/40">Amount</Text>
           <View className="mb-3.5 flex-row items-baseline gap-1.5">
             <Text className="font-sans-semibold text-[26px] text-white/35">Rs.</Text>

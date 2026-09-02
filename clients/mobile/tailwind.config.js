@@ -37,10 +37,15 @@ module.exports = {
         // brand/bright — theme-invariant, for pressed/highlight states and
         // the Voice Mode orb core (brighter than salli-accent).
         "salli-bright": "#FF784E",
-        // Deep-ink hero card (Tax, New Entry amount, Account detail) — always
-        // dark in both themes. Repointed off the old warm brown to iOS's
-        // systemGray6 so it sits in the same neutral family as `card`.
-        "salli-navy-card": "#1C1C1E",
+        // AI accent — lavender. Reserved for AI actions so they never read as
+        // spending state, which is what brand orange now means exclusively.
+        "salli-ai": "rgb(var(--color-salli-ai) / <alpha-value>)",
+        // Hero block (Tax payable, New Entry amount, Debt/Insurance summaries)
+        // — deliberately dark in BOTH themes, which is why it is not `primary`.
+        // 16 of its 24 call sites hardcode white text, so inverting it in dark
+        // would render them white-on-white. On the near-black canvas it
+        // separates by its 2px ink border instead of by fill.
+        "salli-hero": "#000000",
       },
       fontFamily: {
         sans: ["Archivo_400Regular"],
@@ -58,12 +63,11 @@ module.exports = {
       },
       borderRadius: {
         // One container radius for the whole app — cards, inputs, buttons,
-        // sheets, tiles. 16px because that is what Apple's own Sign-in button
-        // uses, and having it disagree with everything next to it was the
-        // most visible inconsistency. `control` used to be a second, smaller
-        // value and is deliberately gone rather than aliased, so there is no
-        // second name for one value to drift apart again.
-        card: "16px",
+        // sheets, tiles. 12px: 16 reads too soft against a 2px ink border and
+        // a hard offset shadow. `control` used to be a second, smaller value
+        // and is deliberately gone rather than aliased, so there is no second
+        // name for one value to drift apart again.
+        card: "12px",
         // Micro-labels and square checkboxes — the 18-22px elements where the
         // container radius would clamp to a capsule and a checkbox would read
         // as a radio button. Was four different values (4/5/6/7px) for one

@@ -162,7 +162,7 @@ function OverviewTab({
 
   return (
     <View className="px-4 pt-3">
-      <Card className="bg-salli-navy-card p-[18px]">
+      <Card className="bg-salli-hero p-[18px]">
         <Text className="mb-2 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
           {isRefund ? "Refund Due" : "Net Tax Payable"} · AY {data.pack_year}
         </Text>
@@ -317,7 +317,7 @@ function DeductionsTab({ data }: { data: TaxComputationFull }) {
   return (
     <View className="pt-3">
       <View className="px-4">
-        <Card className="bg-salli-navy-card p-[18px]">
+        <Card className="bg-salli-hero p-[18px]">
           <Text className="mb-2 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">
             Total Deductions &amp; Credits
           </Text>
@@ -440,7 +440,7 @@ function HistoryTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
 
   return (
     <View className="px-4 pt-3">
-      <Card className="bg-salli-navy-card p-[18px]">
+      <Card className="bg-salli-hero p-[18px]">
         <View className="flex-row items-start justify-between">
           <View>
             <Text className="mb-2 text-[14px] font-sans-medium uppercase tracking-wide text-white/50">

@@ -132,7 +132,7 @@ export function EntryDetailSheet({
       </View>
 
       {/* amount hero */}
-      <View className="mb-3 rounded-card border border-foreground/[0.08] bg-salli-navy-card p-[18px]">
+      <View className="mb-3 rounded-card border border-foreground/[0.08] bg-salli-hero p-[18px]">
         <Text className="mb-1.5 text-[13px] font-sans-medium uppercase tracking-wide text-white/40" numberOfLines={1}>
           {entry?.description}
         </Text>

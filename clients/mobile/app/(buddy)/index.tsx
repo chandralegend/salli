@@ -17,7 +17,6 @@ import { ApprovalGateCard } from "@/components/agent/ApprovalGateCard";
 import { AssistantMarkdown } from "@/components/agent/AssistantMarkdown";
 import { Bloub } from "@/components/agent/Bloub";
 import type { BloubMood } from "@/components/agent/bloub-geometry";
-import { MessageActions } from "@/components/agent/MessageActions";
 import { ToolActivityBlock } from "@/components/agent/ToolActivityBlock";
 import { Drawer } from "@/components/ui/drawer";
 import { type ChatMessage, useAgentChat } from "@/hooks/useAgentChat";
@@ -195,7 +194,7 @@ export default function BuddyScreen() {
                     className="max-w-[78%] rounded-card border-2 border-foreground px-4 py-3"
                     style={[{ backgroundColor: colors.bubbleUser }, shadow]}
                   >
-                    <Text className="text-[16.5px] leading-[23px]" style={{ color: "#000000" }}>
+                    <Text selectable className="text-[16.5px] leading-[23px]" style={{ color: "#000000" }}>
                       {item.content}
                     </Text>
                   </View>
@@ -227,18 +226,7 @@ export default function BuddyScreen() {
                       ),
                     )}
                   </View>
-                  {/* One action row for the whole message, not one per part —
-                      a reply split across several text parts by streaming is
-                      still one answer to copy. Hidden while streaming so the
-                      button does not appear under a half-written reply. */}
-                  {streaming && item.id === messages[messages.length - 1]?.id ? null : (
-                    <MessageActions
-                      text={item.parts
-                        .filter((part) => part.kind === "text")
-                        .map((part) => (part as { content: string }).content)
-                        .join("\n\n")}
-                    />
-                  )}
+
                 </View>
               )
             }

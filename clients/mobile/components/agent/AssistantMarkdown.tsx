@@ -1,3 +1,4 @@
+import { Text } from "react-native";
 import Markdown from "react-native-markdown-display";
 
 import { useThemeColors } from "@/lib/theme";
@@ -9,6 +10,22 @@ export function AssistantMarkdown({ content }: { content: string }) {
   const colors = useThemeColors();
   return (
     <Markdown
+      rules={{
+        // The library's own `textgroup` renders a bare <Text>, so nothing in a
+        // reply was selectable and copying needed a button of our own. With
+        // `selectable` a long press brings up iOS's real menu — Copy, Select
+        // All, Look Up, Share — which is both more capable than one button and
+        // the gesture people already reach for.
+        //
+        // Overriding the rule rather than wrapping the reply in a selectable
+        // <Text>: markdown renders a View tree with Text only at the leaves, so
+        // a wrapper would apply to nothing.
+        textgroup: (node, children, _parent, styles) => (
+          <Text key={node.key} selectable style={styles.textgroup}>
+            {children}
+          </Text>
+        ),
+      }}
       style={{
         // 16.5/25 — `.msg-ai` in the mockup. This was 13/20, which is why
         // Buddy Mode still looked cramped after the app-wide type rescale:

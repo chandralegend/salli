@@ -19,6 +19,7 @@ import { AddEditAccountDrawer } from "@/components/AddEditAccountDrawer";
 import { EntryDetailSheet } from "@/components/EntryDetailSheet";
 import { NewEntryModal } from "@/components/NewEntryModal";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { PostingChip } from "@/components/ui/posting-chip";
 import { Card } from "@/components/ui/card";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
@@ -36,7 +37,7 @@ import {
 } from "@/hooks/useLedger";
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
 import { useSalliStore } from "@/lib/store";
-import { useThemeColors } from "@/lib/theme";
+import { useHardShadow, useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const TABS = ["Accounts", "Journal", "Income Stmt"] as const;
@@ -80,6 +81,7 @@ function dateGroupLabel(iso: string): string {
 
 export default function LedgerScreen() {
   const colors = useThemeColors();
+  const shadow = useHardShadow();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Journal");
   const [filter, setFilter] = useState<(typeof TYPE_FILTERS)[number]>("All");
   const [search, setSearch] = useState("");
@@ -233,29 +235,39 @@ export default function LedgerScreen() {
                       const isIncome = debitAcc?.type === "asset" && creditAcc?.type === "income";
                       const reversed = Boolean(entry.reversed_by);
                       return (
+                        // The mockup's journal card: description and amount on
+                        // one baseline row, a quiet meta line, then the two
+                        // postings as DR/CR code chips. The old row spent its
+                        // widest line on "DR: <long name> · CR: <long name>",
+                        // truncated so neither account was legible, and put a
+                        // 3px colour rail where the chips now carry that signal.
                         <AnimatedPressable
                           key={entry.id}
                           onPress={() => setSelectedEntry(entry)}
-                          className={cn("flex-row gap-2.5 rounded-card border-2 border-foreground bg-card p-3", reversed && "opacity-40")}
+                          press="sink"
+                          className={cn("rounded-card border-2 border-foreground bg-card p-[15px]", reversed && "opacity-40")}
+                          style={reversed ? undefined : shadow}
                         >
-                          <View className={cn("mt-0.5 h-9 w-[3px] rounded-pill", isIncome ? "bg-salli-accent" : "bg-foreground/15")} />
-                          <View className="flex-1">
-                            <View className="mb-1 flex-row items-start justify-between gap-2">
-                              <Text numberOfLines={1} className={cn("flex-1 font-sans-semibold text-[15px] text-foreground", reversed && "line-through")}>
-                                {entry.description}
-                              </Text>
-                              <Text className={cn("font-sans-bold text-[15px]", isIncome ? "text-foreground" : "text-foreground/60")}>
-                                {isIncome ? "+" : "−"}Rs. {formatLKR(debit?.amount ?? "0", 0)}
-                              </Text>
-                            </View>
-                            <Text numberOfLines={1} className="mb-1 text-[13px] text-muted-foreground">
-                              DR: {debitAcc?.name ?? "—"} · CR: {creditAcc?.name ?? "—"}
+                          <View className="flex-row items-baseline gap-2.5">
+                            <Text
+                              numberOfLines={2}
+                              className={cn("flex-1 font-sans-bold text-[17px] text-foreground", reversed && "line-through")}
+                            >
+                              {entry.description}
                             </Text>
-                            <View className={cn("self-start rounded-badge border-[1.5px] border-foreground px-1.5 py-0.5", entry.source === "statement" ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
-                              <Text className={cn("text-[13px] font-sans-medium capitalize", entry.source === "statement" ? "text-salli-accent" : "text-muted-foreground")}>
-                                {reversed ? "(reversed)" : entry.source}
-                              </Text>
-                            </View>
+                            <Text className="shrink-0 font-sans-extrabold text-[17px] text-foreground">
+                              {isIncome ? "+" : "−"}Rs. {formatLKR(debit?.amount ?? "0", 0)}
+                            </Text>
+                          </View>
+                          <Text className="mt-1.5 text-[13.5px] text-muted-foreground">
+                            {entry.entry_date} · {entry.postings.length} posting
+                            {entry.postings.length === 1 ? "" : "s"}
+                            {entry.source === "statement" ? " · imported" : ""}
+                            {reversed ? " · reversed" : ""}
+                          </Text>
+                          <View className="mt-3 flex-row flex-wrap gap-2">
+                            <PostingChip side="DR" code={debitAcc?.code} />
+                            <PostingChip side="CR" code={creditAcc?.code} />
                           </View>
                         </AnimatedPressable>
                       );
@@ -309,38 +321,49 @@ export default function LedgerScreen() {
                           <AnimatedPressable
                             key={a.id}
                             onPress={() => setSelectedAccountId(a.id)}
-                            className={cn("flex-row items-center gap-2.5 rounded-card border-2 border-foreground bg-card p-3", !a.is_active && "opacity-45")}
+                            press="sink"
+                            className={cn("flex-row items-center gap-[13px] rounded-card border-2 border-foreground bg-card p-[15px]", !a.is_active && "opacity-45")}
+                            style={a.is_active ? shadow : undefined}
                           >
-                            {/* No type badge and no colour rail. Both repeated
-                                what the section heading above already says
-                                ("ASSETS · 11 ACCOUNTS"), and the badge had no
-                                shrink, so on a long account name it pushed out
-                                of the flex child and rendered on top of the
-                                balance. The icon still carries asset-vs-other. */}
+                            {/* `.avatar` from the mockup: a lettered square,
+                                accent-filled for the accounts that actually
+                                hold money. A glyph could only ever say "bank",
+                                which every row here already is — the initial
+                                distinguishes them at a glance instead. */}
                             <View
                               className={cn(
-                                "h-10 w-10 items-center justify-center rounded-card border-2",
-                                isAsset ? "border-salli-accent bg-salli-accent/10" : "border-foreground bg-muted",
+                                "h-11 w-11 shrink-0 items-center justify-center rounded-[11px] border-2 border-foreground",
+                                isAsset ? "bg-salli-accent" : "bg-card",
                               )}
                             >
-                              <Icon size={18} color={isAsset ? colors.accent : colors.mutedForeground} strokeWidth={2} />
+                              <Text
+                                className="font-sans-extrabold text-[17px]"
+                                style={{ color: isAsset ? "#FFFFFF" : colors.foreground }}
+                              >
+                                {a.name.trim().charAt(0).toUpperCase()}
+                              </Text>
                             </View>
                             <View className="min-w-0 flex-1">
-                              <Text numberOfLines={1} className="font-sans-semibold text-[16px] text-foreground">
+                              <Text numberOfLines={1} className="font-sans-bold text-[17px] text-foreground">
                                 {a.name}
                               </Text>
-                              <Text numberOfLines={1} className="mt-0.5 text-[14px] text-muted-foreground">
+                              <Text numberOfLines={1} className="mt-0.5 text-[13.5px] text-muted-foreground">
                                 {a.code} · {a.currency}
                                 {a.is_active ? "" : " · Inactive"}
                               </Text>
                             </View>
-                            {/* shrink-0: the balance is the one thing on the row
-                                that must never be clipped or overlapped. */}
-                            <View className="shrink-0 flex-row items-center gap-1.5">
-                              <Text className={cn("font-sans-bold text-[15px]", isAsset ? "text-foreground" : "text-foreground/60")}>
+                            {/* Right-aligned amount with its side underneath,
+                                as the mockup has it. shrink-0 because the
+                                balance is the one thing on the row that must
+                                never be clipped. No chevron: the whole row is
+                                the target and the mockup shows none. */}
+                            <View className="shrink-0 items-end">
+                              <Text className="font-sans-extrabold text-[17px] text-foreground">
                                 {bal !== undefined ? `Rs. ${formatLKRAbbrev(bal)}` : "—"}
                               </Text>
-                              <ChevronRight size={15} color={colors.mutedForeground} strokeWidth={2} />
+                              <Text className="mt-0.5 font-mono text-[12px] text-muted-foreground">
+                                {isAsset ? "DR" : "CR"}
+                              </Text>
                             </View>
                           </AnimatedPressable>
                         );

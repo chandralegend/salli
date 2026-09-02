@@ -166,8 +166,16 @@ export default function DashboardScreen() {
       >
         {/* ── What you're worth ─────────────────────────────────────────── */}
         <View className="px-5 pt-3">
+          {/* Two explicit lines, as the mockup renders it. There it comes from
+              `text-wrap: balance` over a non-breaking "Rs.&nbsp;84.4L", which
+              React Native has no equivalent for — left to itself RN fits the
+              whole sentence on one line and the figure stops being the thing
+              you see first. Breaking it by hand keeps the number at the start
+              of its own line at any width. */}
           <Text className="font-sans text-[29px] leading-[34px] tracking-tight text-foreground">
-            You&rsquo;ve built{" "}
+            You&rsquo;ve built
+          </Text>
+          <Text className="font-sans text-[29px] leading-[34px] tracking-tight text-foreground">
             <Text className="font-sans-extrabold">
               Rs. {netWorth ? formatLKRAbbrev(netWorth.current_net_worth) : "—"}
             </Text>{" "}

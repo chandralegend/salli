@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, View } from "react-native";
+import { AccessibilityInfo, Animated, Easing } from "react-native";
 import Svg, { G, Path } from "react-native-svg";
 
 import { BLOUB, BLOUB_VIEWBOX, type BloubEye, type BloubMood } from "./bloub-geometry";
@@ -31,6 +31,7 @@ export function Bloub({
   mood = "neutral",
   size = 176,
   enterFrom,
+  amplitude,
 }: {
   mood?: BloubMood;
   size?: number;
@@ -40,8 +41,28 @@ export function Bloub({
    * rather than one face vanishing and a different one appearing.
    */
   enterFrom?: number;
+  /**
+   * Live 0..1 microphone level. Adds a small scale on top of the breath so the
+   * face responds to the actual voice rather than to a synthetic loop — the
+   * signal Voice Mode already carries from on-device recognition.
+   */
+  amplitude?: number;
 }) {
   const colors = useThemeColors();
+
+  /**
+   * Reduce Motion, honoured because the previous voice orb honoured it and
+   * dropping that on the way past would be a quiet accessibility regression.
+   * With it on, the drift, breath and amplitude all hold still; expressions
+   * still change and still cross-fade, since a dissolve is not vestibular
+   * motion and the expression is the information.
+   */
+  const [reduceMotion, setReduceMotion] = useState(false);
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduceMotion);
+    return () => sub.remove();
+  }, []);
   const drift = useRef(new Animated.Value(0)).current;
   const breath = useRef(new Animated.Value(0)).current;
   const pop = useRef(new Animated.Value(enterFrom ?? 1)).current;
@@ -56,10 +77,14 @@ export function Bloub({
         easing: Easing.linear,
         useNativeDriver: false,
       });
+    if (reduceMotion) {
+      drift.setValue(0);
+      return;
+    }
     const loop = Animated.loop(Animated.sequence([leg(1), leg(0)]));
     loop.start();
     return () => loop.stop();
-  }, [drift, durationMs]);
+  }, [drift, durationMs, reduceMotion]);
 
   // Breathing. Faster while a reply is streaming, because that is the one mood
   // where something is actively happening and stillness would read as stalled.
@@ -72,10 +97,14 @@ export function Bloub({
         easing: Easing.inOut(Easing.quad),
         useNativeDriver: true,
       });
+    if (reduceMotion) {
+      breath.setValue(0);
+      return;
+    }
     const loop = Animated.loop(Animated.sequence([leg(1), leg(0)]));
     loop.start();
     return () => loop.stop();
-  }, [breath, mood]);
+  }, [breath, mood, reduceMotion]);
 
   /**
    * The expression being dissolved out of, and how far through that is.
@@ -125,16 +154,32 @@ export function Bloub({
     Animated.spring(pop, { toValue: 1, useNativeDriver: true, speed: 10, bounciness: 6 }).start();
   }, [mood, pop, enterFrom, fade]);
 
+  const voice = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (reduceMotion || amplitude == null) {
+      voice.setValue(1);
+      return;
+    }
+    // Eases over slightly longer than the level's ~100ms emit interval, so the
+    // face swells with the voice instead of ticking with the sampler.
+    Animated.timing(voice, {
+      toValue: 1 + Math.max(0, Math.min(1, amplitude)) * 0.09,
+      duration: 140,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [amplitude, reduceMotion, voice]);
+
   const bodyScale = useMemo(
     () =>
       Animated.multiply(
-        pop,
+        Animated.multiply(pop, voice),
         breath.interpolate({
           inputRange: [0, 1],
           outputRange: [1, mood === "excited" ? 1.035 : 1.018],
         }),
       ),
-    [breath, pop, mood],
+    [breath, pop, voice, mood],
   );
 
   return (

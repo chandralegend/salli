@@ -1,22 +1,29 @@
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
-import { LayoutGrid, Sparkles, Table, TrendingUp } from "lucide-react-native";
 import { useEffect, useRef } from "react";
 import { Animated, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { NavFreedom, NavHome, NavLedger, NavSalli } from "@/components/ui/nav-icons";
 import { TourTarget } from "@/components/tour/TourTarget";
 import { useModeSwitch } from "@/hooks/useModeSwitch";
 import { useAppTheme, useThemeColors } from "../../lib/theme";
 
-const ROUTE_META: Record<string, { Icon: typeof LayoutGrid; label: string }> = {
-  index: { Icon: LayoutGrid, label: "Home" },
-  ledger: { Icon: Table, label: "Ledger" },
-  // Sparkles, not PiggyBank: a piggy bank reads as "savings", which is a
-  // different feature entirely — this tab opens the AI assistant.
-  agent: { Icon: Sparkles, label: "Salli AI" },
-  "financial-independence": { Icon: TrendingUp, label: "Freedom" },
+/**
+ * Glyphs and labels straight from the mockup, including its route mapping —
+ * the house is Home and the four-square grid is Ledger. The app had those two
+ * the other way round, with a table for Ledger, so the bar did not match the
+ * design even where the glyphs were close.
+ *
+ * "Salli", not "Salli AI": the mockup's label, and the shorter word keeps four
+ * labels on one line without any of them wrapping.
+ */
+const ROUTE_META: Record<string, { Icon: typeof NavHome; label: string }> = {
+  index: { Icon: NavHome, label: "Home" },
+  ledger: { Icon: NavLedger, label: "Ledger" },
+  agent: { Icon: NavSalli, label: "Salli" },
+  "financial-independence": { Icon: NavFreedom, label: "Freedom" },
 };
 
 /** One nav tab — owns its own highlight-crossfade Animated.Value so each tab
@@ -30,7 +37,7 @@ function NavTab({
 }: {
   isFocused: boolean;
   label: string;
-  Icon: typeof LayoutGrid;
+  Icon: typeof NavHome;
   onPress: () => void;
   accessibilityLabel: string;
 }) {
@@ -50,13 +57,13 @@ function NavTab({
       className="flex-1 items-center justify-center gap-1"
     >
       <Icon
-        size={23}
+        size={21}
         color={isFocused ? colors.accent : colors.mutedForeground}
-        strokeWidth={isFocused ? 2.3 : 1.9}
+        strokeWidth={isFocused ? 2.3 : 2}
       />
       <Text
         style={{ color: isFocused ? colors.accent : colors.mutedForeground, fontSize: 11.5 }}
-        className={isFocused ? "font-sans-bold" : "font-sans-medium"}
+        className={isFocused ? "font-sans-semibold" : "font-sans-medium"}
       >
         {label}
       </Text>
@@ -156,7 +163,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
       {/* Four tabs, no centre "+". Add moved to Home, and it kept the
           long-press-to-capture that used to live here — so the entry point is
           relocated, not retired. */}
-      <View className="flex-row items-center px-2" style={{ height: 58 }}>
+      <View className="flex-row items-center px-2 pb-1 pt-2" style={{ minHeight: 56 }}>
         {visibleRoutes.map(renderTab)}
       </View>
     </View>

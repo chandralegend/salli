@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { BarChart3, ChevronRight, LayoutGrid, Layers, Plus, Settings, Sparkles } from "lucide-react-native";
+import { BarChart3, ChevronRight, LayoutGrid, Layers, Plus, Settings } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 
@@ -7,6 +7,7 @@ import { VoiceCaptureSheet } from "@/components/VoiceCaptureSheet";
 import { TourTarget } from "@/components/tour/TourTarget";
 import { AvatarMoreButton } from "@/components/layout/AvatarMoreButton";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { NavSalli } from "@/components/ui/nav-icons";
 import { IconButton } from "@/components/ui/icon-button";
 import { PageShell } from "@/components/ui/page-shell";
 import { useThemedRefreshControl } from "@/components/ui/themed-refresh-control";
@@ -241,7 +242,7 @@ export default function DashboardScreen() {
             >
               {/* Black on lavender, not `foreground`: the lavender is
                   theme-invariant, so white text would vanish on it in dark. */}
-              <Sparkles size={19} color="#000000" strokeWidth={2} />
+              <NavSalli size={19} color="#000000" strokeWidth={2} />
               <Text className="font-sans-bold text-[17px]" style={{ color: "#000000" }}>
                 Ask Salli
               </Text>

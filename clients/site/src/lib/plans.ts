@@ -39,7 +39,7 @@ export const TIERS: Tier[] = [
       "Full Sri Lanka tax engine",
       "Debt payoff & FIRE planning",
       "6,000 AI credits / month",
-      "Every model — Haiku, Sonnet, Opus, Fable",
+      "Runs on Claude Haiku 4.5 — around 600 conversations a month",
       "Full FIRE scenarios, AI rationale & all advisor recommendations",
       "Connect Claude, ChatGPT & other MCP clients",
       "Community support",
@@ -57,7 +57,7 @@ export const TIERS: Tier[] = [
     features: [
       "Everything in Free",
       "100,000 AI credits / month",
-      "Around 3,300 Sonnet or 2,000 Opus conversations",
+      "Around 10,000 conversations a month",
       "Daily wealth advisor",
       "Priority support",
     ],

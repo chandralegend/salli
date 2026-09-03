@@ -51,17 +51,6 @@ export type CreditBalance = {
   resets_at: string;
 };
 
-export type AiModel = {
-  id: string;
-  name: string;
-  blurb: string;
-  credit_multiplier: number;
-  /** What one conversation costs on this model — the number worth showing, in
-   *  preference to an abstract multiplier. */
-  credits_per_message: number;
-  is_default: boolean;
-};
-
 export type CreditPack = "10k" | "25k" | "60k";
 
 export type Plan = {
@@ -144,30 +133,6 @@ export function useCreditCheckout() {
   });
 }
 
-export function useAiModels() {
-  return useQuery({
-    queryKey: ["ai-models"],
-    queryFn: () =>
-      apiFetch<{ selected: string; default: string; models: AiModel[] }>("GET", "/ai-models"),
-    staleTime: 5 * 60_000,
-  });
-}
-
-export function useSetAiModel() {
-  const qc = useQueryClient();
-  return useMutation({
-    // null means "back to the default" — the server clears the stored
-    // preference rather than storing the default's id, so the user follows the
-    // default if it ever changes.
-    mutationFn: (model_id: string | null) =>
-      apiFetch<void>("PUT", "/ai-models/selection", { model_id }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["ai-models"] });
-      // The credit cost of a message just changed, so any surface quoting it is stale.
-      qc.invalidateQueries({ queryKey: ["billing"] });
-    },
-  });
-}
 
 export function useBillingPortal() {
   return useMutation({

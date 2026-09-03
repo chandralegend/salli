@@ -154,12 +154,14 @@ async def generate_strategy(
 ) -> FireStrategySchema:
     from langchain_core.messages import HumanMessage, SystemMessage
 
-    from salli.domain.agents.model_factory import SONNET, chat_model
+    from salli.domain.agents.model_factory import CONVERSATION_MODEL, chat_model
 
     # Named `llm`, not `model`: `model` is the parameter holding the model *id*,
     # and rebinding it to the constructed client makes the two meanings of the
     # same name overlap in one function.
-    llm = chat_model(api_key=api_key, model=model or SONNET, temperature=0.3, max_tokens=8000)
+    llm = chat_model(
+        api_key=api_key, model=model or CONVERSATION_MODEL, temperature=0.3, max_tokens=8000
+    )
     structured = llm.with_structured_output(FireStrategySchema)
     payload = json.dumps(context, indent=2, default=str)
 

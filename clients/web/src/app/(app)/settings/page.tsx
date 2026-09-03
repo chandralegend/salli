@@ -15,7 +15,6 @@ import { TopUpCard } from "@/components/billing/TopUpCard";
 import { UpgradeDialog } from "@/components/billing/UpgradeDialog";
 import { DangerZone } from "@/components/settings/DangerZone";
 import { LlmKeysCard } from "@/components/settings/LlmKeysCard";
-import { ModelPickerCard } from "@/components/settings/ModelPickerCard";
 import { McpConnectionsCard } from "@/components/settings/McpConnectionsCard";
 import { HelpFeedbackCard } from "@/components/support/HelpFeedbackCard";
 import { useSubscription, useBillingPortal, type BillingCycle } from "@/hooks/useBilling";
@@ -240,7 +239,6 @@ function SettingsContent() {
         {/* MCP: connect an AI assistant */}
         <TopUpCard />
 
-        <ModelPickerCard />
 
         <LlmKeysCard />
 

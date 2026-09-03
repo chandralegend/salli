@@ -44,7 +44,7 @@ def build_tax_worker(
 
     from langgraph.prebuilt import create_react_agent
 
-    from salli.domain.agents.model_factory import SONNET, chat_model
+    from salli.domain.agents.model_factory import CONVERSATION_MODEL, chat_model
     from salli.domain.agents.tools import make_read_tools
 
     today = datetime.date.today().strftime("%A, %d %B %Y")
@@ -56,7 +56,7 @@ def build_tax_worker(
 
     tools = make_read_tools(ledger_svc, tax_svc) if tools is None else tools
     return create_react_agent(
-        model=chat_model(api_key=api_key, model=model or SONNET, temperature=0),
+        model=chat_model(api_key=api_key, model=model or CONVERSATION_MODEL, temperature=0),
         tools=tools,
         name="tax_specialist",
         prompt=dated_prompt,

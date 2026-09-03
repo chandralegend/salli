@@ -8,7 +8,6 @@ import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import { BugReportDrawer } from "@/components/settings/BugReportDrawer";
 import { LlmKeysCard } from "@/components/settings/LlmKeysCard";
 import { McpConnectionsCard } from "@/components/settings/McpConnectionsCard";
-import { ModelPickerCard } from "@/components/settings/ModelPickerCard";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Rule, SectionLabel } from "@/components/ui/blocks";
 import { PageShell } from "@/components/ui/page-shell";
@@ -257,7 +256,6 @@ export default function SettingsScreen() {
 
       <SectionLabel>Salli</SectionLabel>
       <View className="mt-3 gap-[9px] px-5">
-        <ModelPickerCard />
         <LlmKeysCard />
         <McpConnectionsCard />
       </View>

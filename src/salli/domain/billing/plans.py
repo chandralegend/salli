@@ -81,7 +81,7 @@ PLANS: dict[str, Plan] = {
             "Ledger & double-entry bookkeeping",
             "Sri Lanka tax engine (unlimited)",
             "6,000 AI credits / month",
-            "Every model — Haiku, Sonnet, Opus, Fable",
+            "Runs on Claude Haiku 4.5 — around 600 conversations a month",
             "Full FIRE scenarios, AI rationale & all advisor recommendations",
             "Connect Claude/ChatGPT via MCP",
             "Top up any time, or bring your own API key",
@@ -101,7 +101,7 @@ PLANS: dict[str, Plan] = {
         features=[
             "Everything in Free",
             "100,000 AI credits / month",
-            "Around 3,300 Sonnet or 2,000 Opus conversations",
+            "Around 10,000 conversations a month",
             "Daily wealth advisor",
             "Priority support",
         ],

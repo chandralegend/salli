@@ -22,11 +22,15 @@ from typing import Any
 from salli.domain.ai_models import DEFAULT_MODEL, EXTRACTION_MODEL
 
 # Re-exported from the catalogue so there is one list of models in the codebase
-# rather than three. These names are kept because a dozen call sites use them,
-# but the values now come from `domain.ai_models` alongside the credit
-# multipliers — a model and its price cannot drift apart if they are declared
-# in the same place.
-SONNET = DEFAULT_MODEL
+# rather than three; the values come from `domain.ai_models` alongside the
+# credit multipliers, so a model and its price cannot drift apart.
+#
+# This constant was called SONNET until conversations were pinned to the
+# cheapest model. It is an alias for whatever DEFAULT_MODEL is, and naming it
+# after one particular model made it a lie the moment that changed — the six
+# agent modules that default to it would have read as "runs on Sonnet" while
+# running on Haiku.
+CONVERSATION_MODEL = DEFAULT_MODEL
 HAIKU = EXTRACTION_MODEL
 
 
@@ -46,7 +50,7 @@ def reveal(api_key: Any) -> str:
     return str(revealed)
 
 
-def chat_model(*, api_key: Any, model: str = SONNET, **kwargs: Any) -> Any:
+def chat_model(*, api_key: Any, model: str = CONVERSATION_MODEL, **kwargs: Any) -> Any:
     """Build a ChatAnthropic bound to exactly this key."""
     from langchain_anthropic import ChatAnthropic
 

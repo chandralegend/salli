@@ -10,7 +10,7 @@ picking Opus cost 5x and changed nothing about the answer.
 
 from __future__ import annotations
 
-from salli.domain.agents.model_factory import HAIKU, SONNET
+from salli.domain.agents.model_factory import CONVERSATION_MODEL, HAIKU
 from salli.domain.ai_models import DEFAULT_MODEL, EXTRACTION_MODEL, MODELS
 
 
@@ -19,7 +19,7 @@ class TestOneCatalogue:
         """There were three hardcoded model tables before this — the factory's
         constants, a tier dict in the Anthropic adapter, and a bare literal in
         the statement classifier. They had already drifted."""
-        assert SONNET == DEFAULT_MODEL
+        assert CONVERSATION_MODEL == DEFAULT_MODEL
         assert HAIKU == EXTRACTION_MODEL
 
     def test_the_adapter_tier_table_reads_from_the_catalogue(self):
@@ -133,3 +133,51 @@ class TestPriceMatchesWhatRuns:
             assert "get_preferred_model(user_id)" in text, (
                 f"{rel} charges a model-scaled price but never resolves the user's model"
             )
+
+
+class TestTheModelIsPinned:
+    """
+    Conversations run on one model, chosen for cost, and users cannot change it.
+
+    The picker is gone from both clients and `PUT /ai-models/selection` is
+    deleted, but neither of those is what makes the pin hold — a stored
+    preference from before the change, or a hand-rolled request, would both go
+    through `get_preferred_model`. These guard the one place that decides.
+    """
+
+    def test_the_pinned_model_is_the_cheapest_in_the_catalogue(self):
+        """ "Cheapest" is the whole reason for the pin, so it is asserted against
+        the catalogue rather than against a second copy of the id. Adding a
+        cheaper model without re-pointing DEFAULT_MODEL fails here."""
+        cheapest = min(MODELS.values(), key=lambda m: m.credit_multiplier)
+        assert cheapest.id == DEFAULT_MODEL
+        assert cheapest.credit_multiplier == 1
+
+    async def test_a_stored_preference_is_ignored(self):
+        """The bug this exists to catch: pinning by changing only the default
+        would leave everyone who had already picked Opus running on Opus, and
+        being charged x5, forever."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        from salli.application.services.user_profile_service import UserProfileService
+
+        uow = MagicMock()
+        uow.user_profiles.get = AsyncMock(return_value={"preferred_model": "claude-opus-5"})
+        uow.__aenter__ = AsyncMock(return_value=uow)
+        uow.__aexit__ = AsyncMock(return_value=False)
+
+        svc = UserProfileService(
+            lambda: uow,  # type: ignore[arg-type]
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+        )
+        assert await svc.get_preferred_model("user-1") == DEFAULT_MODEL
+
+    def test_there_is_no_way_to_set_a_model(self):
+        """Both halves of the removal: the service method and the route."""
+        from salli.application.services.user_profile_service import UserProfileService
+        from salli.interfaces.api import main
+
+        assert not hasattr(UserProfileService, "set_preferred_model")
+        assert not hasattr(main, "ai_models")

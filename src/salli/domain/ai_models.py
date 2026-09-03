@@ -2,13 +2,15 @@
 The AI model catalogue — pure domain, no I/O.
 
 One source of truth for which models exist, what they cost in credits, and
-which one is used when a user has not chosen. Before this module the answer
-was split across three places that had already drifted: the `SONNET`/`HAIKU`
-constants in `domain/agents/model_factory.py`, a `_MODEL_TIERS` dict in
+which one every conversation runs on. Before this module the answer was split
+across three places that had already drifted: the model constants in
+`domain/agents/model_factory.py`, a `_MODEL_TIERS` dict in
 `adapters/llm/anthropic_adapter.py`, and a bare literal inside
-`adapters/parsing/llm_classifier.py`. Adding user-selectable models on top of
-that split would have meant a choice that silently applied to one path and not
-the others.
+`adapters/parsing/llm_classifier.py`.
+
+The catalogue is kept in full even though only one entry is reachable today:
+`domain/billing` still prices actions through `credit_multiplier`, and pinning
+is a one-line change to undo.
 
 `domain/agents` imports this for the model id; `domain/billing` imports it for
 the credit multiplier. Both are pure domain, so neither direction creates a
@@ -70,14 +72,27 @@ MODELS: dict[str, AiModel] = {
     ),
 }
 
-#: Used when a user has expressed no preference.
-DEFAULT_MODEL = "claude-sonnet-5"
+#: The model every conversation runs on.
+#:
+#: This used to be "the model used when a user has expressed no preference",
+#: with a picker letting anyone move to Sonnet, Opus or Fable. Model choice is
+#: gone: the picker is removed from both clients, the selection endpoint is
+#: deleted, and `get_preferred_model` returns this id for every user regardless
+#: of what they had previously chosen.
+#:
+#: Haiku 4.5 because it is the x1 multiplier — the cheapest of the four, and the
+#: same model bulk extraction already ran on.
+#:
+#: The `preferred_model` column is deliberately left in place, still holding
+#: whatever people last chose. Nothing reads it, and keeping it means restoring
+#: the feature is a code revert rather than a migration plus lost data.
+DEFAULT_MODEL = "claude-haiku-4-5-20251001"
 
-#: Bulk row classification and free-text entry parsing stay pinned here
-#: regardless of what the user picked for conversation. These are mechanical
-#: extraction jobs where Haiku is the right tool, and letting someone aim Opus
-#: at a 600-row bank statement is a cost trap with no quality upside. Because
-#: it is always Haiku, that work is always charged at x1.
+#: Bulk row classification and free-text entry parsing. These are mechanical
+#: extraction jobs where Haiku is the right tool. It is the same id as
+#: DEFAULT_MODEL today — conversation and extraction have converged now that
+#: choice is gone — but the two are kept separate because they are pinned for
+#: different reasons, and only one of them would move if choice came back.
 EXTRACTION_MODEL = "claude-haiku-4-5-20251001"
 
 

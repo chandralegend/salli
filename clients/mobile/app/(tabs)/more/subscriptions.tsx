@@ -1,12 +1,14 @@
-import { AlertTriangle, Plus, RefreshCw, Trash2 } from "lucide-react-native";
+import { Plus, Trash2 } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
+import { ActionButton } from "@/components/ui/action-button";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { Hero, Rule, SectionLabel, Strong } from "@/components/ui/blocks";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { ChipSelect } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
-import { ActionButton } from "@/components/ui/action-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { TextField } from "@/components/ui/text-field";
 import {
@@ -17,9 +19,9 @@ import {
   useSubscriptions,
   useUpdateSubscription,
 } from "@/hooks/useSubscriptions";
-import { formatLKR, formatLKRAbbrev } from "@/lib/format";
-import { useThemeColors } from "@/lib/theme";
-import { cn } from "@/lib/utils";
+import { confirmDestructive } from "@/lib/confirm";
+import { formatDate, formatLKR, formatLKRAbbrev } from "@/lib/format";
+import { useHardShadow, useThemeColors } from "@/lib/theme";
 
 /** Billing cadences the engine understands (see monthlyEquivalent). Stored lowercase. */
 const FREQUENCIES = ["monthly", "annual", "quarterly", "weekly"] as const;
@@ -33,6 +35,18 @@ function monthlyEquivalent(amount: number, frequency: string): number {
   return amount; // monthly
 }
 
+/**
+ * What renews, and what it costs a month.
+ *
+ * The dark hero card said the monthly total as a 40px number and then said the
+ * alert count twice — once as a chip and again as one of three tiles beneath it,
+ * alongside an "Annualised" tile that was the headline figure times twelve.
+ * One sentence carries all of it.
+ *
+ * Each row also used to end in a bordered footer reading "No alerts" in accent
+ * — a line whose only content was that there was nothing to say, coloured as if
+ * there were. Rows are quiet now unless something is actually wrong.
+ */
 export default function SubscriptionsScreen() {
   const colors = useThemeColors();
   const subscriptions = useSubscriptions();
@@ -53,7 +67,9 @@ export default function SubscriptionsScreen() {
 
   const reportFor = (id: string) => reports.data?.find((r) => r.subscription_id === id);
 
-  const active = (subscriptions.data ?? []).filter((s) => s.is_active);
+  const all = subscriptions.data ?? [];
+  const active = all.filter((s) => s.is_active);
+  const cancelled = all.filter((s) => !s.is_active);
   const monthlyTotal = active.reduce((sum, s) => sum + monthlyEquivalent(Number(s.amount), s.frequency), 0);
   const alertCount = (reports.data ?? []).reduce((n, r) => n + r.alerts.length, 0);
 
@@ -65,124 +81,143 @@ export default function SubscriptionsScreen() {
             title="Subscriptions"
             back
             trailing={
-              <Pressable
+              <AnimatedPressable
                 onPress={openAdd}
+                accessibilityRole="button"
+                accessibilityLabel="Add a subscription"
                 className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
               >
                 <Plus size={21} color={colors.accent} strokeWidth={2.4} />
-              </Pressable>
+              </AnimatedPressable>
             }
           />
         }
       >
-        {/* hero — monthly recurring cost */}
-        <View className="px-4 pt-3">
-          <Card className="bg-salli-hero p-[18px]">
-            <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/50">
-              Monthly Recurring
-            </Text>
-            <View className="mb-1 flex-row items-baseline gap-1">
-              <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
-              <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
-                {formatLKRAbbrev(monthlyTotal)}
-              </Text>
-            </View>
-            <View className="mb-3.5 flex-row">
-              <View
-                className={cn(
-                  "rounded-pill border px-2.5 py-0.5",
-                  alertCount > 0
-                    ? "border-destructive/25 bg-destructive/10"
-                    : "border-salli-accent/20 bg-salli-accent/15",
-                )}
-              >
-                <Text
-                  className={cn(
-                    "text-[14px] font-sans-semibold",
-                    alertCount > 0 ? "text-destructive" : "text-salli-accent",
-                  )}
-                >
-                  {alertCount > 0 ? `${alertCount} alert${alertCount === 1 ? "" : "s"}` : "All healthy"}
-                </Text>
-              </View>
-            </View>
-            <View className="flex-row gap-1.5">
-              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[13px] text-white/35">Active</Text>
-                <Text className="font-sans-bold text-[15px] text-white">{active.length}</Text>
-              </View>
-              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[13px] text-white/35">Annualised</Text>
-                <Text className="font-sans-bold text-[15px] text-white">Rs. {formatLKRAbbrev(monthlyTotal * 12)}</Text>
-              </View>
-              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[13px] text-white/35">Alerts</Text>
-                <Text className={cn("font-sans-bold text-[15px]", alertCount > 0 ? "text-destructive" : "text-white")}>
-                  {alertCount}
-                </Text>
-              </View>
-            </View>
-          </Card>
-        </View>
-
-        <Text className="mb-1.5 mt-3 px-4 pl-[18px] text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-          Active Subscriptions
-        </Text>
-
-        <View className="gap-2 px-4">
+        <View className="px-5">
           {active.length === 0 ? (
-            <Card className="items-center p-6">
-              <Text className="text-[15px] text-muted-foreground">No subscriptions tracked yet.</Text>
-            </Card>
+            <>
+              <Hero>Nothing recurring is tracked yet.</Hero>
+              <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
+                Add what renews — streaming, insurance, a gym — and we will total it, watch for
+                price rises, and tell you when a charge goes missing.
+              </Text>
+              <ActionButton className="mt-5" onPress={openAdd}>
+                Add a subscription
+              </ActionButton>
+            </>
           ) : (
-            active.map((s) => {
-              const report = reportFor(s.id);
-              return (
-                <Pressable key={s.id} onPress={() => openEdit(s)}>
-                <Card className="p-3.5">
-                  <View className="flex-row items-center gap-2.5">
-                    <View className="h-9 w-9 items-center justify-center rounded-card bg-foreground/[0.06]">
-                      <RefreshCw size={16} color={colors.mutedForeground} strokeWidth={2} />
-                    </View>
-                    <View className="flex-1">
-                      <Text className="font-sans-semibold text-[15px] text-foreground">{s.name}</Text>
-                      <Text className="text-[14px] capitalize text-muted-foreground">
-                        {s.frequency} · next {s.next_due_date}
-                      </Text>
-                    </View>
-                    <View className="items-end">
-                      <Text className="font-sans-semibold text-[15px] text-foreground">Rs. {formatLKR(s.amount, 0)}</Text>
-                      <Pressable onPress={() => remove.mutate(s.id)} className="mt-1">
-                        <Trash2 size={15} color={colors.mutedForeground} strokeWidth={2} />
-                      </Pressable>
-                    </View>
-                  </View>
-                  {report?.alerts.length ? (
-                    <View className="mt-2.5 gap-1.5 border-t border-foreground/[0.06] pt-2.5">
-                      {report.alerts.map((a, i) => (
-                        <View key={i} className="flex-row items-center gap-1.5">
-                          <AlertTriangle size={14} color="#EF4444" strokeWidth={2} />
-                          <Text className="flex-1 text-[14px] text-destructive">{a.message}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  ) : (
-                    <View className="mt-2.5 border-t border-foreground/[0.06] pt-2.5">
-                      <Text className="text-[14px] text-salli-accent">No alerts</Text>
-                    </View>
-                  )}
-                </Card>
-                </Pressable>
-              );
-            })
+            <>
+              <Hero>
+                You spend <Strong>Rs. {formatLKRAbbrev(monthlyTotal)}</Strong> a month on{" "}
+                {active.length} subscription{active.length === 1 ? "" : "s"}.
+              </Hero>
+              <Text
+                className={`mt-2 text-[16px] leading-[23px] ${
+                  alertCount > 0 ? "font-sans-semibold text-destructive" : "text-muted-foreground"
+                }`}
+              >
+                Rs. {formatLKRAbbrev(monthlyTotal * 12)} a year.
+                {alertCount > 0
+                  ? ` ${alertCount} need${alertCount === 1 ? "s" : ""} a look.`
+                  : ""}
+              </Text>
+            </>
           )}
         </View>
+
+        {active.length > 0 ? (
+          <>
+            <Rule />
+            <SectionLabel>Recurring</SectionLabel>
+            <View className="mt-3 gap-[9px] px-5">
+              {active.map((s) => {
+                const alerts = reportFor(s.id)?.alerts ?? [];
+                return (
+                  <AnimatedPressable
+                    key={s.id}
+                    onPress={() => openEdit(s)}
+                    press="sink"
+                    accessibilityRole="button"
+                    accessibilityLabel={`Edit ${s.name}`}
+                    className={`rounded-card border-2 bg-card px-3.5 py-3 ${
+                      alerts.length > 0 ? "border-destructive" : "border-foreground"
+                    }`}
+                  >
+                    <View className="flex-row items-center gap-2.5">
+                      <View className="min-w-0 flex-1">
+                        <Text numberOfLines={1} className="font-sans-bold text-[16px] text-foreground">
+                          {s.name}
+                        </Text>
+                        <Text className="mt-0.5 text-[13.5px] capitalize text-muted-foreground">
+                          {s.frequency} · next {formatDate(s.next_due_date)}
+                        </Text>
+                      </View>
+                      <Text className="shrink-0 font-sans-extrabold text-[15px] text-foreground">
+                        Rs. {formatLKR(s.amount, 0)}
+                      </Text>
+                    </View>
+                    {alerts.length > 0 ? (
+                      <View className="mt-2.5 gap-1 border-t border-destructive/40 pt-2.5">
+                        {alerts.map((a, i) => (
+                          <Text key={i} className="text-[13.5px] leading-[19px] text-destructive">
+                            {a.message}
+                          </Text>
+                        ))}
+                      </View>
+                    ) : null}
+                  </AnimatedPressable>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
+
+        {cancelled.length > 0 ? (
+          <>
+            <Rule />
+            {/* These were invisible before: the list rendered only `is_active`
+                subscriptions, so a cancelled one could not be seen or edited
+                anywhere in the app. */}
+            <SectionLabel>Cancelled</SectionLabel>
+            <View className="mt-3 gap-[9px] px-5">
+              {cancelled.map((s) => (
+                <AnimatedPressable
+                  key={s.id}
+                  onPress={() => openEdit(s)}
+                  press="sink"
+                  accessibilityRole="button"
+                  accessibilityLabel={`Edit ${s.name}`}
+                  className="flex-row items-center gap-2.5 rounded-card border-2 border-foreground/25 px-3.5 py-3"
+                >
+                  <Text numberOfLines={1} className="min-w-0 flex-1 text-[16px] text-muted-foreground">
+                    {s.name}
+                  </Text>
+                  <Text className="shrink-0 text-[13.5px] text-muted-foreground">
+                    Rs. {formatLKR(s.amount, 0)}
+                  </Text>
+                </AnimatedPressable>
+              ))}
+            </View>
+          </>
+        ) : null}
+        <View className="h-7" />
       </PageShell>
 
       <AddEditSubscriptionDrawer
         visible={drawerOpen}
         subscription={editing}
         onClose={() => setDrawerOpen(false)}
+        onDelete={(s) =>
+          confirmDestructive({
+            title: "Delete subscription",
+            message: `"${s.name}" will be removed permanently.`,
+            onConfirm: () => {
+              remove.mutate(s.id);
+              setDrawerOpen(false);
+            },
+          })
+        }
+        deleting={remove.isPending}
       />
     </View>
   );
@@ -195,13 +230,18 @@ function AddEditSubscriptionDrawer({
   visible,
   subscription,
   onClose,
+  onDelete,
+  deleting,
 }: {
   visible: boolean;
   subscription: Subscription | null;
   onClose: () => void;
+  onDelete: (s: Subscription) => void;
+  deleting: boolean;
 }) {
   const add = useAddSubscription();
   const update = useUpdateSubscription();
+  const shadow = useHardShadow();
 
   const isEdit = Boolean(subscription);
 
@@ -254,12 +294,27 @@ function AddEditSubscriptionDrawer({
     <Drawer
       visible={visible}
       onClose={onClose}
-      title={isEdit ? "Edit Subscription" : "New Subscription"}
+      title={isEdit ? "Edit subscription" : "New subscription"}
       footer={
         <>
           <ActionButton variant="accent" loading={pending} disabled={!canSubmit} onPress={submit}>
-            {isEdit ? "Save Changes" : "Add Subscription"}
+            {isEdit ? "Save changes" : "Add subscription"}
           </ActionButton>
+          {/* Delete lives here, behind a confirm. It used to be a 15px bin icon
+              on every row that fired the mutation on the first tap. */}
+          {isEdit && subscription ? (
+            <Pressable
+              onPress={() => onDelete(subscription)}
+              disabled={deleting}
+              style={shadow}
+              className="mt-2.5 h-12 flex-row items-center justify-center gap-2 rounded-card border-2 border-destructive bg-card"
+            >
+              <Trash2 size={17} color="#EF4444" strokeWidth={2} />
+              <Text className="font-sans-bold text-[16px] text-destructive">
+                {deleting ? "Deleting…" : "Delete subscription"}
+              </Text>
+            </Pressable>
+          ) : null}
           {isError ? (
             <Text className="mt-2 text-center text-[14px] text-destructive">
               Could not save subscription. Please try again.
@@ -281,7 +336,7 @@ function AddEditSubscriptionDrawer({
         />
         <TextField
           className="flex-1"
-          label="Next Due *"
+          label="Next due *"
           value={nextDue}
           onChangeText={setNextDue}
           autoCapitalize="none"
@@ -290,7 +345,7 @@ function AddEditSubscriptionDrawer({
       </View>
 
       <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-        Billing Cycle *
+        Billing cycle *
       </Text>
       <ChipSelect className="mb-1" options={FREQUENCIES} value={frequency} onChange={setFrequency} capitalize />
     </Drawer>

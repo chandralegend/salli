@@ -130,8 +130,9 @@ export function Chip({
 }: {
   children: ReactNode;
   /** `accent` fills with brand orange — reserved for the one chip in a set
-   *  that carries state, never for every chip in the set. */
-  tone?: "plain" | "accent";
+   *  that carries state, never for every chip in the set. `danger` outlines in
+   *  destructive red for the exception in a list of normal rows. */
+  tone?: "plain" | "accent" | "danger";
   className?: string;
 }) {
   return (
@@ -139,11 +140,15 @@ export function Chip({
       className={cn(
         "flex-row items-center justify-center rounded-badge border-[1.5px] border-foreground px-2.5 py-1",
         tone === "accent" ? "bg-salli-accent" : "bg-card",
+        tone === "danger" ? "border-destructive" : undefined,
         className,
       )}
     >
       <Text
-        className={cn("font-mono text-[12px]", tone === "accent" ? undefined : "text-foreground")}
+        className={cn(
+          "font-mono text-[12px]",
+          tone === "accent" ? undefined : tone === "danger" ? "text-destructive" : "text-foreground",
+        )}
         // The accent fill is theme-invariant, so its label cannot be
         // ink-derived — it would invert into the orange.
         style={tone === "accent" ? { color: "#FFFFFF" } : undefined}

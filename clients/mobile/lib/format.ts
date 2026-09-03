@@ -35,3 +35,25 @@ export function formatMinor(minor: number, currency: string): string {
     return `${currency} ${(minor / 100).toFixed(2)}`;
   }
 }
+
+/**
+ * "3 Sep 2026" — the app's date form.
+ *
+ * Five screens were hand-rolling this same toLocaleDateString call. Accepts a
+ * bare "YYYY-MM-DD" as well as a full timestamp, and returns "—" rather than
+ * "Invalid Date" for anything unparseable, since these values come off the wire.
+ */
+export function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+/** "3 Sep 2026, 15:04" — for logs, where the time is the point. */
+export function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return `${formatDate(iso)}, ${d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+}

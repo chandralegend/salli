@@ -1,8 +1,10 @@
-import { ArrowDownRight, ArrowUpRight, Download } from "lucide-react-native";
+import { Download } from "lucide-react-native";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import Svg, { Polygon, Polyline } from "react-native-svg";
 
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { Hero, Meter, Rule, SectionLabel, Strong } from "@/components/ui/blocks";
 import { Card } from "@/components/ui/card";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
@@ -18,9 +20,16 @@ import {
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
 import { useThemeColors } from "@/lib/theme";
 import { useToast } from "@/lib/toast";
-import { cn } from "@/lib/utils";
 
-const TABS = ["Balance Sheet", "Income Stmt", "Net Worth"] as const;
+/**
+ * Three tabs, kept — unlike the tabs removed from Tax, Debt and Portfolio.
+ *
+ * Those repeated each other's figures. These are three different statements of
+ * account: what you own and owe at a moment, what came in and went out over a
+ * period, and how the first has moved over time. None is derivable from
+ * another on screen.
+ */
+const TABS = ["Balance sheet", "Income", "Net worth"] as const;
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -54,7 +63,7 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 function periodRange(period: string): { from: string; to: string; label: string } {
   const now = new Date();
   const y = now.getFullYear();
-  if (period === "YTD") return { from: `${y}-01-01`, to: iso(now), label: `${y} YTD` };
+  if (period === "YTD") return { from: `${y}-01-01`, to: iso(now), label: `${y} so far` };
   if (period === "AY 25/26") return { from: "2025-04-01", to: "2026-03-31", label: "AY 2025/26" };
   if (/^[A-Za-z]{3} \d{4}$/.test(period)) {
     // A specific month pill, e.g. "Jun 2026".
@@ -73,7 +82,7 @@ function periodRange(period: string): { from: string; to: string; label: string 
   };
 }
 
-/** Net-worth trend line + area fill (mockup's Net Worth hero chart). */
+/** Net-worth trend line + area fill. */
 function TrendChart({ values }: { values: number[] }) {
   const colors = useThemeColors();
   const W = 320;
@@ -90,15 +99,63 @@ function TrendChart({ values }: { values: number[] }) {
   return (
     <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
       <Polygon points={area} fill={`${colors.accent}1F`} stroke="none" />
-      <Polyline points={line} fill="none" stroke={colors.accent} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+      <Polyline
+        points={line}
+        fill="none"
+        stroke={colors.accent}
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </Svg>
+  );
+}
+
+/**
+ * A statement's line items: one row per line, then its total under a heavier
+ * rule. Replaces the per-row 3px accent spine, which coloured the first row of
+ * every section for no reason anyone could read off it.
+ */
+function LineTable({
+  lines,
+  totalLabel,
+  total,
+}: {
+  lines: { label: string; amount: string | number }[];
+  totalLabel: string;
+  total: string | number | undefined;
+}) {
+  return (
+    <Card className="overflow-hidden p-0">
+      {lines.map((l, i) => (
+        <View
+          key={i}
+          className="flex-row items-baseline justify-between gap-3 border-b border-foreground/15 px-3.5 py-2.5"
+        >
+          <Text numberOfLines={1} className="min-w-0 flex-1 text-[15px] text-foreground">
+            {l.label}
+          </Text>
+          <Text className="shrink-0 text-[15px] text-foreground">Rs. {formatLKR(l.amount, 0)}</Text>
+        </View>
+      ))}
+      {total !== undefined ? (
+        <View className="flex-row items-baseline justify-between gap-3 border-t-2 border-foreground px-3.5 py-2.5">
+          <Text className="min-w-0 flex-1 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+            {totalLabel}
+          </Text>
+          <Text className="shrink-0 font-sans-extrabold text-[16px] text-foreground">
+            Rs. {formatLKR(total, 0)}
+          </Text>
+        </View>
+      ) : null}
+    </Card>
   );
 }
 
 export default function ReportsScreen() {
   const colors = useThemeColors();
   const showToast = useToast();
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Balance Sheet");
+  const [tab, setTab] = useState<(typeof TABS)[number]>("Balance sheet");
   const [period, setPeriod] = useState<(typeof PERIODS)[number]>(PERIODS[0]);
   const [exporting, setExporting] = useState(false);
   const range = periodRange(period);
@@ -108,13 +165,16 @@ export default function ReportsScreen() {
 
   const trend = netWorth.data?.trend ?? [];
   const nwDelta =
-    trend.length >= 2 ? Number(trend[trend.length - 1].net_worth) - Number(trend[trend.length - 2].net_worth) : null;
+    trend.length >= 2
+      ? Number(trend[trend.length - 1].net_worth) - Number(trend[trend.length - 2].net_worth)
+      : null;
   const prevLabel = trend.length >= 2 ? MONTHS[new Date(trend[trend.length - 2].date).getMonth()] : "";
 
   const incomeTotal = income.data ? Object.values(income.data.income).reduce((s, v) => s + Number(v), 0) : 0;
-  const expenseTotal = income.data ? Object.values(income.data.expenses).reduce((s, v) => s + Number(v), 0) : 0;
+  const expenseTotal = income.data
+    ? Object.values(income.data.expenses).reduce((s, v) => s + Number(v), 0)
+    : 0;
   const saved = income.data ? Number(income.data.net_income) : 0;
-  const expensePct = incomeTotal > 0 ? Math.min(100, (expenseTotal / incomeTotal) * 100) : 0;
 
   // Net-worth trend, chronological, capped to the last 12 months for the chart/list.
   const trendChron = trend.slice(-12);
@@ -131,9 +191,11 @@ export default function ReportsScreen() {
     }
   }
 
-  // Which server-side CSV report the current tab maps to (Income Stmt has none).
+  // Which server-side CSV report the current tab maps to. The income statement
+  // has none, so the control is absent on that tab rather than present at 40%
+  // opacity with nothing to say about why.
   const exportType: ExportableReport | null =
-    tab === "Balance Sheet" ? "balance-sheet" : tab === "Net Worth" ? "net-worth" : null;
+    tab === "Balance sheet" ? "balance-sheet" : tab === "Net worth" ? "net-worth" : null;
 
   async function handleExport() {
     if (!exportType || exporting) return;
@@ -151,124 +213,65 @@ export default function ReportsScreen() {
     <PageShell
       animateOn={tab}
       header={
-        <ScreenHeader
-          title="Reports"
-          back
-          trailing={
-            <Pressable
-              onPress={handleExport}
-              disabled={!exportType || exporting}
-              className={cn(
-                "flex-row items-center gap-1.5 rounded-pill border border-foreground/10 bg-foreground/[0.06] px-3.5 py-1.5",
-                !exportType && "opacity-40",
-              )}
-            >
-              {exporting ? (
-                <ActivityIndicator size="small" color={colors.mutedForeground} />
-              ) : (
-                <Download size={15} color={colors.mutedForeground} strokeWidth={2} />
-              )}
-              <Text className="font-sans-medium text-[15px] text-foreground/50">Export</Text>
-            </Pressable>
-          }
-        />
+        <>
+          <ScreenHeader
+            title="Reports"
+            back
+            trailing={
+              exportType ? (
+                <AnimatedPressable
+                  onPress={handleExport}
+                  disabled={exporting}
+                  accessibilityRole="button"
+                  accessibilityLabel="Export as CSV"
+                  className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
+                >
+                  {exporting ? (
+                    <ActivityIndicator size="small" color={colors.foreground} />
+                  ) : (
+                    <Download size={18} color={colors.foreground} strokeWidth={2} />
+                  )}
+                </AnimatedPressable>
+              ) : undefined
+            }
+          />
+          <Tabs items={TABS} value={tab} onChange={setTab} className="mt-3" />
+        </>
       }
     >
-      <View className="mt-2.5 flex-row gap-1.5 px-4">
-        {PERIODS.map((p) => (
-          <FilterChip key={p} label={p} active={period === p} onPress={() => setPeriod(p)} />
-        ))}
-      </View>
-
-      <Tabs items={TABS} value={tab} onChange={setTab} className="mt-1.5" />
-
-      {tab === "Balance Sheet" ? (
-        <View className="px-4 pt-2.5">
-          <Card className="bg-salli-hero p-[18px]">
-            <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/50">
-              Net Worth Snapshot
+      {tab === "Balance sheet" ? (
+        <View>
+          <View className="px-5">
+            <Hero>
+              Your net worth is{" "}
+              <Strong>
+                Rs. {balanceSheet.data ? formatLKRAbbrev(balanceSheet.data.net_worth) : "—"}
+              </Strong>
+              .
+            </Hero>
+            {/* Stated as signed component figures rather than as "X owned less
+                Y owed". This ledger reports total_liabilities NEGATIVE, so the
+                sentence form rendered "less Rs. -2.9L owed" — a double negative
+                asserting arithmetic that did not reconcile with the net worth
+                above it. The signed figures are what the balance sheet says. */}
+            <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
+              Assets Rs. {balanceSheet.data ? formatLKRAbbrev(balanceSheet.data.total_assets) : "—"}
+              , liabilities Rs.{" "}
+              {balanceSheet.data ? formatLKRAbbrev(balanceSheet.data.total_liabilities) : "—"}.
+              {/* A zero delta is not movement. "Up Rs. 0 since Sep" read as a
+                  rise of nothing. */}
+              {nwDelta !== null
+                ? nwDelta === 0
+                  ? ` Unchanged since ${prevLabel}.`
+                  : ` ${nwDelta > 0 ? "Up" : "Down"} Rs. ${formatLKRAbbrev(Math.abs(nwDelta))} since ${prevLabel}.`
+                : ""}
             </Text>
-            <View className="mb-1 flex-row items-baseline gap-1">
-              <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
-              <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
-                {balanceSheet.data ? formatLKRAbbrev(balanceSheet.data.net_worth) : "—"}
-              </Text>
-            </View>
-            {nwDelta !== null ? (
-              <View className="mb-3.5 flex-row">
-                <View
-                  className={cn(
-                    "flex-row items-center gap-1 rounded-pill border px-2.5 py-0.5",
-                    nwDelta >= 0
-                      ? "border-salli-accent/20 bg-salli-accent/15"
-                      : "border-destructive/20 bg-destructive/10",
-                  )}
-                >
-                  {nwDelta >= 0 ? (
-                    <ArrowUpRight size={9} color={colors.accent} strokeWidth={2.5} />
-                  ) : (
-                    <ArrowDownRight size={9} color="#EF4444" strokeWidth={2.5} />
-                  )}
-                  <Text className={cn("text-[14px] font-sans-semibold", nwDelta >= 0 ? "text-salli-accent" : "text-destructive")}>
-                    {nwDelta >= 0 ? "+" : "−"}Rs. {formatLKRAbbrev(Math.abs(nwDelta))} vs {prevLabel}
-                  </Text>
-                </View>
-              </View>
-            ) : (
-              <View className="mb-3.5" />
-            )}
-            <View className="flex-row gap-1.5">
-              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[13px] text-white/35">Assets</Text>
-                <Text className="font-sans-bold text-[15px] leading-none text-white">
-                  Rs. {balanceSheet.data ? formatLKRAbbrev(balanceSheet.data.total_assets) : "—"}
-                </Text>
-              </View>
-              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[13px] text-white/35">Liabilities</Text>
-                <Text className="font-sans-bold text-[15px] leading-none text-white/60">
-                  Rs. {balanceSheet.data ? formatLKRAbbrev(balanceSheet.data.total_liabilities) : "—"}
-                </Text>
-              </View>
-              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[13px] text-white/35">Equity</Text>
-                <Text className="font-sans-bold text-[15px] leading-none text-white/50">
-                  Rs. {balanceSheet.data ? formatLKRAbbrev(balanceSheet.data.total_equity) : "—"}
-                </Text>
-              </View>
-            </View>
-          </Card>
+          </View>
 
-          <Card className="mt-2.5 p-4">
-            <Text className="mb-3 font-sans-semibold text-[15px] text-foreground">
-              Income vs Expense · {range.label}
-            </Text>
-            <View className="gap-3.5">
-              <View>
-                <View className="mb-1.5 flex-row justify-between">
-                  <Text className="text-[15px] text-foreground/50">Income</Text>
-                  <Text className="font-sans-semibold text-[15px] text-foreground">Rs. {formatLKRAbbrev(incomeTotal)}</Text>
-                </View>
-                <View className="h-1.5 overflow-hidden rounded-pill bg-foreground/[0.06]">
-                  <View className="h-full rounded-pill bg-salli-accent" style={{ width: incomeTotal > 0 ? "100%" : "0%" }} />
-                </View>
-              </View>
-              <View>
-                <View className="mb-1.5 flex-row justify-between">
-                  <Text className="text-[15px] text-foreground/50">Expenses</Text>
-                  <Text className="font-sans-semibold text-[15px] text-foreground/60">Rs. {formatLKRAbbrev(expenseTotal)}</Text>
-                </View>
-                <View className="h-1.5 overflow-hidden rounded-pill bg-foreground/[0.06]">
-                  <View className="h-full rounded-pill bg-foreground/35" style={{ width: `${expensePct}%` }} />
-                </View>
-              </View>
-              <View className="flex-row justify-between border-t border-foreground/[0.07] pt-2">
-                <Text className="text-[15px] font-sans-medium text-muted-foreground">Saved this month</Text>
-                <Text className="font-sans-bold text-[15px] text-foreground">Rs. {formatLKR(saved, 0)}</Text>
-              </View>
-            </View>
-          </Card>
-
+          {/* The "Income vs Expense" card that used to sit here belonged to the
+              income statement, which has its own tab. Having it on this tab was
+              also why the period pills appeared to apply to a balance sheet —
+              a balance sheet is a moment, not a period. */}
           {(["assets", "liabilities", "equity"] as const).map((section) => {
             const lines = balanceSheet.data?.[section] ?? [];
             if (lines.length === 0) return null;
@@ -279,145 +282,140 @@ export default function ReportsScreen() {
                   ? balanceSheet.data?.total_liabilities
                   : balanceSheet.data?.total_equity;
             return (
-              <Card key={section} className="mt-2.5 overflow-hidden p-0">
-                <View className="border-b border-foreground/[0.06] px-4 py-3">
-                  <Text className="font-sans-semibold text-[15px] capitalize text-foreground">{section}</Text>
+              <View key={section}>
+                <Rule />
+                <SectionLabel>{section}</SectionLabel>
+                <View className="mt-3 px-5">
+                  <LineTable
+                    lines={lines.map((l) => ({ label: `${l.code} · ${l.name}`, amount: l.balance }))}
+                    totalLabel={`Total ${section}`}
+                    total={total}
+                  />
                 </View>
-                <View className="px-4">
-                  {lines.map((line, i) => (
-                    <View key={i} className="flex-row items-center gap-2.5 border-b border-foreground/[0.05] py-2.5">
-                      <View className={cn("h-[30px] w-[3px] rounded-pill", i === 0 ? "bg-salli-accent" : "bg-foreground/15")} />
-                      <Text className="flex-1 text-[15px] text-foreground/55">
-                        {line.code} · {line.name}
-                      </Text>
-                      <Text className="font-sans-medium text-[15px] text-foreground">
-                        Rs. {formatLKR(line.balance, 0)}
-                      </Text>
-                    </View>
-                  ))}
-                  {total ? (
-                    <View className="flex-row justify-between bg-foreground/[0.02] py-2.5">
-                      <Text className="font-sans-semibold text-[15px] capitalize text-muted-foreground">Total {section}</Text>
-                      <Text className="font-sans-bold text-[15px] text-foreground">Rs. {formatLKR(total, 0)}</Text>
-                    </View>
-                  ) : null}
-                </View>
-              </Card>
+              </View>
             );
           })}
+          <View className="h-7" />
         </View>
-      ) : tab === "Income Stmt" ? (
-        <View className="px-4 pt-2.5">
-          <Card className="bg-salli-hero p-[18px]">
-            <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/50">
-              Net Income · {range.label}
+      ) : tab === "Income" ? (
+        <View>
+          {/* The period pills live on this tab only. They were rendered above
+              all three, but only the income statement takes a date range —
+              tapping them on the other two changed nothing. */}
+          <View className="flex-row flex-wrap gap-1.5 px-5">
+            {PERIODS.map((p) => (
+              <FilterChip key={p} label={p} active={period === p} onPress={() => setPeriod(p)} />
+            ))}
+          </View>
+
+          <View className="mt-4 px-5">
+            {/* A negative surplus is not something you "kept". The sentence
+                flips rather than printing "You kept Rs. -5.0L". */}
+            <Hero>
+              {saved < 0 ? (
+                <>
+                  You spent <Strong>Rs. {formatLKRAbbrev(Math.abs(saved))}</Strong> more than you
+                  earned in {range.label}.
+                </>
+              ) : (
+                <>
+                  You kept <Strong>Rs. {income.data ? formatLKRAbbrev(saved) : "—"}</Strong> in{" "}
+                  {range.label}.
+                </>
+              )}
+            </Hero>
+            <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
+              Rs. {formatLKRAbbrev(incomeTotal)} in, Rs. {formatLKRAbbrev(expenseTotal)} out.
             </Text>
-            <View className="mb-2.5 flex-row items-baseline gap-1">
-              <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
-              <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
-                {income.data ? formatLKRAbbrev(saved) : "—"}
-              </Text>
-            </View>
-            <View className="flex-row gap-1.5">
-              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[13px] text-white/35">Total Income</Text>
-                <Text className="font-sans-bold text-[15px] leading-none text-white">
-                  Rs. {income.data ? formatLKRAbbrev(incomeTotal) : "—"}
-                </Text>
-              </View>
-              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[13px] text-white/35">Total Expenses</Text>
-                <Text className="font-sans-bold text-[15px] leading-none text-white/60">
-                  Rs. {income.data ? formatLKRAbbrev(expenseTotal) : "—"}
-                </Text>
-              </View>
-            </View>
-          </Card>
+            {incomeTotal > 0 ? (
+              <Meter
+                className="mt-4"
+                value={expenseTotal / incomeTotal}
+                over={expenseTotal > incomeTotal}
+              />
+            ) : null}
+          </View>
 
           {(["income", "expenses"] as const).map((section) => {
             const entries = income.data ? Object.entries(income.data[section]) : [];
             if (entries.length === 0) return null;
-            const total = section === "income" ? incomeTotal : expenseTotal;
             return (
-              <Card key={section} className="mt-2.5 overflow-hidden p-0">
-                <View className="border-b border-foreground/[0.06] px-4 py-3">
-                  <Text className="font-sans-semibold text-[15px] capitalize text-foreground">{section}</Text>
+              <View key={section}>
+                <Rule />
+                <SectionLabel>{section}</SectionLabel>
+                <View className="mt-3 px-5">
+                  <LineTable
+                    lines={entries.map(([name, amount]) => ({ label: name, amount }))}
+                    totalLabel={`Total ${section}`}
+                    total={section === "income" ? incomeTotal : expenseTotal}
+                  />
                 </View>
-                <View className="px-4">
-                  {entries.map(([name, amount], i) => (
-                    <View key={i} className="flex-row items-center gap-2.5 border-b border-foreground/[0.05] py-2.5">
-                      <View className={cn("h-[30px] w-[3px] rounded-pill", section === "income" ? "bg-salli-accent" : "bg-foreground/15")} />
-                      <Text className="flex-1 text-[15px] text-foreground/55">{name}</Text>
-                      <Text className="font-sans-medium text-[15px] text-foreground">Rs. {formatLKR(amount, 0)}</Text>
-                    </View>
-                  ))}
-                  <View className="flex-row justify-between bg-foreground/[0.02] py-2.5">
-                    <Text className="font-sans-semibold text-[15px] capitalize text-muted-foreground">Total {section}</Text>
-                    <Text className="font-sans-bold text-[15px] text-foreground">Rs. {formatLKR(total, 0)}</Text>
-                  </View>
-                </View>
-              </Card>
+              </View>
             );
           })}
 
-          {income.data && Object.keys(income.data.income).length === 0 && Object.keys(income.data.expenses).length === 0 ? (
-            <Card className="mt-2.5 items-center p-6">
-              <Text className="text-[15px] text-muted-foreground">No income or expenses this period.</Text>
-            </Card>
-          ) : income.data ? (
-            <View className="mt-2.5 flex-row items-center justify-between rounded-card border border-salli-accent/20 bg-salli-accent/[0.08] px-4 py-3.5">
-              <Text className="font-sans-bold text-[16px] text-foreground">Net Income</Text>
-              <Text className="font-sans-extrabold text-[22px] tracking-tight text-salli-accent">Rs. {formatLKR(saved, 0)}</Text>
+          {income.data &&
+          Object.keys(income.data.income).length === 0 &&
+          Object.keys(income.data.expenses).length === 0 ? (
+            <View className="mt-4 px-5">
+              <Text className="text-[15px] leading-[21px] text-muted-foreground">
+                Nothing came in or went out in {range.label}.
+              </Text>
             </View>
           ) : null}
+          <View className="h-7" />
         </View>
       ) : (
-        <View className="px-4 pt-2.5">
-          <Card className="bg-salli-hero p-[18px]">
-            <View className="mb-3.5 flex-row items-start justify-between">
-              <View className="flex-1">
-                <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/50">
-                  Current Net Worth
-                </Text>
-                <View className="flex-row items-baseline gap-1">
-                  <Text className="font-sans-semibold text-[22px] text-white/40">Rs.</Text>
-                  <Text className="font-sans-extrabold text-[42px] leading-none tracking-tighter text-white">
-                    {netWorth.data ? formatLKRAbbrev(netWorth.data.current_net_worth) : "—"}
-                  </Text>
-                </View>
-                <Text className="mt-1 text-[14px] text-white/30">
-                  As of {netWorth.data?.as_of ? monthLabel(netWorth.data.as_of) : "—"}
-                </Text>
-              </View>
-              {yoyPct !== null ? (
-                <View className="mt-1 rounded-card border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
-                  <Text className="font-sans-semibold text-[14px] text-salli-accent">
-                    {yoyPct >= 0 ? "↑" : "↓"} {Math.abs(yoyPct).toFixed(0)}% YoY
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-            {trendValues.length >= 2 ? (
-              <>
+        <View>
+          <View className="px-5">
+            <Hero>
+              <Strong>
+                Rs. {netWorth.data ? formatLKRAbbrev(netWorth.data.current_net_worth) : "—"}
+              </Strong>{" "}
+              as of {netWorth.data?.as_of ? monthLabel(netWorth.data.as_of) : "—"}.
+            </Hero>
+            {yoyPct !== null ? (
+              <Text
+                className={`mt-2 text-[16px] leading-[23px] ${
+                  yoyPct >= 0 ? "font-sans-semibold text-salli-accent" : "font-sans-semibold text-destructive"
+                }`}
+              >
+                {yoyPct >= 0 ? "Up" : "Down"} {Math.abs(yoyPct).toFixed(0)}% on a year ago.
+              </Text>
+            ) : (
+              <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
+                Not yet a year of history to compare against.
+              </Text>
+            )}
+          </View>
+
+          {trendValues.length >= 2 ? (
+            <View className="mt-4 px-5">
+              <Card className="px-3.5 pb-2.5 pt-3.5">
                 <TrendChart values={trendValues} />
-                <View className="mt-1 flex-row justify-between">
-                  <Text className="text-[13px] text-white/30">{monthLabel(trendChron[0].date)}</Text>
-                  <Text className="text-[13px] text-white/30">{monthLabel(trendChron[trendChron.length - 1].date)}</Text>
+                <View className="mt-1.5 flex-row justify-between">
+                  <Text className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                    {monthLabel(trendChron[0].date)}
+                  </Text>
+                  <Text className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                    {monthLabel(trendChron[trendChron.length - 1].date)}
+                  </Text>
                 </View>
-              </>
-            ) : null}
-          </Card>
+              </Card>
+            </View>
+          ) : null}
 
           {trend.length === 0 ? (
-            <Card className="mt-2.5 items-center p-6">
-              <Text className="text-[15px] text-muted-foreground">No history yet.</Text>
-            </Card>
+            <View className="mt-4 px-5">
+              <Text className="text-[15px] leading-[21px] text-muted-foreground">
+                No history yet. It builds up as you post entries.
+              </Text>
+            </View>
           ) : (
             <>
-              <Text className="px-0.5 pb-1.5 pt-3.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-                Monthly Trend
-              </Text>
-              <View className="gap-3.5">
+              <Rule />
+              <SectionLabel>Month by month</SectionLabel>
+              <View className="mt-3 gap-[9px] px-5">
                 {trendChron
                   .map((point, i) => {
                     const value = Number(point.net_worth);
@@ -428,19 +426,27 @@ export default function ReportsScreen() {
                   })
                   .reverse()
                   .map(({ point, value, delta, pct }, i) => (
-                    <Card key={i} className="flex-row items-center justify-between p-3.5">
-                      <View>
-                        <Text className="font-sans-semibold text-[15px] text-foreground">{monthLabel(point.date)}</Text>
+                    <Card key={i} flat className="flex-row items-center gap-3 px-3.5 py-3">
+                      <View className="min-w-0 flex-1">
+                        <Text className="font-sans-bold text-[16px] text-foreground">
+                          {monthLabel(point.date)}
+                        </Text>
                         {delta !== null ? (
-                          <Text className="mt-0.5 text-[14px] text-muted-foreground">
-                            {delta >= 0 ? "+" : "−"}Rs. {formatLKRAbbrev(Math.abs(delta))} this month
+                          <Text className="mt-0.5 text-[13.5px] text-muted-foreground">
+                            {delta >= 0 ? "+" : "−"}Rs. {formatLKRAbbrev(Math.abs(delta))} that month
                           </Text>
                         ) : null}
                       </View>
-                      <View className="items-end">
-                        <Text className="font-sans-bold text-[16px] text-foreground">Rs. {formatLKRAbbrev(value)}</Text>
+                      <View className="shrink-0 items-end">
+                        <Text className="font-sans-extrabold text-[15px] text-foreground">
+                          Rs. {formatLKRAbbrev(value)}
+                        </Text>
                         {pct !== null ? (
-                          <Text className={cn("text-[14px] font-sans-medium", pct >= 0 ? "text-salli-accent" : "text-destructive")}>
+                          <Text
+                            className={`mt-0.5 text-[13px] ${
+                              pct >= 0 ? "text-muted-foreground" : "text-destructive"
+                            }`}
+                          >
                             {pct >= 0 ? "+" : "−"}
                             {Math.abs(pct).toFixed(1)}%
                           </Text>
@@ -451,6 +457,7 @@ export default function ReportsScreen() {
               </View>
             </>
           )}
+          <View className="h-7" />
         </View>
       )}
     </PageShell>

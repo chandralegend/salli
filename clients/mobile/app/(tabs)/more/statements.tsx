@@ -1,73 +1,93 @@
 import * as DocumentPicker from "expo-document-picker";
 import { LinearGradient } from "expo-linear-gradient";
-import {
-  Building2,
-  Check,
-  CreditCard,
-  FileText,
-  Info,
-  Landmark,
-  Lock,
-  MoreVertical,
-  Search,
-  Upload,
-} from "lucide-react-native";
+import { Check, Upload } from "lucide-react-native";
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Modal, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 
 import { QuotaBanner } from "@/components/shared/QuotaBanner";
-import { Card } from "@/components/ui/card";
-import { PageShell } from "@/components/ui/page-shell";
 import { ActionButton } from "@/components/ui/action-button";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { Chip, Hero, Rule, SectionLabel, Strong } from "@/components/ui/blocks";
+import { Card } from "@/components/ui/card";
 import { FilterChip } from "@/components/ui/filter-chip";
+import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { StatTile } from "@/components/ui/stat-tile";
-import { Tabs } from "@/components/ui/tabs";
 import { useAccounts, useTrialBalance } from "@/hooks/useLedger";
 import type { ParsedTransaction, StatementUploadResult } from "@/hooks/useStatements";
 import { usePendingStatement, usePostStatement, uploadStatement } from "@/hooks/useStatements";
-import { formatLKR } from "@/lib/format";
+import { formatDate, formatLKR } from "@/lib/format";
 import { isQuotaError } from "@/lib/quota";
 import { useIsTablet } from "@/lib/responsive";
-import { useThemeColors } from "@/lib/theme";
+import { useHardShadow, useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const TABLET_POST_BAR_MAX_WIDTH = 720;
 
-const TABS = ["Review", "History", "Banks"] as const;
-type Tab = (typeof TABS)[number];
-const STATUS = ["All", "Pending", "Matched", "Skipped"] as const;
+/**
+ * Two filters, not four.
+ *
+ * "Skipped" was a chip whose handler read `if (status === "Skipped") return
+ * false` — it always rendered an empty list, under an empty-state message that
+ * admitted the server has no skipped state. "All" and the two real states are
+ * what is left.
+ */
+const STATUS = ["Needs review", "Matched", "All"] as const;
 type Status = (typeof STATUS)[number];
 
 const isMatched = (t: ParsedTransaction) => Boolean(t.debit_account_id && t.credit_account_id);
 
-/** Builds the honest secondary line: "30 Jun · Income · BOC credit" from the
- * fields the API actually returns (date, category, bank string, credit_flag). */
+/** Builds the honest secondary line: "30 Jun 2026 · Income · BOC credit" from
+ * the fields the API actually returns (date, category, bank string, credit_flag). */
 function txnSubtitle(t: ParsedTransaction, bank: string): string {
-  const parts: string[] = [t.date];
+  const parts: string[] = [formatDate(t.date)];
   if (t.category) parts.push(t.category);
   parts.push(`${bank ? `${bank} ` : ""}${t.credit_flag ? "credit" : "debit"}`);
   return parts.join(" · ");
 }
 
+/**
+ * Import a statement, review what was parsed, post it.
+ *
+ * This was three tabs, and two of them were not what their labels said.
+ *
+ * "History" received the SAME props as Review — the same imported/matched/
+ * unmatched counts from the same piece of state — and rendered them as the same
+ * three stat tiles, above a one-row list of the current import. It then
+ * explained in its own footnote that statement history is not stored on the
+ * server. It was a second view of the open import, called history.
+ *
+ * "Banks" was reachable from a menu item labelled "Manage banks" and offered
+ * nothing to manage: a read-only list of the ledger's asset accounts. It
+ * survives as a block called what it is — where imports post — shown while no
+ * import is open, which is when it is useful.
+ *
+ * The counts were also stated three times on the Review tab alone: as three
+ * stat tiles, as an "N Pending" badge beside them, and again in the filter chip
+ * labels. The chips keep them, since a filter should say how much it will show.
+ */
 export default function StatementsScreen() {
   const colors = useThemeColors();
   const isTablet = useIsTablet();
+  const shadow = useHardShadow();
   const [upload, setUpload] = useState<StatementUploadResult | null>(null);
   const [uploading, setUploading] = useState(false);
   const [approved, setApproved] = useState<Set<string>>(new Set());
-  const [tab, setTab] = useState<Tab>("Review");
-  const [status, setStatus] = useState<Status>("Pending");
-  const [search, setSearch] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [status, setStatus] = useState<Status>("Needs review");
   const [quotaHit, setQuotaHit] = useState(false);
 
   const statementId = upload?.statement_id ?? null;
   const pending = usePendingStatement(statementId);
   const postStatement = usePostStatement(statementId);
 
+  const accounts = useAccounts();
+  const balances = useTrialBalance();
+  // Bank / cash accounts are the ledger asset accounts imports post against.
+  const bankAccounts = useMemo(
+    () => (accounts.data ?? []).filter((a) => a.type === "asset"),
+    [accounts.data],
+  );
+
   const handleUpload = async () => {
-    setMenuOpen(false);
     const result = await DocumentPicker.getDocumentAsync({
       type: [
         "application/pdf",
@@ -84,8 +104,7 @@ export default function StatementsScreen() {
       const res = await uploadStatement(file.uri, file.name, file.mimeType ?? "application/octet-stream", "");
       setUpload(res);
       setApproved(new Set());
-      setTab("Review");
-      setStatus("Pending");
+      setStatus("Needs review");
     } catch (err) {
       if (isQuotaError(err)) setQuotaHit(true);
       else Alert.alert("Upload failed", "We couldn't process that statement. Please try again.");
@@ -110,81 +129,233 @@ export default function StatementsScreen() {
   const matched = transactions.filter(isMatched).length;
   const unmatched = imported - matched;
   const period = upload?.period_start
-    ? `${upload.period_start}${upload.period_end ? ` → ${upload.period_end}` : ""}`
+    ? `${formatDate(upload.period_start)}${upload.period_end ? ` to ${formatDate(upload.period_end)}` : ""}`
     : "";
 
   const visible = transactions.filter((t) => {
-    if (status === "Pending" && isMatched(t)) return false;
+    if (status === "Needs review" && isMatched(t)) return false;
     if (status === "Matched" && !isMatched(t)) return false;
-    if (status === "Skipped") return false; // no server-side "skipped" state
-    if (search && !t.description.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
-  const showPostBar = Boolean(statementId) && imported > 0 && tab === "Review";
+  const showPostBar = Boolean(statementId) && imported > 0;
 
   return (
     <View className="flex-1">
       <PageShell
-        animateOn={tab}
         contentContainerStyle={showPostBar ? { paddingBottom: 180 } : undefined}
         header={
-          <>
-            <ScreenHeader
-              title="Statements"
-              back
-              trailing={
-                <Pressable
-                  onPress={() => setMenuOpen(true)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Options"
-                  className="h-11 w-11 items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.07]"
-                >
-                  <MoreVertical size={17} color={colors.mutedForeground} strokeWidth={2} />
-                </Pressable>
-              }
-            />
-            <Tabs items={TABS} value={tab} onChange={setTab} className="mt-3" />
-          </>
+          <ScreenHeader
+            title="Statements"
+            back
+            trailing={
+              <AnimatedPressable
+                onPress={handleUpload}
+                accessibilityRole="button"
+                accessibilityLabel="Import a statement"
+                className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
+              >
+                {uploading ? (
+                  <ActivityIndicator size="small" color={colors.accent} />
+                ) : (
+                  <Upload size={19} color={colors.accent} strokeWidth={2.2} />
+                )}
+              </AnimatedPressable>
+            }
+          />
         }
       >
+        {quotaHit ? <QuotaBanner className="mx-5 mb-3" /> : null}
 
-        {quotaHit ? <QuotaBanner className="mx-4 mt-3" /> : null}
+        {!upload ? (
+          <View>
+            <View className="px-5">
+              <Hero>Import a bank statement.</Hero>
+              <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
+                PDF, CSV or XLSX from any Sri Lankan bank. Salli parses it and drafts ledger
+                entries for you to approve — nothing is posted until you say so.
+              </Text>
+              <ActionButton className="mt-5" loading={uploading} onPress={handleUpload}>
+                Choose a file
+              </ActionButton>
+            </View>
 
-        {tab === "Review" ? (
-          <ReviewTab
-            colors={colors}
-            upload={upload}
-            pending={pending}
-            uploading={uploading}
-            onUpload={handleUpload}
-            bank={bank}
-            period={period}
-            imported={imported}
-            matched={matched}
-            unmatched={unmatched}
-            status={status}
-            setStatus={setStatus}
-            search={search}
-            setSearch={setSearch}
-            visible={visible}
-            approved={approved}
-            toggle={toggle}
-          />
-        ) : tab === "History" ? (
-          <HistoryTab
-            colors={colors}
-            upload={upload}
-            imported={imported}
-            matched={matched}
-            unmatched={unmatched}
-            bank={bank}
-            period={period}
-            onUpload={handleUpload}
-            uploading={uploading}
-          />
+            {bankAccounts.length > 0 ? (
+              <>
+                <Rule />
+                <SectionLabel>Imports post to</SectionLabel>
+                <View className="mt-3 gap-[9px] px-5">
+                  {bankAccounts.map((a) => {
+                    const bal = balances.data?.[a.id];
+                    return (
+                      <Card
+                        key={a.id}
+                        flat
+                        className={cn(
+                          "flex-row items-center gap-[11px] px-3.5 py-3",
+                          !a.is_active && "border-foreground/25",
+                        )}
+                      >
+                        <Chip className="min-w-[58px]">{a.code}</Chip>
+                        <View className="min-w-0 flex-1">
+                          <Text numberOfLines={1} className="font-sans-bold text-[15px] text-foreground">
+                            {a.name}
+                          </Text>
+                          <Text className="mt-0.5 text-[13px] text-muted-foreground">
+                            {a.currency}
+                            {a.is_active ? "" : " · inactive"}
+                          </Text>
+                        </View>
+                        {bal != null ? (
+                          <Text className="shrink-0 font-sans-extrabold text-[14px] text-foreground">
+                            Rs. {formatLKR(bal, 0)}
+                          </Text>
+                        ) : null}
+                      </Card>
+                    );
+                  })}
+                </View>
+                <View className="mt-3 px-5">
+                  <Text className="text-[13.5px] leading-5 text-muted-foreground">
+                    Each parsed transaction is matched to one of these by its ledger code. Add or
+                    change them in the Ledger.
+                  </Text>
+                </View>
+              </>
+            ) : (
+              <>
+                <Rule />
+                <View className="px-5">
+                  <Text className="text-[15px] leading-[21px] text-muted-foreground">
+                    You have no asset accounts yet. Imports post against them, so add one in the
+                    Ledger first.
+                  </Text>
+                </View>
+              </>
+            )}
+            <View className="h-7" />
+          </View>
         ) : (
-          <BanksTab colors={colors} />
+          <View>
+            <View className="px-5">
+              <Hero>
+                <Strong>{imported}</Strong> transaction{imported === 1 ? "" : "s"}
+                {bank ? ` from ${bank}` : ""}.
+              </Hero>
+              <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
+                {period ? `${period}. ` : ""}
+                {unmatched === 0
+                  ? "All of them match an account already."
+                  : `${matched} match an account already; ${unmatched} need a look.`}
+              </Text>
+            </View>
+
+            {pending.isLoading ? (
+              <View className="items-center pt-10">
+                <ActivityIndicator color={colors.accent} />
+              </View>
+            ) : imported === 0 ? (
+              <>
+                <Rule />
+                <View className="px-5">
+                  <Text className="text-[15px] leading-[21px] text-muted-foreground">
+                    Nothing could be parsed from that file.
+                  </Text>
+                </View>
+              </>
+            ) : (
+              <>
+                <Rule />
+                <View className="flex-row flex-wrap gap-1.5 px-5">
+                  {STATUS.map((s) => {
+                    const count = s === "All" ? imported : s === "Needs review" ? unmatched : matched;
+                    return (
+                      <FilterChip
+                        key={s}
+                        label={`${s} ${count}`}
+                        active={status === s}
+                        onPress={() => setStatus(s)}
+                      />
+                    );
+                  })}
+                </View>
+
+                <View className="mt-3.5 gap-[9px] px-5">
+                  {visible.length === 0 ? (
+                    <Text className="text-[15px] leading-[21px] text-muted-foreground">
+                      Nothing here under that filter.
+                    </Text>
+                  ) : (
+                    visible.map((t) => {
+                      const matchedRow = isMatched(t);
+                      const isApproved = approved.has(t.id);
+                      return (
+                        <AnimatedPressable
+                          key={t.id}
+                          onPress={() => toggle(t.id)}
+                          press="sink"
+                          accessibilityRole="button"
+                          accessibilityLabel={`${isApproved ? "Unapprove" : "Approve"} ${t.description}`}
+                          className={cn(
+                            "flex-row items-center gap-[11px] rounded-card border-2 bg-card px-3.5 py-3",
+                            isApproved ? "border-salli-accent" : "border-foreground",
+                          )}
+                        >
+                          {/* A checkbox, because the row's job is approving. The
+                              badge it replaces read "Approved"/"Matched"/
+                              "Unmatched" — three words for two independent
+                              facts, one of which the filter above already
+                              states. */}
+                          <View
+                            className={cn(
+                              "h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[6px] border-2 border-foreground",
+                              isApproved ? "bg-salli-accent" : "bg-card",
+                            )}
+                          >
+                            {isApproved ? <Check size={14} color="#FFFFFF" strokeWidth={3} /> : null}
+                          </View>
+                          <View className="min-w-0 flex-1">
+                            <Text
+                              numberOfLines={1}
+                              className="font-sans-bold text-[15px] text-foreground"
+                            >
+                              {t.description}
+                            </Text>
+                            <Text numberOfLines={1} className="mt-0.5 text-[13px] text-muted-foreground">
+                              {txnSubtitle(t, bank)}
+                              {matchedRow ? "" : " · no account"}
+                            </Text>
+                          </View>
+                          <Text className="shrink-0 font-sans-extrabold text-[15px] text-foreground">
+                            {t.credit_flag ? "+" : "−"}
+                            {formatLKR(t.amount, 0)}
+                          </Text>
+                        </AnimatedPressable>
+                      );
+                    })
+                  )}
+                </View>
+
+                <Rule />
+                <View className="px-5">
+                  <ActionButton
+                    variant="secondary"
+                    onPress={() => {
+                      setUpload(null);
+                      setApproved(new Set());
+                    }}
+                  >
+                    Discard this import
+                  </ActionButton>
+                  <Text className="mt-3 text-[13.5px] leading-5 text-muted-foreground">
+                    Approved entries post to your Ledger. Statement history is not kept on the
+                    server, so this import is only here for the rest of your session.
+                  </Text>
+                </View>
+              </>
+            )}
+            <View className="h-7" />
+          </View>
         )}
       </PageShell>
 
@@ -193,539 +364,36 @@ export default function StatementsScreen() {
           colors={["transparent", colors.background]}
           locations={[0, 0.4]}
           className="absolute bottom-0 left-0 right-0"
-          style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 96 }}
+          style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 96 }}
         >
           <Pressable
             disabled={approved.size === 0 || postStatement.isPending}
             onPress={() => postStatement.mutate(Array.from(approved))}
             className={cn(
-              "h-[52px] flex-row items-center justify-center gap-2 rounded-pill bg-salli-accent",
+              "h-[52px] flex-row items-center justify-center gap-2 rounded-card border-2 border-foreground bg-salli-accent",
               (approved.size === 0 || postStatement.isPending) && "opacity-50",
             )}
-            style={{
-              shadowColor: colors.accent,
-              shadowOpacity: 0.35,
-              shadowRadius: 20,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 6,
-              width: "100%",
-              maxWidth: isTablet ? TABLET_POST_BAR_MAX_WIDTH : undefined,
-              alignSelf: "center",
-            }}
+            style={[
+              shadow,
+              {
+                width: "100%",
+                maxWidth: isTablet ? TABLET_POST_BAR_MAX_WIDTH : undefined,
+                alignSelf: "center",
+              },
+            ]}
           >
             {postStatement.isPending ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <>
-                <Check size={17} color="#FFFFFF" strokeWidth={2.5} />
-                <Text className="font-sans-semibold text-[18px] text-white">
-                  Post {approved.size || ""} {approved.size === 1 ? "Entry" : "Entries"} to Ledger
-                </Text>
-              </>
+              <Text className="font-sans-bold text-[17px] text-white">
+                {approved.size === 0
+                  ? "Select entries to post"
+                  : `Post ${approved.size} ${approved.size === 1 ? "entry" : "entries"}`}
+              </Text>
             )}
           </Pressable>
         </LinearGradient>
       ) : null}
-
-      <OptionsMenu
-        visible={menuOpen}
-        colors={colors}
-        hasImport={Boolean(statementId)}
-        onClose={() => setMenuOpen(false)}
-        onUpload={handleUpload}
-        onManageBanks={() => {
-          setMenuOpen(false);
-          setTab("Banks");
-        }}
-        onClearImport={() => {
-          setMenuOpen(false);
-          setUpload(null);
-          setApproved(new Set());
-        }}
-      />
     </View>
-  );
-}
-
-function ReviewTab({
-  colors,
-  upload,
-  pending,
-  uploading,
-  onUpload,
-  bank,
-  period,
-  imported,
-  matched,
-  unmatched,
-  status,
-  setStatus,
-  search,
-  setSearch,
-  visible,
-  approved,
-  toggle,
-}: {
-  colors: ReturnType<typeof useThemeColors>;
-  upload: StatementUploadResult | null;
-  pending: ReturnType<typeof usePendingStatement>;
-  uploading: boolean;
-  onUpload: () => void;
-  bank: string;
-  period: string;
-  imported: number;
-  matched: number;
-  unmatched: number;
-  status: Status;
-  setStatus: (s: Status) => void;
-  search: string;
-  setSearch: (s: string) => void;
-  visible: ParsedTransaction[];
-  approved: Set<string>;
-  toggle: (id: string) => void;
-}) {
-  if (!upload) {
-    return (
-      <View className="items-center gap-3 px-8 pt-16">
-        <View className="h-16 w-16 items-center justify-center rounded-full bg-salli-accent/15">
-          <Upload size={26} color={colors.accent} strokeWidth={1.8} />
-        </View>
-        <Text className="text-center font-sans-semibold text-[18px] text-foreground">Import a bank statement</Text>
-        <Text className="text-center text-[15px] leading-5 text-muted-foreground">
-          PDF, CSV, or XLSX — any Sri Lankan bank. Salli parses it and drafts ledger entries for your review.
-        </Text>
-        <ActionButton className="mt-2" loading={uploading} onPress={onUpload}>
-          Choose file
-        </ActionButton>
-      </View>
-    );
-  }
-
-  return (
-    <View className="px-4 pt-3">
-      <Card className="bg-salli-hero p-4">
-        <View className="mb-3 flex-row items-start justify-between">
-          <View className="flex-1">
-            <Text className="mb-1 text-[11px] font-mono uppercase tracking-widest text-white/45">
-              {bank ? `${bank} · Import` : "Bank Statement · Import"}
-            </Text>
-            <Text className="text-[15px] text-white/40">{period || "Parsed statement"}</Text>
-          </View>
-          <View className="items-end gap-1.5">
-            {unmatched > 0 ? (
-              <View className="rounded-badge border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-0.5">
-                <Text className="text-[14px] font-sans-semibold text-salli-accent">{unmatched} Pending</Text>
-              </View>
-            ) : null}
-            <Lock size={28} color="rgba(255,255,255,0.2)" strokeWidth={1.5} />
-          </View>
-        </View>
-        <View className="flex-row gap-1.5">
-          <StatTile onDark className="flex-1" label="Imported" value={String(imported)} />
-          <StatTile onDark className="flex-1" label="Matched" value={String(matched)} />
-          <StatTile
-            onDark
-            className="flex-1 border-salli-accent/20 bg-salli-accent/15"
-            label="Unmatched"
-            labelClassName="text-salli-accent/70"
-            valueClassName="text-salli-accent"
-            value={String(unmatched)}
-          />
-        </View>
-      </Card>
-
-      {pending.isLoading ? (
-        <View className="items-center pt-10">
-          <ActivityIndicator color={colors.accent} />
-        </View>
-      ) : imported === 0 ? (
-        <Card className="mt-3 items-center p-6">
-          <Text className="text-[15px] text-muted-foreground">No transactions parsed from this file.</Text>
-        </Card>
-      ) : (
-        <>
-          <View className="mt-3 flex-row items-center gap-2">
-            <View className="h-9 flex-1 flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card px-3">
-              <Search size={15} color={colors.mutedForeground} strokeWidth={2} />
-              <TextInput
-                value={search}
-                onChangeText={setSearch}
-                placeholder="Search transactions..."
-                placeholderTextColor="rgba(128,128,128,0.4)"
-                className="flex-1 text-[15px] text-foreground"
-              />
-            </View>
-          </View>
-
-          <View className="mt-2.5 flex-row gap-1.5">
-            {STATUS.map((s) => {
-              const count = s === "All" ? imported : s === "Pending" ? unmatched : s === "Matched" ? matched : 0;
-              const showCount = s !== "Skipped";
-              return (
-                <FilterChip
-                  key={s}
-                  label={`${s}${showCount ? ` ${count}` : ""}`}
-                  active={status === s}
-                  onPress={() => setStatus(s)}
-                />
-              );
-            })}
-          </View>
-
-          <Text className="mb-1.5 mt-3 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-            {status === "Matched" ? "Matched" : status === "Skipped" ? "Skipped" : "Needs Review"}
-            {upload.period_start ? ` · ${upload.period_start}` : ""}
-          </Text>
-
-          {visible.length === 0 ? (
-            <Card className="items-center p-6">
-              <Text className="text-[15px] text-muted-foreground">
-                {status === "Skipped"
-                  ? "Transactions aren't skipped on the server yet."
-                  : "Nothing here for this filter."}
-              </Text>
-            </Card>
-          ) : (
-            <View className="gap-3.5">
-              {visible.map((t) => {
-                const matchedRow = isMatched(t);
-                const isApproved = approved.has(t.id);
-                return (
-                  <Pressable
-                    key={t.id}
-                    onPress={() => toggle(t.id)}
-                    className={cn(
-                      "flex-row items-center gap-2.5 rounded-card border p-3",
-                      matchedRow && !isApproved
-                        ? "border-foreground/[0.08] bg-card"
-                        : "border-salli-accent/25 bg-card",
-                    )}
-                  >
-                    <View
-                      className={cn(
-                        "h-12 w-[3px] rounded-pill",
-                        matchedRow && !isApproved ? "bg-foreground/15" : "bg-salli-accent",
-                      )}
-                    />
-                    <View className="h-9 w-9 items-center justify-center rounded-card border border-salli-accent/20 bg-salli-accent/[0.12]">
-                      <CreditCard size={17} color={colors.accent} strokeWidth={2} />
-                    </View>
-                    <View className="flex-1">
-                      <Text className="font-sans-semibold text-[15px] text-foreground" numberOfLines={1}>
-                        {t.description}
-                      </Text>
-                      <Text className="mt-0.5 text-[14px] text-muted-foreground" numberOfLines={1}>
-                        {txnSubtitle(t, bank)}
-                      </Text>
-                    </View>
-                    <View className="items-end gap-1">
-                      <Text
-                        className={cn(
-                          "font-sans-bold text-[15px]",
-                          t.credit_flag ? "text-foreground" : "text-foreground/70",
-                        )}
-                      >
-                        {t.credit_flag ? "+" : "−"}Rs. {formatLKR(t.amount, 0)}
-                      </Text>
-                      <View
-                        className={cn(
-                          "rounded-badge border-[1.5px] border-foreground px-1.5 py-0.5",
-                          isApproved
-                            ? "bg-salli-accent"
-                            : matchedRow
-                              ? "bg-foreground/[0.07]"
-                              : "bg-salli-accent/15",
-                        )}
-                      >
-                        <Text
-                          className={cn(
-                            "text-[13px] font-sans-semibold",
-                            isApproved ? "text-white" : matchedRow ? "text-muted-foreground" : "text-salli-accent",
-                          )}
-                        >
-                          {isApproved ? "Approved" : matchedRow ? "Matched" : "Unmatched"}
-                        </Text>
-                      </View>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-          )}
-        </>
-      )}
-    </View>
-  );
-}
-
-function HistoryTab({
-  colors,
-  upload,
-  imported,
-  matched,
-  unmatched,
-  bank,
-  period,
-  onUpload,
-  uploading,
-}: {
-  colors: ReturnType<typeof useThemeColors>;
-  upload: StatementUploadResult | null;
-  imported: number;
-  matched: number;
-  unmatched: number;
-  bank: string;
-  period: string;
-  onUpload: () => void;
-  uploading: boolean;
-}) {
-  if (!upload) {
-    return (
-      <View className="items-center gap-2 px-8 pt-14">
-        <View className="mb-1 h-14 w-14 items-center justify-center rounded-full bg-foreground/[0.06]">
-          <FileText size={24} color={colors.mutedForeground} strokeWidth={1.6} />
-        </View>
-        <Text className="text-center font-sans-semibold text-[17px] text-foreground">No imports yet</Text>
-        <Text className="text-center text-[15px] leading-5 text-muted-foreground">
-          Past statements aren't stored on the server. Import one to review and post it — it will appear here for the
-          rest of your session.
-        </Text>
-        <ActionButton className="mt-2" loading={uploading} onPress={onUpload}>
-          Import statement
-        </ActionButton>
-      </View>
-    );
-  }
-
-  return (
-    <View className="px-4 pt-3">
-      <Card className="bg-salli-hero p-[18px]">
-        <View className="flex-row items-start justify-between">
-          <View>
-            <Text className="mb-2 text-[11px] font-mono uppercase tracking-widest text-white/50">
-              This Import
-            </Text>
-            <View className="flex-row items-baseline gap-1.5">
-              <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
-                {imported}
-              </Text>
-              <Text className="font-sans-medium text-[15px] text-white/40">transactions</Text>
-            </View>
-          </View>
-          <View className="mt-1 rounded-card border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
-            <Text className="font-sans-semibold text-[14px] text-salli-accent">{matched} matched</Text>
-          </View>
-        </View>
-        <View className="mt-3.5 flex-row gap-1.5">
-          <StatTile onDark className="flex-1" label="Imported" value={String(imported)} />
-          <StatTile onDark className="flex-1" label="Matched" value={String(matched)} />
-          <StatTile
-            onDark
-            className="flex-1"
-            label="Unmatched"
-            valueClassName="text-salli-accent"
-            value={String(unmatched)}
-          />
-        </View>
-      </Card>
-
-      <Text className="px-1.5 pb-1.5 pt-3.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-        Imported This Session
-      </Text>
-      <Card className="flex-row items-center gap-2.5 p-3.5">
-        <View className="h-9 w-9 items-center justify-center rounded-card border border-salli-accent/15 bg-salli-accent/10">
-          <FileText size={17} color={colors.accent} strokeWidth={2} />
-        </View>
-        <View className="flex-1">
-          <Text className="font-sans-semibold text-[15px] text-foreground" numberOfLines={1}>
-            {bank || "Bank statement"}
-          </Text>
-          <Text className="mt-0.5 text-[14px] text-muted-foreground" numberOfLines={1}>
-            {period ? `${period} · ` : ""}
-            {imported} txns
-          </Text>
-        </View>
-        <View className="items-end">
-          <View className="rounded-badge border-[1.5px] border-salli-accent bg-salli-accent/15 px-2 py-0.5">
-            <Text className="text-[13px] font-sans-semibold text-salli-accent">{matched} matched</Text>
-          </View>
-          <Text className="mt-1 text-[13px] text-muted-foreground">{unmatched} unmatched</Text>
-        </View>
-      </Card>
-
-      <View className="mt-2.5 flex-row items-start gap-2 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
-        <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
-        <Text className="flex-1 text-[14px] leading-5 text-muted-foreground">
-          Posted entries live in your Ledger. A persistent statement history isn't tracked by the server yet.
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-function BanksTab({ colors }: { colors: ReturnType<typeof useThemeColors> }) {
-  const accounts = useAccounts();
-  const balances = useTrialBalance();
-
-  // Bank / cash accounts are the ledger asset accounts imports post against.
-  const bankAccounts = useMemo(
-    () => (accounts.data ?? []).filter((a) => a.type === "asset"),
-    [accounts.data],
-  );
-
-  if (accounts.isLoading) {
-    return (
-      <View className="items-center pt-14">
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
-  }
-
-  if (bankAccounts.length === 0) {
-    return (
-      <View className="items-center gap-2 px-8 pt-14">
-        <View className="mb-1 h-14 w-14 items-center justify-center rounded-full bg-foreground/[0.06]">
-          <Landmark size={24} color={colors.mutedForeground} strokeWidth={1.6} />
-        </View>
-        <Text className="text-center font-sans-semibold text-[17px] text-foreground">No asset accounts yet</Text>
-        <Text className="text-center text-[15px] leading-5 text-muted-foreground">
-          Imports post against ledger asset accounts. Add one in the Ledger to map a bank account here.
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <View className="px-4 pt-4">
-      <Text className="px-1.5 pb-1.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-        Ledger Bank &amp; Cash Accounts
-      </Text>
-      <View className="gap-3.5">
-        {bankAccounts.map((a) => {
-          const active = a.is_active;
-          const bal = balances.data?.[a.id];
-          const initials = a.code.slice(0, 4);
-          return (
-            <Card
-              key={a.id}
-              className={cn("flex-row items-center gap-2.5 p-3.5", !active && "opacity-55")}
-            >
-              <View className={cn("h-11 w-[3px] rounded-pill", active ? "bg-salli-accent" : "bg-foreground/12")} />
-              <View
-                className={cn(
-                  "h-10 w-10 items-center justify-center rounded-card",
-                  active ? "border border-salli-accent/15 bg-salli-accent/10" : "bg-foreground/[0.06]",
-                )}
-              >
-                {a.code ? (
-                  <Text
-                    className={cn(
-                      "text-[13px] font-sans-bold",
-                      active ? "text-salli-accent" : "text-foreground/50",
-                    )}
-                  >
-                    {initials}
-                  </Text>
-                ) : (
-                  <Building2 size={18} color={active ? colors.accent : colors.mutedForeground} strokeWidth={2} />
-                )}
-              </View>
-              <View className="flex-1">
-                <Text className="font-sans-semibold text-[15px] text-foreground" numberOfLines={1}>
-                  {a.name}
-                </Text>
-                <Text className="mt-0.5 text-[14px] text-muted-foreground" numberOfLines={1}>
-                  {a.currency} · maps to {a.code}
-                </Text>
-              </View>
-              <View className="items-end">
-                <View className={cn("rounded-badge border-[1.5px] border-foreground px-2 py-0.5", active ? "bg-salli-accent/15" : "bg-foreground/[0.07]")}>
-                  <Text
-                    className={cn(
-                      "text-[13px] font-sans-semibold",
-                      active ? "text-salli-accent" : "text-muted-foreground",
-                    )}
-                  >
-                    {active ? "Active" : "Inactive"}
-                  </Text>
-                </View>
-                {bal != null ? (
-                  <Text className="mt-1 text-[13px] text-muted-foreground">Rs. {formatLKR(bal, 0)}</Text>
-                ) : null}
-              </View>
-            </Card>
-          );
-        })}
-      </View>
-
-      <View className="mt-3 flex-row items-start gap-2 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
-        <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
-        <Text className="flex-1 text-[14px] leading-5 text-muted-foreground">
-          Each account maps to a ledger asset code so imported transactions post automatically.
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-function OptionsMenu({
-  visible,
-  colors,
-  hasImport,
-  onClose,
-  onUpload,
-  onManageBanks,
-  onClearImport,
-}: {
-  visible: boolean;
-  colors: ReturnType<typeof useThemeColors>;
-  hasImport: boolean;
-  onClose: () => void;
-  onUpload: () => void;
-  onManageBanks: () => void;
-  onClearImport: () => void;
-}) {
-  const items: { key: string; label: string; Icon: typeof Upload; onPress: () => void; danger?: boolean }[] = [
-    { key: "upload", label: "Upload new statement", Icon: Upload, onPress: onUpload },
-    { key: "banks", label: "Manage banks", Icon: Landmark, onPress: onManageBanks },
-  ];
-  if (hasImport) {
-    items.push({ key: "clear", label: "Clear current import", Icon: Info, onPress: onClearImport, danger: true });
-  }
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable className="flex-1 bg-black/50" onPress={onClose}>
-        <View
-          className="absolute right-4 top-[104px] w-[236px] overflow-hidden rounded-card border-2 border-foreground bg-card"
-          style={{ shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 12 }}
-        >
-          {items.map((item, i) => (
-            <Pressable
-              key={item.key}
-              onPress={item.onPress}
-              className={cn(
-                "flex-row items-center gap-3 px-4 py-3.5",
-                i < items.length - 1 && "border-b border-foreground/[0.06]",
-              )}
-            >
-              <item.Icon
-                size={18}
-                color={item.danger ? "#EF4444" : colors.foreground}
-                strokeWidth={2}
-              />
-              <Text
-                className={cn(
-                  "font-sans-medium text-[16px]",
-                  item.danger ? "text-[#EF4444]" : "text-foreground",
-                )}
-              >
-                {item.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      </Pressable>
-    </Modal>
   );
 }

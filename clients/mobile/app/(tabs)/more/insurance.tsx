@@ -1,14 +1,15 @@
-import { AlertTriangle, Pencil, Plus, Shield, Trash2 } from "lucide-react-native";
+import { Plus, Trash2 } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
+import { ActionButton } from "@/components/ui/action-button";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { Hero, Meter, Rule, SectionLabel, Strong } from "@/components/ui/blocks";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { ChipSelect } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
-import { ActionButton } from "@/components/ui/action-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
 import {
   type Policy,
@@ -20,11 +21,8 @@ import {
   useUpdatePolicy,
 } from "@/hooks/useInsurance";
 import { confirmDestructive } from "@/lib/confirm";
-import { formatLKR, formatLKRAbbrev } from "@/lib/format";
-import { useThemeColors } from "@/lib/theme";
-import { cn } from "@/lib/utils";
-
-const TABS = ["Policies", "Targets", "Coverage Report"] as const;
+import { formatDate, formatLKRAbbrev } from "@/lib/format";
+import { useHardShadow, useThemeColors } from "@/lib/theme";
 
 /** Policy types the backend accepts (String(20), free-form; CLI documents these). */
 const POLICY_TYPES = ["life", "health", "motor", "property", "other"] as const;
@@ -33,12 +31,25 @@ const POLICY_TYPES = ["life", "health", "motor", "property", "other"] as const;
 const PREMIUM_FREQUENCIES = ["monthly", "quarterly", "yearly"] as const;
 
 const FieldLabel = ({ children }: { children: string }) => (
-  <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">{children}</Text>
+  <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+    {children}
+  </Text>
 );
 
+/**
+ * Cover you hold, cover you said you need, and the difference.
+ *
+ * Three tabs became one scroll. "Coverage Report" was derived entirely from the
+ * other two — target minus actual, per type — so the app showed a list of
+ * declared targets on one tab and the same targets with their shortfall on
+ * another. The gap version is strictly more informative, so it is the only one
+ * left, and it carries the delete the Targets tab existed for.
+ *
+ * The dark hero stated the gap twice on its own: once as a chip and again as
+ * one of three tiles under it.
+ */
 export default function InsuranceScreen() {
   const colors = useThemeColors();
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Policies");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Policy | null>(null);
   const [targetOpen, setTargetOpen] = useState(false);
@@ -55,245 +66,210 @@ export default function InsuranceScreen() {
     setEditing(p);
     setDrawerOpen(true);
   };
-  const confirmDelete = (p: Policy) => {
-    confirmDestructive({
-      title: "Delete policy",
-      message: `Delete "${p.name}"? This cannot be undone.`,
-      onConfirm: () => deletePolicy.mutate(p.id),
-    });
-  };
 
   const activePolicies = (policies.data ?? []).filter((p) => p.is_active);
   const totalCoverage = activePolicies.reduce((s, p) => s + Number(p.coverage_amount), 0);
   const totalTarget = (targets.data ?? []).reduce((s, t) => s + Number(t.target_amount), 0);
   const totalGap = (report.data?.lines ?? []).reduce((s, l) => s + Math.max(0, Number(l.gap)), 0);
-  const gapFree = totalTarget > 0 && totalGap <= 0;
+  const lines = report.data?.lines ?? [];
+  const missing = report.data?.missing_types ?? [];
+  const expiring = report.data?.expiring_soon ?? [];
 
   return (
     <View className="flex-1">
       <PageShell
-        animateOn={tab}
         header={
           <ScreenHeader
             title="Insurance"
             back
             trailing={
-              <Pressable
+              <AnimatedPressable
                 onPress={openAdd}
+                accessibilityRole="button"
+                accessibilityLabel="Add a policy"
                 className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
               >
                 <Plus size={21} color={colors.accent} strokeWidth={2.4} />
-              </Pressable>
+              </AnimatedPressable>
             }
           />
         }
       >
-        {/* hero — coverage vs gap */}
-        <View className="px-4 pt-3">
-          <Card className="bg-salli-hero p-[18px]">
-            <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/50">
-              Total Coverage
-            </Text>
-            <View className="mb-1 flex-row items-baseline gap-1">
-              <Text className="font-sans-semibold text-[20px] text-white/40">Rs.</Text>
-              <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
-                {formatLKRAbbrev(totalCoverage)}
+        <View className="px-5">
+          {activePolicies.length === 0 ? (
+            <>
+              <Hero>You haven&rsquo;t added any policies.</Hero>
+              <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
+                Add what you are insured for, say how much cover you think you need, and we will
+                show you where you fall short.
               </Text>
-            </View>
-            <View className="mb-3.5 flex-row">
-              <View
-                className={cn(
-                  "rounded-pill border px-2.5 py-0.5",
-                  gapFree
-                    ? "border-salli-accent/20 bg-salli-accent/15"
-                    : "border-destructive/25 bg-destructive/10",
-                )}
+              <ActionButton className="mt-5" onPress={openAdd}>
+                Add a policy
+              </ActionButton>
+            </>
+          ) : (
+            <>
+              <Hero>
+                You&rsquo;re covered for <Strong>Rs. {formatLKRAbbrev(totalCoverage)}</Strong>.
+              </Hero>
+              <Text
+                className={`mt-2 text-[16px] leading-[23px] ${
+                  totalGap > 0 ? "font-sans-semibold text-destructive" : "text-muted-foreground"
+                }`}
               >
-                <Text
-                  className={cn(
-                    "text-[14px] font-sans-semibold",
-                    gapFree ? "text-salli-accent" : "text-destructive",
-                  )}
-                >
-                  {totalTarget === 0
-                    ? "No targets set"
-                    : gapFree
-                      ? "Fully covered"
-                      : `Rs. ${formatLKRAbbrev(totalGap)} gap`}
-                </Text>
-              </View>
-            </View>
-            <View className="flex-row gap-1.5">
-              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[13px] text-white/35">Policies</Text>
-                <Text className="font-sans-bold text-[15px] text-white">{activePolicies.length}</Text>
-              </View>
-              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[13px] text-white/35">Target</Text>
-                <Text className="font-sans-bold text-[15px] text-white">Rs. {formatLKRAbbrev(totalTarget)}</Text>
-              </View>
-              <View className="flex-1 rounded-card bg-white/[0.06] p-2.5">
-                <Text className="mb-1 text-[13px] text-white/35">Gap</Text>
-                <Text className={cn("font-sans-bold text-[15px]", totalGap > 0 ? "text-destructive" : "text-salli-accent")}>
-                  Rs. {formatLKRAbbrev(totalGap)}
-                </Text>
-              </View>
-            </View>
-          </Card>
+                {totalTarget === 0
+                  ? "You haven't said how much cover you need, so there is nothing to compare it against yet."
+                  : totalGap > 0
+                    ? `Rs. ${formatLKRAbbrev(totalGap)} short of the Rs. ${formatLKRAbbrev(totalTarget)} you said you need.`
+                    : `That meets the Rs. ${formatLKRAbbrev(totalTarget)} you said you need.`}
+              </Text>
+            </>
+          )}
         </View>
 
-        <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
-
-        {tab === "Policies" ? (
-          <View className="gap-1.5 px-4 pt-3">
-            {activePolicies.length === 0 ? (
-              <Card className="items-center p-6">
-                <Text className="text-[15px] text-muted-foreground">No policies yet.</Text>
-              </Card>
-            ) : (
-              activePolicies.map((p) => (
-                <Pressable key={p.id} onPress={() => openEdit(p)}>
-                  <Card className="flex-row items-center gap-2.5 p-3.5">
-                    <View className="h-9 w-9 items-center justify-center rounded-card border border-salli-accent/20 bg-salli-accent/[0.12]">
-                      <Shield size={17} color={colors.accent} strokeWidth={2} />
-                    </View>
-                    <View className="flex-1">
-                      <Text className="font-sans-semibold text-[15px] text-foreground">{p.name}</Text>
-                      <Text className="text-[14px] capitalize text-muted-foreground">
-                        {p.policy_type} · {p.provider} · expires {p.expiry_date}
-                      </Text>
-                    </View>
-                    <View className="items-end gap-1.5">
-                      <Text className="font-sans-semibold text-[15px] text-foreground">Rs. {formatLKRAbbrev(p.coverage_amount)}</Text>
-                      <View className="flex-row items-center gap-3">
-                        <Pressable onPress={() => openEdit(p)} hitSlop={8}>
-                          <Pencil size={15} color={colors.mutedForeground} strokeWidth={2} />
-                        </Pressable>
-                        <Pressable onPress={() => confirmDelete(p)} hitSlop={8}>
-                          <Trash2 size={15} color={colors.mutedForeground} strokeWidth={2} />
-                        </Pressable>
-                      </View>
-                    </View>
-                  </Card>
-                </Pressable>
-              ))
-            )}
-          </View>
-        ) : null}
-
-        {tab === "Targets" ? (
-          <View className="gap-1.5 px-4 pt-3">
-            {(targets.data ?? []).length === 0 ? (
-              <Card className="items-center gap-1.5 p-6">
-                <Text className="text-center text-[15px] text-muted-foreground">
-                  No coverage targets yet
-                </Text>
-                <Text className="text-center text-[15px] leading-5 text-muted-foreground">
-                  Declare how much cover you think you need, and the Coverage Report will show
-                  where you fall short.
-                </Text>
-              </Card>
-            ) : (
-              (targets.data ?? []).map((t) => (
-                <Card key={t.policy_type} className="flex-row items-center justify-between p-3.5">
-                  <Text className="font-sans-semibold text-[15px] capitalize text-foreground">{t.policy_type}</Text>
-                  <View className="flex-row items-center gap-3">
-                    <Text className="font-sans-semibold text-[15px] text-foreground">Rs. {formatLKRAbbrev(t.target_amount)}</Text>
-                    <Pressable onPress={() => deleteTarget.mutate(t.policy_type)}>
-                      <Trash2 size={15} color={colors.mutedForeground} strokeWidth={2} />
-                    </Pressable>
-                  </View>
-                </Card>
-              ))
-            )}
-
-            {/* Without this the tab was delete-only: `setTarget` existed in the
-                hook and nothing rendered it, so a mobile-only user could never
-                declare a target — which left the whole coverage-gap engine
-                unreachable, since it only reports a gap where one is declared. */}
-            <Pressable
-              onPress={() => setTargetOpen(true)}
-              className="mt-1 flex-row items-center gap-2.5 rounded-card border border-dashed border-foreground/[0.12] bg-card px-3.5 py-[11px]"
-            >
-              <View className="h-8 w-8 items-center justify-center rounded-card bg-foreground/[0.04]">
-                <Plus size={15} color={colors.mutedForeground} strokeWidth={2.5} />
-              </View>
-              <Text className="font-sans-medium text-[15px] text-muted-foreground">
-                Set a coverage target
-              </Text>
-            </Pressable>
-          </View>
-        ) : null}
-
-        {tab === "Coverage Report" ? (
-          <View className="gap-2.5 px-4 pt-3">
-            {report.data?.lines.length ? (
-              <View className="gap-3.5">
-                {report.data.lines.map((line, i) => {
+        {activePolicies.length > 0 ? (
+          <>
+            <Rule />
+            <SectionLabel>Cover by type</SectionLabel>
+            <View className="mt-3 gap-[9px] px-5">
+              {lines.length > 0 ? (
+                lines.map((line, i) => {
                   const target = Number(line.target_amount);
                   const actual = Number(line.actual_coverage);
                   const gap = Number(line.gap);
-                  const pct = target > 0 ? Math.min(100, (actual / target) * 100) : 0;
                   const covered = gap <= 0;
                   return (
-                    <Card key={i} className="p-3.5">
-                      <View className="mb-2 flex-row items-center justify-between">
-                        <Text className="font-sans-semibold text-[15px] capitalize text-foreground">{line.policy_type}</Text>
-                        <Text className={cn("font-sans-semibold text-[15px]", covered ? "text-salli-accent" : "text-destructive")}>
-                          {covered ? "Covered" : `Gap Rs. ${formatLKR(gap, 0)}`}
+                    <Card key={i} className={`p-[15px] ${covered ? "" : "border-destructive"}`}>
+                      <View className="flex-row items-baseline justify-between gap-2.5">
+                        <Text className="min-w-0 flex-1 font-sans-bold text-[17px] capitalize text-foreground">
+                          {line.policy_type}
                         </Text>
+                        <Text
+                          className={`shrink-0 font-sans-bold text-[13.5px] ${
+                            covered ? "text-muted-foreground" : "text-destructive"
+                          }`}
+                        >
+                          {covered ? "Covered" : `Rs. ${formatLKRAbbrev(gap)} short`}
+                        </Text>
+                        <Pressable
+                          onPress={() =>
+                            confirmDestructive({
+                              title: "Remove target",
+                              message: `Stop tracking a cover target for ${line.policy_type}?`,
+                              confirmLabel: "Remove",
+                              onConfirm: () => deleteTarget.mutate(line.policy_type),
+                            })
+                          }
+                          hitSlop={10}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Remove ${line.policy_type} target`}
+                          className="shrink-0"
+                        >
+                          <Trash2 size={15} color={colors.mutedForeground} strokeWidth={2} />
+                        </Pressable>
                       </View>
-                      <View className="mb-1.5 h-1.5 overflow-hidden rounded-pill bg-foreground/[0.08]">
-                        <View
-                          className={cn("h-full rounded-pill", covered ? "bg-salli-accent" : "bg-destructive")}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </View>
-                      <Text className="text-[14px] text-muted-foreground">
-                        Rs. {formatLKRAbbrev(actual)} of Rs. {formatLKRAbbrev(target)} target
+                      {/* `over` is the breach tone, which a shortfall is — the
+                          bar is under-filled, and red says that matters. */}
+                      <Meter
+                        className="mt-[11px]"
+                        value={target > 0 ? actual / target : 0}
+                        over={!covered}
+                      />
+                      <Text className="mt-[9px] text-[13.5px] text-muted-foreground">
+                        Rs. {formatLKRAbbrev(actual)} of Rs. {formatLKRAbbrev(target)}
                       </Text>
                     </Card>
                   );
-                })}
-              </View>
-            ) : (
-              <Card className="items-center p-6">
-                <Text className="text-[15px] text-muted-foreground">No coverage targets declared.</Text>
-              </Card>
-            )}
-
-            {(report.data?.missing_types.length ?? 0) > 0 ? (
-              <Card className="flex-row items-start gap-2 border-destructive/25 bg-destructive/5 p-3.5">
-                <AlertTriangle size={16} color="#EF4444" strokeWidth={2} />
-                <Text className="flex-1 text-[15px] capitalize text-destructive">
-                  Missing coverage: {report.data!.missing_types.join(", ")}
+                })
+              ) : (
+                <Text className="text-[15px] leading-[21px] text-muted-foreground">
+                  No cover targets declared yet. Set one and this becomes a shortfall you can act
+                  on.
                 </Text>
-              </Card>
-            ) : null}
+              )}
 
-            {(report.data?.expiring_soon.length ?? 0) > 0 ? (
-              <Card className="overflow-hidden p-0">
-                <View className="border-b border-foreground/[0.06] px-4 py-3">
-                  <Text className="font-sans-semibold text-[15px] text-foreground">Expiring Soon</Text>
-                </View>
-                {report.data!.expiring_soon.map((e, i) => (
-                  <View
-                    key={i}
-                    className={cn(
-                      "flex-row items-center justify-between px-4 py-3",
-                      i < report.data!.expiring_soon.length - 1 && "border-b border-foreground/[0.05]",
-                    )}
-                  >
-                    <Text className="text-[15px] text-foreground">{e.policy_name}</Text>
-                    <Text className={cn("text-[15px]", e.days_until_expiry <= 30 ? "text-destructive" : "text-muted-foreground")}>
-                      {e.days_until_expiry} days
+              {missing.length > 0 ? (
+                <Text className="mt-1 text-[15px] leading-[21px] text-destructive">
+                  Nothing at all for {missing.join(", ")}.
+                </Text>
+              ) : null}
+
+              {/* Without this the targets list was delete-only: `setTarget`
+                  existed in the hook and nothing rendered it, so a mobile-only
+                  user could never declare a target — which left the whole
+                  coverage-gap engine unreachable, since it only reports a gap
+                  where one is declared. */}
+              <ActionButton
+                variant="secondary"
+                className="mt-1"
+                onPress={() => setTargetOpen(true)}
+              >
+                Set a cover target
+              </ActionButton>
+            </View>
+
+            <Rule />
+            <SectionLabel>Policies</SectionLabel>
+            <View className="mt-3 gap-[9px] px-5">
+              {activePolicies.map((p) => (
+                <AnimatedPressable
+                  key={p.id}
+                  onPress={() => openEdit(p)}
+                  press="sink"
+                  accessibilityRole="button"
+                  accessibilityLabel={`Edit ${p.name}`}
+                  className="flex-row items-center gap-2.5 rounded-card border-2 border-foreground bg-card px-3.5 py-3"
+                >
+                  <View className="min-w-0 flex-1">
+                    <Text numberOfLines={1} className="font-sans-bold text-[16px] text-foreground">
+                      {p.name}
+                    </Text>
+                    <Text numberOfLines={1} className="mt-0.5 text-[13.5px] capitalize text-muted-foreground">
+                      {p.policy_type} · {p.provider} · to {formatDate(p.expiry_date)}
                     </Text>
                   </View>
-                ))}
-              </Card>
+                  {/* The pencil that used to sit here opened the same sheet as
+                      tapping the row, so it was a second button for the first
+                      button's job. */}
+                  <Text className="shrink-0 font-sans-extrabold text-[15px] text-foreground">
+                    {formatLKRAbbrev(p.coverage_amount)}
+                  </Text>
+                </AnimatedPressable>
+              ))}
+            </View>
+
+            {expiring.length > 0 ? (
+              <>
+                <Rule />
+                <SectionLabel>Expiring soon</SectionLabel>
+                <View className="mt-3 gap-[9px] px-5">
+                  {expiring.map((e, i) => (
+                    <View
+                      key={i}
+                      className={`flex-row items-center justify-between gap-3 rounded-card border-2 px-3.5 py-3 ${
+                        e.days_until_expiry <= 30 ? "border-destructive" : "border-foreground"
+                      }`}
+                    >
+                      <Text numberOfLines={1} className="min-w-0 flex-1 text-[16px] text-foreground">
+                        {e.policy_name}
+                      </Text>
+                      <Text
+                        className={`shrink-0 text-[13.5px] ${
+                          e.days_until_expiry <= 30
+                            ? "font-sans-semibold text-destructive"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {e.days_until_expiry} days
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </>
             ) : null}
-          </View>
+          </>
         ) : null}
+        <View className="h-7" />
       </PageShell>
 
       <SetTargetDrawer
@@ -311,6 +287,17 @@ export default function InsuranceScreen() {
         visible={drawerOpen}
         policy={editing}
         onClose={() => setDrawerOpen(false)}
+        onDelete={(p) =>
+          confirmDestructive({
+            title: "Delete policy",
+            message: `Delete "${p.name}"? This cannot be undone.`,
+            onConfirm: () => {
+              deletePolicy.mutate(p.id);
+              setDrawerOpen(false);
+            },
+          })
+        }
+        deleting={deletePolicy.isPending}
       />
     </View>
   );
@@ -318,18 +305,23 @@ export default function InsuranceScreen() {
 
 /** Add / Edit policy bottom-sheet — reused for both flows. On edit it prefills
  * from the passed policy and PATCHes only the fields; on add it POSTs a full
- * PolicyRequest. Theme-aware (bg-background / bg-card / text-foreground). */
+ * PolicyRequest. */
 function AddEditPolicyDrawer({
   visible,
   policy,
   onClose,
+  onDelete,
+  deleting,
 }: {
   visible: boolean;
   policy: Policy | null;
   onClose: () => void;
+  onDelete: (p: Policy) => void;
+  deleting: boolean;
 }) {
   const addPolicy = useAddPolicy();
   const updatePolicy = useUpdatePolicy();
+  const shadow = useHardShadow();
   const isEdit = policy !== null;
 
   const [name, setName] = useState("");
@@ -373,35 +365,19 @@ function AddEditPolicyDrawer({
 
   const submit = () => {
     if (!canSubmit) return;
+    const body = {
+      name: name.trim(),
+      provider: provider.trim(),
+      policy_type: policyType,
+      coverage_amount: coverageNum,
+      premium_amount: premiumNum,
+      premium_frequency: frequency,
+      expiry_date: expiry.trim(),
+    };
     if (isEdit && policy) {
-      updatePolicy.mutate(
-        {
-          id: policy.id,
-          body: {
-            name: name.trim(),
-            provider: provider.trim(),
-            policy_type: policyType,
-            coverage_amount: coverageNum,
-            premium_amount: premiumNum,
-            premium_frequency: frequency,
-            expiry_date: expiry.trim(),
-          },
-        },
-        { onSuccess: onClose },
-      );
+      updatePolicy.mutate({ id: policy.id, body }, { onSuccess: onClose });
     } else {
-      addPolicy.mutate(
-        {
-          name: name.trim(),
-          provider: provider.trim(),
-          policy_type: policyType,
-          coverage_amount: coverageNum,
-          premium_amount: premiumNum,
-          premium_frequency: frequency,
-          expiry_date: expiry.trim(),
-        },
-        { onSuccess: onClose },
-      );
+      addPolicy.mutate(body, { onSuccess: onClose });
     }
   };
 
@@ -409,12 +385,25 @@ function AddEditPolicyDrawer({
     <Drawer
       visible={visible}
       onClose={onClose}
-      title={isEdit ? "Edit Policy" : "New Policy"}
+      title={isEdit ? "Edit policy" : "New policy"}
       footer={
         <>
           <ActionButton variant="accent" loading={pending} disabled={!canSubmit} onPress={submit}>
-            {isEdit ? "Save Changes" : "Add Policy"}
+            {isEdit ? "Save changes" : "Add policy"}
           </ActionButton>
+          {isEdit && policy ? (
+            <Pressable
+              onPress={() => onDelete(policy)}
+              disabled={deleting}
+              style={shadow}
+              className="mt-2.5 h-12 flex-row items-center justify-center gap-2 rounded-card border-2 border-destructive bg-card"
+            >
+              <Trash2 size={17} color="#EF4444" strokeWidth={2} />
+              <Text className="font-sans-bold text-[16px] text-destructive">
+                {deleting ? "Deleting…" : "Delete policy"}
+              </Text>
+            </Pressable>
+          ) : null}
           {isError ? (
             <Text className="mt-2 text-center text-[14px] text-destructive">
               Could not save policy. Please try again.
@@ -425,7 +414,7 @@ function AddEditPolicyDrawer({
     >
       <TextField
         className="mb-2.5"
-        label="Policy Name *"
+        label="Policy name *"
         value={name}
         onChangeText={setName}
         placeholder="Family Life Cover"
@@ -438,7 +427,7 @@ function AddEditPolicyDrawer({
         placeholder="Ceylinco Life"
       />
 
-      <FieldLabel>Policy Type *</FieldLabel>
+      <FieldLabel>Policy type *</FieldLabel>
       <ChipSelect className="mb-3" options={POLICY_TYPES} value={policyType} onChange={setPolicyType} capitalize />
 
       <View className="mb-3 flex-row gap-2">
@@ -460,12 +449,12 @@ function AddEditPolicyDrawer({
         />
       </View>
 
-      <FieldLabel>Premium Frequency *</FieldLabel>
+      <FieldLabel>Premium frequency *</FieldLabel>
       <ChipSelect className="mb-3" options={PREMIUM_FREQUENCIES} value={frequency} onChange={setFrequency} capitalize />
 
       <TextField
         className="mb-1"
-        label="Expiry Date *"
+        label="Expiry date *"
         value={expiry}
         onChangeText={setExpiry}
         autoCapitalize="none"
@@ -475,12 +464,11 @@ function AddEditPolicyDrawer({
   );
 }
 
-
 /**
  * Declare how much cover you think you need for one policy type.
  *
  * The coverage-gap engine only reports a gap where a target exists, so without
- * this the Coverage Report stayed permanently empty for anyone who never opened
+ * this the shortfall block stays permanently empty for anyone who never opened
  * the web app.
  */
 function SetTargetDrawer({
@@ -508,45 +496,21 @@ function SetTargetDrawer({
     <Drawer
       visible={visible}
       onClose={onClose}
-      title="Coverage target"
+      title="Cover target"
       footer={
-        <ActionButton
-          loading={pending}
-          disabled={!valid}
-          onPress={() => onSubmit(policyType, value)}
-        >
+        <ActionButton loading={pending} disabled={!valid} onPress={() => onSubmit(policyType, value)}>
           {replacing ? "Update target" : "Set target"}
         </ActionButton>
       }
     >
       <View className="gap-3 pb-2">
+        {/* ChipSelect, not a hand-rolled pill row. This sheet had its own copy
+            of the chip styling, which is how it ended up the one place in the
+            app where a selected chip was a full pill rather than the badge
+            shape everything else uses. */}
         <View>
-          <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-            Policy type
-          </Text>
-          <View className="flex-row flex-wrap gap-1.5">
-            {POLICY_TYPES.map((t) => (
-              <Pressable
-                key={t}
-                onPress={() => setPolicyType(t)}
-                className={cn(
-                  "rounded-pill px-3 py-1.5",
-                  policyType === t ? "bg-salli-accent" : "border-2 border-foreground bg-card",
-                )}
-              >
-                <Text
-                  className={cn(
-                    "text-[15px] capitalize",
-                    policyType === t
-                      ? "font-sans-semibold text-white"
-                      : "font-sans-medium text-foreground/55",
-                  )}
-                >
-                  {t}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          <FieldLabel>Policy type</FieldLabel>
+          <ChipSelect options={POLICY_TYPES} value={policyType} onChange={setPolicyType} capitalize />
         </View>
 
         <TextField
@@ -560,7 +524,7 @@ function SetTargetDrawer({
         <Text className="text-[14px] leading-5 text-muted-foreground">
           {replacing
             ? "You already have a target for this type — saving replaces it."
-            : "The Coverage Report compares this against the policies you hold and shows the shortfall."}
+            : "This is compared against the policies you hold to show the shortfall."}
         </Text>
       </View>
     </Drawer>

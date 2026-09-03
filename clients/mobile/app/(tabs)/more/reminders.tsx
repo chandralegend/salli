@@ -1,205 +1,175 @@
-import {
-  Calendar,
-  Check,
-  Trash2,
-  ChevronRight,
-  Plus,
-  Search,
-} from "lucide-react-native";
+import { Calendar, Plus, Trash2 } from "lucide-react-native";
 import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
-import { Drawer } from "@/components/ui/drawer";
-import { ChipSelect, FilterChip } from "@/components/ui/filter-chip";
-import { PageShell } from "@/components/ui/page-shell";
 import { ActionButton } from "@/components/ui/action-button";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { Hero, Rule, SectionLabel, Strong } from "@/components/ui/blocks";
+import { Drawer } from "@/components/ui/drawer";
+import { ChipSelect } from "@/components/ui/filter-chip";
+import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { TextField } from "@/components/ui/text-field";
 import { useReminderMutations, useReminders, type Reminder, useSyncAlertsOnOpen } from "@/hooks/useReminders";
 import { confirmDestructive } from "@/lib/confirm";
+import { formatDate } from "@/lib/format";
 import { useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
-
-const FILTERS = ["All", "Overdue", "Due Soon", "IRD"] as const;
 
 function daysUntil(dateStr: string) {
   return Math.round((new Date(dateStr).getTime() - Date.now()) / 86400000);
 }
 
-/** Format a valid YYYY-MM-DD string as "30 Sep 2026"; empty string otherwise. */
-function formatDueDate(iso: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
-  const d = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+/** "in 12 days" / "12 days ago" / "today". */
+function whenPhrase(days: number): string {
+  if (days === 0) return "today";
+  if (days === 1) return "tomorrow";
+  if (days === -1) return "yesterday";
+  return days > 0 ? `in ${days} days` : `${Math.abs(days)} days ago`;
 }
 
-type RowKind = "overdue" | "dueSoon" | "upcoming" | "completed";
+type Bucket = "overdue" | "dueSoon" | "later" | "done";
 
-function statusMeta(r: Reminder) {
-  if (r.status === "done") return { label: "Done", tone: "muted" as const };
+function bucketOf(r: Reminder): Bucket {
+  if (r.status === "done") return "done";
   const days = daysUntil(r.due_date);
-  if (days < 0) return { label: "Overdue", tone: "strong" as const };
-  if (days <= 30) return { label: "Due Soon", tone: "accent" as const };
-  return { label: "Upcoming", tone: "muted" as const };
+  if (days < 0) return "overdue";
+  if (days <= 30) return "dueSoon";
+  return "later";
 }
 
+/**
+ * What needs doing, in one scroll.
+ *
+ * The three-box Overdue/Due Soon/Upcoming strip is one sentence, and the
+ * search box and four filter chips are gone with it. Those chips duplicated
+ * the sections they filtered — tapping "Overdue" hid everything except the
+ * block already labelled "Overdue" — and one of them, "IRD", was a no-op the
+ * code itself documented: every reminder in Salli is an IRD reminder, so the
+ * filter behaved exactly as "All".
+ *
+ * The rows lost two badges each for the same reason. A hardcoded "IRD" chip on
+ * every row distinguishes nothing, and a status chip reading "Overdue" inside
+ * the section headed "Overdue" is the heading again, in a box.
+ */
 export default function RemindersScreen() {
   const colors = useThemeColors();
   const reminders = useReminders();
   const { create, markDone, remove, seed } = useReminderMutations();
   // Surfaces budget/subscription/insurance alerts that would otherwise never appear.
   useSyncAlertsOnOpen();
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
-  const [search, setSearch] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const q = search.trim().toLowerCase();
-  const items = (reminders.data ?? []).filter(
-    (r) => !q || r.kind.replace(/_/g, " ").toLowerCase().includes(q),
-  );
-  const overdue = items.filter((r) => r.status === "pending" && statusMeta(r).label === "Overdue");
-  const dueSoon = items.filter((r) => r.status === "pending" && statusMeta(r).label === "Due Soon");
-  const upcoming = items.filter((r) => r.status === "pending" && statusMeta(r).label === "Upcoming");
-  const completed = items.filter((r) => r.status === "done");
+  const items = reminders.data ?? [];
+  const overdue = items.filter((r) => bucketOf(r) === "overdue");
+  const dueSoon = items.filter((r) => bucketOf(r) === "dueSoon");
+  const later = items.filter((r) => bucketOf(r) === "later");
+  const done = items.filter((r) => bucketOf(r) === "done");
 
-  // Every reminder in Salli is an IRD filing reminder, so "IRD" behaves as "All".
-  const showOverdue = filter === "All" || filter === "IRD" || filter === "Overdue";
-  const showDueSoon = filter === "All" || filter === "IRD" || filter === "Due Soon";
-  const showUpcoming = filter === "All" || filter === "IRD";
-  const showCompleted = filter === "All" || filter === "IRD";
-
-  const Row = ({ r, kind }: { r: Reminder; kind: RowKind }) => {
-    const done = kind === "completed";
-    const rail =
-      kind === "overdue"
-        ? "bg-foreground"
-        : kind === "dueSoon"
-          ? "bg-salli-accent"
-          : kind === "completed"
-            ? "bg-foreground/20"
-            : "bg-foreground/15";
-    const border =
-      kind === "overdue"
-        ? "border-foreground/10"
-        : kind === "dueSoon"
-          ? "border-foreground/[0.08]"
-          : kind === "completed"
-            ? "border-foreground/[0.05]"
-            : "border-foreground/[0.06]";
-    const subtitle = done
-      ? `Done · ${r.due_date}`
-      : kind === "overdue"
-        ? `Was due ${r.due_date}`
-        : `Due ${r.due_date} · ${Math.abs(daysUntil(r.due_date))} days`;
-
+  const Row = ({ r, bucket }: { r: Reminder; bucket: Bucket }) => {
+    const isDone = bucket === "done";
+    const days = daysUntil(r.due_date);
     return (
       <View
         className={cn(
-          "flex-row gap-2.5 rounded-card border bg-card p-3",
-          done ? "items-center opacity-40" : "items-start",
-          border,
+          "flex-row items-center gap-3 rounded-card border-2 px-3.5 py-3",
+          isDone
+            ? "border-foreground/25"
+            : bucket === "overdue"
+              ? "border-salli-accent bg-card"
+              : "border-foreground bg-card",
         )}
       >
-        <View className={cn("w-[3px] rounded-pill", done ? "h-8" : "mt-0.5 h-11", rail)} />
-        <View className="flex-1">
+        <View className="min-w-0 flex-1">
           <Text
+            numberOfLines={2}
             className={cn(
-              "font-sans-semibold text-[15px]",
-              done ? "text-foreground/60 line-through" : "text-foreground",
+              "text-[16px] leading-[21px]",
+              isDone ? "text-muted-foreground line-through" : "font-sans-bold text-foreground",
             )}
           >
             {r.kind.replace(/_/g, " ")}
           </Text>
-          <Text className={cn("mt-0.5 text-[14px]", done ? "text-muted-foreground" : "text-muted-foreground")}>
-            {subtitle}
-          </Text>
-          {!done ? (
-            <View className="mt-1.5 flex-row gap-1.5">
-              <View
-                className={cn(
-                  "rounded-badge border-[1.5px] border-foreground px-2.5 py-0.5",
-                  kind === "dueSoon"
-                    ? "bg-salli-accent/15"
-                    : kind === "overdue"
-                      ? "bg-foreground/10"
-                      : "bg-foreground/[0.06]",
-                )}
-              >
-                <Text
-                  className={cn(
-                    "text-[13px] font-sans-semibold",
-                    kind === "dueSoon"
-                      ? "text-salli-accent"
-                      : kind === "overdue"
-                        ? "text-foreground/60"
-                        : "text-muted-foreground",
-                  )}
-                >
-                  {statusMeta(r).label}
-                </Text>
-              </View>
-              <View className="rounded-badge border-[1.5px] border-foreground bg-foreground/[0.06] px-2.5 py-0.5">
-                <Text className="text-[13px] font-sans-medium text-muted-foreground">IRD</Text>
-              </View>
-            </View>
-          ) : null}
-        </View>
-        <View className="flex-row items-center gap-2.5">
-          {kind === "overdue" ? (
-            <Pressable onPress={() => markDone.mutate(r.id)} className="rounded-card bg-primary px-2.5 py-1.5">
-              <Text className="font-sans-semibold text-[14px] text-primary-foreground">Done</Text>
-            </Pressable>
-          ) : kind === "dueSoon" ? (
-            <Pressable
-              onPress={() => markDone.mutate(r.id)}
-              className="rounded-card border border-foreground/10 bg-foreground/[0.06] px-2.5 py-1.5"
-            >
-              <Text className="font-sans-semibold text-[14px] text-foreground/50">Done</Text>
-            </Pressable>
-          ) : kind === "upcoming" ? (
-            <ChevronRight size={15} color={colors.mutedForeground} strokeWidth={2} />
-          ) : (
-            <Check size={18} color={colors.mutedForeground} strokeWidth={2.5} />
-          )}
-          {/* Web has had delete all along; mobile's `remove` mutation existed
-              and nothing rendered it, so a reminder created by mistake was
-              permanent. Marking done and deleting are different intents —
-              "I did this" versus "this shouldn't be here". */}
-          <Pressable
-            onPress={() =>
-              confirmDestructive({
-                title: "Delete reminder",
-                message: `"${r.kind}" will be removed. This can't be undone.`,
-                onConfirm: async () => {
-                  await remove.mutateAsync(r.id);
-                },
-              })
-            }
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel={`Delete ${r.kind}`}
+          <Text
+            className={cn(
+              "mt-0.5 text-[13.5px]",
+              bucket === "overdue" ? "font-sans-semibold text-salli-accent" : "text-muted-foreground",
+            )}
           >
-            <Trash2 size={15} color={colors.mutedForeground} strokeWidth={2} />
-          </Pressable>
+            {isDone
+              ? `Done · was due ${formatDate(r.due_date)}`
+              : `${formatDate(r.due_date)} · ${whenPhrase(days)}`}
+          </Text>
         </View>
+        {!isDone ? (
+          <Pressable
+            onPress={() => markDone.mutate(r.id)}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel={`Mark ${r.kind} done`}
+            className="shrink-0 rounded-badge border-[1.5px] border-foreground bg-card px-2.5 py-1"
+          >
+            <Text className="font-mono text-[12px] text-foreground">Done</Text>
+          </Pressable>
+        ) : null}
+        {/* Marking done and deleting are different intents — "I did this"
+            versus "this shouldn't be here" — so both stay. Delete is
+            confirm-gated; mobile's `remove` mutation existed for a while with
+            nothing rendering it, so a mistaken reminder was permanent. */}
+        <Pressable
+          onPress={() =>
+            confirmDestructive({
+              title: "Delete reminder",
+              message: `"${r.kind}" will be removed. This can't be undone.`,
+              onConfirm: () => remove.mutate(r.id),
+            })
+          }
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={`Delete ${r.kind}`}
+          className="shrink-0"
+        >
+          <Trash2 size={16} color={colors.mutedForeground} strokeWidth={2} />
+        </Pressable>
       </View>
     );
   };
 
-  const Section = ({ title, data, kind }: { title: string; data: Reminder[]; kind: RowKind }) =>
+  const Section = ({ label, data, bucket }: { label: string; data: Reminder[]; bucket: Bucket }) =>
     data.length === 0 ? null : (
-      <View className="mb-1">
-        <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-          {title}
-        </Text>
-        <View className="gap-3.5">
+      <>
+        <Rule />
+        <SectionLabel>{label}</SectionLabel>
+        <View className="mt-3 gap-[9px] px-5">
           {data.map((r) => (
-            <Row key={r.id} r={r} kind={kind} />
+            <Row key={r.id} r={r} bucket={bucket} />
           ))}
         </View>
-      </View>
+      </>
     );
+
+  /** The opening sentence leads with whatever is most urgent. */
+  const headline = () => {
+    if (overdue.length > 0)
+      return (
+        <Hero>
+          <Strong className="text-salli-accent">
+            {overdue.length} reminder{overdue.length === 1 ? " is" : "s are"} overdue
+          </Strong>
+          .
+        </Hero>
+      );
+    if (dueSoon.length > 0)
+      return (
+        <Hero>
+          <Strong>
+            {dueSoon.length} thing{dueSoon.length === 1 ? "" : "s"}
+          </Strong>{" "}
+          {dueSoon.length === 1 ? "is" : "are"} due this month.
+        </Hero>
+      );
+    return <Hero>Nothing is due this month.</Hero>;
+  };
 
   return (
     <PageShell
@@ -208,91 +178,73 @@ export default function RemindersScreen() {
           title="Reminders"
           back
           trailing={
-            <Pressable
+            <AnimatedPressable
               onPress={() => setDrawerOpen(true)}
               accessibilityRole="button"
               accessibilityLabel="New reminder"
               className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
             >
               <Plus size={21} color={colors.accent} strokeWidth={2.4} />
-            </Pressable>
+            </AnimatedPressable>
           }
         />
       }
     >
-      <View className="my-3 flex-row gap-2 px-4">
-        <View className="flex-1 items-center rounded-card border-2 border-foreground bg-card px-2.5 py-3">
-          <Text className="font-sans-bold text-[26px] leading-none text-foreground">{overdue.length}</Text>
-          <Text className="mt-1 text-[13px] font-sans-medium text-muted-foreground">Overdue</Text>
-        </View>
-        <View className="flex-1 items-center rounded-card border-2 border-foreground bg-card px-2.5 py-3">
-          <Text className="font-sans-bold text-[26px] leading-none text-foreground">{dueSoon.length}</Text>
-          <Text className="mt-1 text-[13px] font-sans-medium text-muted-foreground">Due Soon</Text>
-        </View>
-        <View className="flex-1 items-center rounded-card border-2 border-foreground bg-card px-2.5 py-3">
-          <Text className="font-sans-bold text-[26px] leading-none text-foreground">{upcoming.length}</Text>
-          <Text className="mt-1 text-[13px] font-sans-medium text-muted-foreground">Upcoming</Text>
-        </View>
-      </View>
-
-      <View className="mb-2 flex-row items-center gap-2 px-4">
-        <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card px-3">
-          <Search size={15} color="rgba(128,128,128,0.4)" strokeWidth={2} />
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search..."
-            placeholderTextColor="rgba(128,128,128,0.4)"
-            className="flex-1 text-[15px] text-foreground"
-          />
-        </View>
-      </View>
-
-      <View className="mb-2 flex-row gap-1.5 px-4">
-        {FILTERS.map((f) => (
-          <FilterChip key={f} label={f} active={filter === f} onPress={() => setFilter(f)} />
-        ))}
-      </View>
-
-      <View className="px-4">
+      <View className="px-5">
         {items.length === 0 ? (
-          <View className="mb-3 items-center gap-3 rounded-card border-2 border-foreground bg-card p-6">
-            <Text className="text-center text-[15px] text-muted-foreground">No reminders yet.</Text>
-            <Pressable
+          <>
+            <Hero>Nothing to remember yet.</Hero>
+            <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
+              Add a deadline, or load the IRD filing calendar for the year and we will keep the
+              dates for you.
+            </Text>
+            <ActionButton className="mt-5" onPress={() => setDrawerOpen(true)}>
+              Add a reminder
+            </ActionButton>
+            <ActionButton
+              variant="secondary"
+              className="mt-2.5"
+              loading={seed.isPending}
               onPress={() => seed.mutate("2025/26")}
-              className="flex-row items-center gap-2 rounded-pill border border-foreground/[0.08] bg-foreground/[0.04] px-4 py-2"
             >
-              <Calendar size={15} color="rgba(128,128,128,0.6)" strokeWidth={2} />
-              <Text className="text-[15px] text-muted-foreground">Seed IRD Filing Calendar</Text>
-            </Pressable>
-          </View>
+              Load the IRD calendar
+            </ActionButton>
+          </>
         ) : (
           <>
-            <Pressable
-              onPress={() => seed.mutate("2025/26")}
-              className="mb-2.5 h-[38px] flex-row items-center justify-center gap-2 rounded-pill border border-foreground/[0.08] bg-foreground/[0.04]"
-            >
-              <Calendar size={15} color="rgba(128,128,128,0.6)" strokeWidth={2} />
-              <Text className="text-[15px] text-muted-foreground">Seed IRD Filing Calendar</Text>
-            </Pressable>
-            {showOverdue ? <Section title="Overdue" data={overdue} kind="overdue" /> : null}
-            {showDueSoon ? <Section title="Due This Month" data={dueSoon} kind="dueSoon" /> : null}
-            {showUpcoming ? <Section title="Upcoming" data={upcoming} kind="upcoming" /> : null}
-            {showCompleted ? <Section title="Completed" data={completed} kind="completed" /> : null}
-            {(showOverdue ? overdue.length : 0) +
-              (showDueSoon ? dueSoon.length : 0) +
-              (showUpcoming ? upcoming.length : 0) +
-              (showCompleted ? completed.length : 0) ===
-            0 ? (
-              <View className="items-center rounded-card border-2 border-foreground bg-card p-6">
-                <Text className="text-center text-[15px] text-muted-foreground">
-                  No reminders match {q ? `“${search}”` : `the ${filter} filter`}.
-                </Text>
-              </View>
-            ) : null}
+            {headline()}
+            <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
+              {[
+                later.length > 0 ? `${later.length} later` : null,
+                done.length > 0 ? `${done.length} done` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ") || "Nothing else on the list."}
+            </Text>
           </>
         )}
       </View>
+
+      <Section label="Overdue" data={overdue} bucket="overdue" />
+      <Section label="Due this month" data={dueSoon} bucket="dueSoon" />
+      <Section label="Later" data={later} bucket="later" />
+      <Section label="Done" data={done} bucket="done" />
+
+      {items.length > 0 ? (
+        <>
+          <Rule />
+          <View className="px-5">
+            <ActionButton
+              variant="secondary"
+              loading={seed.isPending}
+              onPress={() => seed.mutate("2025/26")}
+            >
+              Load the IRD calendar
+            </ActionButton>
+          </View>
+        </>
+      ) : null}
+      <View className="h-7" />
 
       <NewReminderDrawer
         visible={drawerOpen}
@@ -333,8 +285,11 @@ function NewReminderDrawer({
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
 
-  const duePreview = formatDueDate(dueDate);
-  const canSubmit = Boolean(description.trim()) && duePreview !== "" && !saving;
+  // Only a full YYYY-MM-DD counts: formatDate would happily render a partial
+  // string as a date, which would make a half-typed field look submittable.
+  const complete = /^\d{4}-\d{2}-\d{2}$/.test(dueDate);
+  const duePreview = complete ? formatDate(dueDate) : "";
+  const canSubmit = Boolean(description.trim()) && duePreview !== "—" && complete && !saving;
 
   const reset = () => {
     setType("Tax Filing");
@@ -359,42 +314,42 @@ function NewReminderDrawer({
     <Drawer
       visible={visible}
       onClose={handleClose}
-      title="New Reminder"
+      title="New reminder"
       footer={
         <ActionButton disabled={!canSubmit} loading={saving} onPress={handleSubmit}>
-          Add Reminder
+          Add reminder
         </ActionButton>
       }
     >
-              <TextField
-                label="Description *"
-                className="mb-2.5"
-                value={description}
-                onChangeText={setDescription}
-                placeholder="File IRD Annual Return"
-                autoFocus
-              />
+      <TextField
+        label="Description *"
+        className="mb-2.5"
+        value={description}
+        onChangeText={setDescription}
+        placeholder="File IRD Annual Return"
+        autoFocus
+      />
 
-              <TextField
-                label="Due Date *"
-                className="mb-2.5"
-                value={dueDate}
-                onChangeText={setDueDate}
-                placeholder="YYYY-MM-DD"
-                keyboardType="numbers-and-punctuation"
-                autoCapitalize="none"
-                autoCorrect={false}
-                maxLength={10}
-                rightIcon={<Calendar size={18} color={colors.mutedForeground} strokeWidth={2} />}
-              />
-              <Text className="mb-3 pl-1 text-[14px] text-muted-foreground">
-                {duePreview ? duePreview : "Enter a date as YYYY-MM-DD."}
-              </Text>
+      <TextField
+        label="Due date *"
+        className="mb-2.5"
+        value={dueDate}
+        onChangeText={setDueDate}
+        placeholder="YYYY-MM-DD"
+        keyboardType="numbers-and-punctuation"
+        autoCapitalize="none"
+        autoCorrect={false}
+        maxLength={10}
+        rightIcon={<Calendar size={18} color={colors.mutedForeground} strokeWidth={2} />}
+      />
+      <Text className="mb-3 pl-1 text-[14px] text-muted-foreground">
+        {duePreview && duePreview !== "—" ? duePreview : "Enter a date as YYYY-MM-DD."}
+      </Text>
 
-              <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-                Type
-              </Text>
-              <ChipSelect className="mb-4" options={REMINDER_TYPES} value={type} onChange={setType} />
+      <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+        Type
+      </Text>
+      <ChipSelect className="mb-4" options={REMINDER_TYPES} value={type} onChange={setType} />
     </Drawer>
   );
 }

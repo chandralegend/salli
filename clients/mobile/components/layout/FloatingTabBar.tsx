@@ -163,7 +163,11 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
       {/* Four tabs, no centre "+". Add moved to Home, and it kept the
           long-press-to-capture that used to live here — so the entry point is
           relocated, not retired. */}
-      <View className="flex-row items-center px-2 pb-1 pt-2" style={{ minHeight: 56 }}>
+      {/* pt-3.5, not pt-2. At 8px the icons sat almost against the 2px ink
+          border, so the border read as cramping them rather than separating
+          the bar from the content above it. The extra 6px goes on the top
+          only — the bottom is already spaced by the safe-area inset. */}
+      <View className="flex-row items-center px-2 pb-1 pt-3.5" style={{ minHeight: 60 }}>
         {visibleRoutes.map(renderTab)}
       </View>
     </View>

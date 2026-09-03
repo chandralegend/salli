@@ -1,34 +1,36 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  Car,
-  Home,
-  type LucideIcon,
-  Pencil,
-  Plus,
-  ShoppingBag,
-  Utensils,
-  Wallet,
-  Wifi,
-  Zap,
-} from "lucide-react-native";
 import { useRouter } from "expo-router";
+import { Pencil, Plus } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
+import { ActionButton } from "@/components/ui/action-button";
+import { Hero, Meter, Rule, Said, SectionLabel, Strong } from "@/components/ui/blocks";
 import { Card } from "@/components/ui/card";
 import { FilterChip } from "@/components/ui/filter-chip";
+import { IconButton } from "@/components/ui/icon-button";
 import { PageShell } from "@/components/ui/page-shell";
-import { ActionButton } from "@/components/ui/action-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { SegmentedControl } from "@/components/ui/segmented-control";
-import { getScoreFiScoreGet } from "@/lib/api/sdk.gen";
 import { useBudgetSummaryFull, useBudgets, useCreateBudget, useUpdateBudget } from "@/hooks/useBudget";
+import { useFiSurplus } from "@/hooks/useFi";
 import { useAccounts } from "@/hooks/useLedger";
-import { useThemeColors } from "@/lib/theme";
+import { getScoreFiScoreGet } from "@/lib/api/sdk.gen";
 import { formatLKR, formatLKRAbbrev } from "@/lib/format";
-import { cn } from "@/lib/utils";
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 const PRESETS: { label: string; value: number }[] = [
   { label: "60K", value: 60000 },
   { label: "84K", value: 84000 },
@@ -36,17 +38,24 @@ const PRESETS: { label: string; value: number }[] = [
   { label: "1.2L", value: 120000 },
 ];
 
-/** Best-effort icon for a category name, matching the mockup's per-row glyphs. */
-function categoryIcon(name: string): LucideIcon {
-  const n = name.toLowerCase();
-  if (/food|grocer|supermarket/.test(n)) return ShoppingBag;
-  if (/rent|hous|mortgage|home/.test(n)) return Home;
-  if (/transport|fuel|travel|vehicle|car/.test(n)) return Car;
-  if (/dining|restaurant|entertain|cafe/.test(n)) return Utensils;
-  if (/electric|water|util|ceb/.test(n)) return Zap;
-  if (/internet|mobile|phone|subscription|stream/.test(n)) return Wifi;
-  return Wallet;
-}
+/** Small counts read as words in a sentence and as digits in a figure. Money
+ *  is always digits; a day count this size is not. */
+const WORDS = [
+  "Zero",
+  "One",
+  "Two",
+  "Three",
+  "Four",
+  "Five",
+  "Six",
+  "Seven",
+  "Eight",
+  "Nine",
+  "Ten",
+  "Eleven",
+  "Twelve",
+];
+const inWords = (n: number) => WORDS[n] ?? String(n);
 
 function monthRange() {
   const now = new Date();
@@ -55,14 +64,30 @@ function monthRange() {
   return { from, to };
 }
 
-function currentMonthLabel() {
-  const d = new Date();
-  return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+/**
+ * How much of the budget period is left, as a sentence.
+ *
+ * Parsed from the period's own end date rather than from today's month, because
+ * the summary you are looking at is not necessarily the current month's — an
+ * older budget still renders, and captioning it "nine days left" would be a
+ * lie. A closed period says so.
+ */
+function periodTailSentence(periodEnd: string): string {
+  const [y, m, d] = periodEnd.split("-").map(Number);
+  if (!y || !m || !d) return "";
+  const end = new Date(y, m - 1, d);
+  const month = MONTHS[m - 1];
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.round((end.getTime() - today.getTime()) / 86_400_000);
+  if (days < 0) return `${month} has closed.`;
+  if (days === 0) return `Last day of ${month}.`;
+  if (days === 1) return `One day left in ${month}.`;
+  return `${inWords(days)} days left in ${month}.`;
 }
 
 export default function BudgetScreen() {
   const router = useRouter();
-  const colors = useThemeColors();
   const budgets = useBudgets();
   const accounts = useAccounts();
   const createBudget = useCreateBudget();
@@ -70,6 +95,11 @@ export default function BudgetScreen() {
   const latestBudget = budgets.data?.[0];
   const summary = useBudgetSummaryFull(latestBudget?.id);
   const [editing, setEditing] = useState(false);
+
+  // The needs/wants/savings split is the same server figure the Freedom tab
+  // reads, under the same query key — so this is a cache hit, not a second
+  // computation, whenever Freedom has been opened.
+  const surplus = useFiSurplus();
 
   const fiScore = useQuery({
     queryKey: ["fi-score"],
@@ -79,10 +109,12 @@ export default function BudgetScreen() {
     },
   });
 
-  const expenseAccounts = useMemo(() => (accounts.data ?? []).filter((a) => a.type === "expense"), [accounts.data]);
+  const expenseAccounts = useMemo(
+    () => (accounts.data ?? []).filter((a) => a.type === "expense"),
+    [accounts.data],
+  );
   const [limits, setLimits] = useState<Record<string, string>>({});
   const [monthlyLimit, setMonthlyLimit] = useState(0);
-  const [cadence, setCadence] = useState<"Weekly" | "Monthly">("Monthly");
 
   const avgIncome = Number(fiScore.data?.monthly_income ?? 0);
   const recommended = avgIncome > 0 ? Math.round(avgIncome * 0.7) : 0;
@@ -90,7 +122,6 @@ export default function BudgetScreen() {
   const effectiveLimit = monthlyLimit || recommended || allocated;
   const pct = avgIncome > 0 && effectiveLimit > 0 ? Math.round((effectiveLimit / avgIncome) * 100) : null;
   const unallocated = effectiveLimit - allocated;
-  const dominantId = Object.entries(limits).sort((a, b) => Number(b[1]) - Number(a[1]))[0]?.[0];
 
   const enterEdit = () => {
     const pre: Record<string, string> = {};
@@ -126,249 +157,223 @@ export default function BudgetScreen() {
   };
 
   const saving = createBudget.isPending || updateBudget.isPending;
+  const reviewing = Boolean(latestBudget && summary.data && !editing);
+
+  /** Needs / wants / savings, as one sentence under a rule. Empty until
+   *  spending carries `need` tags, and an empty split is "not classified yet"
+   *  rather than "nothing spent" — so it is omitted rather than shown as 0%. */
+  const needSplit = (() => {
+    const raw = surplus.data?.expense_by_need ?? {};
+    const entries = (
+      [
+        ["essential", "needs"],
+        ["discretionary", "wants"],
+        ["savings", "savings"],
+      ] as const
+    )
+      .map(([slug, label]) => ({ label, amount: Number(raw[slug] ?? 0) }))
+      .filter((e) => e.amount > 0);
+    const total = entries.reduce((s, e) => s + e.amount, 0);
+    if (total <= 0) return null;
+    return entries.map((e) => ({ label: e.label, pct: Math.round((e.amount / total) * 100) }));
+  })();
 
   return (
     <PageShell
       header={
         <ScreenHeader
-          title={latestBudget && !editing ? "Budget" : "Budget Setup"}
+          title={reviewing ? "Budget" : latestBudget ? "Edit budget" : "Set a budget"}
           back
           trailing={
-            <View className="flex-row items-center gap-2">
-              {latestBudget && summary.data && !editing ? (
-                <Pressable
-                  onPress={enterEdit}
-                  className="h-10 w-10 items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.07]"
-                >
-                  <Pencil size={15} color="rgba(128,128,128,0.8)" strokeWidth={2} />
-                </Pressable>
-              ) : null}
-              <View className="rounded-pill border border-foreground/10 bg-foreground/[0.07] px-3 py-1">
-                <Text className="text-[15px] font-sans-medium text-muted-foreground">{currentMonthLabel()}</Text>
-              </View>
-            </View>
+            reviewing ? (
+              <IconButton icon={Pencil} size={18} onPress={enterEdit} accessibilityLabel="Edit budget" />
+            ) : undefined
           }
         />
       }
     >
-      {latestBudget && summary.data && !editing ? (
+      {reviewing && summary.data ? (
         (() => {
           const spent = Number(summary.data.total_actual);
           const limit = Number(summary.data.total_limit);
           const remaining = limit - spent;
-          const usedPct = limit > 0 ? Math.round((spent / limit) * 100) : 0;
           const over = remaining < 0;
+          const tail = periodTailSentence(summary.data.period_end);
           return (
-            <View className="px-4 pt-3.5">
-              {/* hero — spend vs limit */}
-              <Card className="bg-salli-hero p-[18px]">
-                <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/40">
-                  Monthly Budget
+            <View>
+              {/* The screen opens by saying the one thing it is for. The dark
+                  hero card this replaces stated the same figure three times —
+                  as a 40px number, as a "% used" chip and as "of Rs. 1.6L"
+                  underneath. */}
+              <View className="px-5">
+                <Hero>
+                  You&rsquo;ve spent <Strong>Rs. {formatLKRAbbrev(spent)}</Strong> of{" "}
+                  <Strong>Rs. {formatLKRAbbrev(limit)}</Strong>.
+                </Hero>
+                <Text
+                  className={`mt-2 text-[16px] leading-[23px] ${
+                    over ? "font-sans-semibold text-salli-accent" : "text-muted-foreground"
+                  }`}
+                >
+                  {over
+                    ? `Over by Rs. ${formatLKRAbbrev(Math.abs(remaining))}. ${tail}`
+                    : `Rs. ${formatLKRAbbrev(remaining)} left. ${tail}`}
                 </Text>
-                <View className="mb-2.5 flex-row items-start justify-between">
-                  <View className="flex-row items-baseline gap-1.5">
-                    <Text className="font-sans-semibold text-[22px] text-white/35">Rs.</Text>
-                    <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
-                      {formatLKRAbbrev(spent)}
-                    </Text>
-                  </View>
-                  <View
-                    className={cn(
-                      "mt-1 rounded-card border px-2.5 py-1",
-                      over
-                        ? "border-destructive/30 bg-destructive/20"
-                        : "border-salli-accent/30 bg-salli-accent/20",
-                    )}
-                  >
-                    <Text
-                      className={cn(
-                        "text-[14px] font-sans-semibold",
-                        over ? "text-destructive" : "text-salli-accent",
-                      )}
-                    >
-                      {usedPct}% used
-                    </Text>
-                  </View>
-                </View>
-                <View className="mb-2 h-[5px] overflow-hidden rounded-pill bg-white/[0.08]">
-                  <View
-                    className={cn("h-full rounded-pill", over ? "bg-destructive" : "bg-salli-accent")}
-                    style={{ width: `${Math.min(100, usedPct)}%` }}
-                  />
-                </View>
-                <View className="flex-row justify-between">
-                  <Text className="text-[14px] text-white/30">of Rs. {formatLKRAbbrev(limit)}</Text>
-                  <Text className="text-[14px] text-white/30">
-                    Rs. {formatLKRAbbrev(Math.abs(remaining))} {over ? "over" : "remaining"}
-                  </Text>
-                </View>
-              </Card>
-
-              {/* category limits */}
-              <View className="mb-2 mt-3 flex-row items-center justify-between">
-                <Text className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-                  Category Limits
-                </Text>
-                <Text className="text-[14px] text-muted-foreground">{currentMonthLabel()}</Text>
+                <Meter className="mt-4" value={limit > 0 ? spent / limit : 0} over={over} />
               </View>
 
-              <View className="gap-3.5">
+              <Rule />
+
+              <SectionLabel>By category</SectionLabel>
+              <View className="mt-3 gap-[13px] px-5">
                 {summary.data.lines.map((line, i) => {
                   const actual = Number(line.actual_amount);
                   const lim = Number(line.limit_amount);
                   const lineOver = actual > lim;
-                  const share = lim > 0 ? Math.min(100, (actual / lim) * 100) : 0;
-                  const Icon = categoryIcon(line.category);
                   return (
-                    <View
-                      key={i}
-                      className="flex-row items-center gap-2.5 rounded-card border-2 border-foreground bg-card px-3.5 py-[11px]"
-                    >
-                      <View
-                        className={cn(
-                          "h-8 w-8 items-center justify-center rounded-card",
-                          lineOver ? "border border-destructive/20 bg-destructive/[0.12]" : "bg-foreground/[0.06]",
-                        )}
-                      >
-                        <Icon
-                          size={15}
-                          color={lineOver ? "#ef4444" : "rgba(128,128,128,0.7)"}
-                          strokeWidth={2.5}
-                        />
+                    <Card key={i} className={`p-[15px] ${lineOver ? "border-salli-accent" : ""}`}>
+                      <View className="flex-row items-baseline justify-between gap-2.5">
+                        <Text
+                          numberOfLines={1}
+                          className="min-w-0 flex-1 font-sans-bold text-[17px] text-foreground"
+                        >
+                          {line.category}
+                        </Text>
+                        <Text className="shrink-0 text-[13.5px] text-muted-foreground">
+                          <Text
+                            className={`font-sans-bold ${
+                              lineOver ? "text-salli-accent" : "text-foreground"
+                            }`}
+                          >
+                            Rs. {formatLKRAbbrev(actual)}
+                          </Text>{" "}
+                          / {formatLKRAbbrev(lim)}
+                        </Text>
                       </View>
-                      <View className="flex-1">
-                        <View className="flex-row items-center justify-between">
-                          <Text className="font-sans-semibold text-[15px] text-foreground">{line.category}</Text>
-                          <Text className="text-[14px] text-muted-foreground">
-                            Rs. {formatLKR(actual, 0)} / {formatLKRAbbrev(lim)}
-                          </Text>
-                        </View>
-                        <View className="mt-[5px] h-[3px] overflow-hidden rounded-pill bg-foreground/[0.06]">
-                          <View
-                            className={cn("h-full rounded-pill", lineOver ? "bg-destructive" : "bg-salli-accent")}
-                            style={{ width: `${share}%` }}
-                          />
-                        </View>
-                      </View>
-                    </View>
+                      <Meter className="mt-[11px]" value={lim > 0 ? actual / lim : 0} over={lineOver} />
+                      {lineOver ? (
+                        <Text className="mt-[9px] text-[13.5px] text-salli-accent">
+                          Over by Rs. {formatLKR(actual - lim, 0)}.
+                        </Text>
+                      ) : null}
+                    </Card>
                   );
                 })}
+                {summary.data.lines.length === 0 ? (
+                  <Card className="p-[15px]">
+                    <Text className="text-[15px] leading-[21px] text-muted-foreground">
+                      This budget has no category limits. Tap the pencil to add some.
+                    </Text>
+                  </Card>
+                ) : null}
               </View>
+
+              {needSplit ? (
+                <>
+                  <Rule />
+                  <View className="px-5">
+                    <Said>
+                      {needSplit.map((n, i) => (
+                        <Text key={n.label}>
+                          {i > 0 ? " · " : ""}
+                          {i === 0 ? n.label.charAt(0).toUpperCase() + n.label.slice(1) : n.label}{" "}
+                          <Strong>{n.pct}%</Strong>
+                        </Text>
+                      ))}
+                      .
+                    </Said>
+                  </View>
+                </>
+              ) : null}
+              <View className="h-7" />
             </View>
           );
         })()
       ) : (
-        <View className="px-4 pt-3.5">
-          {/* hero */}
-          <Card className="bg-salli-hero p-0">
-            <View className="p-[18px] pb-4">
-              <View className="mb-2.5 flex-row items-start justify-between">
-                <View>
-                  <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/40">
-                    Monthly Limit
-                  </Text>
-                  <View className="flex-row items-baseline gap-1.5">
-                    <Text className="font-sans-semibold text-[22px] text-white/35">Rs.</Text>
-                    <Text className="font-sans-extrabold text-[44px] leading-none tracking-tighter text-white">
-                      {formatLKR(effectiveLimit, 0)}
-                    </Text>
-                  </View>
-                </View>
-                {pct !== null ? (
-                  <View className="mt-1 rounded-card border border-salli-accent/30 bg-salli-accent/20 px-2.5 py-1">
-                    <Text className="text-[14px] font-sans-semibold text-salli-accent">{pct}% of income</Text>
-                  </View>
-                ) : null}
-              </View>
-              <View className="mb-2 h-[5px] overflow-hidden rounded-pill bg-white/[0.08]">
-                <View
-                  className="h-full rounded-pill bg-salli-accent"
-                  style={{ width: `${pct !== null ? Math.min(100, pct) : 0}%` }}
-                />
-              </View>
-              <View className="flex-row justify-between">
-                <Text className="text-[14px] text-white/30">
-                  Avg monthly income {avgIncome > 0 ? `Rs. ${formatLKRAbbrev(avgIncome)}` : "—"}
-                </Text>
-                <Text className="text-[14px] text-white/30">Recommended ≤80%</Text>
-              </View>
-            </View>
-          </Card>
-
-          {/* cadence + presets */}
-          <View className="mt-2.5 flex-row items-center gap-2">
-            <SegmentedControl options={["Weekly", "Monthly"] as const} value={cadence} onChange={setCadence} />
-            <View className="flex-row gap-1.5">
-              {PRESETS.map((p) => (
-                <FilterChip
-                  key={p.label}
-                  label={p.label}
-                  active={monthlyLimit === p.value}
-                  onPress={() => setMonthlyLimit(p.value)}
-                />
-              ))}
-            </View>
-          </View>
-
-          {/* category limits */}
-          <View className="mb-2 mt-3 flex-row items-center justify-between">
-            <Text className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-              Category Limits
+        <View>
+          {/* Setup is not in the mockup, so it follows the same grammar as the
+              review view: the sentence states the decision being made, the
+              meter shows it against income, and the categories are cards. */}
+          <View className="px-5">
+            <Hero>
+              {effectiveLimit > 0 ? (
+                <>
+                  You&rsquo;ll spend at most <Strong>Rs. {formatLKR(effectiveLimit, 0)}</Strong> a month.
+                </>
+              ) : (
+                <>How much do you want to spend each month?</>
+              )}
+            </Hero>
+            <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
+              {avgIncome > 0
+                ? pct !== null
+                  ? `That is ${pct}% of your Rs. ${formatLKRAbbrev(avgIncome)} average income. Under 80% is comfortable.`
+                  : `Your average income is Rs. ${formatLKRAbbrev(avgIncome)} a month.`
+                : "Pick a figure, or set limits per category below and we will total them."}
             </Text>
-            <Pressable onPress={autoSplit}>
-              <Text className="text-[14px] font-sans-medium text-salli-accent">Auto-split</Text>
-            </Pressable>
+            {pct !== null ? <Meter className="mt-4" value={pct / 100} over={pct > 80} /> : null}
           </View>
 
-          <View className="gap-3.5">
+          <View className="mt-4 flex-row flex-wrap items-center gap-1.5 px-5">
+            {PRESETS.map((p) => (
+              <FilterChip
+                key={p.label}
+                label={p.label}
+                active={monthlyLimit === p.value}
+                onPress={() => setMonthlyLimit(p.value)}
+              />
+            ))}
+          </View>
+
+          <Rule />
+
+          <SectionLabel
+            trailing={
+              <Pressable onPress={autoSplit} hitSlop={8}>
+                <Text className="font-sans-semibold text-[14px] text-salli-accent">Auto-split</Text>
+              </Pressable>
+            }
+          >
+            By category
+          </SectionLabel>
+
+          <View className="mt-3 gap-[13px] px-5">
             {expenseAccounts.length === 0 ? (
-              <Card className="items-center p-6">
-                <Text className="text-[15px] text-muted-foreground">No expense accounts to budget yet.</Text>
+              <Card className="p-[15px]">
+                <Text className="text-[15px] leading-[21px] text-muted-foreground">
+                  No expense accounts to budget yet.
+                </Text>
               </Card>
             ) : (
               expenseAccounts.map((a) => {
-                const isDominant = a.id === dominantId && Number(limits[a.id] ?? 0) > 0;
-                const share = effectiveLimit > 0 ? Math.min(100, (Number(limits[a.id] ?? 0) / effectiveLimit) * 100) : 0;
-                const Icon = categoryIcon(a.name);
+                const value = Number(limits[a.id] ?? 0);
                 return (
-                  <View
-                    key={a.id}
-                    className="flex-row items-center gap-2.5 rounded-card border-2 border-foreground bg-card px-3.5 py-[11px]"
-                  >
-                    <View
-                      className={cn(
-                        "h-8 w-8 items-center justify-center rounded-card",
-                        isDominant ? "border border-salli-accent/20 bg-salli-accent/[0.12]" : "bg-foreground/[0.06]",
-                      )}
-                    >
-                      <Icon
-                        size={15}
-                        color={isDominant ? colors.accent : "rgba(128,128,128,0.7)"}
-                        strokeWidth={2.5}
-                      />
-                    </View>
-                    <View className="flex-1">
-                      <Text className="font-sans-semibold text-[15px] text-foreground">{a.name}</Text>
-                      <View className="mt-[5px] h-[3px] overflow-hidden rounded-pill bg-foreground/[0.06]">
-                        <View
-                          className={cn("h-full rounded-pill", isDominant ? "bg-salli-accent" : "bg-foreground/30")}
-                          style={{ width: `${share}%` }}
+                  <Card key={a.id} className="p-[15px]">
+                    <View className="flex-row items-center justify-between gap-2.5">
+                      <Text
+                        numberOfLines={1}
+                        className="min-w-0 flex-1 font-sans-bold text-[17px] text-foreground"
+                      >
+                        {a.name}
+                      </Text>
+                      <View className="shrink-0 flex-row items-center gap-1 rounded-badge border-[1.5px] border-foreground bg-muted px-2.5 py-1">
+                        <Text className="font-mono text-[13px] text-muted-foreground">Rs.</Text>
+                        <TextInput
+                          value={limits[a.id] ?? ""}
+                          onChangeText={(v) => setLimits((prev) => ({ ...prev, [a.id]: v }))}
+                          keyboardType="numeric"
+                          placeholder="0"
+                          placeholderTextColor="rgba(128,128,128,0.5)"
+                          style={{ width: 62 }}
+                          className="p-0 text-right font-sans-bold text-[15px] text-foreground"
                         />
                       </View>
                     </View>
-                    <View className="flex-none flex-row items-center gap-1 rounded-card border border-foreground/10 bg-muted px-2.5 py-1.5">
-                      <Text className="text-[15px] font-sans-medium text-muted-foreground">Rs.</Text>
-                      <TextInput
-                        value={limits[a.id] ?? ""}
-                        onChangeText={(v) => setLimits((prev) => ({ ...prev, [a.id]: v }))}
-                        keyboardType="numeric"
-                        placeholder="0"
-                        placeholderTextColor="rgba(128,128,128,0.4)"
-                        style={{ width: 56 }}
-                        className="text-right font-sans-semibold text-[15px] text-foreground"
-                      />
-                    </View>
-                  </View>
+                    <Meter
+                      className="mt-[11px]"
+                      value={effectiveLimit > 0 ? value / effectiveLimit : 0}
+                    />
+                  </Card>
                 );
               })
             )}
@@ -378,44 +383,46 @@ export default function BudgetScreen() {
                 did nothing. */}
             <Pressable
               onPress={() => router.push("/(tabs)/ledger")}
-              className="flex-row items-center gap-2.5 rounded-card border border-dashed border-foreground/10 bg-card px-3.5 py-[11px]"
+              className="flex-row items-center gap-3 rounded-card border-2 border-dashed border-foreground/30 px-[15px] py-3.5"
             >
-              <View className="h-8 w-8 items-center justify-center rounded-card bg-foreground/[0.04]">
-                <Plus size={15} color="rgba(128,128,128,0.4)" strokeWidth={2.5} />
-              </View>
-              <View className="flex-1">
-                <Text className="font-sans-medium text-[15px] text-muted-foreground">
-                  Add a spending category
-                </Text>
-                <Text className="mt-0.5 text-[14px] text-muted-foreground">
-                  Categories come from your expense accounts — add one in the Ledger
-                </Text>
-              </View>
+              <Plus size={18} color="rgba(128,128,128,0.8)" strokeWidth={2.5} />
+              <Text className="flex-1 text-[15px] leading-[21px] text-muted-foreground">
+                Categories are your expense accounts — add one in the Ledger.
+              </Text>
             </Pressable>
           </View>
 
-          {/* unallocated indicator */}
           {effectiveLimit > 0 ? (
-            <View className="mt-2 flex-row items-center gap-2 px-0.5">
-              <View
-                className={cn("h-2 w-2 rounded-full", unallocated < 0 ? "bg-destructive" : "bg-salli-accent")}
-              />
-              <Text className="text-[14px] text-muted-foreground">
-                Rs. {formatLKR(Math.abs(unallocated), 0)} {unallocated < 0 ? "over budget" : "unallocated"} · tap any category to edit
-              </Text>
-            </View>
+            <>
+              <Rule tight />
+              <View className="px-5">
+                <Text
+                  className={`text-[15px] leading-[21px] ${
+                    unallocated < 0 ? "font-sans-semibold text-salli-accent" : "text-muted-foreground"
+                  }`}
+                >
+                  {unallocated < 0
+                    ? `Your category limits exceed the monthly figure by Rs. ${formatLKR(Math.abs(unallocated), 0)}.`
+                    : `Rs. ${formatLKR(unallocated, 0)} of the monthly figure is still unallocated.`}
+                </Text>
+              </View>
+            </>
           ) : null}
 
-          <ActionButton className="mb-2 mt-4" loading={saving} disabled={allocated === 0} onPress={handleSave}>
-            {editing ? "Update Budget" : "Save Budget"}
-          </ActionButton>
-          {editing ? (
-            <Pressable onPress={() => setEditing(false)} className="mb-4 items-center">
-              <Text className="text-[14px] text-muted-foreground">Cancel</Text>
+          <View className="mt-5 px-5">
+            <ActionButton loading={saving} disabled={allocated === 0} onPress={handleSave}>
+              {editing ? "Update budget" : "Save budget"}
+            </ActionButton>
+            <Pressable
+              onPress={() => (editing ? setEditing(false) : router.back())}
+              className="mt-3.5 items-center py-1"
+            >
+              <Text className="text-[15px] text-muted-foreground">
+                {editing ? "Cancel" : "Not now"}
+              </Text>
             </Pressable>
-          ) : (
-            <Text className="mb-4 text-center text-[14px] text-muted-foreground">Skip category limits for now</Text>
-          )}
+          </View>
+          <View className="h-7" />
         </View>
       )}
     </PageShell>

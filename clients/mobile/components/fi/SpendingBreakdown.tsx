@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { InfoButton } from "@/components/ui/info-button";
 import type { FiSurplus } from "@/hooks/useFi";
 import { useTags } from "@/hooks/useTags";
+import { chartColor } from "@/lib/chartColors";
 import { formatLKRAbbrev } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -17,14 +18,6 @@ const NEED_META: Record<string, { label: string; bar: string; text: string }> = 
   savings: { label: "Savings & Debt", bar: "bg-[#3A5FC7]", text: "text-[#3A5FC7]" },
 };
 
-/**
- * Slice colours, brand-first then stepping away from it.
- *
- * Ordered so the largest category — categories are sorted by amount — always
- * lands on the accent. A random or purely decorative order would put the
- * loudest colour on an arbitrary slice.
- */
-const SLICE_COLORS = ["#F15A32", "#2E7D6B", "#3A5FC7", "#C77D3A", "#7B4B8A", "#8A8785", "#4B463D"];
 
 /**
  * Where the money went, as a donut.
@@ -74,7 +67,7 @@ function SpendDonut({
           <Path
             key={sl.label}
             d={`M ${ox0} ${oy0} A ${R} ${R} 0 ${large} 1 ${ox1} ${oy1} L ${ix1} ${iy1} A ${rIn} ${rIn} 0 ${large} 0 ${ix0} ${iy0} Z`}
-            fill={SLICE_COLORS[i % SLICE_COLORS.length]}
+            fill={chartColor(i)}
           />
         );
       })}
@@ -183,7 +176,7 @@ export function SpendingBreakdown({ surplus }: { surplus: FiSurplus | undefined 
             <View key={c.label} className="flex-row items-center gap-2">
               <View
                 className="h-3 w-3 shrink-0 rounded-[3px] border border-foreground"
-                style={{ backgroundColor: SLICE_COLORS[i % SLICE_COLORS.length] }}
+                style={{ backgroundColor: chartColor(i) }}
               />
               <Text numberOfLines={1} className="min-w-0 flex-1 text-[14px] text-foreground">
                 {c.label}

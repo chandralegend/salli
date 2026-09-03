@@ -4,7 +4,6 @@ import {
   ChevronRight,
   ChevronUp,
   Lock,
-  PiggyBank,
   Plus,
   Sparkles,
   Target,
@@ -38,6 +37,7 @@ import {
   type FiProjections,
 } from "@/hooks/useFi";
 import { useModeSwitch } from "@/hooks/useModeSwitch";
+import { chartColor } from "@/lib/chartColors";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useSalliStore } from "@/lib/store";
 import { useHardShadow, useThemeColors } from "@/lib/theme";
@@ -56,8 +56,6 @@ import { cn } from "@/lib/utils";
  */
 const TABS = ["Overview", "Strategy", "Goals"] as const;
 
-/** Distinct-but-on-brand colours for allocation pie segments. */
-const PIE_COLORS = ["#16130f", "#b7b1a5", "#4b463d", "#e4e0d6", "#6b6459", "#2c2822", "#8c877c"];
 
 /** Portfolio-projection line chart (mockup's Strategy hero): three engine
  * series (growth/base/conservative) plus a dashed FIRE-target line. Locked
@@ -129,7 +127,7 @@ function AllocationDonut({
         const [ix0, iy0] = pt(rIn, start);
         const large = end - start > 180 ? 1 : 0;
         const dPath = `M ${ox0} ${oy0} A ${R} ${R} 0 ${large} 1 ${ox1} ${oy1} L ${ix1} ${iy1} A ${rIn} ${rIn} 0 ${large} 0 ${ix0} ${iy0} Z`;
-        return <Path key={b.name} d={dPath} fill={PIE_COLORS[i % PIE_COLORS.length]} onPress={() => onSelect(i)} />;
+        return <Path key={b.name} d={dPath} fill={chartColor(i)} onPress={() => onSelect(i)} />;
       })}
     </Svg>
   );
@@ -422,7 +420,16 @@ export default function FinancialIndependenceScreen() {
         <View className="gap-3 px-4 pt-3.5">
           {/* Portfolio projection chart */}
           {projections.data ? (
-            <View className="rounded-card border border-foreground/[0.08] bg-salli-hero p-[16px]">
+            <View
+              // 2px ink border and the hard shadow, like every other container.
+              // It had a hairline and none, which on the near-black canvas left
+              // a dark rectangle with no discernible edge. The block stays dark
+              // in both themes because the chart's lines are drawn in white and
+              // accent: in light it reads as a black block on cream, and in dark
+              // the white border supplies the edge the fill cannot.
+              className="rounded-card border-2 border-foreground bg-salli-hero p-[16px]"
+              style={shadow}
+            >
               <View className="mb-3 flex-row items-center justify-between">
                 <Text className="text-[11px] font-mono uppercase tracking-widest text-white/50">
                   Portfolio Projection
@@ -489,22 +496,49 @@ export default function FinancialIndependenceScreen() {
                     <Text className="text-[13px] text-muted-foreground">surplus/mo</Text>
                   </View>
                 </View>
-                <Text className="text-center text-[14px] text-muted-foreground">Tap a slice to see how each bucket works</Text>
+                {/* A legend, because seven unlabelled slices meant you could
+                    not tell which bucket was which without tapping each one in
+                    turn. Two columns: at full width a single column of seven
+                    rows pushed the rationale card off the screen entirely. */}
+                <View className="mt-1 flex-row flex-wrap">
+                  {strategy.data.buckets.map((b, i) => (
+                    <View key={b.name} className="w-1/2 flex-row items-center gap-2 py-1 pr-2">
+                      <View
+                        className="h-3 w-3 shrink-0 rounded-[3px] border border-foreground"
+                        style={{ backgroundColor: chartColor(i) }}
+                      />
+                      <Text numberOfLines={1} className="min-w-0 flex-1 text-[13.5px] text-foreground">
+                        {b.name}
+                      </Text>
+                      <Text className="shrink-0 font-sans-bold text-[13.5px] text-foreground">
+                        {Math.round(Number(b.target_pct) * 100)}%
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                <Text className="mt-2.5 text-center text-[13.5px] text-muted-foreground">
+                  Tap a slice to see how each bucket works
+                </Text>
               </Card>
 
               {/* Salli AI's Strategy — collapsible. Shown whenever there's a
                   full rationale OR a locked preview (Free tier) — never just
                   vanishes for a locked user the way `ai_rationale` alone would. */}
               {strategy.data.ai_rationale || strategy.data.rationale_locked ? (
-                <View className="rounded-card border border-salli-accent/20 bg-card">
+                <Card className="p-0">
                   <Pressable
                     onPress={() => setStrategyOpen((o) => !o)}
                     className="flex-row items-center gap-2 p-3.5"
                   >
-                    <View className="h-[26px] w-[26px] items-center justify-center rounded-card bg-salli-accent/15">
-                      <PiggyBank size={16} color={colors.accent} strokeWidth={2} />
+                    {/* Salli's own mark, not a piggy bank — a piggy bank reads
+                        as "savings", which is a different thing entirely from
+                        "this was written by the assistant". */}
+                    <View className="h-[30px] w-[30px] items-center justify-center rounded-[8px] border-2 border-foreground bg-salli-ai">
+                      <NavSalli size={16} color="#000000" strokeWidth={2} />
                     </View>
-                    <Text className="flex-1 font-sans-semibold text-[15px] text-foreground">Salli AI&apos;s Strategy</Text>
+                    <Text className="flex-1 font-sans-bold text-[16px] text-foreground">
+                      Salli&apos;s strategy
+                    </Text>
                     <Text className="text-[13px] capitalize text-muted-foreground">
                       {strategy.data.fire_style} · v{strategy.data.version}
                     </Text>
@@ -551,14 +585,17 @@ export default function FinancialIndependenceScreen() {
                       </View>
                       <View className="flex-row flex-wrap gap-1.5">
                         {["4% rule", `${formatPct(strategy.data.swr, 0)} SWR`, `${formatPct(strategy.data.return_base, 0)} base`].map((t) => (
-                          <View key={t} className="rounded-pill bg-salli-accent/[0.12] px-2.5 py-0.5">
-                            <Text className="text-[13px] font-sans-medium text-salli-accent">{t}</Text>
+                          <View
+                            key={t}
+                            className="rounded-pill border-[1.5px] border-foreground bg-card px-2.5 py-0.5"
+                          >
+                            <Text className="font-mono text-[12px] text-foreground">{t}</Text>
                           </View>
                         ))}
                       </View>
                     </View>
                   ) : null}
-                </View>
+                </Card>
               ) : null}
 
               <ActionButton variant="secondary" loading={generateStrategy.isPending} onPress={() => generateStrategy.mutate()}>

@@ -1,5 +1,5 @@
 """
-FIRE Strategy LLM agent — generates a personalised AI FireStrategy.
+FIRE Strategy LLM agent. Generates a personalised AI FireStrategy.
 
 The model receives the user's actual ledger data, applies the seven FIRE
 theories, and returns a structured FireStrategy. It NEVER computes money;
@@ -13,7 +13,10 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-FIRE_SYSTEM_PROMPT = """You are Salli's FIRE Strategy Architect — a deep-thinking financial independence advisor
+from salli.domain.agents.style import WRITING_STYLE
+
+FIRE_SYSTEM_PROMPT = (
+    """You are Salli's FIRE Strategy Architect, a deep-thinking financial independence advisor
 specialising in Sri Lanka, with expertise in international FIRE literature.
 
 You will analyse a user's REAL financial data (from their ledger) and produce a personalised
@@ -23,15 +26,15 @@ FIRE strategy using these seven foundational theories:
    situation. Standard SWR is 4% (25x expenses), but FatFIRE users with conservative needs
    may use 3.5%, and those with aggressive growth plans may use 4.5%.
 
-2. **Barbell Strategy**: Create two poles — ultra-safe (emergency + bonds/FDs) and
-   high-growth (equities/business) — avoid the mushy middle. The size of each pole depends
+2. **Barbell Strategy**: Create two poles, ultra-safe (emergency + bonds/FDs) and
+   high-growth (equities/business). Avoid the mushy middle. The size of each pole depends
    on the user's risk appetite and income stability.
 
 3. **Three-Bucket System**: Organise into Liquidity (emergency, 1-2y expenses), Stability
    (medium-term, bonds/FDs), and Growth (long-term, equities). Adapt bucket sizes to the
    user's timeline and income.
 
-4. **Pay Yourself First**: Design the allocation buckets in automation order — emergency
+4. **Pay Yourself First**: Design the allocation buckets in automation order, emergency
    bucket first, then stability, then growth. Monthly contributions flow in this sequence.
 
 5. **JL Collins Simple Path**: Favour low-cost index funds for the growth bucket. In Sri Lanka
@@ -40,7 +43,7 @@ FIRE strategy using these seven foundational theories:
 
 6. **Currency Diversification**: If the user has foreign income (FSI) or multi-currency
    accounts, create a dedicated foreign currency / hedge bucket. LKR depreciation risk is
-   real — weight this bucket appropriately.
+   real, weight this bucket appropriately.
 
 7. **FIRE Tier Classification**: Classify the user:
    - LeanFIRE: savings rate < 30%, living lean
@@ -48,16 +51,19 @@ FIRE strategy using these seven foundational theories:
    - FatFIRE: savings rate ≥ 50%, or high income with comfort-first lifestyle
    - CoastFIRE: user wants to stop contributing but let investments compound
 
-Generate allocation buckets appropriate to this user — not a generic template. The bucket
+Generate allocation buckets appropriate to this user, not a generic template. The bucket
 count, names, and target percentages should reflect their actual financial profile.
 
 Rules:
 - Target percentages across all buckets must sum to 100%
-- All figures you reference MUST come from the data provided — never invent or estimate
+- All figures you reference MUST come from the data provided, never invent or estimate
 - Be specific: reference actual account types, income sources, and amounts from the data
 - If re-running, reference what has changed and what stays the same
 - The ai_rationale should be detailed markdown (300-500 words) explaining the full strategy
-- Do NOT use emojis"""
+
+"""
+    + WRITING_STYLE
+)
 
 
 class BucketSchema(BaseModel):
@@ -66,7 +72,7 @@ class BucketSchema(BaseModel):
     target_pct: float = Field(
         ge=0.0,
         le=1.0,
-        description="A FRACTION between 0.0 and 1.0 (e.g. 0.25 for 25%) — never a percentage",
+        description="A FRACTION between 0.0 and 1.0 (e.g. 0.25 for 25%), never a percentage",
     )
     description: str = Field(
         description="1-2 sentences explaining this bucket and what to invest in"
@@ -89,7 +95,7 @@ class FireStrategySchema(BaseModel):
     swr: float = Field(
         ge=0.02,
         le=0.06,
-        description="Safe withdrawal rate as a FRACTION, e.g. 0.04 for 4% — never 4",
+        description="Safe withdrawal rate as a FRACTION, e.g. 0.04 for 4%, never 4",
     )
     return_conservative: float = Field(
         ge=-0.5, le=0.5, description="Conservative annual NOMINAL return as a FRACTION, e.g. 0.06"
@@ -124,7 +130,7 @@ class FireStrategySchema(BaseModel):
         Rescale bucket weights to sum to exactly 1.0.
 
         Unlike the rates above, a bucket sum that is merely close (0.99, 1.02)
-        is recoverable and not worth failing a whole generation over — the
+        is recoverable and not worth failing a whole generation over, the
         allocation's *relative* split is what the model was reasoning about.
         A sum of 0 carries no information, so it is rejected.
         """

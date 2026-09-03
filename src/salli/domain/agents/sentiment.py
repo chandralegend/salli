@@ -1,12 +1,12 @@
 """
 Deterministic sentiment heuristic for tone-aware chat responses.
 
-Pure functions, no LLM call and no I/O — keeps this fast, free, and testable.
+Pure functions, no LLM call and no I/O, keeps this fast, free, and testable.
 This is intentionally a coarse keyword heuristic, not a general-purpose
 sentiment model: it exists only to catch a handful of clearly-signalled
 emotional states in the user's latest chat message so Scrooge can adjust his
 delivery, not to classify sentiment accurately in general. When in doubt it
-returns "neutral" — a missed signal is far cheaper than a wrong one here.
+returns "neutral": a missed signal is far cheaper than a wrong one here.
 """
 
 from __future__ import annotations
@@ -114,13 +114,13 @@ def tone_instruction(sentiment: Sentiment) -> str:
     if sentiment == "frustrated":
         return (
             "Tone note: the user's message reads as frustrated. Acknowledge it in "
-            "one short line, then get straight to the fix — no lecturing, no "
+            "one short line, then get straight to the fix, no lecturing, no "
             "restating the problem back at length."
         )
     if sentiment == "anxious":
         return (
             "Tone note: the user's message reads as anxious. Lead with a concrete, "
-            "reassuring fact from their actual data before recommending action — "
+            "reassuring fact from their actual data before recommending action, "
             "don't pile on more numbers than they need right now."
         )
     if sentiment == "positive":

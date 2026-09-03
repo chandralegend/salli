@@ -1,7 +1,7 @@
 """
 Finance specialist worker agent.
 
-Read-only access to the ledger — accounts, entries, trial balance, income statement.
+Read-only access to the ledger: accounts, entries, trial balance, income statement.
 Delegated to by the manager for detailed finance/bookkeeping questions.
 """
 
@@ -9,14 +9,16 @@ from __future__ import annotations
 
 from typing import Any
 
-FINANCE_WORKER_PROMPT = """You are a personal finance and bookkeeping specialist.
+from salli.domain.agents.style import WRITING_STYLE
 
-Do NOT use emojis in your responses unless the user explicitly asks for them or they appear in tool output you are quoting.
+FINANCE_WORKER_PROMPT = (
+    """You are a personal finance and bookkeeping specialist.
+
 
 Your role:
 - Answer questions about the user's ledger: account balances, journal entries,
   income statements, and spending patterns
-- Use the available tools to retrieve accurate data — never invent figures
+- Use the available tools to retrieve accurate data, never invent figures
 - Explain double-entry bookkeeping concepts where relevant
 - Flag anything that looks like a discrepancy (trial balance not zero, etc.)
 
@@ -24,7 +26,11 @@ Currency: LKR by default. Foreign currency accounts are tracked with FX rates.
 Always quote amounts with the currency code.
 
 Return clear, concise answers. If the user needs to take action (e.g. post an
-entry), explain what information you would need."""
+entry), explain what information you would need.
+
+"""
+    + WRITING_STYLE
+)
 
 
 def build_finance_worker(

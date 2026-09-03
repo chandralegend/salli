@@ -1,13 +1,13 @@
 """
-Monthly financial-health briefing workflow — StateGraph with a human review gate.
+Monthly financial-health briefing workflow. A StateGraph with a human review gate.
 
 Nodes:
   gather    → quota-gated deterministic gather (AdvisorService.gather_context)
   narrate   → the one LLM call (advisor.generate_advice)
-  review    → interrupt() — human approves, edits, or rejects the draft briefing
+  review    → interrupt(): human approves, edits, or rejects the draft briefing
   finalize  → persist the approved briefing as an advisory report
 
-Unlike return_workflow.py, the LLM IS invoked here (in narrate) — that's the
+Unlike return_workflow.py, the LLM IS invoked here (in narrate). That is the
 whole point of a briefing. The review gate sits after narrate and before
 finalize/persist, mirroring return_workflow's gather→compute→review→finalize
 shape but with narrate standing in for compute as the one step that produces
@@ -35,7 +35,7 @@ class BriefingState:
     # Populated by gather
     context: dict[str, Any] = field(default_factory=dict)
 
-    # Populated by narrate — an Advice model (see domain/agents/advisor.py)
+    # Populated by narrate: an Advice model (see domain/agents/advisor.py)
     advice: Any = None
 
     # Set by review node
@@ -64,7 +64,7 @@ async def _narrate(state: BriefingState) -> dict[str, Any]:
         advice = await advisor_llm.generate_advice(state.context)
     except Exception as e:
         # generate_advice calls the provider, so `e` can be an SDK error whose
-        # message embeds the rejected API key — see error_label.
+        # message embeds the rejected API key, see error_label.
         return {"error": error_label(e)}
     return {"advice": advice}
 

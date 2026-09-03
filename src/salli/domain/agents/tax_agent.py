@@ -1,5 +1,5 @@
 """
-Tax Agent — conversational, read-only, LangGraph-backed.
+Tax Agent, conversational, read-only, LangGraph-backed.
 
 The agent may only narrate numbers it received from tool calls. It cannot compute
 tax, cannot post to the ledger, and cannot submit anything externally.
@@ -16,7 +16,10 @@ from __future__ import annotations
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 
-TAX_AGENT_SYSTEM_PROMPT = """\
+from salli.domain.agents.style import WRITING_STYLE
+
+TAX_AGENT_SYSTEM_PROMPT = (
+    """\
 You are Salli, a personal tax assistant for Sri Lanka.
 
 RULES (non-negotiable):
@@ -37,7 +40,7 @@ RULES (non-negotiable):
 CAPABILITIES:
 - Explain how income tax bands work for 2025/26
 - Show the trial balance and account breakdown for the user's ledger
-- Retrieve the computed tax liability (from the engine — not your arithmetic)
+- Retrieve the computed tax liability (from the engine, not your arithmetic)
 - Walk through band-by-band workings to explain why the tax is what it is
 - Explain APIT, AIT, and foreign service income credits
 - Guide the user through gathering documents for their return
@@ -48,14 +51,18 @@ LIMITATIONS:
 - Cannot advise on penalties already imposed; recommend an accountant
 
 Begin by asking the user what they'd like help with today.
+
+
 """
+    + WRITING_STYLE
+)
 
 
 def build_tax_agent(ledger_svc, tax_svc, checkpointer=None, *, api_key):
     """
     Construct and return a compiled LangGraph Tax Agent.
 
-    NOTE: currently unreferenced — the conversational surface is the supervisor
+    NOTE: currently unreferenced, the conversational surface is the supervisor
     in manager_agent.py / buddy_agent.py. Kept in step with the other builders
     (explicit, required `api_key`) rather than left holding a zero-arg model
     that would silently read ANTHROPIC_API_KEY if it were ever revived.

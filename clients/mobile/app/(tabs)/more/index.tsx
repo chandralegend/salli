@@ -2,7 +2,6 @@ import { useRouter } from "expo-router";
 import {
   Bell,
   Book,
-  Coins,
   FileText,
   Landmark,
   Receipt,
@@ -23,7 +22,6 @@ import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { IconButton } from "@/components/ui/icon-button";
 import { PageShell } from "@/components/ui/page-shell";
 import { useMore } from "@/hooks/useMore";
-import { useEntitlements } from "@/hooks/useSettings";
 import { useTaxPacks } from "@/hooks/useTax";
 import { formatLKRAbbrev, formatPct } from "@/lib/format";
 import { dueDateShort } from "@/lib/taxDates";
@@ -59,12 +57,12 @@ type Tile = {
 /**
  * Ordered by how often you would reach for it, not alphabetically.
  *
- * Billing leads because this menu is its ONLY entry point — before it was
- * added here it was reachable only from a quota banner, i.e. only once you had
- * already run out of credits.
+ * Billing is NOT here: it moved under Settings, which is where the account
+ * lives. It must stay reachable from somewhere other than a ran-out-of-credits
+ * quota banner, which was its only entry point before it was added to this
+ * grid — Settings' Plan row is that somewhere.
  */
 const TILES: Tile[] = [
-  { key: "billing", title: "Billing", icon: Coins, href: "/(tabs)/more/billing" },
   { key: "budget", title: "Budget", icon: Wallet, href: "/(tabs)/more/budget" },
   { key: "affordability", title: "Afford it?", icon: ShoppingBag, action: "affordability" },
   { key: "tax", title: "Tax", icon: Receipt, href: "/(tabs)/more/tax" },
@@ -87,9 +85,6 @@ export default function MoreScreen() {
   // The filing deadline comes from the tax pack, never from a literal in this
   // file — see lib/taxDates.ts.
   const packs = useTaxPacks();
-  // `credits.total` is allowance + purchased, which is what can actually be
-  // spent — allowance alone reads as empty for a topped-up user.
-  const credits = useEntitlements().data?.credits;
   const currentPack = packs.data?.find((p) => p.year === tax?.pack_year);
   const [affordOpen, setAffordOpen] = useState(false);
 
@@ -102,10 +97,6 @@ export default function MoreScreen() {
    * cannot be mistaken for decoration.
    */
   const detail: Record<string, { value?: string; hint: string; alert?: boolean }> = {
-    billing: {
-      value: credits ? credits.total.toLocaleString() : undefined,
-      hint: credits ? "credits available" : "Plan & top-ups",
-    },
     budget: {
       value: budgetSummary ? `Rs. ${formatLKRAbbrev(budgetSummary.total_actual)}` : undefined,
       hint: budgetSummary

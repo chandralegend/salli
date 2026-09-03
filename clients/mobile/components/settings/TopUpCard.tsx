@@ -1,8 +1,8 @@
-import { Coins } from "lucide-react-native";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import type { PurchasesStoreProduct } from "react-native-purchases";
 
-import { Card } from "@/components/ui/card";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { Rule, SectionLabel } from "@/components/ui/blocks";
 import { useBuyCreditPack, useCreditPacks, useRestorePurchases } from "@/hooks/usePurchases";
 import { CREDITS_BY_PRODUCT, purchasesAvailable } from "@/lib/purchases";
 import { useThemeColors } from "@/lib/theme";
@@ -20,6 +20,11 @@ import { useToast } from "@/lib/toast";
  * Renders nothing at all until purchasing genuinely works, which is the honest
  * state until the Paid Apps Agreement is active and the products are approved.
  * A visible-but-broken buy button is worse than no button.
+ *
+ * It owns its own rule and section label rather than taking a heading from the
+ * caller, precisely because it can render nothing: a caller-supplied label
+ * would be left stranded above an empty space on every device where purchasing
+ * is unavailable.
  */
 export function TopUpCard() {
   const colors = useThemeColors();
@@ -49,33 +54,38 @@ export function TopUpCard() {
   }
 
   return (
-    <Card className="p-4">
-      <View className="mb-1 flex-row items-center gap-2">
-        <Coins size={18} color={colors.mutedForeground} />
-        <Text className="font-sans-semibold text-[17px] text-foreground">Top up credits</Text>
+    <>
+      <Rule />
+      <SectionLabel>Top up</SectionLabel>
+      <View className="mt-3 px-5">
+        <Text className="text-[15px] leading-[21px] text-muted-foreground">
+          A one-off purchase, not a subscription. Purchased credits never expire and are spent only
+          after your monthly allowance runs out.
+        </Text>
       </View>
-      <Text className="mb-3 text-[15px] leading-[22px] text-muted-foreground">
-        A one-off purchase, not a subscription. Purchased credits never expire and are used only
-        after your monthly allowance runs out.
-      </Text>
 
-      <View className="gap-3.5">
+      <View className="mt-3.5 gap-[9px] px-5">
         {packs.data.map((p) => {
           const credits = CREDITS_BY_PRODUCT[p.identifier];
           const busy = buy.isPending;
           return (
-            <Pressable
+            <AnimatedPressable
               key={p.identifier}
               onPress={() => purchase(p)}
               disabled={busy}
-              className="flex-row items-center justify-between rounded-card border border-foreground/10 p-3"
+              press="sink"
+              accessibilityRole="button"
+              accessibilityLabel={`Buy ${credits ? credits.toLocaleString() : p.title} credits for ${p.priceString}`}
+              className="flex-row items-center justify-between gap-3 rounded-card border-2 border-foreground bg-card px-3.5 py-3"
             >
-              <View>
-                <Text className="font-sans-medium text-[16px] text-foreground">
+              <View className="min-w-0 flex-1">
+                <Text className="font-sans-bold text-[16px] text-foreground">
                   {credits ? credits.toLocaleString() : p.title} credits
                 </Text>
-                <Text className="mt-0.5 text-[14px] text-muted-foreground">
-                  {credits ? `About ${Math.round(credits / 30).toLocaleString()} Sonnet conversations` : p.description}
+                <Text className="mt-0.5 text-[13.5px] text-muted-foreground">
+                  {credits
+                    ? `About ${Math.round(credits / 30).toLocaleString()} Sonnet conversations`
+                    : p.description}
                 </Text>
               </View>
               {busy ? (
@@ -84,11 +94,11 @@ export function TopUpCard() {
                 /* priceString, not our own formatting — StoreKit gives it in the
                    user's currency with local tax already applied, which a
                    hard-coded "$4.99" would get wrong everywhere but the US. */
-                <Text className="font-sans-semibold text-[16px] text-salli-accent">
+                <Text className="shrink-0 font-sans-extrabold text-[16px] text-foreground">
                   {p.priceString}
                 </Text>
               )}
-            </Pressable>
+            </AnimatedPressable>
           );
         })}
       </View>
@@ -103,12 +113,12 @@ export function TopUpCard() {
           }
         }}
         disabled={restore.isPending}
-        className="mt-3 items-center py-1.5"
+        className="mt-3.5 items-center py-1"
       >
-        <Text className="text-[15px] text-muted-foreground underline">
+        <Text className="font-sans-semibold text-[15px] text-salli-accent">
           {restore.isPending ? "Restoring…" : "Restore purchases"}
         </Text>
       </Pressable>
-    </Card>
+    </>
   );
 }

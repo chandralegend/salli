@@ -1,18 +1,20 @@
 import { File, Paths } from "expo-file-system";
 import { useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
-import { AlertTriangle, Bug, ChevronRight, Compass, Download, LogOut } from "lucide-react-native";
+import { Bug, ChevronRight, Compass, Download, LogOut, Trash2 } from "lucide-react-native";
 import { useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 
 import { BugReportDrawer } from "@/components/settings/BugReportDrawer";
 import { LlmKeysCard } from "@/components/settings/LlmKeysCard";
-import { ModelPickerCard } from "@/components/settings/ModelPickerCard";
 import { McpConnectionsCard } from "@/components/settings/McpConnectionsCard";
+import { ModelPickerCard } from "@/components/settings/ModelPickerCard";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import { Card } from "@/components/ui/card";
+import { Rule, SectionLabel } from "@/components/ui/blocks";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { useMore } from "@/hooks/useMore";
 import {
   useDailyBriefing,
   useDeleteAccount,
@@ -20,25 +22,76 @@ import {
   useExportData,
   useSetDailyBriefing,
 } from "@/hooks/useSettings";
-import { useMore } from "@/hooks/useMore";
 import { logout } from "@/lib/auth";
 import { confirmDestructive } from "@/lib/confirm";
 import { useSalliStore } from "@/lib/store";
-import { useThemeColors, useThemeMode } from "@/lib/theme";
+import { useHardShadow, useThemeColors, useThemeMode } from "@/lib/theme";
 import { useToast } from "@/lib/toast";
-import { cn } from "@/lib/utils";
 
-function formatShortDate(iso?: string | null) {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return `${months[d.getMonth()]} ${d.getDate()}`;
+/** One tappable settings row: label, optional description, trailing glyph. */
+function Row({
+  label,
+  description,
+  onPress,
+  trailing,
+  danger,
+  disabled,
+}: {
+  label: string;
+  description?: string;
+  onPress: () => void;
+  trailing?: React.ReactNode;
+  danger?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      disabled={disabled}
+      press="sink"
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      className={`flex-row items-center gap-3 rounded-card border-2 bg-card px-3.5 py-3 ${
+        danger ? "border-destructive" : "border-foreground"
+      }`}
+    >
+      <View className="min-w-0 flex-1">
+        <Text
+          className={`font-sans-bold text-[16px] ${danger ? "text-destructive" : "text-foreground"}`}
+        >
+          {label}
+        </Text>
+        {description ? (
+          <Text className="mt-0.5 text-[13.5px] leading-[19px] text-muted-foreground">
+            {description}
+          </Text>
+        ) : null}
+      </View>
+      {trailing}
+    </AnimatedPressable>
+  );
 }
 
+/**
+ * Settings, in one scroll — and the entry point to Billing.
+ *
+ * Billing used to be a tile in the More grid. It belongs with the account,
+ * which is what this screen is, so it is a row here instead.
+ *
+ * That move also removed a genuine duplication. Settings carried its own
+ * free-plan usage panel — a hardcoded `#0E1A60` navy block left over from the
+ * palette before this one — that stated the credit balance three ways (a
+ * "credits left" pill, an "Allowance x / y" chip and a "Purchased n" chip)
+ * while Billing stated the same balance four more ways one tap away. The Plan
+ * row below shows the balance once and links to the screen that owns it.
+ *
+ * The panel also only rendered for free-plan users, so a paying subscriber
+ * opening Settings saw no balance at all.
+ */
 export default function SettingsScreen() {
   const router = useRouter();
   const colors = useThemeColors();
+  const shadow = useHardShadow();
   const { mode, setMode } = useThemeMode();
   const dailyBriefing = useDailyBriefing();
   const setDailyBriefing = useSetDailyBriefing();
@@ -50,10 +103,9 @@ export default function SettingsScreen() {
   const startTour = useSalliStore((s) => s.startTour);
   const showToast = useToast();
 
-  const isFree = entitlements.data?.plan === "free";
-
+  // `credits.total` is allowance + purchased, which is what can actually be
+  // spent — allowance alone reads as empty for a topped-up user.
   const credits = entitlements.data?.credits;
-  const resetsAt = formatShortDate(credits?.resets_at ?? entitlements.data?.current_period_end);
 
   async function handleSignOut() {
     await logout();
@@ -108,197 +160,175 @@ export default function SettingsScreen() {
 
   return (
     <PageShell header={<ScreenHeader title="Settings" back />}>
-      <View className="gap-2.5 px-4 pt-3">
-        <Card className="flex-row items-center gap-3 p-4">
-          <View className="h-12 w-12 items-center justify-center rounded-[11px] border-2 border-foreground bg-card">
-            <Text className="font-sans-bold text-[22px] text-white">
-              {(profile?.display_name ?? "?").charAt(0).toUpperCase()}
-            </Text>
-          </View>
-          <View className="flex-1">
-            <Text className="font-sans-semibold text-[17px] text-foreground">{profile?.display_name ?? "—"}</Text>
-            <Text className="mt-0.5 text-[15px] text-muted-foreground">{profile?.email ?? ""}</Text>
-          </View>
-          <View className="rounded-card border border-foreground/10 bg-foreground/[0.06] px-2.5 py-1">
-            <Text className="font-sans-semibold text-[14px] text-foreground/50 capitalize">
-              {entitlements.data?.plan_name ?? "Free"}
-            </Text>
-          </View>
-        </Card>
+      {/* Identity, stated once. The avatar had `bg-card` with `text-white` —
+          white on white, i.e. invisible, in light mode. Same bug the More
+          screen's avatar had; both came from one accent-circle sweep. */}
+      <View className="flex-row items-center gap-3.5 px-5">
+        <View className="h-14 w-14 items-center justify-center rounded-[13px] border-2 border-foreground bg-salli-accent">
+          <Text className="font-sans-extrabold text-[24px] text-white">
+            {(profile?.display_name ?? "?").charAt(0).toUpperCase()}
+          </Text>
+        </View>
+        <View className="min-w-0 flex-1">
+          <Text numberOfLines={1} className="font-sans-extrabold text-[19px] text-foreground">
+            {profile?.display_name ?? "—"}
+          </Text>
+          <Text numberOfLines={1} className="mt-0.5 text-[14px] text-muted-foreground">
+            {profile?.email ?? ""}
+          </Text>
+        </View>
+      </View>
 
-        {isFree ? (
-          <View className="overflow-hidden rounded-card border border-foreground/10">
-            {/* usage header */}
-            <View style={{ backgroundColor: "#0E1A60" }} className="px-4 pb-4 pt-3.5">
-              <View className="mb-2.5 flex-row items-center justify-between">
-                <Text className="text-[15px] font-sans-medium text-white/60">
-                  Free Plan{resetsAt ? ` · Resets ${resetsAt}` : ""}
-                </Text>
-                {credits ? (
-                  <View className="rounded-pill bg-white/15 px-2.5 py-0.5">
-                    <Text className="font-sans-bold text-[14px] text-white">
-                      {credits.total.toLocaleString()} credits left
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-              {credits ? (
-                <View className="flex-row flex-wrap gap-1.5">
-                  <View className="flex-row items-center gap-1.5 rounded-pill bg-white/10 px-3 py-1.5">
-                    <Text className="text-[14px] text-white/50">Allowance</Text>
-                    <Text className="font-sans-bold text-[14px] text-white">
-                      {credits.allowance_remaining.toLocaleString()} /{" "}
-                      {credits.allowance_total.toLocaleString()}
-                    </Text>
-                  </View>
-                  {credits.purchased_remaining > 0 ? (
-                    <View className="flex-row items-center gap-1.5 rounded-pill bg-white/10 px-3 py-1.5">
-                      <Text className="text-[14px] text-white/50">Purchased</Text>
-                      <Text className="font-sans-bold text-[14px] text-white">
-                        {credits.purchased_remaining.toLocaleString()}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-              ) : null}
-            </View>
-          </View>
-        ) : null}
+      <Rule />
 
-        <Card className="overflow-hidden p-0">
-          <AnimatedPressable
-            onPress={() => router.push("/onboarding")}
-            className="flex-row items-center justify-between border-b border-foreground/[0.06] px-4 py-3.5"
-          >
-            <Text className="font-sans-medium text-[16px] text-foreground">Redo profile setup</Text>
-            <ChevronRight size={16} color={colors.mutedForeground} strokeWidth={2} />
-          </AnimatedPressable>
-          <AnimatedPressable
-            onPress={() => {
-              router.push("/(tabs)");
-              startTour();
-            }}
-            className="flex-row items-center justify-between border-b border-foreground/[0.06] px-4 py-3.5"
-          >
-            <Text className="font-sans-medium text-[16px] text-foreground">Take a tour</Text>
-            <Compass size={16} color={colors.mutedForeground} strokeWidth={2} />
-          </AnimatedPressable>
-          <AnimatedPressable
-            onPress={() => setBugReportOpen(true)}
-            className="flex-row items-center justify-between border-b border-foreground/[0.06] px-4 py-3.5"
-          >
-            <Text className="font-sans-medium text-[16px] text-foreground">Report a bug</Text>
-            <Bug size={16} color={colors.mutedForeground} strokeWidth={2} />
-          </AnimatedPressable>
-          <View className="flex-row items-center justify-between border-b border-foreground/[0.06] px-4 py-3.5">
-            <View className="flex-1 pr-3">
-              <Text className="font-sans-medium text-[16px] text-foreground">Daily briefing</Text>
-              <Text className="mt-0.5 text-[14px] leading-5 text-muted-foreground">
-                A wealth-advisor run each morning. Spends credits from your balance.
-              </Text>
-            </View>
-            {dailyBriefing.isLoading ? (
-              <ActivityIndicator size="small" color={colors.mutedForeground} />
-            ) : (
-              <Pressable
-                onPress={() => {
-                  if (!setDailyBriefing.isPending) {
-                    setDailyBriefing.mutate(!(dailyBriefing.data ?? false));
-                  }
-                }}
-                disabled={setDailyBriefing.isPending}
-                className="rounded-pill p-0.5"
-                style={{
-                  backgroundColor: dailyBriefing.data ? colors.accent : "rgba(128,128,128,0.25)",
-                }}
-              >
-                <View className="h-[22px] w-[38px] justify-center">
-                  <View
-                    className="h-[18px] w-[18px] rounded-full bg-white"
-                    style={{ marginLeft: dailyBriefing.data ? 18 : 2 }}
-                  />
-                </View>
-              </Pressable>
-            )}
-          </View>
-          <View className="flex-row items-center justify-between px-4 py-3.5">
-            <Text className="font-sans-medium text-[16px] text-foreground">Appearance</Text>
-            <View className="flex-row rounded-pill bg-foreground/[0.08] p-0.5">
-              {(
-                [
-                  { value: "light", label: "Light" },
-                  { value: "dark", label: "Dark" },
-                  { value: "system", label: "Device" },
-                ] as const
-              ).map((opt) => {
-                const active = mode === opt.value;
-                return (
-                  <Pressable
-                    key={opt.value}
-                    onPress={() => setMode(opt.value)}
-                    className={cn("rounded-pill px-2.5 py-1.5", active && "bg-primary")}
-                  >
-                    <Text
-                      className={cn(
-                        "text-[15px]",
-                        active ? "font-sans-semibold text-primary-foreground" : "font-sans-medium text-muted-foreground",
-                      )}
-                    >
-                      {opt.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        </Card>
+      <SectionLabel>Plan</SectionLabel>
+      <View className="mt-3 px-5">
+        <Row
+          label={entitlements.data?.plan_name ?? "Free"}
+          description={
+            credits
+              ? `${credits.total.toLocaleString()} credits available`
+              : "Plan, credits and top-ups"
+          }
+          onPress={() => router.push("/(tabs)/more/billing")}
+          trailing={<ChevronRight size={18} color={colors.mutedForeground} strokeWidth={2} />}
+        />
+      </View>
 
-        <ModelPickerCard />
+      <Rule />
 
-        <LlmKeysCard />
+      <SectionLabel>Preferences</SectionLabel>
+      <View className="mt-3 gap-[9px] px-5">
+        <View className="rounded-card border-2 border-foreground bg-card px-3.5 py-3" style={shadow}>
+          <Text className="font-sans-bold text-[16px] text-foreground">Appearance</Text>
+          {/* SegmentedControl, not a hand-rolled pill row. This was the last
+              place in the app still drawing its own version of that control. */}
+          <SegmentedControl
+            className="mt-2.5"
+            options={["light", "dark", "system"] as const}
+            value={mode}
+            onChange={setMode}
+            capitalize
+          />
+        </View>
 
-        <McpConnectionsCard />
-
-        <AnimatedPressable
-          onPress={handleSignOut}
-          className="flex-row items-center justify-between rounded-card border-2 border-foreground bg-card p-4"
+        <View
+          className="flex-row items-center gap-3 rounded-card border-2 border-foreground bg-card px-3.5 py-3"
+          style={shadow}
         >
-          <Text className="font-sans-medium text-[16px] text-foreground">Sign Out</Text>
-          <LogOut size={18} color={colors.mutedForeground} strokeWidth={2} />
-        </AnimatedPressable>
-
-        <Card className="overflow-hidden p-0">
-          <View className="px-4 pb-2 pt-3">
-            <Text className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-              Danger Zone
+          <View className="min-w-0 flex-1">
+            <Text className="font-sans-bold text-[16px] text-foreground">Daily briefing</Text>
+            <Text className="mt-0.5 text-[13.5px] leading-[19px] text-muted-foreground">
+              A wealth-advisor run each morning. Spends credits from your balance.
             </Text>
           </View>
-          <AnimatedPressable
-            onPress={handleExport}
-            disabled={exportData.isPending}
-            className="flex-row items-center justify-between border-t border-foreground/[0.05] px-4 py-2.5"
-          >
-            <Text className="font-sans-medium text-[16px] text-foreground/60">Export my data</Text>
-            {exportData.isPending ? (
+          {dailyBriefing.isLoading ? (
+            <ActivityIndicator size="small" color={colors.mutedForeground} />
+          ) : (
+            <Pressable
+              onPress={() => {
+                if (!setDailyBriefing.isPending) {
+                  setDailyBriefing.mutate(!(dailyBriefing.data ?? false));
+                }
+              }}
+              disabled={setDailyBriefing.isPending}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: Boolean(dailyBriefing.data) }}
+              accessibilityLabel="Daily briefing"
+              className="h-[26px] w-[46px] shrink-0 justify-center rounded-pill border-2 border-foreground p-0.5"
+              style={{
+                backgroundColor: dailyBriefing.data ? colors.accent : colors.muted,
+              }}
+            >
+              {/* 16, not 20. The track is 46 wide; its 2px border and 2px
+                  padding leave 38 of usable width, and the thumb with its own
+                  border is 22 — so the far edge is 38 − 22 = 16. At 20 the
+                  thumb pushed 4px past the end of its own track. */}
+              <View
+                className="h-[18px] w-[18px] rounded-full border-2 border-foreground bg-card"
+                style={{ marginLeft: dailyBriefing.data ? 16 : 0 }}
+              />
+            </Pressable>
+          )}
+        </View>
+      </View>
+
+      <Rule />
+
+      <SectionLabel>Salli</SectionLabel>
+      <View className="mt-3 gap-[9px] px-5">
+        <ModelPickerCard />
+        <LlmKeysCard />
+        <McpConnectionsCard />
+      </View>
+
+      <Rule />
+
+      <SectionLabel>Help</SectionLabel>
+      <View className="mt-3 gap-[9px] px-5">
+        <Row
+          label="Take a tour"
+          description="Walk through the app again"
+          onPress={() => {
+            router.push("/(tabs)");
+            startTour();
+          }}
+          trailing={<Compass size={18} color={colors.mutedForeground} strokeWidth={2} />}
+        />
+        <Row
+          label="Redo profile setup"
+          description="Re-answer the onboarding questions"
+          onPress={() => router.push("/onboarding")}
+          trailing={<ChevronRight size={18} color={colors.mutedForeground} strokeWidth={2} />}
+        />
+        <Row
+          label="Report a bug"
+          onPress={() => setBugReportOpen(true)}
+          trailing={<Bug size={18} color={colors.mutedForeground} strokeWidth={2} />}
+        />
+      </View>
+
+      <Rule />
+
+      {/* Export is not a dangerous action. It used to sit under a "Danger Zone"
+          heading beside account deletion, which is how a backup got framed as a
+          risk. */}
+      <SectionLabel>Your data</SectionLabel>
+      <View className="mt-3 gap-[9px] px-5">
+        <Row
+          label="Export my data"
+          description="Everything Salli holds, as one JSON file"
+          onPress={handleExport}
+          disabled={exportData.isPending}
+          trailing={
+            exportData.isPending ? (
               <ActivityIndicator size="small" color={colors.mutedForeground} />
             ) : (
-              <Download size={16} color={colors.mutedForeground} strokeWidth={2} />
-            )}
-          </AnimatedPressable>
-          <AnimatedPressable
-            onPress={confirmDelete}
-            disabled={deleteAccount.isPending}
-            className="flex-row items-center justify-between border-t border-foreground/[0.05] px-4 py-2.5"
-          >
-            <Text className="font-sans-medium text-[16px] text-destructive/90">Delete my account</Text>
-            {deleteAccount.isPending ? (
+              <Download size={18} color={colors.mutedForeground} strokeWidth={2} />
+            )
+          }
+        />
+        <Row
+          label="Sign out"
+          onPress={handleSignOut}
+          trailing={<LogOut size={18} color={colors.mutedForeground} strokeWidth={2} />}
+        />
+        <Row
+          label="Delete my account"
+          description="Permanently removes everything. This cannot be undone."
+          onPress={confirmDelete}
+          disabled={deleteAccount.isPending}
+          danger
+          trailing={
+            deleteAccount.isPending ? (
               <ActivityIndicator size="small" color="#EF4444" />
             ) : (
-              <AlertTriangle size={16} color="#EF4444" strokeWidth={2} />
-            )}
-          </AnimatedPressable>
-        </Card>
+              <Trash2 size={18} color="#EF4444" strokeWidth={2} />
+            )
+          }
+        />
       </View>
+      <View className="h-7" />
 
       <BugReportDrawer visible={bugReportOpen} onClose={() => setBugReportOpen(false)} />
     </PageShell>

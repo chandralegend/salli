@@ -1,25 +1,18 @@
-import {
-  ArrowUpRight,
-  Info,
-  Plus,
-  Search,
-  Trash2,
-  TriangleAlert,
-} from "lucide-react-native";
+import { Plus, Trash2 } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
+import { ActionButton } from "@/components/ui/action-button";
+import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { Hero, Rule, Said, SectionLabel, Strong } from "@/components/ui/blocks";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { ChipSelect } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
-import { ActionButton } from "@/components/ui/action-button";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
 import {
-  type AllocationSlice,
   type Holding,
   useAddHolding,
   useDeleteHolding,
@@ -27,16 +20,11 @@ import {
   usePortfolioSummary,
   useUpdateHolding,
 } from "@/hooks/usePortfolio";
+import { chartColor } from "@/lib/chartColors";
 import { confirmDestructive } from "@/lib/confirm";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
-import { useThemeColors } from "@/lib/theme";
+import { useHardShadow, useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
-
-const TABS = ["Holdings", "Allocation"] as const;
-
-/** Distinct-but-on-brand colours for allocation slices (shared by donut, legend,
- * per-holding accent bars, and asset-class cards so everything reads as one). */
-const SLICE_COLORS = ["#16130f", "#b7b1a5", "#4b463d", "#e4e0d6", "#6b6459", "#2c2822", "#8c877c"];
 
 /** Asset classes the backend accepts (free-form string); these mirror the
  * mockup's New Holding chips. Stored lowercase. */
@@ -44,8 +32,13 @@ const ASSET_CLASSES = ["equity", "commodity", "bond", "cash", "property"] as con
 
 const titleCase = (s: string) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-/** Donut of allocation slices with tappable annular sectors (same technique as
- * financial-independence.tsx). Each slice opens the asset-class detail drawer. */
+/**
+ * Donut of allocation slices with tappable annular sectors.
+ *
+ * Stays local to this screen rather than joining blocks.tsx because its slices
+ * are pressable — the other two donuts in the app are read-only, and merging
+ * them would mean giving them a press target they have nothing to open.
+ */
 function AllocationDonut({
   slices,
   onSelect,
@@ -84,10 +77,21 @@ function AllocationDonut({
   );
 }
 
+/**
+ * Portfolio, in one scroll.
+ *
+ * Not in the mockup, so it takes Tax's and Debt's grammar: a sentence, then
+ * rules separating labelled blocks.
+ *
+ * It was two tabs, Holdings and Allocation, sharing one dark hero whose caption
+ * changed depending on which tab you were on — so the same figure meant two
+ * things. Allocation then said each asset class twice: once as a donut with a
+ * legend, and again directly underneath as a card per class with the same value
+ * and share. The legend rows carry the value now and are tappable, which is
+ * what the cards were for.
+ */
 export default function PortfolioScreen() {
   const colors = useThemeColors();
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Holdings");
-  const [search, setSearch] = useState("");
   const [selectedClass, setSelectedClass] = useState<number | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [editHolding, setEditHolding] = useState<Holding | null>(null);
@@ -98,30 +102,28 @@ export default function PortfolioScreen() {
   const allHoldings = holdings.data ?? [];
   const allocation = summary.data?.allocation ?? [];
   const totalValue = Number(summary.data?.total_value ?? 0);
+  const totalCost = Number(summary.data?.total_cost_basis ?? 0);
+  const totalGain = Number(summary.data?.total_gain ?? 0);
 
   // Stable colour per asset class, keyed off the summary's allocation order so
-  // the donut, legend, cards and per-holding bars all agree.
+  // the donut, legend and per-holding swatches all agree. Uses the shared chart
+  // palette — this screen was the last holdout on a warm grey-brown ramp that
+  // rendered as seven near-identical browns, none of them the brand accent.
   const colorForClass = useMemo(() => {
     const map: Record<string, string> = {};
     allocation.forEach((a, i) => {
-      map[a.asset_class] = SLICE_COLORS[i % SLICE_COLORS.length];
+      map[a.asset_class] = chartColor(i);
     });
     return map;
   }, [allocation]);
 
-  const visible = allHoldings.filter(
-    (h) =>
-      !search ||
-      h.name.toLowerCase().includes(search.toLowerCase()) ||
-      h.symbol.toLowerCase().includes(search.toLowerCase()),
+  // Largest first: the ordering question a holdings list is actually asked.
+  const byValue = useMemo(
+    () => [...allHoldings].sort((a, b) => Number(b.current_value) - Number(a.current_value)),
+    [allHoldings],
   );
 
-  const grouped = visible.reduce<Record<string, Holding[]>>((acc, h) => {
-    (acc[h.asset_class] ??= []).push(h);
-    return acc;
-  }, {});
-
-  // #holdings per asset class (from the full, unfiltered list).
+  // #holdings per asset class.
   const countByClass = allHoldings.reduce<Record<string, number>>((acc, h) => {
     acc[h.asset_class] = (acc[h.asset_class] ?? 0) + 1;
     return acc;
@@ -135,350 +137,257 @@ export default function PortfolioScreen() {
   const concentrated = topSlice && Number(topSlice.pct_of_portfolio) > 0.5 ? topSlice : null;
 
   const empty = allHoldings.length === 0;
+  const up = totalGain >= 0;
 
   return (
     <View className="flex-1">
       <PageShell
-        animateOn={tab}
         header={
           <ScreenHeader
             title="Portfolio"
             back
             trailing={
-              <View className="flex-row items-center gap-2">
-                <View className="rounded-pill border-2 border-foreground bg-card px-3 py-1.5">
-                  <Text className="text-[14px] text-muted-foreground">Manual values only</Text>
-                </View>
-                <Pressable
-                  onPress={() => setAddOpen(true)}
-                  className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
-                >
-                  <Plus size={21} color={colors.accent} strokeWidth={2.4} />
-                </Pressable>
-              </View>
+              <AnimatedPressable
+                onPress={() => setAddOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Add a holding"
+                className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
+              >
+                <Plus size={21} color={colors.accent} strokeWidth={2.4} />
+              </AnimatedPressable>
             }
           />
         }
       >
         {empty ? (
-          <View className="items-center gap-2 px-8 pt-16">
-            <Text className="text-center font-sans-semibold text-[17px] text-foreground">No holdings yet</Text>
-            <Text className="text-center text-[15px] text-muted-foreground">
-              Add your first holding to track value, cost and allocation.
+          <View className="px-5 pt-2">
+            <Hero>You haven&rsquo;t added any holdings.</Hero>
+            <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
+              Add what you own — shares, gold, a fixed deposit — and we will track its value, cost
+              and allocation. Values are entered by you; there is no live market feed.
             </Text>
-            <ActionButton className="mt-3" variant="accent" onPress={() => setAddOpen(true)}>
-              <Plus size={21} color={colors.accent} strokeWidth={2.4} />
-              <Text className="font-sans-semibold text-[16px] text-white">New Holding</Text>
+            <ActionButton className="mt-5" onPress={() => setAddOpen(true)}>
+              Add a holding
             </ActionButton>
           </View>
         ) : (
-          <>
-            <View className="px-4 pt-3">
-            {/* Navy hero — total value + cost/gain */}
-            <Card className="bg-salli-hero p-[18px]">
-              <Text className="mb-2 text-[11px] font-mono uppercase tracking-widest text-white/50">
-                Total Portfolio Value
+          <View>
+            <View className="px-5">
+              <Hero>
+                Your holdings are worth <Strong>Rs. {formatLKRAbbrev(totalValue)}</Strong>.
+              </Hero>
+              <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
+                <Text className={up ? "font-sans-semibold text-salli-accent" : "font-sans-semibold text-destructive"}>
+                  {up ? "Up" : "Down"} Rs. {formatLKRAbbrev(Math.abs(totalGain))} (
+                  {formatPct(Math.abs(Number(summary.data?.total_gain_pct ?? 0)), 1)})
+                </Text>{" "}
+                on Rs. {formatLKRAbbrev(totalCost)} invested.
               </Text>
-              <View className="mb-1.5 flex-row items-baseline gap-1">
-                <Text className="font-sans-semibold text-[22px] text-white/40">Rs.</Text>
-                <Text className="font-sans-extrabold text-[44px] tracking-tighter text-white">
-                  {summary.data ? formatLKRAbbrev(summary.data.total_value) : "—"}
-                </Text>
-              </View>
-              <View className="flex-row items-center gap-2.5">
-                <Text className="text-[14px] text-white/30">
-                  {tab === "Allocation"
-                    ? `${allocation.length} asset ${allocation.length === 1 ? "class" : "classes"}`
-                    : `Cost Rs. ${summary.data ? formatLKRAbbrev(summary.data.total_cost_basis) : "—"}`}
-                </Text>
-                {summary.data ? (
-                  <View
-                    className={cn(
-                      "flex-row items-center gap-1 rounded-pill border px-2.5 py-1",
-                      Number(summary.data.total_gain) >= 0
-                        ? "border-salli-accent/30 bg-salli-accent/15"
-                        : "border-destructive/30 bg-destructive/15",
-                    )}
-                  >
-                    {Number(summary.data.total_gain) >= 0 ? (
-                      <ArrowUpRight size={9} color={colors.accent} strokeWidth={2.5} />
-                    ) : null}
-                    <Text
-                      className={cn(
-                        "text-[14px] font-sans-semibold",
-                        Number(summary.data.total_gain) >= 0 ? "text-salli-accent" : "text-destructive",
-                      )}
-                    >
-                      {tab === "Allocation"
-                        ? `${formatPct(summary.data.total_gain_pct, 1)} overall`
-                        : `${Number(summary.data.total_gain) >= 0 ? "+" : "-"}Rs. ${formatLKRAbbrev(summary.data.total_gain)} (${formatPct(summary.data.total_gain_pct, 1)})`}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-            </Card>
             </View>
 
-            {/* Tabs */}
-            <Tabs className="mt-3" items={TABS} value={tab} onChange={setTab} />
-
-            <View className="px-4">
-            {tab === "Holdings" ? (
+            {allocation.length > 0 ? (
               <>
-                <View className="mt-2.5 flex-row gap-2">
-                  <View className="h-[38px] flex-1 flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card px-3">
-                    <Search size={15} color={colors.mutedForeground} strokeWidth={2} />
-                    <TextInput
-                      value={search}
-                      onChangeText={setSearch}
-                      placeholder="Search..."
-                      placeholderTextColor="rgba(128,128,128,0.4)"
-                      className="flex-1 text-[15px] text-foreground"
-                    />
-                  </View>
-                </View>
-
-                <View className="mt-3 gap-3">
-                  {Object.entries(grouped).map(([assetClass, items]) => (
-                    <View key={assetClass}>
-                      <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-                        {titleCase(assetClass)}
-                      </Text>
-                      <View className="gap-3.5">
-                        {items.map((h) => {
-                          const gain = Number(h.current_value) - Number(h.cost_basis);
-                          const pct = totalValue > 0 ? Number(h.current_value) / totalValue : 0;
-                          const color = colorForClass[h.asset_class] ?? SLICE_COLORS[0];
-                          return (
-                            <Pressable key={h.id} onPress={() => setEditHolding(h)}>
-                              <Card className="flex-row items-center gap-2.5 p-3">
-                                <View className="h-[42px] w-[3px] rounded-pill" style={{ backgroundColor: color }} />
-                                <View
-                                  className="h-[38px] w-[38px] items-center justify-center rounded-card"
-                                  style={{ backgroundColor: `${color}1F`, borderWidth: 0.5, borderColor: `${color}33` }}
-                                >
-                                  <Text className="font-sans-bold text-[13px]" style={{ color }}>
-                                    {h.symbol.slice(0, 4).toUpperCase()}
-                                  </Text>
-                                </View>
-                                <View className="flex-1">
-                                  <Text className="font-sans-semibold text-[15px] text-foreground">{h.name}</Text>
-                                  <Text className="text-[14px] text-muted-foreground">{formatPct(pct, 0)} of portfolio</Text>
-                                </View>
-                                <View className="items-end">
-                                  <Text className="font-sans-semibold text-[15px] text-foreground">
-                                    Rs. {formatLKRAbbrev(h.current_value)}
-                                  </Text>
-                                  <Text className={cn("text-[14px]", gain >= 0 ? "text-foreground/50" : "text-destructive")}>
-                                    {gain >= 0 ? "+" : "-"}Rs. {formatLKRAbbrev(gain)}
-                                  </Text>
-                                </View>
-                              </Card>
-                            </Pressable>
-                          );
-                        })}
-                      </View>
-                    </View>
-                  ))}
-                  {visible.length === 0 ? (
-                    <Text className="pt-6 text-center text-[15px] text-muted-foreground">No holdings match “{search}”.</Text>
-                  ) : null}
-                </View>
-              </>
-            ) : (
-              <>
-                {/* Donut hero — tappable slices open the asset-class drawer */}
-                <Card className="mt-3 p-4">
-                  <Text className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-                    Allocation by asset class
-                  </Text>
-                  <View className="my-3 h-[168px] w-[168px] items-center justify-center self-center">
-                    <AllocationDonut
-                      slices={allocation.map((a) => ({
-                        frac: Number(a.pct_of_portfolio),
-                        color: colorForClass[a.asset_class] ?? SLICE_COLORS[0],
-                      }))}
-                      onSelect={setSelectedClass}
-                    />
-                    <View pointerEvents="none" style={{ position: "absolute", alignItems: "center" }}>
-                      <Text className="font-sans-extrabold text-[20px] leading-6 text-foreground">
-                        {summary.data ? `Rs. ${formatLKRAbbrev(summary.data.total_value)}` : "—"}
-                      </Text>
-                      <Text className="text-[13px] text-muted-foreground">total value</Text>
-                    </View>
-                  </View>
-                  <Text className="mb-3 text-center text-[14px] text-muted-foreground">Tap a slice for asset-class detail</Text>
-                  <View className="flex-row flex-wrap justify-center gap-x-4 gap-y-1.5">
-                    {allocation.map((a) => (
-                      <View key={a.asset_class} className="flex-row items-center gap-1.5">
-                        <View
-                          style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: colorForClass[a.asset_class] }}
-                        />
-                        <Text className="text-[14px] font-sans-medium text-foreground/50">
-                          {titleCase(a.asset_class)} {formatPct(a.pct_of_portfolio, 0)}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                </Card>
-
-                {/* By asset class — value, share, progress */}
-                <Text className="mb-2 mt-3.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-                  By Asset Class
-                </Text>
-                <View className="gap-3.5">
-                  {allocation.map((a, i) => {
-                    const color = colorForClass[a.asset_class] ?? SLICE_COLORS[0];
-                    const count = countByClass[a.asset_class] ?? 0;
-                    return (
-                      <Pressable key={a.asset_class} onPress={() => setSelectedClass(i)}>
-                        <Card className="p-3.5">
-                          <View className="mb-2 flex-row items-center justify-between">
-                            <View className="flex-1 flex-row items-center gap-2">
-                              <View
-                                className="h-8 w-8 items-center justify-center rounded-card"
-                                style={{ backgroundColor: `${color}1F`, borderWidth: 0.5, borderColor: `${color}33` }}
-                              >
-                                <View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: color }} />
-                              </View>
-                              <View>
-                                <Text className="font-sans-semibold text-[15px] text-foreground">{titleCase(a.asset_class)}</Text>
-                                <Text className="text-[14px] text-muted-foreground">
-                                  {count} {count === 1 ? "holding" : "holdings"}
-                                </Text>
-                              </View>
-                            </View>
-                            <View className="items-end">
-                              <Text className="font-sans-bold text-[16px] text-foreground">
-                                Rs. {formatLKRAbbrev(a.current_value)}
-                              </Text>
-                              <Text className="font-sans-semibold text-[14px]" style={{ color }}>
-                                {formatPct(a.pct_of_portfolio, 0)}
-                              </Text>
-                            </View>
-                          </View>
-                          <View className="h-1.5 overflow-hidden rounded-pill bg-foreground/[0.06]">
+                <Rule />
+                <SectionLabel>Allocation</SectionLabel>
+                {/* Donut carries the proportions, the legend carries the names
+                    and figures — neither has to do both badly. Both the slices
+                    and the legend rows open the asset-class detail. */}
+                <View className="mt-3.5 flex-row items-center gap-4 px-5">
+                  <AllocationDonut
+                    slices={allocation.map((a) => ({
+                      frac: Number(a.pct_of_portfolio),
+                      color: colorForClass[a.asset_class] ?? chartColor(0),
+                    }))}
+                    onSelect={setSelectedClass}
+                  />
+                  <View className="min-w-0 flex-1 gap-2.5">
+                    {allocation.map((a, i) => {
+                      const count = countByClass[a.asset_class] ?? 0;
+                      return (
+                        <Pressable
+                          key={a.asset_class}
+                          onPress={() => setSelectedClass(i)}
+                          hitSlop={4}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${titleCase(a.asset_class)} detail`}
+                        >
+                          <View className="flex-row items-center gap-2">
                             <View
-                              className="h-full rounded-pill"
-                              style={{
-                                width: `${Math.min(100, Number(a.pct_of_portfolio) * 100)}%`,
-                                backgroundColor: color,
-                              }}
+                              className="h-3 w-3 shrink-0 rounded-[3px] border border-foreground"
+                              style={{ backgroundColor: colorForClass[a.asset_class] }}
                             />
+                            <Text
+                              numberOfLines={1}
+                              className="min-w-0 flex-1 text-[14px] text-foreground"
+                            >
+                              {titleCase(a.asset_class)}
+                            </Text>
+                            <Text className="shrink-0 font-sans-bold text-[14px] text-foreground">
+                              {formatPct(a.pct_of_portfolio, 0)}
+                            </Text>
                           </View>
-                        </Card>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-
-                {/* Concentration note — only when one class dominates */}
-                {concentrated ? (
-                  <View className="mt-3 flex-row items-start gap-2 rounded-card border border-salli-accent/20 bg-salli-accent/[0.08] px-3.5 py-2.5">
-                    <TriangleAlert size={16} color={colors.accent} strokeWidth={2} style={{ marginTop: 1 }} />
-                    <Text className="flex-1 text-[14px] leading-5 text-foreground/55">
-                      <Text className="font-sans-semibold text-salli-accent">
-                        {formatPct(concentrated.pct_of_portfolio, 0)} in {titleCase(concentrated.asset_class).toLowerCase()}
-                      </Text>{" "}
-                      — a single asset class is a large share of this portfolio.
-                    </Text>
+                          <Text className="ml-5 text-[13px] text-muted-foreground">
+                            Rs. {formatLKRAbbrev(a.current_value)} · {count}{" "}
+                            {count === 1 ? "holding" : "holdings"}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
                   </View>
-                ) : null}
+                </View>
+              </>
+            ) : null}
 
-                {/* Disclaimer */}
-                <View className="mt-2.5 flex-row items-start gap-2 rounded-card border border-foreground/[0.06] bg-foreground/[0.04] px-3.5 py-2.5">
-                  <Info size={15} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 1 }} />
-                  <Text className="flex-1 text-[14px] leading-5 text-muted-foreground">
-                    Values are manually entered · no live market feed
+            <Rule />
+
+            <SectionLabel>Holdings</SectionLabel>
+            {/* Flat and largest-first. It used to be grouped under a heading per
+                asset class, which restated the allocation block directly above
+                it; the swatch says which class a row belongs to. */}
+            <View className="mt-3 gap-[9px] px-5">
+              {byValue.map((h) => {
+                const gain = Number(h.current_value) - Number(h.cost_basis);
+                const color = colorForClass[h.asset_class] ?? chartColor(0);
+                return (
+                  <AnimatedPressable
+                    key={h.id}
+                    onPress={() => setEditHolding(h)}
+                    press="sink"
+                    accessibilityRole="button"
+                    accessibilityLabel={`Edit ${h.name}`}
+                    className="flex-row items-center gap-[11px] rounded-card border-2 border-foreground bg-card px-3.5 py-3"
+                  >
+                    <View
+                      className="h-3.5 w-3.5 shrink-0 rounded-[4px] border border-foreground"
+                      style={{ backgroundColor: color }}
+                    />
+                    <View className="min-w-0 flex-1">
+                      <Text numberOfLines={1} className="font-sans-bold text-[16px] text-foreground">
+                        {h.name}
+                      </Text>
+                      <Text className="mt-0.5 font-mono text-[12px] uppercase text-muted-foreground">
+                        {h.symbol}
+                      </Text>
+                    </View>
+                    <View className="shrink-0 items-end">
+                      <Text className="font-sans-extrabold text-[15px] text-foreground">
+                        {formatLKRAbbrev(h.current_value)}
+                      </Text>
+                      <Text
+                        className={cn(
+                          "mt-0.5 text-[13px]",
+                          gain >= 0 ? "text-muted-foreground" : "text-destructive",
+                        )}
+                      >
+                        {gain >= 0 ? "+" : "−"}
+                        {formatLKRAbbrev(Math.abs(gain))}
+                      </Text>
+                    </View>
+                  </AnimatedPressable>
+                );
+              })}
+            </View>
+
+            {concentrated ? (
+              <>
+                <Rule />
+                <View className="px-5">
+                  <Said>
+                    <Strong className="text-salli-accent">
+                      {formatPct(concentrated.pct_of_portfolio, 0)} of this sits in{" "}
+                      {titleCase(concentrated.asset_class).toLowerCase()}
+                    </Strong>
+                    .
+                  </Said>
+                  <Text className="mt-1.5 text-[15px] leading-[21px] text-muted-foreground">
+                    One asset class carrying more than half the portfolio moves it on its own.
                   </Text>
                 </View>
               </>
-            )}
+            ) : null}
+
+            <Rule />
+            <View className="px-5">
+              <Text className="text-[13.5px] leading-5 text-muted-foreground">
+                Values are the ones you entered. There is no live market feed.
+              </Text>
             </View>
-          </>
+            <View className="h-7" />
+          </View>
         )}
       </PageShell>
-
-      {!empty ? (
-        <Pressable
-          onPress={() => setAddOpen(true)}
-          className="absolute bottom-28 right-5 h-12 w-12 items-center justify-center rounded-full"
-          style={{
-            backgroundColor: colors.accent,
-            shadowColor: colors.accent,
-            shadowOpacity: 0.4,
-            shadowRadius: 16,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 6,
-          }}
-        >
-          <Plus size={21} color={colors.accent} strokeWidth={2.4} />
-        </Pressable>
-      ) : null}
 
       {/* Asset-class detail drawer */}
       <Drawer
         visible={selectedClass !== null}
         onClose={() => setSelectedClass(null)}
-        title={selectedClass !== null && allocation[selectedClass] ? titleCase(allocation[selectedClass].asset_class) : undefined}
+        title={
+          selectedClass !== null && allocation[selectedClass]
+            ? titleCase(allocation[selectedClass].asset_class)
+            : undefined
+        }
         keyboardAvoiding={false}
       >
         {selectedClass !== null && allocation[selectedClass]
-              ? (() => {
-                  const a = allocation[selectedClass];
-                  const color = colorForClass[a.asset_class] ?? SLICE_COLORS[0];
-                  const items = allHoldings.filter((h) => h.asset_class === a.asset_class);
-                  const cost = items.reduce((s, h) => s + Number(h.cost_basis), 0);
-                  const gain = Number(a.current_value) - cost;
-                  return (
-                    <>
-                      <View className="mb-3 flex-row gap-2">
-                        <View className="flex-1 rounded-card border-2 border-foreground bg-card p-3">
-                          <Text className="mb-1 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Value</Text>
-                          <Text className="font-sans-extrabold text-[22px] leading-6 text-foreground">
-                            Rs. {formatLKRAbbrev(a.current_value)}
+          ? (() => {
+              const a = allocation[selectedClass];
+              const color = colorForClass[a.asset_class] ?? chartColor(0);
+              const items = allHoldings.filter((h) => h.asset_class === a.asset_class);
+              const cost = items.reduce((s, h) => s + Number(h.cost_basis), 0);
+              const gain = Number(a.current_value) - cost;
+              return (
+                <>
+                  <Text className="text-[20px] leading-[26px] tracking-tight text-foreground">
+                    <Text className="font-sans-extrabold">Rs. {formatLKRAbbrev(a.current_value)}</Text>{" "}
+                    — <Text className="font-sans-extrabold" style={{ color }}>
+                      {formatPct(a.pct_of_portfolio, 1)}
+                    </Text>{" "}
+                    of the portfolio.
+                  </Text>
+                  <Text
+                    className={cn(
+                      "mt-1.5 text-[15px] leading-[21px]",
+                      gain >= 0 ? "text-muted-foreground" : "text-destructive",
+                    )}
+                  >
+                    {gain >= 0 ? "Up" : "Down"} Rs. {formatLKRAbbrev(Math.abs(gain))}
+                    {cost > 0 ? ` (${formatPct(Math.abs(gain / cost), 1)})` : ""} on Rs.{" "}
+                    {formatLKRAbbrev(cost)} invested.
+                  </Text>
+
+                  <View className="my-4 h-px bg-foreground/15" />
+
+                  <Text className="mb-2.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+                    {items.length} {items.length === 1 ? "holding" : "holdings"}
+                  </Text>
+                  <View className="gap-2.5">
+                    {items.map((h) => {
+                      const hGain = Number(h.current_value) - Number(h.cost_basis);
+                      return (
+                        <View key={h.id} className="flex-row items-baseline justify-between gap-3">
+                          <Text numberOfLines={1} className="min-w-0 flex-1 text-[16px] text-foreground">
+                            {h.name}
+                          </Text>
+                          <Text className="shrink-0 font-sans-extrabold text-[16px] text-foreground">
+                            Rs. {formatLKRAbbrev(h.current_value)}
+                          </Text>
+                          <Text
+                            className={cn(
+                              "w-[74px] shrink-0 text-right text-[13px]",
+                              hGain >= 0 ? "text-muted-foreground" : "text-destructive",
+                            )}
+                          >
+                            {hGain >= 0 ? "+" : "−"}
+                            {formatLKRAbbrev(Math.abs(hGain))}
                           </Text>
                         </View>
-                        <View className="flex-1 rounded-card border-2 border-foreground bg-card p-3">
-                          <Text className="mb-1 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Share</Text>
-                          <Text className="font-sans-extrabold text-[22px] leading-6" style={{ color }}>
-                            {formatPct(a.pct_of_portfolio, 1)}
-                          </Text>
-                        </View>
-                      </View>
-                      <View className="mb-3 flex-row items-center justify-between rounded-card border-2 border-foreground bg-card px-3.5 py-2.5">
-                        <Text className="text-[15px] text-foreground/50">Unrealized gain</Text>
-                        <Text className={cn("font-sans-bold text-[15px]", gain >= 0 ? "text-salli-accent" : "text-destructive")}>
-                          {gain >= 0 ? "+" : "-"}Rs. {formatLKRAbbrev(gain)}
-                          {cost > 0 ? ` · ${formatPct(gain / cost, 1)}` : ""}
-                        </Text>
-                      </View>
-                      <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-                        {items.length} {items.length === 1 ? "holding" : "holdings"}
-                      </Text>
-                      <View className="gap-3.5">
-                        {items.map((h) => {
-                          const hGain = Number(h.current_value) - Number(h.cost_basis);
-                          return (
-                            <View key={h.id} className="flex-row items-center justify-between rounded-card bg-card px-3 py-2.5">
-                              <View>
-                                <Text className="font-sans-semibold text-[15px] text-foreground">{h.name}</Text>
-                                <Text className="text-[14px] text-muted-foreground">{h.symbol.toUpperCase()}</Text>
-                              </View>
-                              <View className="items-end">
-                                <Text className="font-sans-semibold text-[15px] text-foreground">Rs. {formatLKRAbbrev(h.current_value)}</Text>
-                                <Text className={cn("text-[14px]", hGain >= 0 ? "text-foreground/50" : "text-destructive")}>
-                                  {hGain >= 0 ? "+" : "-"}Rs. {formatLKRAbbrev(hGain)}
-                                </Text>
-                              </View>
-                            </View>
-                          );
-                        })}
-                      </View>
-                    </>
-                  );
-                })()
-              : null}
+                      );
+                    })}
+                  </View>
+                </>
+              );
+            })()
+          : null}
       </Drawer>
 
       <HoldingDrawer visible={addOpen} onClose={() => setAddOpen(false)} />
@@ -507,6 +416,7 @@ function HoldingDrawer({
   const addHolding = useAddHolding();
   const updateHolding = useUpdateHolding();
   const deleteHolding = useDeleteHolding();
+  const shadow = useHardShadow();
 
   const isEdit = Boolean(holding);
 
@@ -595,85 +505,92 @@ function HoldingDrawer({
         disabled={!canSubmit}
         onPress={submit}
       >
-        {isEdit ? "Save Changes" : "Add Holding"}
+        {isEdit ? "Save changes" : "Add holding"}
       </ActionButton>
       {isEdit ? (
         <Pressable
           onPress={confirmDelete}
           disabled={busy}
-          className="mt-2.5 h-12 flex-row items-center justify-center gap-2 rounded-pill border border-destructive/25 bg-destructive/[0.08]"
+          style={shadow}
+          className="mt-2.5 h-12 flex-row items-center justify-center gap-2 rounded-card border-2 border-destructive bg-card"
         >
           <Trash2 size={17} color="#EF4444" strokeWidth={2} />
-          <Text className="font-sans-semibold text-[16px] text-destructive">
-            {deleteHolding.isPending ? "Deleting…" : "Delete Holding"}
+          <Text className="font-sans-bold text-[16px] text-destructive">
+            {deleteHolding.isPending ? "Deleting…" : "Delete holding"}
           </Text>
         </Pressable>
       ) : null}
       {isError ? (
-        <Text className="mt-2 text-center text-[14px] text-destructive">Could not save holding. Please try again.</Text>
+        <Text className="mt-2 text-center text-[14px] text-destructive">
+          Could not save holding. Please try again.
+        </Text>
       ) : null}
     </>
   );
 
   return (
-    <Drawer visible={visible} onClose={onClose} title={isEdit ? "Edit Holding" : "New Holding"} footer={footer}>
-              {/* symbol + name */}
-              <View className="mb-2.5 flex-row gap-2">
-                <TextField
-                  className="w-[120px]"
-                  label="Symbol *"
-                  value={symbol}
-                  onChangeText={setSymbol}
-                  autoCapitalize="characters"
-                  placeholder="COMB"
-                />
-                <TextField className="flex-1" label="Name *" value={name} onChangeText={setName} placeholder="Commercial Bank" />
-              </View>
+    <Drawer visible={visible} onClose={onClose} title={isEdit ? "Edit holding" : "New holding"} footer={footer}>
+      <View className="mb-2.5 flex-row gap-2">
+        <TextField
+          className="w-[120px]"
+          label="Symbol *"
+          value={symbol}
+          onChangeText={setSymbol}
+          autoCapitalize="characters"
+          placeholder="COMB"
+        />
+        <TextField
+          className="flex-1"
+          label="Name *"
+          value={name}
+          onChangeText={setName}
+          placeholder="Commercial Bank"
+        />
+      </View>
 
-              {/* asset class chips */}
-              <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Asset Class *</Text>
-              <ChipSelect
-                className="mb-3"
-                options={ASSET_CLASSES}
-                value={assetClass}
-                onChange={setAssetClass}
-                capitalize
-              />
+      <Text className="mb-2 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+        Asset class *
+      </Text>
+      <ChipSelect
+        className="mb-3"
+        options={ASSET_CLASSES}
+        value={assetClass}
+        onChange={setAssetClass}
+        capitalize
+      />
 
-              {/* cost + current value */}
-              <View className="mb-3 flex-row gap-2">
-                <TextField
-                  className="flex-1"
-                  label="Cost Basis *"
-                  value={cost}
-                  onChangeText={setCost}
-                  keyboardType="decimal-pad"
-                  placeholder="0"
-                />
-                <TextField
-                  className="flex-1"
-                  label="Current Value *"
-                  value={value}
-                  onChangeText={setValue}
-                  keyboardType="decimal-pad"
-                  placeholder="0"
-                />
-              </View>
+      <View className="mb-3 flex-row gap-2">
+        <TextField
+          className="flex-1"
+          label="Cost basis *"
+          value={cost}
+          onChangeText={setCost}
+          keyboardType="decimal-pad"
+          placeholder="0"
+        />
+        <TextField
+          className="flex-1"
+          label="Current value *"
+          value={value}
+          onChangeText={setValue}
+          keyboardType="decimal-pad"
+          placeholder="0"
+        />
+      </View>
 
-              {/* computed gain */}
-              {cost && value ? (
-                <View
-                  className={cn(
-                    "mb-4 flex-row items-center justify-between rounded-card border px-3.5 py-2.5",
-                    gain >= 0 ? "border-salli-accent/20 bg-salli-accent/[0.08]" : "border-destructive/20 bg-destructive/[0.08]",
-                  )}
-                >
-                  <Text className="text-[15px] text-foreground/50">Unrealized gain</Text>
-                  <Text className={cn("font-sans-bold text-[16px]", gain >= 0 ? "text-salli-accent" : "text-destructive")}>
-                    {gain >= 0 ? "+" : "-"}Rs. {formatLKR(Math.abs(gain), 0)} · {formatPct(gainPct, 1)}
-                  </Text>
-                </View>
-              ) : null}
+      {cost && value ? (
+        <View className="mb-4 flex-row items-center justify-between rounded-card border-2 border-foreground bg-card px-3.5 py-2.5">
+          <Text className="text-[15px] text-muted-foreground">Unrealized gain</Text>
+          <Text
+            className={cn(
+              "font-sans-bold text-[16px]",
+              gain >= 0 ? "text-salli-accent" : "text-destructive",
+            )}
+          >
+            {gain >= 0 ? "+" : "−"}Rs. {formatLKR(Math.abs(gain), 0)} · {formatPct(Math.abs(gainPct), 1)}
+          </Text>
+        </View>
+      ) : null}
     </Drawer>
   );
 }

@@ -21,6 +21,7 @@ import { ToolActivityBlock } from "@/components/agent/ToolActivityBlock";
 import { Drawer } from "@/components/ui/drawer";
 import { type ChatMessage, useAgentChat } from "@/hooks/useAgentChat";
 import { useIsTablet } from "@/lib/responsive";
+import { useSalliStore } from "@/lib/store";
 import { useHardShadow, useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -129,6 +130,18 @@ export default function BuddyScreen() {
   useEffect(() => {
     listRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
+
+  /**
+   * A question handed over by another screen — Freedom's "ask Salli for a
+   * plan", for instance. Sent once, on mount, and cleared as it is read so a
+   * remount cannot re-send it and re-spend the credits.
+   */
+  const consumePendingAsk = useSalliStore((st) => st.consumePendingAsk);
+  useEffect(() => {
+    const question = consumePendingAsk();
+    if (question) send(question);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /**
    * Ordered by urgency: a pending approval outranks streaming, because it is

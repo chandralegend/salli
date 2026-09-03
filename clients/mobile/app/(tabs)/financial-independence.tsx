@@ -14,19 +14,18 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import Markdown from "react-native-markdown-display";
 import Svg, { Circle, Line, Path, Polyline } from "react-native-svg";
 
-import { QuotaBanner } from "@/components/shared/QuotaBanner";
-import { TourTarget } from "@/components/tour/TourTarget";
 import { GoalDetailDrawer } from "@/components/fi/GoalDetailDrawer";
 import { SpendingBreakdown } from "@/components/fi/SpendingBreakdown";
+import { TourTarget } from "@/components/tour/TourTarget";
+import { ActionButton } from "@/components/ui/action-button";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { InfoButton } from "@/components/ui/info-button";
+import { NavSalli } from "@/components/ui/nav-icons";
 import { PageShell } from "@/components/ui/page-shell";
-import { ActionButton } from "@/components/ui/action-button";
 import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
-import { isQuotaError } from "@/lib/quota";
 import {
   useFiGoalMutations,
   useFiGoals,
@@ -35,16 +34,27 @@ import {
   useFiStrategy,
   useFiSurplus,
   useGenerateStrategy,
-  useLatestAdvisorReport,
-  useRunAdvisor,
-  type FiProjections,
   type FiGoal,
+  type FiProjections,
 } from "@/hooks/useFi";
+import { useModeSwitch } from "@/hooks/useModeSwitch";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
+import { useSalliStore } from "@/lib/store";
 import { useHardShadow, useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-const TABS = ["Overview", "Strategy", "Goals", "Mentor"] as const;
+/**
+ * No "Mentor" tab any more.
+ *
+ * It ran the wealth advisor and rendered its report in a tab of its own — a
+ * second, separate AI surface sitting three taps from the first one, with its
+ * own button, its own quota banner and its own way of presenting an answer.
+ * The agent has had `run_wealth_advisor` and `get_latest_advisor_report` as
+ * tools all along, so Salli could always do this; the tab was a parallel route
+ * to the same engine. Asking Salli directly also means you can follow up,
+ * which a static report never allowed.
+ */
+const TABS = ["Overview", "Strategy", "Goals"] as const;
 
 /** Distinct-but-on-brand colours for allocation pie segments. */
 const PIE_COLORS = ["#16130f", "#b7b1a5", "#4b463d", "#e4e0d6", "#6b6459", "#2c2822", "#8c877c"];
@@ -131,6 +141,8 @@ function AllocationDonut({
 export default function FinancialIndependenceScreen() {
   const colors = useThemeColors();
   const shadow = useHardShadow();
+  const askSalli = useSalliStore((st) => st.askSalli);
+  const { enterBuddy } = useModeSwitch();
   const router = useRouter();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Overview");
   const [strategyOpen, setStrategyOpen] = useState(true);
@@ -148,8 +160,6 @@ export default function FinancialIndependenceScreen() {
   const generateStrategy = useGenerateStrategy();
   const goals = useFiGoals();
   const { createGoal } = useFiGoalMutations();
-  const advisorReport = useLatestAdvisorReport();
-  const runAdvisor = useRunAdvisor();
 
   const submitGoal = () => {
     if (!newName.trim() || !newAmount) return;
@@ -381,6 +391,30 @@ export default function FinancialIndependenceScreen() {
             </View>
           )}
 
+          <View className="my-4 h-px bg-foreground/15" />
+
+          {/* Where the Mentor tab used to be. Salli has the advisor as a tool,
+              so this is the same engine reached by asking rather than by
+              navigating — and a conversation you can follow up on rather than
+              a report you can only read. */}
+          <AnimatedPressable
+            onPress={() => {
+              askSalli(
+                "Look at my Freedom position and give me a prioritised plan. Run the wealth advisor if you need a fresh one.",
+              );
+              enterBuddy();
+            }}
+            press="sink"
+            haptic="light"
+            className="h-[52px] flex-row items-center justify-center gap-2 rounded-card border-2 border-foreground bg-salli-ai"
+            style={shadow}
+          >
+            <NavSalli size={19} color="#000000" strokeWidth={2} />
+            <Text className="font-sans-bold text-[17px]" style={{ color: "#000000" }}>
+              Ask Salli for a plan
+            </Text>
+          </AnimatedPressable>
+
         </View>
       ) : null}
 
@@ -532,66 +566,6 @@ export default function FinancialIndependenceScreen() {
               </ActionButton>
             </>
           )}
-        </View>
-      ) : null}
-
-      {tab === "Mentor" ? (
-        <View className="gap-3 px-4 pt-3.5">
-          <Card className="p-4">
-            <View className="mb-2 flex-row items-center justify-between">
-              <Text className="font-sans-semibold text-[16px] text-foreground">Freedom Mentor</Text>
-              {runAdvisor.isPending ? <ActivityIndicator color={colors.accent} /> : null}
-            </View>
-
-            {advisorReport.data ? (
-              <>
-                <Text className="mb-2.5 text-[15px] leading-5 text-foreground/50">{advisorReport.data.summary}</Text>
-                {advisorReport.data.recommendations.map((rec) =>
-                  rec.locked ? (
-                    <View key={rec.id} className="mb-2 flex-row items-center gap-2 rounded-card border border-foreground/10 bg-muted p-3 opacity-60">
-                      <Lock size={14} color={colors.mutedForeground} strokeWidth={2} />
-                      <View className="flex-1">
-                        <Text className="font-sans-medium text-[15px] text-foreground">{rec.title}</Text>
-                        <Text className="text-[13px] capitalize text-muted-foreground">{rec.category}</Text>
-                      </View>
-                    </View>
-                  ) : (
-                    <View key={rec.id} className="mb-2 rounded-card border border-foreground/10 bg-muted p-3">
-                      <View className="mb-1 flex-row items-center gap-1.5">
-                        <View className="rounded-badge border-[1.5px] border-salli-accent bg-salli-accent/15 px-1.5 py-0.5">
-                          <Text className="text-[12px] font-sans-semibold text-salli-accent">P{rec.priority}</Text>
-                        </View>
-                        <Text className="flex-1 font-sans-medium text-[15px] text-foreground">{rec.title}</Text>
-                      </View>
-                      <Text className="text-[14px] leading-5 text-muted-foreground">{rec.rationale}</Text>
-                    </View>
-                  ),
-                )}
-                {advisorReport.data.recommendations_locked_count > 0 ? (
-                  <Pressable
-                    onPress={() => router.push("/(tabs)/more/billing")}
-                    className="mb-1 flex-row items-center gap-1.5 rounded-card bg-salli-accent/[0.08] px-3 py-2"
-                  >
-                    <Text className="flex-1 text-[14px] font-sans-medium text-salli-accent">
-                      Unlock {advisorReport.data.recommendations_locked_count} more recommendation
-                      {advisorReport.data.recommendations_locked_count > 1 ? "s" : ""}
-                    </Text>
-                    <ChevronRight size={14} color={colors.accent} strokeWidth={2} />
-                  </Pressable>
-                ) : null}
-              </>
-            ) : (
-              <Text className="mb-3 text-[15px] text-muted-foreground">
-                Run the advisor for a prioritized, engine-backed action plan.
-              </Text>
-            )}
-            <ActionButton variant="secondary" loading={runAdvisor.isPending} onPress={() => runAdvisor.mutate()}>
-              {advisorReport.data ? "Re-run Freedom Mentor" : "Run Freedom Mentor"}
-            </ActionButton>
-            {isQuotaError(runAdvisor.error) ? (
-              <QuotaBanner className="mt-3" />
-            ) : null}
-          </Card>
         </View>
       ) : null}
 

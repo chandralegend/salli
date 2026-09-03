@@ -1,4 +1,5 @@
 import { Text, View } from "react-native";
+import Svg, { Path } from "react-native-svg";
 
 import { Card } from "@/components/ui/card";
 import { InfoButton } from "@/components/ui/info-button";
@@ -15,6 +16,71 @@ const NEED_META: Record<string, { label: string; bar: string; text: string }> = 
   discretionary: { label: "Wants", bar: "bg-[#C77D3A]", text: "text-[#C77D3A]" },
   savings: { label: "Savings & Debt", bar: "bg-[#3A5FC7]", text: "text-[#3A5FC7]" },
 };
+
+/**
+ * Slice colours, brand-first then stepping away from it.
+ *
+ * Ordered so the largest category — categories are sorted by amount — always
+ * lands on the accent. A random or purely decorative order would put the
+ * loudest colour on an arbitrary slice.
+ */
+const SLICE_COLORS = ["#F15A32", "#2E7D6B", "#3A5FC7", "#C77D3A", "#7B4B8A", "#8A8785", "#4B463D"];
+
+/**
+ * Where the money went, as a donut.
+ *
+ * The list this replaces gave each category a name, an amount and a 1.5px bar
+ * — six near-identical rows in which the one thing you actually want, the
+ * relative size of each slice, had to be read off six separate bars. A donut
+ * states it in one shape.
+ *
+ * Arc maths matches the allocation donut on the Strategy tab rather than
+ * inventing a second technique: a 1.2 degree gap between slices so adjacent
+ * segments stay distinguishable without a stroke.
+ */
+function SpendDonut({
+  slices,
+  size = 168,
+}: {
+  slices: { label: string; amount: number }[];
+  size?: number;
+}) {
+  const total = slices.reduce((s, x) => s + x.amount, 0);
+  if (total <= 0) return null;
+  const cx = size / 2;
+  const cy = size / 2;
+  const R = size / 2;
+  const rIn = R - 30;
+  const pt = (r: number, deg: number): [number, number] => {
+    const t = (deg * Math.PI) / 180;
+    return [cx + r * Math.sin(t), cy - r * Math.cos(t)];
+  };
+  const gap = 1.2;
+  let cursor = 0;
+  return (
+    <Svg width={size} height={size}>
+      {slices.map((sl, i) => {
+        const frac = sl.amount / total;
+        const start = cursor + gap;
+        const end = cursor + frac * 360 - gap;
+        cursor += frac * 360;
+        if (end <= start) return null;
+        const [ox0, oy0] = pt(R, start);
+        const [ox1, oy1] = pt(R, end);
+        const [ix1, iy1] = pt(rIn, end);
+        const [ix0, iy0] = pt(rIn, start);
+        const large = end - start > 180 ? 1 : 0;
+        return (
+          <Path
+            key={sl.label}
+            d={`M ${ox0} ${oy0} A ${R} ${R} 0 ${large} 1 ${ox1} ${oy1} L ${ix1} ${iy1} A ${rIn} ${rIn} 0 ${large} 0 ${ix0} ${iy0} Z`}
+            fill={SLICE_COLORS[i % SLICE_COLORS.length]}
+          />
+        );
+      })}
+    </Svg>
+  );
+}
 
 /**
  * Where the money goes, along both tag axes.
@@ -77,7 +143,7 @@ export function SpendingBreakdown({ surplus }: { surplus: FiSurplus | undefined 
       {/* needs vs wants */}
       {needs.length > 0 ? (
         <View className="mt-3.5">
-          <View className="h-2.5 flex-row overflow-hidden rounded-pill">
+          <View className="h-[11px] flex-row overflow-hidden rounded-pill border border-foreground">
             {needs.map((n) => (
               <View
                 key={n.slug}
@@ -106,27 +172,38 @@ export function SpendingBreakdown({ surplus }: { surplus: FiSurplus | undefined 
         </View>
       )}
 
-      {/* by category */}
-      <View className="mt-4 gap-2">
-        {categories.map((c) => (
-          <View key={c.label}>
-            <View className="mb-1 flex-row items-baseline justify-between">
-              <Text className="flex-1 text-[15px] text-foreground/60" numberOfLines={1}>
+      {/* by category — the donut carries the proportions, the legend carries
+          the names and figures. Splitting them that way means neither has to
+          do both badly: the shape answers "what dominates" at a glance and the
+          legend answers "how much exactly". */}
+      <View className="mt-4 flex-row items-center gap-4">
+        <SpendDonut slices={categories} />
+        <View className="min-w-0 flex-1 gap-2">
+          {categories.map((c, i) => (
+            <View key={c.label} className="flex-row items-center gap-2">
+              <View
+                className="h-3 w-3 shrink-0 rounded-[3px] border border-foreground"
+                style={{ backgroundColor: SLICE_COLORS[i % SLICE_COLORS.length] }}
+              />
+              <Text numberOfLines={1} className="min-w-0 flex-1 text-[14px] text-foreground">
                 {c.label}
               </Text>
-              <Text className="font-sans-semibold text-[15px] text-foreground">
-                Rs. {formatLKRAbbrev(c.amount)}
+              <Text className="shrink-0 font-sans-bold text-[14px] text-foreground">
+                {Math.round((c.amount / categoryTotal) * 100)}%
               </Text>
             </View>
-            <View className="h-1.5 overflow-hidden rounded-pill bg-foreground/[0.06]">
-              <View
-                className="h-full rounded-pill bg-salli-accent"
-                style={{ width: `${Math.max(2, (c.amount / categoryTotal) * 100)}%` }}
-              />
-            </View>
-          </View>
-        ))}
+          ))}
+        </View>
       </View>
+      {/* Amounts under the legend rather than in it: at legend width the name,
+          the figure and the share together truncated the names to nothing. */}
+      <Text className="mt-3 text-[13.5px] leading-5 text-muted-foreground">
+        {categories
+          .slice(0, 3)
+          .map((c) => `${c.label} Rs. ${formatLKRAbbrev(c.amount)}`)
+          .join(" · ")}
+        {categories.length > 3 ? ` · +${categories.length - 3} more` : ""}
+      </Text>
     </Card>
   );
 }

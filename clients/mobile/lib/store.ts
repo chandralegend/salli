@@ -50,6 +50,19 @@ type SalliStore = {
   quickAddDraft: ParsedEntryDraft | null;
   requestQuickAddEntry: (draft?: ParsedEntryDraft | null) => void;
 
+  /**
+   * A question to put to Salli the moment Buddy Mode opens, then forget.
+   *
+   * Same shape as the quick-add draft above, and for the same reason: the
+   * screen that raises the intent is not the screen that acts on it, and
+   * `useModeSwitch` is deliberately narrow — navigating and setting the mode
+   * together is its whole job, and threading a payload through it would widen
+   * a contract that exists to stay closed.
+   */
+  pendingAsk: string | null;
+  askSalli: (question: string) => void;
+  consumePendingAsk: () => string | null;
+
   /** Guided tour — the mobile equivalent of web's NextStepJS walkthrough.
    * `tourComplete` is AsyncStorage-backed (loaded once, see loadTourComplete),
    * same pattern as the dark-mode persistence in lib/theme.tsx. */
@@ -66,7 +79,7 @@ type SalliStore = {
   skipTour: () => void;
 };
 
-export const useSalliStore = create<SalliStore>((set) => ({
+export const useSalliStore = create<SalliStore>((set, get) => ({
   token: null,
   setToken: (token) => set({ token }),
   userId: null,
@@ -106,6 +119,16 @@ export const useSalliStore = create<SalliStore>((set) => ({
   quickAddDraft: null,
   requestQuickAddEntry: (draft = null) =>
     set((s) => ({ quickAddEntryRequest: s.quickAddEntryRequest + 1, quickAddDraft: draft })),
+
+  pendingAsk: null,
+  askSalli: (question) => set({ pendingAsk: question }),
+  // Read-and-clear, so a remount cannot re-send the same question — and cannot
+  // spend the credits for it twice.
+  consumePendingAsk: () => {
+    const q = get().pendingAsk;
+    if (q) set({ pendingAsk: null });
+    return q;
+  },
 
   tourComplete: true, // assume complete until loadTourComplete resolves — never auto-starts on a stale/failed read
   tourActive: false,

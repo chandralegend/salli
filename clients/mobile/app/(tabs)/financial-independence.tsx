@@ -1,19 +1,13 @@
 import { useRouter } from "expo-router";
 import {
-  Check,
   ChevronDown,
   ChevronRight,
   ChevronUp,
-  Home,
   Lock,
-  type LucideIcon,
   PiggyBank,
   Plus,
-  Shield,
   Sparkles,
   Target,
-  TrendingUp,
-  Wallet,
 } from "lucide-react-native";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
@@ -47,23 +41,13 @@ import {
   type FiGoal,
 } from "@/hooks/useFi";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
-import { useThemeColors } from "@/lib/theme";
+import { useHardShadow, useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const TABS = ["Overview", "Strategy", "Goals", "Mentor"] as const;
 
 /** Distinct-but-on-brand colours for allocation pie segments. */
 const PIE_COLORS = ["#16130f", "#b7b1a5", "#4b463d", "#e4e0d6", "#6b6459", "#2c2822", "#8c877c"];
-
-const GOAL_ICON: Record<string, LucideIcon> = {
-  emergency_fund: Wallet,
-  home: Home,
-  retirement: PiggyBank,
-  financial_independence: Target,
-  debt_free: Shield,
-  wealth_growth: TrendingUp,
-  custom: Target,
-};
 
 /** Portfolio-projection line chart (mockup's Strategy hero): three engine
  * series (growth/base/conservative) plus a dashed FIRE-target line. Locked
@@ -141,19 +125,12 @@ function AllocationDonut({
   );
 }
 
-function ProgressBar({ pct }: { pct: number }) {
-  return (
-    <View className="h-1.5 overflow-hidden rounded-pill bg-foreground/10">
-      <View className="h-full rounded-pill bg-salli-accent" style={{ width: `${Math.min(100, Math.max(0, pct * 100))}%` }} />
-    </View>
-  );
-}
-
 /** Conic-style progress ring (mockup's FI Score badge): a thin accent arc that
  * fills to `score`%, with the integer score centered in the hole. */
 
 export default function FinancialIndependenceScreen() {
   const colors = useThemeColors();
+  const shadow = useHardShadow();
   const router = useRouter();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Overview");
   const [strategyOpen, setStrategyOpen] = useState(true);
@@ -330,60 +307,79 @@ export default function FinancialIndependenceScreen() {
               open this screen with. */}
           <SpendingBreakdown surplus={surplus.data} />
 
-          {/* TIER 3 — Goals status, from the same /fi/goals data the Goals tab
-              renders in full (never invented client-side milestones). */}
-          <Card className="p-4">
-            <View className="mb-3.5 flex-row items-center justify-between">
-              <View className="flex-row items-center gap-1.5">
-                <Text className="font-sans-semibold text-[16px] text-foreground">Goals</Text>
-                <InfoButton
-                  size={14}
-                  title="Goals"
-                  description={
-                    "Specific things you're saving toward — a deposit, a fund, a purchase — each with a target amount and date.\n\n" +
-                    "Tap a goal to earmark the accounts saving for it. Progress then comes from those accounts' real balances, so it only moves when your money does."
-                  }
-                />
-              </View>
-              <Pressable onPress={() => setTab("Goals")}>
-                <Text className="text-[15px] font-sans-medium text-salli-accent">See all</Text>
-              </Pressable>
+          {/* Goals, to the mockup: a mono section label with the action on the
+              right, then a card per goal. It used to be a single card holding a
+              "N of M complete" line and three compact rows with no amounts —
+              the percentage without the figures behind it, which is the half
+              people cannot act on. Same /fi/goals data the Goals tab renders in
+              full; nothing is invented client-side. */}
+          <View className="my-4 h-px bg-foreground/15" />
+
+          <View className="mb-3 flex-row items-baseline justify-between">
+            <Text className="px-1 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+              Goals
+            </Text>
+            <Pressable onPress={() => setTab("Goals")} hitSlop={8}>
+              <Text className="text-[13.5px] text-muted-foreground underline">
+                {allGoals.length === 0 ? "Add a goal" : "See all"}
+              </Text>
+            </Pressable>
+          </View>
+          {allGoals.length === 0 ? (
+            <Text className="px-1 text-[16px] text-muted-foreground">
+              Nothing saved toward yet. A goal earns its progress from the accounts
+              you earmark for it.
+            </Text>
+          ) : (
+            <View className="gap-3.5">
+              {(activeGoals.length > 0 ? activeGoals : completeGoals).slice(0, 3).map((goal) => {
+                const done = goal.progress >= 1;
+                return (
+                  <AnimatedPressable
+                    key={goal.id}
+                    onPress={() => setDetailGoal(goal)}
+                    press="sink"
+                    className="rounded-card border-2 border-foreground bg-card p-[15px]"
+                    style={shadow}
+                  >
+                    <View className="flex-row items-baseline justify-between gap-2.5">
+                      <Text
+                        numberOfLines={1}
+                        className={cn(
+                          "flex-1 font-sans-bold text-[17px]",
+                          done ? "text-muted-foreground line-through" : "text-foreground",
+                        )}
+                      >
+                        {goal.name}
+                      </Text>
+                      <Text className="shrink-0 font-sans-extrabold text-[15px] text-foreground">
+                        {done ? "Done" : `${(goal.progress * 100).toFixed(0)}%`}
+                      </Text>
+                    </View>
+                    <View className="mt-3 h-[11px] overflow-hidden rounded-pill bg-foreground/20">
+                      <View
+                        className="h-full rounded-pill bg-salli-accent"
+                        style={{ width: `${Math.min(100, Math.max(0, goal.progress * 100))}%` }}
+                      />
+                    </View>
+                    {/* The amounts, which the old rows omitted entirely, plus
+                        the priority — which only means anything once two goals
+                        share an account and one has to give way. */}
+                    <Text className="mt-2.5 text-[13.5px] text-muted-foreground">
+                      Rs. {formatLKRAbbrev(goal.current_amount)} of Rs.{" "}
+                      {formatLKRAbbrev(goal.target_amount)}
+                      {goal.priority ? ` · priority ${goal.priority}` : ""}
+                    </Text>
+                    {Number(goal.allocated_amount) === 0 ? (
+                      <Text className="mt-1.5 text-[13.5px] text-salli-accent">
+                        No accounts earmarked yet — tap to pick some.
+                      </Text>
+                    ) : null}
+                  </AnimatedPressable>
+                );
+              })}
             </View>
-            {allGoals.length === 0 ? (
-              <Text className="text-[15px] text-muted-foreground">No goals yet — add one in the Goals tab.</Text>
-            ) : (
-              <>
-                <Text className="mb-3 text-[14px] text-muted-foreground">
-                  {completeGoals.length} of {allGoals.length} complete
-                </Text>
-                <View className="gap-3">
-                  {(activeGoals.length > 0 ? activeGoals : completeGoals).slice(0, 3).map((goal) => {
-                    const GoalIcon = GOAL_ICON[goal.kind] ?? Target;
-                    const done = goal.progress >= 1;
-                    return (
-                      <View key={goal.id}>
-                        <View className="mb-1.5 flex-row items-center gap-2">
-                          <GoalIcon size={15} color={done ? colors.mutedForeground : colors.accent} strokeWidth={2} />
-                          <Text
-                            className={cn(
-                              "flex-1 font-sans-medium text-[15px]",
-                              done ? "text-muted-foreground line-through" : "text-foreground",
-                            )}
-                          >
-                            {goal.name}
-                          </Text>
-                          <Text className="font-sans-semibold text-[15px] text-salli-accent">
-                            {(goal.progress * 100).toFixed(0)}%
-                          </Text>
-                        </View>
-                        <ProgressBar pct={goal.progress} />
-                      </View>
-                    );
-                  })}
-                </View>
-              </>
-            )}
-          </Card>
+          )}
 
         </View>
       ) : null}
@@ -606,113 +602,98 @@ export default function FinancialIndependenceScreen() {
           const active = all.filter((g) => g.progress < 1);
           const savedToward = all.reduce((s, g) => s + Number(g.current_amount), 0);
           return (
-            <View className="gap-2 px-4 pt-3.5">
-              {/* summary hero */}
-              <View className="rounded-card border border-foreground/[0.08] bg-salli-hero p-[16px]">
-                <Text className="mb-1.5 text-[11px] font-mono uppercase tracking-widest text-white/50">
-                  Goals Progress
-                </Text>
-                <View className="mb-3 flex-row items-baseline gap-1.5">
-                  <Text className="font-sans-extrabold text-[40px] leading-none tracking-tighter text-white">
-                    {complete.length}
-                  </Text>
-                  <Text className="text-[16px] font-sans-medium text-white/40">of {all.length} complete</Text>
-                </View>
-                <View className="flex-row gap-1.5">
-                  <View className="flex-1 rounded-card bg-white/[0.06] px-2.5 py-2">
-                    <Text className="mb-1 text-[13px] text-white/35">In Progress</Text>
-                    <Text className="font-sans-bold text-[17px] leading-[20px] text-salli-accent">{active.length} active</Text>
-                  </View>
-                  <View className="flex-1 rounded-card bg-white/[0.06] px-2.5 py-2">
-                    <Text className="mb-1 text-[13px] text-white/35">Saved Toward</Text>
-                    <Text className="font-sans-bold text-[17px] leading-[20px] text-white">Rs. {formatLKRAbbrev(savedToward)}</Text>
-                  </View>
-                </View>
-              </View>
-
-              <Text className="mb-0.5 mt-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-                Your Goals
+            <View className="px-4 pt-3.5">
+              {/* A sentence, not an inverted hero with a 40px count. The block
+                  it replaces led a list of goals with a tally of the same list
+                  and two nested stat cells — three restatements before the
+                  goals themselves. */}
+              <Text className="px-1 font-sans text-[20px] leading-[26px] tracking-tight text-foreground">
+                {all.length === 0
+                  ? "No goals yet."
+                  : complete.length === all.length
+                    ? `All ${all.length} of your goals are done.`
+                    : `You've finished ${complete.length} of ${all.length} goals.`}
               </Text>
+              {all.length > 0 ? (
+                <Text className="mt-2 px-1 text-[16px] text-muted-foreground">
+                  Rs. {formatLKRAbbrev(savedToward)} saved toward them so far.
+                </Text>
+              ) : null}
+
+              <View className="my-4 h-px bg-foreground/15" />
 
               {all.length === 0 ? (
-                <Card className="items-center p-6">
-                  <Text className="text-[15px] text-muted-foreground">No goals yet — add your first one.</Text>
-                </Card>
+                <Text className="px-1 text-[16px] text-muted-foreground">
+                  A goal earns its progress from the accounts you earmark for it, so
+                  it only moves when your money does.
+                </Text>
               ) : (
-                all.map((goal) => {
-                  const done = goal.progress >= 1;
-                  const Icon = GOAL_ICON[goal.kind] ?? Target;
-                  const year = goal.target_date ? new Date(goal.target_date).getFullYear() : null;
-                  return (
-                    <AnimatedPressable key={goal.id} onPress={() => setDetailGoal(goal)}>
-                    <Card className={cn("p-3.5", done && "opacity-60")}>
-                      <View className={cn("flex-row items-start justify-between", !done && "mb-2")}>
-                        <View className="flex-1 flex-row items-center gap-2.5">
-                          <View
+                <View className="gap-3.5">
+                  {all.map((goal) => {
+                    const done = goal.progress >= 1;
+                    const year = goal.target_date ? new Date(goal.target_date).getFullYear() : null;
+                    return (
+                      <AnimatedPressable
+                        key={goal.id}
+                        onPress={() => setDetailGoal(goal)}
+                        press="sink"
+                        className="rounded-card border-2 border-foreground bg-card p-[15px]"
+                        style={shadow}
+                      >
+                        <View className="flex-row items-baseline justify-between gap-2.5">
+                          <Text
+                            numberOfLines={1}
                             className={cn(
-                              "h-[34px] w-[34px] items-center justify-center rounded-card",
-                              done ? "bg-salli-accent/[0.12]" : "border border-salli-accent/20 bg-salli-accent/[0.12]",
+                              "flex-1 font-sans-bold text-[17px]",
+                              done ? "text-muted-foreground line-through" : "text-foreground",
                             )}
                           >
-                            {done ? (
-                              <Check size={17} color={colors.accent} strokeWidth={2.5} />
-                            ) : (
-                              <Icon size={17} color={colors.accent} strokeWidth={2} />
-                            )}
-                          </View>
-                          <View className="flex-1">
-                            <Text className={cn("font-sans-semibold text-[15px] text-foreground", done && "line-through")}>
-                              {goal.name}
-                            </Text>
-                            <Text className="mt-0.5 text-[14px] text-muted-foreground">
-                              {done ? `Rs. ${formatLKRAbbrev(goal.current_amount)} · Completed` : year ? `Target ${year}` : "No target date"}
-                            </Text>
-                          </View>
+                            {goal.name}
+                          </Text>
+                          <Text className="shrink-0 font-sans-extrabold text-[15px] text-foreground">
+                            {done ? "Done" : `${(goal.progress * 100).toFixed(0)}%`}
+                          </Text>
                         </View>
-                        {/* Edit and delete live in the detail drawer, which is
-                            reachable from every goal — the delete button used to
-                            sit inside this `!done` branch, so a completed goal
-                            could never be removed. */}
-                        {done ? (
-                          <View className="rounded-badge border-[1.5px] border-salli-accent bg-salli-accent/15 px-2 py-0.5">
-                            <Text className="text-[13px] font-sans-semibold text-salli-accent">Done</Text>
-                          </View>
-                        ) : (
-                          <Text className="font-sans-bold text-[15px] text-salli-accent">{(goal.progress * 100).toFixed(0)}%</Text>
-                        )}
-                      </View>
-                      {!done ? (
-                        <>
-                          <ProgressBar pct={goal.progress} />
-                          <View className="mt-1.5 flex-row justify-between">
-                            <Text className="text-[14px] text-muted-foreground">Rs. {formatLKRAbbrev(goal.current_amount)} saved</Text>
-                            <Text className="text-[14px] text-muted-foreground">of Rs. {formatLKRAbbrev(goal.target_amount)}</Text>
-                          </View>
-                          {Number(goal.allocated_amount) === 0 ? (
-                            <Text className="mt-1.5 text-[14px] text-muted-foreground">
-                              Tap to choose which account is saving for this.
-                            </Text>
-                          ) : Number(goal.shortfall) > 0 ? (
-                            <Text className="mt-1.5 text-[14px] text-[#B45309]">
-                              Rs. {formatLKRAbbrev(goal.shortfall)} short of what you earmarked.
-                            </Text>
-                          ) : null}
-                        </>
-                      ) : null}
-                    </Card>
-                    </AnimatedPressable>
-                  );
-                })
+                        {/* The bar and the amounts show for completed goals too.
+                            They used to be inside a `!done` branch, so finishing
+                            a goal erased the figures you finished it with. */}
+                        <View className="mt-3 h-[11px] overflow-hidden rounded-pill bg-foreground/20">
+                          <View
+                            className="h-full rounded-pill bg-salli-accent"
+                            style={{ width: `${Math.min(100, Math.max(0, goal.progress * 100))}%` }}
+                          />
+                        </View>
+                        <Text className="mt-2.5 text-[13.5px] text-muted-foreground">
+                          Rs. {formatLKRAbbrev(goal.current_amount)} of Rs.{" "}
+                          {formatLKRAbbrev(goal.target_amount)}
+                          {goal.priority ? ` · priority ${goal.priority}` : ""}
+                          {year ? ` · by ${year}` : ""}
+                        </Text>
+                        {!done && Number(goal.allocated_amount) === 0 ? (
+                          <Text className="mt-1.5 text-[13.5px] text-salli-accent">
+                            No accounts earmarked yet — tap to pick some.
+                          </Text>
+                        ) : !done && Number(goal.shortfall) > 0 ? (
+                          <Text className="mt-1.5 text-[13.5px] text-salli-accent">
+                            Rs. {formatLKRAbbrev(goal.shortfall)} short of what you earmarked.
+                          </Text>
+                        ) : null}
+                      </AnimatedPressable>
+                    );
+                  })}
+                </View>
               )}
 
+              <View className="h-3.5" />
+
+              {/* Dashed rather than solid: it is a slot for a goal that does
+                  not exist yet, not a goal. */}
               <Pressable
                 onPress={() => setAddOpen(true)}
-                className="flex-row items-center gap-2.5 rounded-card border border-dashed border-foreground/[0.12] bg-card p-3.5"
+                className="h-[52px] flex-row items-center justify-center gap-2 rounded-card border-2 border-dashed border-foreground/50 bg-card"
               >
-                <View className="h-[34px] w-[34px] items-center justify-center rounded-card bg-foreground/[0.04]">
-                  <Plus size={17} color={colors.mutedForeground} strokeWidth={2.5} />
-                </View>
-                <Text className="font-sans-medium text-[15px] text-muted-foreground">Add a goal</Text>
+                <Plus size={19} color={colors.accent} strokeWidth={2.4} />
+                <Text className="font-sans-bold text-[17px] text-foreground">Add a goal</Text>
               </Pressable>
             </View>
           );

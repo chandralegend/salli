@@ -235,8 +235,8 @@ export function TagPicker({
             onDark ? "text-white/30" : "text-muted-foreground",
           )}
         >
-          Tagging doesn&rsquo;t change the amount — it only records what this spending was for, so
-          your breakdowns and needs-vs-wants split add up.
+          Tagging doesn&rsquo;t change the amount. It records what the spending was for, so your
+          breakdowns add up.
         </Text>
       </View>
     </View>

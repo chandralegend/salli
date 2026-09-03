@@ -35,7 +35,7 @@ export function VoiceCaptureSheet({
     if (!value) return;
     parse.mutate(value, {
       onSuccess: (draft) => onDraft(draft),
-      onError: () => showToast("Couldn't read that — try rephrasing, or add the entry manually.", "error"),
+      onError: () => showToast("Couldn't read that. Try rephrasing, or add it manually.", "error"),
     });
   };
 
@@ -70,7 +70,7 @@ export function VoiceCaptureSheet({
       />
 
       <Text className="mt-2.5 px-0.5 text-[14px] leading-5 text-muted-foreground">
-        AI fills the entry for you to review — nothing is posted until you confirm.
+        AI fills the entry for you to review. Nothing posts until you confirm.
       </Text>
     </Drawer>
   );

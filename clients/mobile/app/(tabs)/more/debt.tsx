@@ -193,8 +193,8 @@ export default function DebtScreen() {
           <View className="px-5 pt-2">
             <Hero>You aren&rsquo;t tracking any debt.</Hero>
             <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
-              Add a loan and we will work out the order to clear them in, what paying extra saves,
-              and when you would be free of it.
+              Add a loan and we'll work out the order to clear them, what paying extra saves, and
+              when you're free of it.
             </Text>
             <ActionButton className="mt-5" onPress={openAdd}>
               Add a loan
@@ -209,7 +209,7 @@ export default function DebtScreen() {
               </Hero>
               <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
                 {totalMonths != null
-                  ? `Clear in ${totalMonths} months — ${debtFreeLabel(totalMonths)} — paying Rs. ${formatLKRAbbrev(
+                  ? `Clear in ${totalMonths} months, by ${debtFreeLabel(totalMonths)}, paying Rs. ${formatLKRAbbrev(
                       totalMinPayment + extra,
                     )} a month.`
                   : "Not paid off within the planning horizon on the current payment."}

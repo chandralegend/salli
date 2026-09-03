@@ -163,8 +163,8 @@ export default function PortfolioScreen() {
           <View className="px-5 pt-2">
             <Hero>You haven&rsquo;t added any holdings.</Hero>
             <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
-              Add what you own — shares, gold, a fixed deposit — and we will track its value, cost
-              and allocation. Values are entered by you; there is no live market feed.
+              Add what you own: shares, gold, a fixed deposit. Values are yours to enter; there
+              is no live market feed.
             </Text>
             <ActionButton className="mt-5" onPress={() => setAddOpen(true)}>
               Add a holding
@@ -339,7 +339,7 @@ export default function PortfolioScreen() {
                 <>
                   <Text className="text-[20px] leading-[26px] tracking-tight text-foreground">
                     <Text className="font-sans-extrabold">Rs. {formatLKRAbbrev(a.current_value)}</Text>{" "}
-                    — <Text className="font-sans-extrabold" style={{ color }}>
+                    is <Text className="font-sans-extrabold" style={{ color }}>
                       {formatPct(a.pct_of_portfolio, 1)}
                     </Text>{" "}
                     of the portfolio.

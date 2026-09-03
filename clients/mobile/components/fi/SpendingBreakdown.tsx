@@ -125,9 +125,8 @@ export function SpendingBreakdown({ surplus }: { surplus: FiSurplus | undefined 
         <InfoButton
           title="Where it goes"
           description={
-            "Your average monthly spending over the last year, split two ways.\n\n" +
-            "The first split is what you spent it on. The second is how necessary it was — the 50/30/20 idea: needs, wants, and what you put away.\n\n" +
-            "Tag your spending from any transaction to fill these in. Anything untagged still shows up, grouped under its account."
+            "Average monthly spending over the last year, split by what you spent it on and how necessary it was.\n\n" +
+            "Tag from any transaction to fill these in. Untagged spending still shows, grouped by account."
           }
         />
       </View>

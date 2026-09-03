@@ -4,7 +4,7 @@ import type { PurchasesStoreProduct } from "react-native-purchases";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Rule, SectionLabel } from "@/components/ui/blocks";
 import { useBuyCreditPack, useCreditPacks, useRestorePurchases } from "@/hooks/usePurchases";
-import { CREDITS_BY_PRODUCT, purchasesAvailable } from "@/lib/purchases";
+import { CREDITS_BY_PRODUCT, CREDITS_PER_MESSAGE, purchasesAvailable } from "@/lib/purchases";
 import { useThemeColors } from "@/lib/theme";
 import { useToast } from "@/lib/toast";
 
@@ -43,7 +43,7 @@ export function TopUpCard() {
       // webhook, so at this instant the money has moved and the credits have
       // not. Claiming they are already there would be a lie the balance
       // immediately contradicts.
-      showToast("Payment received — your credits will appear shortly.");
+      showToast("Payment received. Your credits will appear shortly.");
     } catch (err) {
       // A user tapping Cancel in Apple's sheet lands here too, and that is not
       // an error worth shouting about.
@@ -59,8 +59,8 @@ export function TopUpCard() {
       <SectionLabel>Top up</SectionLabel>
       <View className="mt-3 px-5">
         <Text className="text-[15px] leading-[21px] text-muted-foreground">
-          A one-off purchase, not a subscription. Purchased credits never expire and are spent only
-          after your monthly allowance runs out.
+          A one-off purchase, not a subscription. These credits never expire and are spent after
+          your monthly allowance.
         </Text>
       </View>
 
@@ -84,7 +84,7 @@ export function TopUpCard() {
                 </Text>
                 <Text className="mt-0.5 text-[13.5px] text-muted-foreground">
                   {credits
-                    ? `About ${Math.round(credits / 30).toLocaleString()} Sonnet conversations`
+                    ? `About ${Math.round(credits / CREDITS_PER_MESSAGE).toLocaleString()} conversations`
                     : p.description}
                 </Text>
               </View>

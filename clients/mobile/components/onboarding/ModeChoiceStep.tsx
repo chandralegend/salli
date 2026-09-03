@@ -17,13 +17,13 @@ const MODE_OPTIONS: {
     value: "buddy",
     icon: MessageCircle,
     title: "Buddy Mode",
-    detail: "A friendly chat that walks you through your money — just talk it through.",
+    detail: "A friendly chat that walks you through your money.",
   },
   {
     value: "pro",
     icon: LayoutGrid,
     title: "Pro Mode",
-    detail: "The full toolkit — ledger, tax, budget, and more, all in one dashboard.",
+    detail: "Ledger, tax, budget and more, in one dashboard.",
   },
 ];
 
@@ -83,7 +83,7 @@ export function ModeChoiceStep({
       })}
 
       <Text className="px-0.5 pt-1 text-[14px] leading-5 text-muted-foreground">
-        You can switch anytime — just swipe from either mode to jump to the other.
+        Swipe from either mode to switch.
       </Text>
 
       <ActionButton className="mt-1" loading={loading} onPress={onContinue}>

@@ -91,6 +91,16 @@ export const CREDIT_PACK_PRODUCTS = [
  *  is the server's, driven by the RevenueCat webhook. If these ever disagree
  *  the user sees the wrong number briefly and the balance corrects itself,
  *  which is far better than the client being able to assert its own grant. */
+/**
+ * Credits one conversation costs.
+ *
+ * Mirrors the server's ACTION_AGENT_MESSAGE base of 10 times the pinned model's
+ * x1 multiplier. Duplicated here only so a pack can be described in
+ * conversations rather than in credits; if the base or the pinned model ever
+ * changes, this moves with it.
+ */
+export const CREDITS_PER_MESSAGE = 10;
+
 export const CREDITS_BY_PRODUCT: Record<string, number> = {
   "lk.salli.app.credits.10k": 10_000,
   "lk.salli.app.credits.25k": 25_000,

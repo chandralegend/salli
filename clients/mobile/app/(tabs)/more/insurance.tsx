@@ -118,7 +118,7 @@ export default function InsuranceScreen() {
                 }`}
               >
                 {totalTarget === 0
-                  ? "You haven't said how much cover you need, so there is nothing to compare it against yet."
+                  ? "Set a cover target and we'll show you the shortfall."
                   : totalGap > 0
                     ? `Rs. ${formatLKRAbbrev(totalGap)} short of the Rs. ${formatLKRAbbrev(totalTarget)} you said you need.`
                     : `That meets the Rs. ${formatLKRAbbrev(totalTarget)} you said you need.`}
@@ -523,7 +523,7 @@ function SetTargetDrawer({
 
         <Text className="text-[14px] leading-5 text-muted-foreground">
           {replacing
-            ? "You already have a target for this type — saving replaces it."
+            ? "You already have a target for this type. Saving replaces it."
             : "This is compared against the policies you hold to show the shortfall."}
         </Text>
       </View>

@@ -85,8 +85,8 @@ export function McpConnectionsCard() {
       </View>
 
       <Text className="mt-1.5 text-[15px] leading-5 text-muted-foreground">
-        Let Claude, ChatGPT, or any other MCP-capable AI read and manage your Salli account — the
-        same access Salli AI has in-app, authorized the same way you sign in anywhere else.
+        Let Claude, ChatGPT or any MCP-capable AI read and manage your account, with the same
+        access Salli AI has.
       </Text>
 
       {enabled.data ? (

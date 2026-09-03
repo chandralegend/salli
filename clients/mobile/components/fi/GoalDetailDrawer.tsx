@@ -202,7 +202,7 @@ export function GoalDetailDrawer({
           </View>
         ) : assetAccounts.length === 0 ? (
           <Text className="text-[15px] text-muted-foreground">
-            No accounts yet — add one in the Ledger first.
+            No accounts yet. Add one in the Ledger first.
           </Text>
         ) : (
           assetAccounts.map((a) => {
@@ -255,8 +255,8 @@ export function GoalDetailDrawer({
           })
         )}
         <Text className="text-[13px] leading-5 text-muted-foreground">
-          Earmarking doesn&rsquo;t move any money — it just records which part of an account is
-          meant for this goal. One account can back several goals.
+          Earmarking doesn&rsquo;t move money. It marks part of an account as meant for this
+          goal, and one account can back several.
         </Text>
 
         <Pressable

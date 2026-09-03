@@ -77,8 +77,8 @@ export default function TaxScreen() {
         <View className="px-5 pt-2">
           <Hero>We haven&rsquo;t worked out your tax yet.</Hero>
           <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
-            It is computed from your ledger by a deterministic rules engine — never estimated by AI —
-            and is a planning figure, not a filed return.
+            Computed from your ledger by a deterministic rules engine, never by AI. It is a planning
+            figure, not a filed return.
           </Text>
           <ActionButton className="mt-5" loading={compute.isPending} onPress={() => compute.mutate()}>
             Compute my tax

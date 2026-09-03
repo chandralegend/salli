@@ -98,8 +98,7 @@ export default function SubscriptionsScreen() {
             <>
               <Hero>Nothing recurring is tracked yet.</Hero>
               <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
-                Add what renews — streaming, insurance, a gym — and we will total it, watch for
-                price rises, and tell you when a charge goes missing.
+                Add what renews. We total it, watch for price rises and flag missing charges.
               </Text>
               <ActionButton className="mt-5" onPress={openAdd}>
                 Add a subscription

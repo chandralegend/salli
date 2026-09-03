@@ -172,8 +172,8 @@ export default function StatementsScreen() {
             <View className="px-5">
               <Hero>Import a bank statement.</Hero>
               <Text className="mt-2 text-[16px] leading-[23px] text-muted-foreground">
-                PDF, CSV or XLSX from any Sri Lankan bank. Salli parses it and drafts ledger
-                entries for you to approve — nothing is posted until you say so.
+                PDF, CSV or XLSX from any Sri Lankan bank. Salli drafts the ledger entries and
+                you approve them. Nothing posts until you say so.
               </Text>
               <ActionButton className="mt-5" loading={uploading} onPress={handleUpload}>
                 Choose a file
@@ -348,8 +348,8 @@ export default function StatementsScreen() {
                     Discard this import
                   </ActionButton>
                   <Text className="mt-3 text-[13.5px] leading-5 text-muted-foreground">
-                    Approved entries post to your Ledger. Statement history is not kept on the
-                    server, so this import is only here for the rest of your session.
+                    Approved entries post to your Ledger. This import lasts the session only;
+                    statement history isn't stored.
                   </Text>
                 </View>
               </>

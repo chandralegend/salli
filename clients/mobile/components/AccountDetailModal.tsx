@@ -95,7 +95,7 @@ export function AccountDetailModal({
   const rows: (AccountTransaction & { delta: number })[] = [...visibleTxs].reverse();
 
   return (
-    <Drawer visible={visible} onClose={onClose} title="Account Detail" keyboardAvoiding={false}>
+    <Drawer visible={visible} onClose={onClose} title="Account" keyboardAvoiding={false}>
       <>
         {overview.isLoading || !account ? (
           <View className="items-center justify-center py-16">

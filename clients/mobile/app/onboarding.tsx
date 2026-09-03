@@ -379,7 +379,7 @@ export default function OnboardingScreen() {
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={0} onBack={() => setStep(0)} />
           <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" contentContainerStyle={stepColumnStyle}>
-            <StepTitle title="About You" subtitle="Used to compute your IRD tax and FIRE plan." />
+            <StepTitle title="About you" subtitle="Used to compute your IRD tax and FIRE plan." />
             <View className="gap-3.5">
               <TextField label="Full Name *" active value={fullName} onChangeText={setFullName} placeholder="Your full name" />
               <TextField
@@ -448,7 +448,7 @@ export default function OnboardingScreen() {
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={1} onBack={handleBack} />
           <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" contentContainerStyle={stepColumnStyle}>
-            <StepTitle title="Income Sources" subtitle="Select all that apply — we map each to a ledger account." />
+            <StepTitle title="Income sources" subtitle="Select all that apply. Each maps to a ledger account." />
             <View className="gap-3.5">
               {INCOME_SOURCES.map((source) => {
                 const selected = selectedSources.has(source.key);
@@ -516,7 +516,7 @@ export default function OnboardingScreen() {
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={2} onBack={handleBack} />
           <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" contentContainerStyle={stepColumnStyle}>
-            <StepTitle title="Risk Profile" subtitle="Shapes your FIRE strategy's asset allocation." />
+            <StepTitle title="Risk profile" subtitle="Shapes your FIRE strategy's asset allocation." />
             <View className="gap-3.5">
               <View>
                 <Text className="mb-1.5 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
@@ -623,7 +623,7 @@ export default function OnboardingScreen() {
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <StepHeader index={3} onBack={handleBack} />
           <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" contentContainerStyle={stepColumnStyle}>
-            <StepTitle title="Financial Goals" subtitle="What are you working toward?" />
+            <StepTitle title="Financial goals" subtitle="What are you working toward?" />
             <View className="gap-3">
               {goals.map((goal, i) => (
                 <View key={i} className="gap-2 rounded-card border-2 border-foreground bg-card p-3.5">
@@ -701,7 +701,7 @@ export default function OnboardingScreen() {
       <View className="flex-1 bg-background" style={{ paddingTop: topPad }}>
         <StepHeader index={4} onBack={handleBack} />
         <ScrollView className="flex-1 px-5" contentContainerStyle={stepColumnStyle}>
-          <StepTitle title="Review Setup" subtitle="Confirm — we'll post opening balances as ledger entries." />
+          <StepTitle title="Review setup" subtitle="We'll post your opening balances as ledger entries." />
           <View className="gap-3.5">
             {(
               [
@@ -769,7 +769,7 @@ export default function OnboardingScreen() {
       <ScrollView className="flex-1 px-5" contentContainerStyle={stepColumnStyle}>
         <StepTitle
           title="How do you want to use Salli?"
-          subtitle="Pick a starting point — you can switch anytime with a swipe."
+          subtitle="Pick a starting point. You can switch anytime with a swipe."
         />
         <ModeChoiceStep
           value={chosenMode}

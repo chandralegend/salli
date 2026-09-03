@@ -387,7 +387,7 @@ export default function BudgetScreen() {
             >
               <Plus size={18} color="rgba(128,128,128,0.8)" strokeWidth={2.5} />
               <Text className="flex-1 text-[15px] leading-[21px] text-muted-foreground">
-                Categories are your expense accounts — add one in the Ledger.
+                Categories are your expense accounts. Add one in the Ledger.
               </Text>
             </Pressable>
           </View>

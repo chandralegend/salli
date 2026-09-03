@@ -207,9 +207,8 @@ export default function FinancialIndependenceScreen() {
                 size={20}
                 title="Freedom"
                 description={
-                  "Freedom is the point where your investments can cover your living costs, so working becomes a choice.\n\n" +
-                  "Everything here is computed from your own ledger — your real income, spending, and net worth — not from estimates. " +
-                  "As those change, so do these numbers."
+                  "Freedom is the point where your investments cover your living costs, so working becomes a choice.\n\n" +
+                  "Every figure comes from your own ledger, not from estimates."
                 }
               />
             </View>
@@ -380,7 +379,7 @@ export default function FinancialIndependenceScreen() {
                     </Text>
                     {Number(goal.allocated_amount) === 0 ? (
                       <Text className="mt-1.5 text-[13.5px] text-salli-accent">
-                        No accounts earmarked yet — tap to pick some.
+                        No accounts earmarked yet. Tap to pick some.
                       </Text>
                     ) : null}
                   </AnimatedPressable>
@@ -432,7 +431,7 @@ export default function FinancialIndependenceScreen() {
             >
               <View className="mb-3 flex-row items-center justify-between">
                 <Text className="text-[11px] font-mono uppercase tracking-widest text-white/50">
-                  Portfolio Projection
+                  Portfolio projection
                 </Text>
                 <Text className="text-[14px] text-white/30">
                   {targetAge ? `to age ${targetAge}` : `${projections.data.points.length - 1} yrs`}
@@ -473,7 +472,7 @@ export default function FinancialIndependenceScreen() {
           {!strategy.data ? (
             <Card className="items-center gap-3 p-6">
               <Text className="text-center text-[15px] text-muted-foreground">
-                No FIRE strategy yet — generate one from your financial profile.
+                No strategy yet. Generate one from your profile.
               </Text>
               <ActionButton variant="accent" loading={generateStrategy.isPending} onPress={() => generateStrategy.mutate()}>
                 <Sparkles size={16} color="#FFFFFF" strokeWidth={2} />
@@ -682,7 +681,7 @@ export default function FinancialIndependenceScreen() {
                         </Text>
                         {!done && Number(goal.allocated_amount) === 0 ? (
                           <Text className="mt-1.5 text-[13.5px] text-salli-accent">
-                            No accounts earmarked yet — tap to pick some.
+                            No accounts earmarked yet. Tap to pick some.
                           </Text>
                         ) : !done && Number(goal.shortfall) > 0 ? (
                           <Text className="mt-1.5 text-[13.5px] text-salli-accent">

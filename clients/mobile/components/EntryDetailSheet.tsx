@@ -57,7 +57,7 @@ export function EntryDetailSheet({
     const cr = acct(credit?.account_id);
     Share.share({
       message:
-        `${entry.description} — Rs. ${formatLKR(amount, 0)} (${entry.entry_date})\n` +
+        `${entry.description}: Rs. ${formatLKR(amount, 0)} (${entry.entry_date})\n` +
         `DR ${dr?.code} ${dr?.name} · CR ${cr?.code} ${cr?.name}`,
     }).catch(() => {});
   };
@@ -97,7 +97,7 @@ export function EntryDetailSheet({
     <Drawer
       visible={Boolean(entry)}
       onClose={onClose}
-      title="Entry Detail"
+      title="Entry"
       keyboardAvoiding={false}
       footer={
         <View className="flex-row gap-2">
@@ -169,8 +169,7 @@ export function EntryDetailSheet({
           are the deliberate exception: amounts never change, but a
           miscategorised expense has to be fixable. */}
       <Text className="mt-5 text-center text-[13.5px] leading-5 text-muted-foreground">
-        Posted entries are never edited — a reversal is the correction. Tags stay
-        editable.
+        Posted entries are never edited. A reversal is the correction. Tags stay editable.
       </Text>
     </Drawer>
   );

@@ -72,8 +72,8 @@ function dateGroupLabel(iso: string): string {
   const today = new Date();
   const isSame = (a: Date, b: Date) => a.toDateString() === b.toDateString();
   const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
-  if (isSame(d, today)) return `Today — ${pretty}`;
-  if (isSame(d, yesterday)) return `Yesterday — ${pretty}`;
+  if (isSame(d, today)) return `Today · ${pretty}`;
+  if (isSame(d, yesterday)) return `Yesterday · ${pretty}`;
   return pretty;
 }
 
@@ -212,7 +212,7 @@ export default function LedgerScreen() {
           <View className="gap-1.5 px-4">
             {grouped.length === 0 ? (
               <Card className="items-center p-6">
-                <Text className="text-[15px] text-muted-foreground">No entries yet — post your first one.</Text>
+                <Text className="text-[15px] text-muted-foreground">No entries yet. Post your first one.</Text>
               </Card>
             ) : (
               grouped.map(([date, dayEntries]) => (

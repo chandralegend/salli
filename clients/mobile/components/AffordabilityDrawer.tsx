@@ -97,7 +97,7 @@ function Result({ impact, mutedColor, destructiveColor }: { impact: PurchaseImpa
             <>
               <Text className="mt-1.5 font-sans-bold text-[26px] text-foreground">Not yet knowable</Text>
               <Text className="mt-1.5 text-[14px] text-muted-foreground">
-                Your Freedom date isn&rsquo;t reachable yet — it isn&rsquo;t free.
+                Freedom isn&rsquo;t reachable on your current numbers. That doesn&rsquo;t make this free.
               </Text>
             </>
           ) : (
@@ -123,7 +123,7 @@ function Result({ impact, mutedColor, destructiveColor }: { impact: PurchaseImpa
           <ShieldAlert size={17} color={destructiveColor} strokeWidth={2} style={{ marginTop: 1 }} />
           <Text className="flex-1 text-[14px] text-foreground/70">
             {!impact.payable_from_liquid
-              ? "This is more than your liquid savings — paying cash would leave you short."
+              ? "This is more than your liquid savings. Paying cash would leave you short."
               : `Paying cash drops your buffer below the ${efTarget}-month target.`}
           </Text>
         </View>
@@ -200,7 +200,7 @@ export function AffordabilityDrawer({ visible, onClose }: { visible: boolean; on
 
       {!sim.data && !sim.isPending && !sim.isError ? (
         <Text className="mt-3 text-[14px] text-muted-foreground">
-          Salli prices it against what you own, owe and will owe in tax — and tells you what it costs your Freedom date.
+          Priced against what you own, owe and will owe in tax, then costed in months of freedom.
         </Text>
       ) : null}
 

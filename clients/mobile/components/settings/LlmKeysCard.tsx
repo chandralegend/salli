@@ -55,7 +55,7 @@ export function LlmKeysCard() {
       await save.mutateAsync({ provider, key });
       setEditing(null);
       setDraft("");
-      showToast("Key saved — your AI usage is now unlimited.", "success");
+      showToast("Key saved. Your AI usage is now unlimited.", "success");
     } catch (err) {
       // The provider's verdict, surfaced verbatim from the server's own wording:
       // "rejected" and "couldn't reach the provider" need different responses.
@@ -69,7 +69,7 @@ export function LlmKeysCard() {
     setBusy(provider);
     try {
       await remove.mutateAsync(provider);
-      showToast("Key removed — back to your plan's monthly allowance.", "success");
+      showToast("Key removed. Back to your plan's monthly allowance.", "success");
     } catch {
       showToast("Couldn't remove that key. Please try again shortly.", "error");
     } finally {
@@ -99,8 +99,8 @@ export function LlmKeysCard() {
       </View>
 
       <Text className="mt-1.5 text-[15px] leading-5 text-muted-foreground">
-        Add your own API key and you pay your provider directly — Salli stops counting your monthly
-        AI usage. Your key is encrypted, never shown again, and you can remove it any time.
+        Pay your provider directly and Salli stops counting your usage. Your key is encrypted,
+        shown once, and removable any time.
       </Text>
 
       {keys.isLoading ? (
@@ -150,7 +150,7 @@ export function LlmKeysCard() {
                   <View className="mt-2 flex-row items-center gap-2 rounded-card bg-[#FEF3C7] px-3 py-2">
                     <TriangleAlert size={15} color="#B45309" strokeWidth={2} />
                     <Text className="flex-1 text-[14px] text-[#B45309]">
-                      This key can no longer be read — please add it again.
+                      This key can no longer be read. Please add it again.
                     </Text>
                   </View>
                 ) : null}

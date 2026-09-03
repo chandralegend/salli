@@ -98,7 +98,7 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
       return;
     }
     if (description.trim() === DESCRIPTION_SCAFFOLD.trim() || !description.trim()) {
-      setError("Tell us what actually happened — the prompts above are just a guide.");
+      setError("Tell us what actually happened. The prompts above are only a guide.");
       return;
     }
     submit.mutate(
@@ -134,8 +134,8 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
       }
     >
       <Text className="mb-3 text-[15px] leading-5 text-muted-foreground">
-        Tell us what went wrong. We attach a small technical snapshot — never your balances,
-        amounts, or account names.
+        Tell us what went wrong. We attach a small technical snapshot, never your balances,
+        amounts or account names.
       </Text>
 
       <TextField className="mb-2.5" label="Title" value={title} onChangeText={setTitle} maxLength={200} placeholder="Statement upload fails on BOC PDFs" />
@@ -176,7 +176,7 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
         </Pressable>
       )}
       <Text className="mb-3 text-[14px] leading-5 text-muted-foreground">
-        Take a screenshot yourself and pick the file — Salli never captures your screen.
+        Take a screenshot yourself and pick the file. Salli never captures your screen.
       </Text>
 
       <Pressable
@@ -186,7 +186,7 @@ export function BugReportDrawer({ visible, onClose }: { visible: boolean; onClos
         <View className="flex-1">
           <Text className="text-[15px] font-sans-medium text-foreground">You can email me about this</Text>
           <Text className="mt-0.5 text-[14px] text-muted-foreground">
-            We&apos;ll use the address on your account — it&apos;s never attached to the ticket.
+            We&apos;ll use the address on your account. It&apos;s never attached to the ticket.
           </Text>
         </View>
         <View

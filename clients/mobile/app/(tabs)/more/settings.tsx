@@ -14,7 +14,7 @@ import { Rule, SectionLabel } from "@/components/ui/blocks";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { useMore } from "@/hooks/useMore";
+import { profileInitial, useMore } from "@/hooks/useMore";
 import {
   useDailyBriefing,
   useDeleteAccount,
@@ -166,7 +166,7 @@ export default function SettingsScreen() {
       <View className="flex-row items-center gap-3.5 px-5">
         <View className="h-14 w-14 items-center justify-center rounded-[13px] border-2 border-foreground bg-salli-accent">
           <Text className="font-sans-extrabold text-[24px] text-white">
-            {(profile?.display_name ?? "?").charAt(0).toUpperCase()}
+            {profileInitial(profile)}
           </Text>
         </View>
         <View className="min-w-0 flex-1">

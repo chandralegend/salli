@@ -152,7 +152,7 @@ export default function DashboardScreen() {
             {/* The TourTarget rides along with the button it spotlights — the
                 tour measures this element's on-screen position. */}
             <TourTarget id="dashboard-avatar">
-              <AvatarMoreButton initial="D" />
+              <AvatarMoreButton />
             </TourTarget>
             <View className="flex-1 flex-row items-center justify-center">
               <Text className="font-sans-bold text-[18px] text-foreground">{currentPeriodLabel}</Text>

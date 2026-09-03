@@ -18,14 +18,33 @@ export type PortfolioSummary = { total_value: string; total_gain_pct: string };
 export type DebtPayoffPlan = { months_to_payoff: number | null };
 export type Reminder = { id: string; status: string };
 
-export function useMore() {
-  const profile = useQuery({
+/**
+ * The signed-in user's profile on its own.
+ *
+ * Split out of `useMore` so a header button can read the name without firing
+ * the six other queries that hook bundles (budgets, budget summary, portfolio,
+ * debts, payoff plan, tax, reminders). Same query key, so the two share one
+ * cache entry and one request.
+ */
+export function useProfile() {
+  return useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
       const { data } = await getProfileOnboardingProfileGet({ throwOnError: true });
       return data as unknown as Profile;
     },
   });
+}
+
+/** First letter of the display name, falling back to the email. Trimmed,
+ *  because a display name of " " would otherwise render a blank avatar. */
+export function profileInitial(profile: Profile | undefined): string {
+  const source = profile?.display_name?.trim() || profile?.email?.trim() || "";
+  return source.charAt(0).toUpperCase() || "?";
+}
+
+export function useMore() {
+  const profile = useProfile();
 
   const budgets = useQuery({
     queryKey: ["budgets"],

@@ -112,3 +112,44 @@ export function Meter({
     </View>
   );
 }
+
+/**
+ * `.chip` — the mono bordered tag: a year of assessment, a rate, a priority.
+ *
+ * `PostingChip` is the DR/CR specialisation of this same shape and keeps its
+ * own file, because its two fills carry meaning that must not be reused for
+ * decoration. This one is the neutral form.
+ *
+ * 1.5px rather than the 2px container border: at chip height a 2px edge makes
+ * a tag look like a button.
+ */
+export function Chip({
+  children,
+  tone = "plain",
+  className,
+}: {
+  children: ReactNode;
+  /** `accent` fills with brand orange — reserved for the one chip in a set
+   *  that carries state, never for every chip in the set. */
+  tone?: "plain" | "accent";
+  className?: string;
+}) {
+  return (
+    <View
+      className={cn(
+        "flex-row items-center justify-center rounded-badge border-[1.5px] border-foreground px-2.5 py-1",
+        tone === "accent" ? "bg-salli-accent" : "bg-card",
+        className,
+      )}
+    >
+      <Text
+        className={cn("font-mono text-[12px]", tone === "accent" ? undefined : "text-foreground")}
+        // The accent fill is theme-invariant, so its label cannot be
+        // ink-derived — it would invert into the orange.
+        style={tone === "accent" ? { color: "#FFFFFF" } : undefined}
+      >
+        {children}
+      </Text>
+    </View>
+  );
+}

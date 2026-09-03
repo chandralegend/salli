@@ -10,15 +10,16 @@ import {
   Settings,
   Shield,
   ShieldCheck,
+  ShoppingBag,
   TrendingUp,
   Upload,
   Wallet,
 } from "lucide-react-native";
+import { useState } from "react";
 import { Text, View } from "react-native";
 
-import { AffordabilityCard } from "@/components/AffordabilityCard";
+import { AffordabilityDrawer } from "@/components/AffordabilityDrawer";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import { Card } from "@/components/ui/card";
 import { IconButton } from "@/components/ui/icon-button";
 import { PageShell } from "@/components/ui/page-shell";
 import { useMore } from "@/hooks/useMore";
@@ -39,12 +40,20 @@ import { useHardShadow, useThemeColors } from "@/lib/theme";
  * One tile per destination now. A tile shows a real figure when the feature has
  * one and its description when it does not, so the four that mattered keep
  * their numbers without needing a parallel row each.
+ *
+ * The grid is the whole screen — the profile card that sat above it pushed to
+ * the same /more/settings as the header cog, and the affordability card became
+ * the "Afford it?" tile. That card was the only way to reach the affordability
+ * drawer, so it is a tile rather than a deletion.
  */
 type Tile = {
   key: string;
   title: string;
   icon: typeof Bell;
-  href: string;
+  /** Where the tile goes. Every tile has one of these two, never both. */
+  href?: string;
+  /** Affordability is a drawer rather than a route, so it opens in place. */
+  action?: "affordability";
 };
 
 /**
@@ -57,6 +66,7 @@ type Tile = {
 const TILES: Tile[] = [
   { key: "billing", title: "Billing", icon: Coins, href: "/(tabs)/more/billing" },
   { key: "budget", title: "Budget", icon: Wallet, href: "/(tabs)/more/budget" },
+  { key: "affordability", title: "Afford it?", icon: ShoppingBag, action: "affordability" },
   { key: "tax", title: "Tax", icon: Receipt, href: "/(tabs)/more/tax" },
   { key: "debt", title: "Debt", icon: Landmark, href: "/(tabs)/more/debt" },
   { key: "portfolio", title: "Portfolio", icon: TrendingUp, href: "/(tabs)/more/portfolio" },
@@ -73,8 +83,7 @@ export default function MoreScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const shadow = useHardShadow();
-  const { profile, budgetSummary, portfolio, debtPlan, hasDebts, totalDebt, tax, overdueCount } =
-    useMore();
+  const { budgetSummary, portfolio, debtPlan, hasDebts, totalDebt, tax, overdueCount } = useMore();
   // The filing deadline comes from the tax pack, never from a literal in this
   // file — see lib/taxDates.ts.
   const packs = useTaxPacks();
@@ -82,6 +91,7 @@ export default function MoreScreen() {
   // spent — allowance alone reads as empty for a topped-up user.
   const credits = useEntitlements().data?.credits;
   const currentPack = packs.data?.find((p) => p.year === tax?.pack_year);
+  const [affordOpen, setAffordOpen] = useState(false);
 
   /**
    * What each tile says under its title: a live figure where the feature has
@@ -123,6 +133,7 @@ export default function MoreScreen() {
       hint: overdueCount > 0 ? "overdue" : "Deadlines & alerts",
       alert: overdueCount > 0,
     },
+    affordability: { hint: "Price a purchase" },
     statements: { hint: "Import transactions" },
     subscriptions: { hint: "Recurring bills" },
     insurance: { hint: "Policies & gaps" },
@@ -149,35 +160,6 @@ export default function MoreScreen() {
         </View>
       }
     >
-      <AnimatedPressable
-        onPress={() => router.push("/(tabs)/more/settings")}
-        className="mx-4 mb-3.5"
-      >
-        <Card className="flex-row items-center gap-3.5 p-[15px]">
-          {/* Accent fill with a white initial. It briefly had `bg-card` with
-              white text, which in light mode is white on white — invisible. An
-              avatar is an identity mark rather than a control, so unlike the
-              add buttons it keeps the filled treatment. */}
-          <View className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-salli-accent">
-            <Text className="font-sans-extrabold text-[17px] text-white">
-              {(profile?.display_name ?? "?").charAt(0).toUpperCase()}
-            </Text>
-          </View>
-          <View className="min-w-0 flex-1">
-            <Text numberOfLines={1} className="font-sans-bold text-[17px] text-foreground">
-              {profile?.display_name ?? "Set your name"}
-            </Text>
-            <Text numberOfLines={1} className="mt-0.5 text-[13.5px] text-muted-foreground">
-              {profile?.email ?? ""}
-            </Text>
-          </View>
-        </Card>
-      </AnimatedPressable>
-
-      <View className="mx-4 mb-3.5">
-        <AffordabilityCard />
-      </View>
-
       {/* Two columns. Three fitted the icons but not the figures, and the
           figures are the reason the tiles replaced a list. */}
       <View className="mx-4 flex-row flex-wrap justify-between">
@@ -186,7 +168,11 @@ export default function MoreScreen() {
           return (
             <AnimatedPressable
               key={t.key}
-              onPress={() => router.push(t.href as never)}
+              onPress={() =>
+                t.action === "affordability"
+                  ? setAffordOpen(true)
+                  : router.push(t.href as never)
+              }
               press="sink"
               className="mb-3.5 w-[48%] justify-between rounded-card border-2 border-foreground bg-card p-3.5"
               // A floor, not a fixed height: flex-wrap sizes each item to its
@@ -225,6 +211,8 @@ export default function MoreScreen() {
         })}
       </View>
       <View className="h-2" />
+
+      <AffordabilityDrawer visible={affordOpen} onClose={() => setAffordOpen(false)} />
     </PageShell>
   );
 }

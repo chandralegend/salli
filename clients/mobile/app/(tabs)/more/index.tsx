@@ -2,9 +2,7 @@ import { useRouter } from "expo-router";
 import {
   Bell,
   Book,
-  ChevronRight,
   Coins,
-  CreditCard,
   FileText,
   Landmark,
   Receipt,
@@ -14,202 +12,219 @@ import {
   ShieldCheck,
   TrendingUp,
   Upload,
+  Wallet,
 } from "lucide-react-native";
 import { Text, View } from "react-native";
 
 import { AffordabilityCard } from "@/components/AffordabilityCard";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Card } from "@/components/ui/card";
+import { IconButton } from "@/components/ui/icon-button";
 import { PageShell } from "@/components/ui/page-shell";
-import { formatLKRAbbrev, formatPct } from "@/lib/format";
-import { useThemeColors } from "@/lib/theme";
-import { useEntitlements } from "@/hooks/useSettings";
 import { useMore } from "@/hooks/useMore";
+import { useEntitlements } from "@/hooks/useSettings";
 import { useTaxPacks } from "@/hooks/useTax";
+import { formatLKRAbbrev, formatPct } from "@/lib/format";
 import { dueDateShort } from "@/lib/taxDates";
+import { useHardShadow, useThemeColors } from "@/lib/theme";
 
-const FEATURES: {
+/**
+ * More — a grid of tiles, each carrying its own number.
+ *
+ * This screen used to say everything twice. Four "quick stat" cards showed
+ * Budget, Portfolio, Debt and Tax with live figures, and then a list of eleven
+ * rows showed the same four destinations again with static descriptions — the
+ * same taps, in two different visual languages, on one screen.
+ *
+ * One tile per destination now. A tile shows a real figure when the feature has
+ * one and its description when it does not, so the four that mattered keep
+ * their numbers without needing a parallel row each.
+ */
+type Tile = {
   key: string;
   title: string;
-  detail: string;
   icon: typeof Bell;
   href: string;
-  badge?: string;
-}[] = [
-  // Billing is listed here because this menu is its ONLY entry point. It was
-  // previously reachable only from a quota banner, i.e. only once you had
-  // already run out of credits — so the balance and the top-up buttons were
-  // invisible to everyone who had not yet hit the wall.
-  { key: "billing", title: "Billing", detail: "AI credits, plan & top-ups", icon: Coins, href: "/(tabs)/more/billing" },
-  { key: "budget", title: "Budget", detail: "Monthly & category limits", icon: CreditCard, href: "/(tabs)/more/budget" },
-  { key: "debt", title: "Debt", detail: "Loans & payoff planning", icon: Landmark, href: "/(tabs)/more/debt" },
-  { key: "portfolio", title: "Portfolio", detail: "Holdings & allocation", icon: TrendingUp, href: "/(tabs)/more/portfolio" },
-  { key: "insurance", title: "Insurance", detail: "Policies & coverage gaps", icon: Shield, href: "/(tabs)/more/insurance" },
-  { key: "reports", title: "Reports", detail: "Balance sheet, net worth", icon: FileText, href: "/(tabs)/more/reports" },
-  { key: "statements", title: "Statements", detail: "Import bank transactions", icon: Upload, href: "/(tabs)/more/statements" },
-  { key: "subscriptions", title: "Subscriptions", detail: "Recurring bills & renewals", icon: RefreshCw, href: "/(tabs)/more/subscriptions" },
-  { key: "tax", title: "Tax", detail: "AY 2025/26 · IRD computation", icon: Receipt, href: "/(tabs)/more/tax", badge: "AY 25/26" },
-  { key: "reminders", title: "Reminders", detail: "Filing deadlines & alerts", icon: Bell, href: "/(tabs)/more/reminders" },
-  { key: "documents", title: "Documents", detail: "AI-saved notes & memories", icon: Book, href: "/(tabs)/more/documents" },
-  { key: "audit-log", title: "Audit Log", detail: "AI write action history", icon: ShieldCheck, href: "/(tabs)/more/audit-log" },
-];
+};
 
-function QuickStatCard({ label, value, hint, onPress }: { label: string; value: string; hint: string; onPress: () => void }) {
-  const colors = useThemeColors();
-  return (
-    <AnimatedPressable onPress={onPress} className="w-[48%] rounded-card border-2 border-foreground bg-card p-3.5">
-      <View className="mb-1.5 flex-row items-center justify-between">
-        <Text className="text-[14px] font-sans-medium text-muted-foreground">{label}</Text>
-        <ChevronRight size={14} color={colors.mutedForeground} strokeWidth={2} />
-      </View>
-      <Text className="mb-0.5 font-sans-bold text-[18px] text-foreground">{value}</Text>
-      <Text className="text-[13px] text-muted-foreground">{hint}</Text>
-    </AnimatedPressable>
-  );
-}
+/**
+ * Ordered by how often you would reach for it, not alphabetically.
+ *
+ * Billing leads because this menu is its ONLY entry point — before it was
+ * added here it was reachable only from a quota banner, i.e. only once you had
+ * already run out of credits.
+ */
+const TILES: Tile[] = [
+  { key: "billing", title: "Billing", icon: Coins, href: "/(tabs)/more/billing" },
+  { key: "budget", title: "Budget", icon: Wallet, href: "/(tabs)/more/budget" },
+  { key: "tax", title: "Tax", icon: Receipt, href: "/(tabs)/more/tax" },
+  { key: "debt", title: "Debt", icon: Landmark, href: "/(tabs)/more/debt" },
+  { key: "portfolio", title: "Portfolio", icon: TrendingUp, href: "/(tabs)/more/portfolio" },
+  { key: "reminders", title: "Reminders", icon: Bell, href: "/(tabs)/more/reminders" },
+  { key: "statements", title: "Statements", icon: Upload, href: "/(tabs)/more/statements" },
+  { key: "subscriptions", title: "Subscriptions", icon: RefreshCw, href: "/(tabs)/more/subscriptions" },
+  { key: "insurance", title: "Insurance", icon: Shield, href: "/(tabs)/more/insurance" },
+  { key: "reports", title: "Reports", icon: FileText, href: "/(tabs)/more/reports" },
+  { key: "documents", title: "Documents", icon: Book, href: "/(tabs)/more/documents" },
+  { key: "audit-log", title: "Audit log", icon: ShieldCheck, href: "/(tabs)/more/audit-log" },
+];
 
 export default function MoreScreen() {
   const router = useRouter();
   const colors = useThemeColors();
+  const shadow = useHardShadow();
   const { profile, budgetSummary, portfolio, debtPlan, hasDebts, totalDebt, tax, overdueCount } =
     useMore();
   // The filing deadline comes from the tax pack, never from a literal in this
   // file — see lib/taxDates.ts.
   const packs = useTaxPacks();
-  // Shown as a badge on the Billing row so the balance is legible without
-  // navigating. `credits.total` is allowance + purchased, which is what can
-  // actually be spent — allowance alone reads as empty for a topped-up user.
+  // `credits.total` is allowance + purchased, which is what can actually be
+  // spent — allowance alone reads as empty for a topped-up user.
   const credits = useEntitlements().data?.credits;
   const currentPack = packs.data?.find((p) => p.year === tax?.pack_year);
+
+  /**
+   * What each tile says under its title: a live figure where the feature has
+   * one, its description where it does not.
+   *
+   * `alert` marks the one thing on the tile that needs attention rather than
+   * just reporting — it is the only place accent appears in the grid, so it
+   * cannot be mistaken for decoration.
+   */
+  const detail: Record<string, { value?: string; hint: string; alert?: boolean }> = {
+    billing: {
+      value: credits ? credits.total.toLocaleString() : undefined,
+      hint: credits ? "credits available" : "Plan & top-ups",
+    },
+    budget: {
+      value: budgetSummary ? `Rs. ${formatLKRAbbrev(budgetSummary.total_actual)}` : undefined,
+      hint: budgetSummary
+        ? `of Rs. ${formatLKRAbbrev(budgetSummary.total_limit)} spent`
+        : "Monthly & category limits",
+    },
+    tax: {
+      value: tax ? `Rs. ${formatLKRAbbrev(tax.tax_payable)}` : undefined,
+      hint: tax ? `due ${dueDateShort(currentPack)}` : "IRD computation",
+    },
+    debt: {
+      value: hasDebts ? `Rs. ${formatLKRAbbrev(totalDebt)}` : undefined,
+      hint: hasDebts
+        ? debtPlan?.months_to_payoff
+          ? `${debtPlan.months_to_payoff} months to clear`
+          : "outstanding"
+        : "No debts",
+    },
+    portfolio: {
+      value: portfolio ? `Rs. ${formatLKRAbbrev(portfolio.total_value)}` : undefined,
+      hint: portfolio ? `${formatPct(portfolio.total_gain_pct)} total gain` : "Holdings & allocation",
+    },
+    reminders: {
+      value: overdueCount > 0 ? String(overdueCount) : undefined,
+      hint: overdueCount > 0 ? "overdue" : "Deadlines & alerts",
+      alert: overdueCount > 0,
+    },
+    statements: { hint: "Import transactions" },
+    subscriptions: { hint: "Recurring bills" },
+    insurance: { hint: "Policies & gaps" },
+    reports: { hint: "Balance sheet, net worth" },
+    documents: { hint: "AI-saved notes" },
+    "audit-log": { hint: "AI write history" },
+  };
 
   return (
     <PageShell
       header={
-        <View className="flex-row items-center px-5 pt-2.5">
-          <Text className="flex-1 font-sans-bold text-[26px] text-foreground">More</Text>
-          <AnimatedPressable
-            onPress={() => router.push("/(tabs)/more/settings")}
-            className="h-11 w-11 items-center justify-center rounded-full border border-foreground/[0.08] bg-foreground/[0.07]"
+        <View className="flex-row items-center gap-3 px-4 pt-1">
+          <Text
+            style={{ letterSpacing: -0.8 }}
+            className="flex-1 font-sans-extrabold text-[27px] text-foreground"
           >
-            <Settings size={21} color={colors.foreground} strokeWidth={2} />
-          </AnimatedPressable>
+            More
+          </Text>
+          <IconButton
+            icon={Settings}
+            onPress={() => router.push("/(tabs)/more/settings")}
+            accessibilityLabel="Settings"
+          />
         </View>
       }
     >
+      <AnimatedPressable
+        onPress={() => router.push("/(tabs)/more/settings")}
+        className="mx-4 mb-3.5"
+      >
+        <Card className="flex-row items-center gap-3.5 p-[15px]">
+          {/* Accent fill with a white initial. It briefly had `bg-card` with
+              white text, which in light mode is white on white — invisible. An
+              avatar is an identity mark rather than a control, so unlike the
+              add buttons it keeps the filled treatment. */}
+          <View className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-salli-accent">
+            <Text className="font-sans-extrabold text-[17px] text-white">
+              {(profile?.display_name ?? "?").charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          <View className="min-w-0 flex-1">
+            <Text numberOfLines={1} className="font-sans-bold text-[17px] text-foreground">
+              {profile?.display_name ?? "Set your name"}
+            </Text>
+            <Text numberOfLines={1} className="mt-0.5 text-[13.5px] text-muted-foreground">
+              {profile?.email ?? ""}
+            </Text>
+          </View>
+        </Card>
+      </AnimatedPressable>
 
-      <Card className="mx-4 mb-3 flex-row items-center gap-3 rounded-card p-3.5">
-        <View className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card">
-          <Text className="font-sans-bold text-[19px] text-white">
-            {(profile?.display_name ?? "?").charAt(0).toUpperCase()}
-          </Text>
-        </View>
-        <View className="flex-1">
-          <Text className="font-sans-semibold text-[16px] text-foreground">
-            {profile?.display_name ?? "Set your name"}
-          </Text>
-          <Text className="mt-0.5 text-[14px] text-muted-foreground">{profile?.email ?? ""}</Text>
-        </View>
-      </Card>
-
-      <View className="mx-4 mb-3.5 flex-row flex-wrap justify-between gap-2">
-        <QuickStatCard
-          label="Budget"
-          value={budgetSummary ? `Rs. ${formatLKRAbbrev(budgetSummary.total_actual)}` : "—"}
-          hint={
-            budgetSummary
-              ? `of Rs. ${formatLKRAbbrev(budgetSummary.total_limit)} · ${(
-                  (Number(budgetSummary.total_actual) / Number(budgetSummary.total_limit || 1)) *
-                  100
-                ).toFixed(0)}% used`
-              : "No budget yet"
-          }
-          onPress={() => router.push("/(tabs)/more/budget")}
-        />
-        <QuickStatCard
-          label="Portfolio"
-          value={portfolio ? `Rs. ${formatLKRAbbrev(portfolio.total_value)}` : "—"}
-          hint={portfolio ? `+${formatPct(portfolio.total_gain_pct)} total gain` : "No holdings yet"}
-          onPress={() => router.push("/(tabs)/more/portfolio")}
-        />
-        <QuickStatCard
-          label="Debt"
-          value={hasDebts ? `Rs. ${formatLKRAbbrev(totalDebt)}` : "—"}
-          hint={
-            hasDebts
-              ? debtPlan?.months_to_payoff
-                ? `${debtPlan.months_to_payoff} months to payoff`
-                : "Outstanding balance"
-              : "No debts"
-          }
-          onPress={() => router.push("/(tabs)/more/debt")}
-        />
-        <QuickStatCard
-          label="Tax Payable"
-          value={tax ? `Rs. ${formatLKRAbbrev(tax.tax_payable)}` : "—"}
-          hint={tax ? `${tax.pack_year} · ${dueDateShort(currentPack)}` : "Not computed"}
-          onPress={() => router.push("/(tabs)/more/tax")}
-        />
-      </View>
-
-      {overdueCount > 0 ? (
-        <AnimatedPressable
-          onPress={() => router.push("/(tabs)/more/reminders")}
-          className="mx-4 mb-3 flex-row items-center gap-2.5 rounded-card border-2 border-foreground bg-card px-3.5 py-2.5"
-        >
-          <View className="h-2 w-2 rounded-full bg-foreground" />
-          <Text className="flex-1 font-sans-medium text-[15px] text-foreground">
-            {overdueCount} overdue reminder{overdueCount === 1 ? "" : "s"}
-          </Text>
-          <Text className="text-[15px] text-muted-foreground">Reminders →</Text>
-        </AnimatedPressable>
-      ) : null}
-
-      {/* Moved off Home with the declutter. Kept as its own block above the
-          feature list rather than as a list row, because it opens a drawer
-          rather than navigating — and because it is the one thing here people
-          come looking for by name. */}
-      <View className="mb-3.5">
+      <View className="mx-4 mb-3.5">
         <AffordabilityCard />
       </View>
 
-      <View className="px-4">
-        <Text className="mb-1 pl-0.5 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-          All Features
-        </Text>
-        <Card className="overflow-hidden rounded-card ">
-          {FEATURES.map((f, i) => (
+      {/* Two columns. Three fitted the icons but not the figures, and the
+          figures are the reason the tiles replaced a list. */}
+      <View className="mx-4 flex-row flex-wrap justify-between">
+        {TILES.map((t) => {
+          const d = detail[t.key];
+          return (
             <AnimatedPressable
-              key={f.key}
-              onPress={() => router.push(f.href as never)}
-              className={`flex-row items-center px-3.5 py-2.5 ${i < FEATURES.length - 1 ? "border-b border-foreground/[0.05]" : ""}`}
+              key={t.key}
+              onPress={() => router.push(t.href as never)}
+              press="sink"
+              className="mb-3.5 w-[48%] justify-between rounded-card border-2 border-foreground bg-card p-3.5"
+              // A floor, not a fixed height: flex-wrap sizes each item to its
+              // own content, so a tile with a figure came out taller than one
+              // without and the rows sat crooked. The floor is the height of a
+              // tile that has a figure, so every tile matches the tallest kind.
+              style={[{ minHeight: 126 }, shadow]}
             >
-              <View className="mr-3 h-[30px] w-[30px] items-center justify-center rounded-card bg-foreground/[0.06]">
-                <f.icon size={16} color={colors.mutedForeground} strokeWidth={2} />
-              </View>
-              <View className="flex-1">
-                <Text className="font-sans-medium text-[15px] text-foreground">{f.title}</Text>
-                <Text className="text-[14px] text-muted-foreground">{f.detail}</Text>
-              </View>
-              {f.key === "billing" && credits ? (
-                <View className="mr-2 rounded-badge border-[1.5px] border-foreground bg-foreground/[0.07] px-2 py-0.5">
-                  <Text className="text-[13px] font-sans-medium text-muted-foreground">
-                    {credits.total.toLocaleString()}
+              {/* Icon pinned top, text pinned bottom. With everything packed
+                  to the top, a tile without a figure had its dead space
+                  trailing underneath and looked short-changed rather than
+                  simply quieter. */}
+              <t.icon
+                size={21}
+                color={d.alert ? colors.accent : colors.foreground}
+                strokeWidth={2}
+              />
+              <View>
+                <Text className="font-sans-bold text-[16px] text-foreground">{t.title}</Text>
+                {d.value ? (
+                  <Text
+                    numberOfLines={1}
+                    className={`mt-1 font-sans-extrabold text-[19px] ${
+                      d.alert ? "text-salli-accent" : "text-foreground"
+                    }`}
+                  >
+                    {d.value}
                   </Text>
-                </View>
-              ) : null}
-              {f.badge ? (
-                <View className="mr-2 rounded-badge border-[1.5px] border-foreground bg-foreground/[0.07] px-2 py-0.5">
-                  <Text className="text-[13px] font-sans-medium text-muted-foreground">{f.badge}</Text>
-                </View>
-              ) : null}
-              {f.key === "reminders" && overdueCount > 0 ? (
-                <View className="mr-2.5 h-[7px] w-[7px] rounded-full bg-foreground" />
-              ) : null}
-              <ChevronRight size={15} color={colors.mutedForeground} strokeWidth={2} />
+                ) : null}
+                <Text numberOfLines={1} className="mt-0.5 text-[13px] text-muted-foreground">
+                  {d.hint}
+                </Text>
+              </View>
             </AnimatedPressable>
-          ))}
-        </Card>
+          );
+        })}
       </View>
+      <View className="h-2" />
     </PageShell>
   );
 }

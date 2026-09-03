@@ -26,7 +26,7 @@ export function AffordabilityCard() {
             <Text className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               Can I afford this?
             </Text>
-            <Text className="mt-0.5 text-[15px] text-foreground/50" numberOfLines={1}>
+            <Text className="mt-0.5 text-[13.5px] text-muted-foreground" numberOfLines={2}>
               Price a purchase against your Freedom date
             </Text>
           </View>

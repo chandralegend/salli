@@ -1,6 +1,6 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { BarChart3, ChevronRight, LayoutGrid, Layers, Plus, Settings } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Text, View } from "react-native";
 
 import { VoiceCaptureSheet } from "@/components/VoiceCaptureSheet";
@@ -12,7 +12,7 @@ import { IconButton } from "@/components/ui/icon-button";
 import { PageShell } from "@/components/ui/page-shell";
 import { useThemedRefreshControl } from "@/components/ui/themed-refresh-control";
 import { useDashboard } from "@/hooks/useDashboard";
-import { useModeSwitch } from "@/hooks/useModeSwitch";
+import { useSalliSheet } from "@/hooks/useSalliSheet";
 import { formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useSalliStore } from "@/lib/store";
 import { useHardShadow, useThemeColors } from "@/lib/theme";
@@ -55,7 +55,21 @@ function priorMonthPoint(trend: { date: string; net_worth: string }[]) {
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { enterBuddy } = useModeSwitch();
+  const { open: openSalli } = useSalliSheet();
+
+  /**
+   * A chat-first user boots to /(tabs)?salli=1 and gets the sheet raised on
+   * top, so Pro Mode is underneath it from the first frame and the dismiss
+   * gesture has somewhere to go. Guarded by a ref rather than by clearing the
+   * param, because clearing it would be a second navigation racing the first.
+   */
+  const { salli: salliParam } = useLocalSearchParams<{ salli?: string }>();
+  const raisedOnBoot = useRef(false);
+  useEffect(() => {
+    if (salliParam !== "1" || raisedOnBoot.current) return;
+    raisedOnBoot.current = true;
+    openSalli();
+  }, [salliParam, openSalli]);
   const colors = useThemeColors();
   const shadow = useHardShadow();
   const { netWorth, fiScore, tax, accounts, budgetSummary, balances, refetch } = useDashboard();
@@ -245,7 +259,7 @@ export default function DashboardScreen() {
               </AnimatedPressable>
             </TourTarget>
             <AnimatedPressable
-              onPress={enterBuddy}
+              onPress={openSalli}
               press="sink"
               haptic="light"
               className="h-[52px] flex-1 flex-row items-center justify-center gap-2 rounded-card border-2 border-foreground bg-salli-ai"

@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Mic, Paperclip, Send, SquarePen, Trash2 } from "lucide-react-native";
+import { ChevronDown, Mic, Paperclip, Send, SquarePen, Trash2 } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
   FlatList,
@@ -19,6 +19,7 @@ import { Bloub } from "@/components/agent/Bloub";
 import type { BloubMood } from "@/components/agent/bloub-geometry";
 import { ToolActivityBlock } from "@/components/agent/ToolActivityBlock";
 import { Drawer } from "@/components/ui/drawer";
+import { useSalliSheet } from "@/hooks/useSalliSheet";
 import { type ChatMessage, useAgentChat } from "@/hooks/useAgentChat";
 import { useIsTablet } from "@/lib/responsive";
 import { useSalliStore } from "@/lib/store";
@@ -67,6 +68,7 @@ export default function BuddyScreen() {
   const colors = useThemeColors();
   const shadow = useHardShadow();
   const insets = useSafeAreaInsets();
+  const { close: closeSalli } = useSalliSheet();
   const isTablet = useIsTablet();
   const listRef = useRef<FlatList<ChatMessage>>(null);
   // Whether a keyboard is currently covering the bottom of the screen.
@@ -181,29 +183,53 @@ export default function BuddyScreen() {
           : RESTING_MOODS[restingIndex];
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
-      {/* The header holds the face once a conversation exists, and nothing
-          before that. It used to carry a "Salli" title and a "Swipe left for
-          Pro Mode" caption — a name over a screen that is unmistakably Salli's,
-          and navigation copy repeated on every scroll of every conversation.
-          Both now live in the empty state, said once, where there is room to
-          say them properly.
+    // No top safe-area inset: the sheet is presented below the status bar, so
+    // the window's inset would pad a gap that is already there. `insets.bottom`
+    // is still used by the composer further down, where it is correct.
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* The way out, in both states.
 
-          The face is still the way into chat history, as the title was: in the
-          empty state the big one is the tap target, and here the small one is,
-          so history is reachable in both states. */}
-      {messages.length > 0 ? (
+          The sheet already dismisses on a downward drag, which the platform
+          provides. This is the visible half of that: the old design's only
+          signpost out lived in the empty state, so it vanished the moment a
+          user sent their first message, which is exactly when they were most
+          likely to need it. This one does not move.
+
+          The face is the way into chat history, as the screen's title once was:
+          in the empty state the big one is the tap target, and here the small
+          one is, so history is reachable either way. */}
+      {/* pt-3, not pt-1: the sheet has rounded top corners, and at 4px the
+          pill collided with the curve. */}
+      <View className="flex-row items-center px-4 pb-1.5 pt-3">
         <Pressable
-          onPress={openSessions}
+          onPress={closeSalli}
+          hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Chat history"
-          className="items-center pb-2.5 pt-1.5"
+          accessibilityLabel="Close Salli"
+          className="h-9 flex-row items-center gap-1 rounded-pill border-[1.5px] border-foreground bg-card px-2.5"
         >
-          <Bloub mood={mood} size={34} enterFrom={1.9} />
+          <ChevronDown size={14} color={colors.foreground} strokeWidth={2.5} />
+          <Text className="font-mono text-[11px] uppercase tracking-widest text-foreground">
+            Ledger &amp; tax
+          </Text>
         </Pressable>
-      ) : (
-        <View className="pt-1.5" />
-      )}
+
+        <View className="flex-1 items-center">
+          {messages.length > 0 ? (
+            <Pressable
+              onPress={openSessions}
+              accessibilityRole="button"
+              accessibilityLabel="Chat history"
+              hitSlop={8}
+            >
+              <Bloub mood={mood} size={34} enterFrom={1.9} />
+            </Pressable>
+          ) : null}
+        </View>
+
+        {/* Balances the pill so the face sits centred rather than pushed right. */}
+        <View className="w-[104px]" />
+      </View>
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
         {messages.length === 0 ? (
@@ -224,13 +250,12 @@ export default function BuddyScreen() {
               <Text className="mt-7 px-6 text-center text-[19px] font-sans-semibold leading-[26px] text-foreground">
                 {STATE_CAPTION[chatState]}
               </Text>
-              {/* Said once, here, rather than on every scroll of every
-                  conversation — and it names what is over there instead of the
-                  mode's internal label. "Pro Mode" and "manual" describe how
-                  the app is built; the ledger and the tax figures are what you
-                  actually went looking for. */}
+              {/* No navigation copy here any more. The way out is a control at
+                  the top of the sheet and a downward drag, both of which are
+                  visible without being read, and both of which survive into a
+                  conversation. */}
               <Text className="mt-2.5 px-6 text-center text-[15px] leading-[21px] text-muted-foreground">
-                Swipe left for your ledger, tax and reports.
+                Your ledger, tax and goals are already here.
               </Text>
             </Pressable>
           </View>

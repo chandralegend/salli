@@ -8,12 +8,13 @@ export default function TabsLayout() {
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        // Without this, bottom-tabs v7 defaults to `animation: "none"` — every
-        // tab switch is a hard cut, which is what made moving around Pro Mode
-        // feel abrupt. `shift` cross-fades while nudging the outgoing screen,
-        // so the direction of travel reads without a full slide (a full slide
-        // would fight the edge-swipe mode switcher, which owns horizontal
-        // motion at the root).
+        // Without this, bottom-tabs v7 defaults to `animation: "none"` and
+        // every tab switch is a hard cut, which is what made moving around Pro
+        // Mode feel abrupt. `shift` cross-fades while nudging the outgoing
+        // screen, so the direction of travel reads without a full slide.
+        //
+        // Horizontal stays peer navigation and vertical stays layering: these
+        // tabs move sideways, and Salli rises over them.
         animation: "shift",
       }}
     >

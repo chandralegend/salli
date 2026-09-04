@@ -36,7 +36,7 @@ import {
   type FiGoal,
   type FiProjections,
 } from "@/hooks/useFi";
-import { useModeSwitch } from "@/hooks/useModeSwitch";
+import { useSalliSheet } from "@/hooks/useSalliSheet";
 import { chartColor } from "@/lib/chartColors";
 import { formatLKR, formatLKRAbbrev, formatPct } from "@/lib/format";
 import { useSalliStore } from "@/lib/store";
@@ -140,7 +140,7 @@ export default function FinancialIndependenceScreen() {
   const colors = useThemeColors();
   const shadow = useHardShadow();
   const askSalli = useSalliStore((st) => st.askSalli);
-  const { enterBuddy } = useModeSwitch();
+  const { open: openSalli } = useSalliSheet();
   const router = useRouter();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Overview");
   const [strategyOpen, setStrategyOpen] = useState(true);
@@ -399,7 +399,7 @@ export default function FinancialIndependenceScreen() {
               askSalli(
                 "Look at my Freedom position and give me a prioritised plan. Run the wealth advisor if you need a fresh one.",
               );
-              enterBuddy();
+              openSalli();
             }}
             press="sink"
             haptic="light"

@@ -26,7 +26,6 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 
-import { EdgeSwipeModeSwitcher } from "@/components/layout/EdgeSwipeModeSwitcher";
 import { TourOverlay } from "@/components/tour/TourOverlay";
 import { ToastHost } from "@/components/ui/toast-host";
 import { useAuth } from "../lib/auth";
@@ -68,14 +67,28 @@ function AppShell() {
   return (
     <QueryClientProvider client={queryClient}>
       <StatusBar style={isDark ? "light" : "dark"} />
-      <EdgeSwipeModeSwitcher>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.background },
-          }}
-        />
-      </EdgeSwipeModeSwitcher>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.background },
+        }}
+      >
+        {/* Salli is presented over Pro Mode, not beside it.
+
+            `presentation: "modal"` is the iOS page-sheet: it rises from the
+            bottom, leaves the screen underneath visible and scaled behind it,
+            and dismisses on a downward drag. That is the entire interaction the
+            EdgeSwipeModeSwitcher used to hand-roll with a PanResponder and a
+            placeholder overlay, except the platform does the physics and every
+            user already knows the gesture.
+
+            It also fixes the asymmetry that made the old design hard to leave:
+            a sheet cannot be entered without also showing you how to close it.
+
+            Only this route is declared explicitly; every other route in the
+            group stays file-based and inherits `screenOptions`. */}
+        <Stack.Screen name="(buddy)" options={{ presentation: "modal" }} />
+      </Stack>
       <TourOverlay />
       <ToastHost />
     </QueryClientProvider>

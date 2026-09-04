@@ -1,19 +1,17 @@
 import { useEffect } from "react";
 
-import { useModeSwitch } from "@/hooks/useModeSwitch";
+import { useSalliSheet } from "@/hooks/useSalliSheet";
 
 /**
- * Pro Mode's "Salli AI" tab now enters Buddy Mode directly instead of its own
- * screen — the separate Scrooge persona/tone is retired. This stub only exists
- * because Expo Router's <Tabs> needs a real screen per visible tab entry;
- * FloatingTabBar already intercepts the tab press and navigates straight to
- * /(buddy), so this only fires as defense-in-depth against a stray deep link.
+ * Pro Mode's "Salli" tab presents the Salli sheet rather than navigating to its
+ * own screen. This stub only exists because Expo Router's <Tabs> needs a real
+ * screen per visible tab entry; FloatingTabBar already intercepts the press, so
+ * this fires only as defence against a stray deep link to /(tabs)/agent.
  */
 export default function AgentTabRedirect() {
-  const { enter } = useModeSwitch();
+  const { open } = useSalliSheet();
   useEffect(() => {
-    // replace, not push: this route should leave no history entry behind.
-    enter("buddy", { replace: true });
-  }, [enter]);
+    open();
+  }, [open]);
   return null;
 }

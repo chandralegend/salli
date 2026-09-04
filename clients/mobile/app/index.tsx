@@ -46,5 +46,9 @@ export default function Index() {
   // itself; existing users who onboarded before Buddy Mode shipped land here
   // instead, so this is a one-time prompt for them, not a repeat every launch.
   if (!modeChosen) return <Redirect href="/mode-choice" />;
-  return <Redirect href={mode === "buddy" ? "/(buddy)" : "/(tabs)"} />;
+  // Always land in Pro Mode. Salli is a sheet presented over it, so booting
+  // straight to /(buddy) would leave the sheet with nothing underneath and
+  // nothing to dismiss back to. A chat-first user gets the sheet raised on top
+  // instead, which BuddyBoot does once the tabs are mounted.
+  return <Redirect href={mode === "buddy" ? "/(tabs)?salli=1" : "/(tabs)"} />;
 }

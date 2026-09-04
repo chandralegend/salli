@@ -55,9 +55,9 @@ type SalliStore = {
    *
    * Same shape as the quick-add draft above, and for the same reason: the
    * screen that raises the intent is not the screen that acts on it, and
-   * `useModeSwitch` is deliberately narrow — navigating and setting the mode
-   * together is its whole job, and threading a payload through it would widen
-   * a contract that exists to stay closed.
+   * `useSalliSheet` is deliberately narrow. Opening and closing the sheet is
+   * its whole job, and threading a payload through it would widen a contract
+   * that exists to stay closed.
    */
   pendingAsk: string | null;
   askSalli: (question: string) => void;

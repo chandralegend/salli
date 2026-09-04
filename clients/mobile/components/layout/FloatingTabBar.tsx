@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { NavFreedom, NavHome, NavLedger, NavSalli } from "@/components/ui/nav-icons";
 import { TourTarget } from "@/components/tour/TourTarget";
-import { useModeSwitch } from "@/hooks/useModeSwitch";
+import { useSalliSheet } from "@/hooks/useSalliSheet";
 import { useAppTheme, useThemeColors } from "../../lib/theme";
 
 /**
@@ -95,7 +95,7 @@ function NavTab({
  */
 export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const router = useRouter();
-  const { enterBuddy } = useModeSwitch();
+  const { open: openSalli } = useSalliSheet();
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
 
@@ -110,12 +110,13 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
     const { Icon, label } = ROUTE_META[route.name] ?? ROUTE_META.index;
 
     const onPress = () => {
-      // "Salli AI" enters Buddy Mode directly — the separate Scrooge-persona
-      // screen is retired, so this never lets the tab's own route mount.
-      // Via useModeSwitch so the stored mode moves with the navigation; setting
-      // only the route left the edge-swipe believing we were still in Pro Mode.
+      // Salli is presented as a sheet over Pro Mode rather than replacing it,
+      // so this tab never lets its own route mount. It reads as a tab and
+      // behaves as a sheet trigger, which is why it is also the one tab that
+      // never shows an active state: you are never inside /(tabs) with the
+      // sheet closed and Salli selected.
       if (route.name === "agent") {
-        enterBuddy();
+        openSalli();
         return;
       }
       const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });

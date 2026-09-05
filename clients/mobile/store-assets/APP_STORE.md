@@ -177,13 +177,41 @@ Prices are derived, not chosen by feel: see UNIT_ECONOMICS.md. A conversation
 costs 200 credits, and 200 is the cheapest rate at which the $1.99 pack stays
 profitable without prompt caching and at the worse 30% commission.
 
-Display names and descriptions:
+**Status: all three are configured in App Store Connect** (2026-09-05). Prices
+verified after reload; US proceeds confirm the 15% Small Business rate.
 
-| Product | Display name | Description |
+| Product | Apple ID | Price was | Price now | Proceeds |
+|---|---|---|---|---|
+| 10k | 6807270257 | $4.99 | **$1.99** | $1.69 |
+| 25k | 6807270410 | $9.99 | **$4.49** | $3.82 |
+| 60k | 6807270523 | $19.99 | **$9.99** | $8.49 |
+
+App Store Localization (English U.S.) as entered. **The description field is
+capped at 55 characters**, which is far shorter than it looks in the docs, so
+the copy is written to fit rather than truncated:
+
+| Product | Display name (35 max) | Description (55 max) |
 |---|---|---|
-| 10k | Small credit pack | 10,000 AI credits, about 50 conversations with Salli. Credits never expire. |
-| 25k | Medium credit pack | 25,000 AI credits, about 125 conversations with Salli. Credits never expire. |
-| 60k | Large credit pack | 60,000 AI credits, about 300 conversations with Salli. Credits never expire. |
+| 10k | 10,000 AI Credits | About 50 conversations. Credits never expire. |
+| 25k | 25,000 AI Credits | About 125 conversations. Credits never expire. |
+| 60k | 60,000 AI Credits | About 300 conversations. Credits never expire. |
+
+Review notes are filled on all three, explaining the credit rate, the path to
+the purchase (Settings > Plan), and that no purchase is needed to exercise the
+app.
+
+**Still outstanding: the review Screenshot on each product.** It is the one
+required field left, and it needs an image of the purchase UI, which means a
+capture of Settings > Plan from the simulator. Apple rejects IAPs submitted
+without it.
+
+Two things App Store Connect says that shape the plan:
+
+- "Your first consumable in-app purchase must be submitted with a new app
+  version." The packs cannot ship on their own; they ride with the 1.0
+  submission.
+- The app is still at **1.0 Prepare for Submission**, so nothing has been
+  submitted yet despite builds 21 to 23 being uploaded.
 
 Before submitting, each must be:
 

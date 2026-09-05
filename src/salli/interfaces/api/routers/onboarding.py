@@ -34,7 +34,7 @@ _AccountSeed = tuple[str, str, str, "str | None"]
 
 _BASE_ACCOUNTS: list[_AccountSeed] = [
     ("1100", "Cash", "asset", None),
-    ("1200", "Bank Account — LKR", "asset", None),
+    ("1200", "Bank Account (LKR)", "asset", None),
     ("3000", "Opening Equity", "equity", None),
     ("5000", "General Expenses", "expense", None),
     # Without this account there is nowhere to post a donation, so the

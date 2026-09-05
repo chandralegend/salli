@@ -635,7 +635,7 @@ def make_manager_tools(
     @tool
     async def create_account(
         code: Annotated[str, "Account code, e.g. '1010'"],
-        name: Annotated[str, "Account name, e.g. 'Cash — BOC'"],
+        name: Annotated[str, "Account name, e.g. 'Cash (BOC)'"],
         account_type: Annotated[str, "One of: asset, liability, equity, income, expense"],
         currency: Annotated[str, "Currency code, e.g. 'LKR'"] = "LKR",
     ) -> str:
@@ -729,7 +729,7 @@ def make_manager_tools(
                 "type": "action_approval",
                 "action": "post_journal_entry",
                 "description": (
-                    f"Post {currency} {amount} — Dr {debit_account_id} / Cr {credit_account_id} "
+                    f"Post {currency} {amount}, Dr {debit_account_id} / Cr {credit_account_id} "
                     f"on {entry_date}: {description}"
                 ),
                 "params": params,

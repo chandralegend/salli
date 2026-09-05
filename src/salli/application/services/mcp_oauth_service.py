@@ -182,7 +182,7 @@ class McpOAuthService:
             )
         except ExpiredSignatureError as exc:
             raise ConsentError(
-                "This authorization request has expired — please try connecting again."
+                "This authorization request has expired. Please try connecting again."
             ) from exc
         except JWTError as exc:
             # Logged distinctly from genuine expiry — a signature/issuer
@@ -190,7 +190,7 @@ class McpOAuthService:
             # verify (e.g. an env var rotation), not that time ran out.
             _log.warning("MCP consent: ART failed to decode (%s: %s)", type(exc).__name__, exc)
             raise ConsentError(
-                "This connection link is no longer valid — please try connecting again."
+                "This connection link is no longer valid. Please try connecting again."
             ) from exc
         return payload
 
@@ -223,7 +223,7 @@ class McpOAuthService:
             )
 
         if not await self.is_mcp_enabled(user_id):
-            raise ConsentError("MCP access isn't available for this account — check Settings.")
+            raise ConsentError("MCP access isn't available for this account. Check Settings.")
 
         code = secrets.token_urlsafe(32)
         async with self._uow_factory() as uow:

@@ -87,7 +87,7 @@ class ParsingService:
                 bank=bank,
                 period_start="",
                 period_end="",
-                errors=["No transactions found in the file — check the format is supported"],
+                errors=["No transactions found in the file. Check the format is supported"],
             )
 
         period_start = min(r.date for r in raw_rows)
@@ -126,7 +126,7 @@ class ParsingService:
                 period_start=period_start,
                 period_end=period_end,
                 raw_rows=raw_rows,
-                errors=["No accounts found — create a chart of accounts first"],
+                errors=["No accounts found. Create a chart of accounts first"],
             )
 
         # 4. LLM classifies transactions

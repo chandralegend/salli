@@ -95,10 +95,10 @@ def build_mcp_server(services: Any, issuer_url: str) -> FastMCP:
             "Access to one user's Salli financial data and account: net worth, "
             "budgets, debt payoff plans, portfolio, subscriptions, insurance coverage, "
             "tax position, saved documents/memories, and the Wealth Advisor. Numbers "
-            "returned by read tools are authoritative — do not recompute or adjust "
+            "returned by read tools are authoritative. Do not recompute or adjust "
             "them. Tools that write (create_account, create_reminder, "
             "post_journal_entry, and the document/memory writers) take effect "
-            "immediately — the user already authorized this when they connected."
+            "immediately. The user already authorized this when they connected."
         ),
         token_verifier=SalliTokenVerifier(services.mcp_oauth),
         auth=AuthSettings(

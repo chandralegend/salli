@@ -48,7 +48,7 @@ def _spend(
 
 
 ACCOUNTS = [
-    _account("bank", "Bank Account — LKR", "asset"),
+    _account("bank", "Bank Account (LKR)", "asset"),
     _account("exp", "General Expenses", "expense"),
     _account("inc", "Employment Income", "income"),
 ]

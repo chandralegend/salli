@@ -22,13 +22,13 @@ router = APIRouter(prefix="/billing", tags=["billing"])
 # adapter or the service, because wording is an interface concern — the same condition
 # is phrased differently for a CLI than for a dialog.
 _UNAVAILABLE_COPY = {
-    "checkout_required": "You don't have an active subscription yet — start one from checkout.",
+    "checkout_required": "You don't have an active subscription yet. Start one from checkout.",
     "past_due": "There's an unpaid invoice on your subscription. Settle it in the billing "
     "portal, then change your plan.",
     "paused": "Your subscription is paused. Resume it in the billing portal to change plans.",
     "scheduled_change": "Your subscription is already scheduled to cancel. Manage that in the "
     "billing portal first.",
-    "unknown_status": "Your subscription isn't in a state we can change automatically — "
+    "unknown_status": "Your subscription isn't in a state we can change automatically. "
     "please use the billing portal.",
     "no_change": "You're already on this plan and billing cycle.",
 }

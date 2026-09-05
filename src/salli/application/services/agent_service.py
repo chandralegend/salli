@@ -36,7 +36,7 @@ def _provider_error_message(exc: BaseException) -> str:
     if "401" in text or "authentication_error" in text or "invalid x-api-key" in text.lower():
         return (
             "The Anthropic API key was rejected. If you're using your own key, "
-            "check it in Settings — otherwise this is on our side."
+            "check it in Settings. Otherwise this is on our side."
         )
     if "429" in text or "rate_limit" in text:
         return "The AI provider is rate-limiting this key. Please try again shortly."
@@ -478,7 +478,7 @@ class AgentService:
             haiku = chat_model(api_key=api_key, model=HAIKU, temperature=0, max_tokens=20)
             prompt = (
                 "Generate a 3-5 word title for this conversation. "
-                "Reply with ONLY the title — no quotes, no punctuation, no explanation.\n\n"
+                "Reply with ONLY the title. No quotes, no punctuation, no explanation.\n\n"
                 f"User: {user_msg[:200]}\n"
                 f"Assistant: {ai_text[:400]}"
             )

@@ -32,7 +32,7 @@ _DRAFT_SCHEMA: dict[str, Any] = {
         },
         "description": {
             "type": "string",
-            "description": "A short human description of the transaction (e.g. 'Groceries — Keells').",
+            "description": "A short human description of the transaction (e.g. 'Groceries, Keells').",
         },
         "debit_account_id": {
             "type": ["string", "null"],
@@ -65,7 +65,7 @@ _DRAFT_SCHEMA: dict[str, Any] = {
         "credit_account_hint": {
             "type": ["object", "null"],
             "description": (
-                "Same as debit_account_hint, but for the credit side — ONLY when credit_account_id is null."
+                "Same as debit_account_hint, but for the credit side. ONLY when credit_account_id is null."
             ),
             "properties": {
                 "name": {"type": "string", "description": "Suggested account name."},
@@ -98,7 +98,7 @@ _DRAFT_SCHEMA: dict[str, Any] = {
 _PROMPT = """You convert a person's plain-language note about a single transaction into a DRAFT \
 double-entry journal entry. You do NOT post anything; the user reviews your draft first.
 
-The user's chart of accounts (choose account ids ONLY from this list — never invent an id):
+The user's chart of accounts (choose account ids ONLY from this list, never invent an id):
 {accounts}
 
 Double-entry rules:

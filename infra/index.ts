@@ -257,19 +257,20 @@ const api = new render.WebService(
   {
     provider: renderProvider,
     dependsOn: [project],
-    // `maintenance_mode` is still ignored: the API rejects that field on some
-    // plans, and we never set it deliberately anyway.
+    // Free-tier services can't be updated via this provider — any update sends a
+    // `maintenance_mode` field the API rejects ("only for non-free tier"). So we
+    // ignore the mutable bits and manage them out-of-band (Render API/dashboard).
     //
-    // `envVars` used to be ignored too, because free-tier services cannot be
-    // updated through this provider at all. That made the service's environment
-    // something you had to set by hand in the Render dashboard, and it meant a
-    // variable added to this file was accepted by `pulumi up` and then silently
-    // dropped. REVENUECAT_PRODUCT_CREDITS_10K/25K/60K were added that way and
-    // never reached the service; without them the RevenueCat webhook verifies a
-    // real purchase and grants zero credits, since revenuecat.py drops empty
-    // keys from the product map. Now that the service is on `starter`, Pulumi
-    // manages the environment again and the file is the source of truth.
-    ignoreChanges: ["maintenanceMode"],
+    // The service is on `starter` now, so the plan reason has lapsed, but do NOT
+    // simply drop `envVars` from this list. Pulumi would then delete every
+    // variable `apiEnv` does not declare, and the live service carries about ten
+    // that it doesn't: BYOK_ENCRYPTION_KEYS, MCP_SIGNING_SECRET, OPENAI_API_KEY,
+    // the four JIRA_* used by bug reporting, and PADDLE_PRICE_CREDITS_10K/25K/60K.
+    // REVENUECAT_WEBHOOK_SECRET is declared here but sourced from a GitHub secret
+    // that does not exist, so it would go too and take the purchase webhook with
+    // it. Declare those in `apiEnv` first, then remove `envVars` in the same
+    // change. See BACKLOG.md.
+    ignoreChanges: ["envVars", "maintenanceMode"],
   },
 );
 

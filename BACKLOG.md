@@ -110,29 +110,32 @@ the shipped app. The earlier copy audit swept `clients/mobile` only.
 
 ### Pulumi ignores the Render service's environment
 
-`infra/index.ts` carried `ignoreChanges: ["envVars", "maintenanceMode"]` on the
-web service, because a free-tier Render service cannot be updated through that
-provider at all. The consequence was quiet: a variable added to `apiEnv` was
-accepted by `pulumi up` and then dropped on the floor. That is what happened to
-`REVENUECAT_PRODUCT_CREDITS_10K/25K/60K`.
+`infra/index.ts` sets `ignoreChanges: ["envVars", "maintenanceMode"]` on the web
+service, because a free-tier Render service cannot be updated through that
+provider at all. The service is on `starter` now, so that reason has lapsed, but
+the flag has to stay until `apiEnv` is complete.
 
-`envVars` is now removed from that list, since the service is on `starter`.
-**This change is committed but deliberately not pushed**, because with Pulumi
-managing the environment again it will delete anything on the service that the
-config does not declare:
+The live service carries 32 variables; `apiEnv` declares at most 22. Removing
+`envVars` from `ignoreChanges` today would delete the difference:
 
-- `REVENUECAT_WEBHOOK_SECRET` is declared conditionally, but its value comes
-  from a GitHub secret that does not exist (`gh secret list` shows no
-  `REVENUECAT_*`). Production currently has a working secret set by hand: the
-  webhook answers 400 (bad signature) rather than 503 (unconfigured). Pushing
-  as-is would remove it and take the webhook offline.
-- `OPENAI_API_KEY`, `PADDLE_PRICE_PLUS` and `PADDLE_PRICE_PLUS_YEARLY` are
-  passed by the workflow but never assigned into `apiEnv`, so they would go
-  the same way if they are set on the service.
+- `BYOK_ENCRYPTION_KEYS`
+- `MCP_SIGNING_SECRET`
+- `OPENAI_API_KEY`
+- `JIRA_API_TOKEN`, `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_PROJECT_KEY`
+- `PADDLE_PRICE_CREDITS_10K`, `_25K`, `_60K`
+- `REVENUECAT_WEBHOOK_SECRET` — declared in `apiEnv` but sourced from a GitHub
+  secret that does not exist, so it resolves empty and is dropped. Production
+  proves it is live: the webhook answers 400 (bad signature), not 503
+  (unconfigured). Losing it takes the purchase webhook offline.
 
-Before pushing: add `REVENUECAT_WEBHOOK_SECRET` to the repo secrets with the
-value currently on the service, then diff Render's environment against the
-variables `apiEnv` declares and close any other gaps.
+Declare all of those in `apiEnv` (and add the webhook secret to repo secrets)
+in the same change that removes `envVars`, or the deploy silently strips the
+service.
+
+Worth knowing while this stands: the environment is edited in the Render
+dashboard, not in this repo, so the file is not the source of truth and a
+variable added to `apiEnv` alone never reaches production.
+
 
 ---
 

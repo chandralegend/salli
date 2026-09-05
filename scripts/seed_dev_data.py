@@ -124,10 +124,18 @@ _entry_count = 0
 
 
 async def mkacct(client: httpx.AsyncClient, code: str, name: str,
-                  acct_type: str, currency: str = "LKR") -> None:
-    r = await client.post("/accounts/", json={
-        "code": code, "name": name, "type": acct_type, "currency": currency,
-    })
+                  acct_type: str, currency: str = "LKR",
+                  tax_role: str | None = None) -> None:
+    """Create one account.
+
+    `tax_role` is what the tax engine classifies by — it never reads names or
+    codes. Omitting it here was why seeded data computed zero APIT/AIT credits
+    however much tax the entries withheld.
+    """
+    body = {"code": code, "name": name, "type": acct_type, "currency": currency}
+    if tax_role:
+        body["tax_role"] = tax_role
+    r = await client.post("/accounts/", json=body)
     r.raise_for_status()
     _accts[code] = r.json()["id"]
 
@@ -248,10 +256,18 @@ async def seed(token: str) -> None:
         await mkacct(client, "1002", "Fixed Deposit – People's Bank 5M","asset")
         await mkacct(client, "1003", "HSBC – USD Account",              "asset", "USD")
 
+        # Prepaid tax. APIT and AIT are withheld at source and FTC is paid to a
+        # foreign authority, so all three are money already paid against this
+        # year's bill: assets (receivables), not liabilities. Typed as
+        # liabilities they carried debit balances, which the balance sheet
+        # rendered as negative liabilities and which pushed net worth above
+        # total assets.
+        await mkacct(client, "1010", "APIT Receivable", "asset", tax_role="apit_credit")
+        await mkacct(client, "1011", "AIT Receivable",  "asset", tax_role="ait_credit")
+        await mkacct(client, "1012", "Foreign Tax Credit Receivable", "asset",
+                     tax_role="foreign_tax_credit")
+
         # Liabilities
-        await mkacct(client, "2000", "APIT Payable",         "liability")
-        await mkacct(client, "2010", "AIT Withheld",         "liability")
-        await mkacct(client, "2020", "Foreign Tax Credit",   "liability")
         await mkacct(client, "2030", "Credit Card – Visa Infinite", "liability")
 
         # Equity
@@ -261,7 +277,8 @@ async def seed(token: str) -> None:
         await mkacct(client, "4000", "Employment Income",             "income")
         await mkacct(client, "4010", "Interest Income – Fixed Deposit","income")
         await mkacct(client, "4015", "Interest Income – Savings",      "income")
-        await mkacct(client, "4020", "Foreign Service Income",         "income")  # 15% final
+        await mkacct(client, "4020", "Foreign Service Income",         "income",
+                     tax_role="fsi_income")  # 15% final
         await mkacct(client, "4030", "Freelance Income",               "income")
         await mkacct(client, "4040", "Rental Income",                  "income")
 
@@ -282,7 +299,8 @@ async def seed(token: str) -> None:
         await mkacct(client, "5120", "Electronics & Equipment",       "expense")
         await mkacct(client, "5130", "Travel & Accommodation",        "expense")
         await mkacct(client, "5140", "IRD Tax Installments",          "expense")
-        await mkacct(client, "5150", "Qualifying Donations",          "expense")  # tax-deductible
+        await mkacct(client, "5150", "Qualifying Donations",          "expense",
+                     tax_role="qualifying_payment")  # tax-deductible
         await mkacct(client, "5160", "Business Expenses",             "expense")
         await mkacct(client, "5170", "Bank Charges & FX Fees",        "expense")
         await mkacct(client, "5180", "Prior Year Tax Settlement",     "expense")
@@ -457,7 +475,7 @@ async def seed(token: str) -> None:
             await entry(client, date,
                 f"People's Bank FD Interest – {q} FY2025/26 (AIT 5% withheld)", [
                 ("1001",  1, "83125.00"),
-                ("2010",  1,  "4375.00"),   # DR AIT Withheld liability (pre-paid tax)
+                ("1011",  1,  "4375.00"),   # DR AIT Receivable (tax withheld at source)
                 ("4010", -1, "87500.00"),   # CR Interest Income
             ])
 
@@ -501,7 +519,7 @@ async def seed(token: str) -> None:
             await entry(client, f"{ym}-26",
                 f"Salary – {ym} (ABC Technology Ltd, APIT deducted)", [
                 ("1001",  1, "350000.00"),
-                ("2000",  1,  "25000.00"),   # DR APIT Payable (withheld tax)
+                ("1010",  1,  "25000.00"),   # DR APIT Receivable (tax withheld at source)
                 ("4000", -1, "375000.00"),   # CR Employment Income
             ])
 

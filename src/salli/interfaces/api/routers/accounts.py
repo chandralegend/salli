@@ -11,6 +11,18 @@ router = APIRouter(prefix="/accounts", tags=["accounts"])
 
 AccountTypeStr = Literal["asset", "liability", "equity", "income", "expense"]
 
+# The tax engine classifies strictly by `tax_role`, never by account name or
+# code (see tax_service). Leaving it off these schemas meant a user-created
+# account could never carry one, so only the chart auto-built during
+# onboarding was ever visible to the engine.
+TaxRoleStr = Literal[
+    "apit_credit",
+    "ait_credit",
+    "foreign_tax_credit",
+    "qualifying_payment",
+    "fsi_income",
+]
+
 
 class AddAccountRequest(BaseModel):
     code: str
@@ -18,6 +30,7 @@ class AddAccountRequest(BaseModel):
     type: AccountTypeStr
     currency: str = "LKR"
     parent_id: str | None = None
+    tax_role: TaxRoleStr | None = None
 
 
 class UpdateAccountRequest(BaseModel):
@@ -25,6 +38,7 @@ class UpdateAccountRequest(BaseModel):
     name: str
     type: AccountTypeStr
     currency: str = "LKR"
+    tax_role: TaxRoleStr | None = None
 
 
 @router.get("/")
@@ -39,6 +53,7 @@ async def list_accounts(user_id: CurrentUser, svc: AppServices):
             "currency": a.currency,
             "parent_id": a.parent_id,
             "is_active": a.is_active,
+            "tax_role": a.tax_role,
         }
         for a in accounts
     ]
@@ -53,6 +68,7 @@ async def add_account(body: AddAccountRequest, user_id: CurrentUser, svc: AppSer
         type=body.type,
         currency=body.currency,
         parent_id=body.parent_id,
+        tax_role=body.tax_role,
     )
     return {"id": account_id}
 
@@ -70,6 +86,7 @@ async def get_account(account_id: str, user_id: CurrentUser, svc: AppServices):
         "currency": account.currency,
         "parent_id": account.parent_id,
         "is_active": account.is_active,
+        "tax_role": account.tax_role,
     }
 
 
@@ -98,6 +115,14 @@ async def reactivate_account(account_id: str, user_id: CurrentUser, svc: AppServ
 async def update_account(
     account_id: str, body: UpdateAccountRequest, user_id: CurrentUser, svc: AppServices
 ):
+    # The repository assigns `row.tax_role = tax_role` unconditionally, and the
+    # mobile client does not send the field — so passing body.tax_role straight
+    # through would clear the role on every rename and silently inflate that
+    # user's tax bill. An omitted field keeps whatever the account already has.
+    tax_role = body.tax_role
+    if "tax_role" not in body.model_fields_set:
+        existing = await svc.ledger.get_account(user_id, account_id)
+        tax_role = existing.tax_role if existing else None
     await svc.ledger.update_account(
         user_id=user_id,
         account_id=account_id,
@@ -105,6 +130,7 @@ async def update_account(
         name=body.name,
         type=body.type,
         currency=body.currency,
+        tax_role=tax_role,
     )
     return {"id": account_id}
 

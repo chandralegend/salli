@@ -77,7 +77,9 @@ async def client(app):
 AUTH = {"Authorization": "Bearer test-user-1"}
 
 
-def make_account(id: str = "acc-1", code: str = "1000", name: str = "Cash"):
+def make_account(
+    id: str = "acc-1", code: str = "1000", name: str = "Cash", tax_role: str | None = None
+):
     a = MagicMock()
     a.id = id
     a.code = code
@@ -86,6 +88,7 @@ def make_account(id: str = "acc-1", code: str = "1000", name: str = "Cash"):
     a.currency = "LKR"
     a.parent_id = None
     a.is_active = True
+    a.tax_role = tax_role
     return a
 
 

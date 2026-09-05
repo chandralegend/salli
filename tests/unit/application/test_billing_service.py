@@ -864,10 +864,17 @@ async def test_byok_still_counts_usage(uow_factory, billing_port, repos):
 
 
 async def test_byok_sails_past_the_free_limit(uow_factory, billing_port):
-    """Free allows 150 agent messages; a BYOK user must get well past that."""
+    """Free allows 150 agent messages; a BYOK user must get well past that.
+
+    Counted in messages, not credits. This used to loop `free_limit + 5` times,
+    which read the credit allowance as a message count — harmless only while a
+    message cost 10 credits and the product stayed under the BYOK ceiling. At
+    200 credits a message that loop spends six million credits and trips the
+    backstop the test below is about.
+    """
     svc = _byok_service(uow_factory, billing_port, byok_users={USER})
-    free_limit = get_plan("free").limits[METRIC_AI_CREDITS]
-    for _ in range(free_limit + 5):
+    free_messages = get_plan("free").limits[METRIC_AI_CREDITS] // cost(ACTION_AGENT_MESSAGE, None)
+    for _ in range(free_messages + 5):
         await svc.spend_credits(USER, ACTION_AGENT_MESSAGE)  # must not raise
 
 

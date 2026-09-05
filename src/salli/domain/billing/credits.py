@@ -44,18 +44,31 @@ ACTION_STATEMENT_UPLOAD = "statement_upload"
 ACTION_FIRE_STRATEGY = "fire_strategy"
 
 #: Base cost in credits, before the model multiplier.
+#:
+#: Calibrated against measured inference cost, not against each other by feel.
+#: See UNIT_ECONOMICS.md. The anchor is the iOS 10,000-credit pack at $1.99:
+#: one credit nets about $0.000169 after Apple's cut, so 200 credits buys a
+#: conversation roughly 3.5x over at the cached cost and still turns a profit
+#: at the uncached cost we pay today.
+#:
+#: The previous table priced an agent message at 10 and an advisor run at 20,
+#: which had it backwards: a message is several round trips and the advisor is
+#: one call. Output tokens bill at 5x input, so an action's cost tracks what it
+#: *writes* far more than what it reads.
 ACTION_COSTS: dict[str, int] = {
     # A turn is a supervisor plus however many specialist workers it calls, so
-    # it is several model round trips, not one.
-    ACTION_AGENT_MESSAGE: 10,
-    # One small structured extraction.
-    ACTION_ENTRY_PARSE: 2,
+    # it is several model round trips, not one. Each resends the ~3,600-token
+    # system-plus-tools prefix. The most expensive thing the app does.
+    ACTION_AGENT_MESSAGE: 200,
+    # One small structured extraction against the chart of accounts.
+    ACTION_ENTRY_PARSE: 25,
     # One structured call, max_tokens=2000.
-    ACTION_ADVISOR_RUN: 20,
+    ACTION_ADVISOR_RUN: 150,
     # Bulk row classification, batched 30 rows per call.
-    ACTION_STATEMENT_UPLOAD: 30,
-    # One structured call, max_tokens=8000 — twice the advisor's output budget.
-    ACTION_FIRE_STRATEGY: 40,
+    ACTION_STATEMENT_UPLOAD: 200,
+    # One structured call, max_tokens=8000 — twice the advisor's output budget,
+    # and output is where the money goes.
+    ACTION_FIRE_STRATEGY: 250,
 }
 
 #: Actions that always run on the pinned extraction model, so a user's model

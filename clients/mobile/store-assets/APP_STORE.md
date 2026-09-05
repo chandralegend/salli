@@ -167,11 +167,23 @@ Two that need thought rather than a reflex "no":
 Three **consumable** credit packs, defined in `clients/mobile/lib/purchases.ts`
 and sold through RevenueCat:
 
-| Product ID | Credits |
-|---|---|
-| `lk.salli.app.credits.10k` | 10,000 |
-| `lk.salli.app.credits.25k` | 25,000 |
-| `lk.salli.app.credits.60k` | 60,000 |
+| Product ID | Credits | Conversations | Price (USD) |
+|---|---|---|---|
+| `lk.salli.app.credits.10k` | 10,000 | 50 | **$1.99** |
+| `lk.salli.app.credits.25k` | 25,000 | 125 | **$4.49** |
+| `lk.salli.app.credits.60k` | 60,000 | 300 | **$9.99** |
+
+Prices are derived, not chosen by feel: see UNIT_ECONOMICS.md. A conversation
+costs 200 credits, and 200 is the cheapest rate at which the $1.99 pack stays
+profitable without prompt caching and at the worse 30% commission.
+
+Display names and descriptions:
+
+| Product | Display name | Description |
+|---|---|---|
+| 10k | Small credit pack | 10,000 AI credits, about 50 conversations with Salli. Credits never expire. |
+| 25k | Medium credit pack | 25,000 AI credits, about 125 conversations with Salli. Credits never expire. |
+| 60k | Large credit pack | 60,000 AI credits, about 300 conversations with Salli. Credits never expire. |
 
 Before submitting, each must be:
 
@@ -185,9 +197,10 @@ Before submitting, each must be:
    the bank and tax forms are complete, products stay in "Developer Action
    Needed" and cannot be reviewed.
 
-Credits are consumed at 10 per AI message (`CREDITS_PER_MESSAGE`). The Free plan
-includes 6,000 credits, so the packs extend rather than unlock: the app is fully
-usable without a purchase, which is the answer to give if review asks.
+Credits are consumed at 200 per AI message (`CREDITS_PER_MESSAGE`). The Free plan
+includes 30,000 credits a month, about 150 conversations, so the packs extend
+rather than unlock: the app is fully usable without a purchase, which is the
+answer to give if review asks.
 
 ---
 

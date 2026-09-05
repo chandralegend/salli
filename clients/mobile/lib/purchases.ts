@@ -99,7 +99,7 @@ export const CREDIT_PACK_PRODUCTS = [
  * conversations rather than in credits; if the base or the pinned model ever
  * changes, this moves with it.
  */
-export const CREDITS_PER_MESSAGE = 10;
+export const CREDITS_PER_MESSAGE = 200;
 
 export const CREDITS_BY_PRODUCT: Record<string, number> = {
   "lk.salli.app.credits.10k": 10_000,

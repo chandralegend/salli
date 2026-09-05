@@ -67,12 +67,18 @@ single trivial call cannot go below.
 $0.0029; it costs $0.02 to $0.04. Note that even the *floor* of one trivial call
 ($0.0051) already exceeds the entire per-conversation budget.
 
-Consequences at today's numbers:
+Consequences at today's numbers, **at the ceiling**:
 
-- **Free tier**: 600 conversations x $0.02 = **~$12 of inference given away per
-  active free user, per month.**
-- **Pro**: 10,000 conversations x $0.02 = **~$200/month to serve, sold for $29.**
-  Every heavy Pro subscriber loses about $170 a month.
+- **Free tier**: 600 conversations x $0.02 = ~$12 of inference per free user.
+- **Pro**: 10,000 conversations x $0.02 = ~$200/month to serve, sold for $29.
+
+> **An allowance is a ceiling, not a forecast.** Almost nobody consumes 100% of
+> a metered plan, so these are worst-case exposures per user, not the expected
+> blended cost. What actually decides whether a plan makes money is average
+> consumption; what the ceiling decides is how much a single heavy user can
+> cost you. Both matter, and they are different questions. The rate below is
+> chosen so the *packs* are profitable outright, and so the ceiling is
+> survivable rather than ruinous.
 
 ## Why no pack price fixes it
 
@@ -115,24 +121,48 @@ changing.
 
 ### 2. Re-rate the credit (the actual fix)
 
-Caching alone still leaves a ~3.5x gap. The rate itself is wrong. Changing
-`ACTION_AGENT_MESSAGE` from **10 credits to 100** (`domain/billing/credits.py`)
-divides every allowance by ten and makes the whole ladder work:
+Caching alone still leaves a ~3.5x gap. The rate itself is wrong. **Settled at
+200 credits per conversation**, up from 10.
 
-| | Conversations | Cost (cached) | Price | Net at 15% | Margin |
+The rate is derived, not picked. The 10,000-credit pack is priced at **$1.99**,
+which nets $1.69 after Apple's 15% commission. 200 is the cheapest rate at which
+that pack is comfortably profitable *without* prompt caching and *at* the worse
+30% commission — 100 credits would lose money on every pack sold today:
+
+| Rate | 10k pack buys | Margin cached / today (15%) | Verdict |
+|---|---|---|---|
+| 100 | 100 conversations | 46% / **-12%** | loses money today |
+| 150 | 67 conversations | 64% / 25% | thin at 30% commission |
+| **200** | **50 conversations** | **73% / 44%** | **profitable in every case** |
+
+The resulting ladder, with a mild volume discount:
+
+| | Credits | Conversations | Price | Per conversation | Margin (15%) |
 |---|---|---|---|---|---|
-| Free | 60/mo | $0.60 | $0 | - | acceptable acquisition cost |
-| Pro | 1,000/mo | $10 | $29 | $24.65 | **59%** |
-| 10k pack | 100 | $1.00 | $4.99 | $4.24 | **76%** |
-| 25k pack | 250 | $2.50 | $9.99 | $8.49 | **71%** |
-| 60k pack | 600 | $6.00 | $19.99 | $16.99 | **65%** |
+| 10k pack | 10,000 | 50 | **$1.99** | $0.0398 | 73% cached / 44% today |
+| 25k pack | 25,000 | 125 | **$4.49** | $0.0359 (10% off) | 70% / 38% |
+| 60k pack | 60,000 | 300 | **$9.99** | $0.0333 (16% off) | 67% / 33% |
 
-That is a normal consumer ladder with healthy margin, and 60 free conversations
-a month (two a day) is still a generous free tier.
+Allowances are scaled to keep the plans' documented commitments intact, which
+`tests/unit/domain/test_content_gating.py::TestFreeTierIntent` pins:
 
-The cost is honesty in the copy: Free becomes "around 60 conversations a month"
-and Pro "around 1,000", not 600 and 10,000. Those strings live in
-`domain/billing/plans.py` and on the pricing page.
+| | Credits/mo | Conversations | Cost at the ceiling |
+|---|---|---|---|
+| Free | 30,000 | 150 | $1.38 cached / $2.85 today |
+| Pro | 500,000 | 2,500 | $23 cached / $47.50 today, vs $29 |
+
+Free keeps its 150 messages, because the credit migration is not allowed to take
+allowance away from existing users. Pro keeps 5x the heaviest observed real
+usage (one production user hit exactly 500 and was capped rather than satisfied).
+
+Two things follow from that Pro row:
+
+- Pro costs **$0.0116 per conversation** against the 60k pack's $0.0333, so the
+  subscription is clearly better value than topping up. That ordering is the
+  right incentive and should be preserved if any of these numbers move.
+- **Pro at its ceiling is underwater until caching lands** (-64% today, +21%
+  cached). At a realistic 20% average consumption it is 67% today and 84%
+  cached. Caching is therefore not optional before Pro is marketed hard.
 
 ### A third, free lever: stop paying for the stall
 
@@ -146,9 +176,9 @@ a correctness bug and a cost bug at once.
 
 ## Recommended sequence
 
-1. **Do not create the IAP products at a price yet.** Settle the rate first; the
-   price follows from it, and changing a live IAP price is far more annoying
-   than choosing it once.
+1. **Done:** the rate is settled at 200 credits per conversation and the
+   allowances are scaled to match, so the packs can now be created at
+   $1.99 / $4.49 / $9.99.
 2. **Instrument `response.usage`** on every agent call and log input, output,
    cache-read and cache-write tokens. Everything above rests on a `chars / 4`
    estimate and a 3-to-5-call guess. One day of real traffic replaces both with
@@ -157,9 +187,14 @@ a correctness bug and a cost bug at once.
    `usage.cache_read_input_tokens`.
 4. **Fix the first-turn stall.** It is roughly a 2x cost multiplier on first
    questions.
-5. **Re-rate the credit** (10 -> 100) and update the plan copy and the pricing
-   page together.
-6. **Then** create the three consumables at $4.99 / $9.99 / $19.99.
+5. **Done:** the credit is re-rated (10 -> 200), allowances scaled, and the plan
+   copy and pricing-page FAQ updated in the same commit.
+6. **Create the three consumables** at $1.99 / $4.49 / $9.99, product IDs
+   `lk.salli.app.credits.10k` / `.25k` / `.60k`.
+7. **Set `REVENUECAT_PRODUCT_CREDITS_10K/25K/60K`** on the Render service to
+   those exact ids. They are absent from the workflow, the GitHub secrets and
+   the Pulumi stack config; if they are unset the webhook verifies and then
+   grants zero credits, because `revenuecat.py` drops empty keys.
 
 ## Two other things found while doing this
 

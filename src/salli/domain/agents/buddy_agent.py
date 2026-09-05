@@ -161,7 +161,9 @@ def build_buddy_agent(
 
     graph = create_supervisor(
         agents=[tax_worker, finance_worker],
-        model=chat_model(api_key=api_key, model=model or CONVERSATION_MODEL, temperature=0),
+        model=chat_model(
+            api_key=api_key, model=model or CONVERSATION_MODEL, temperature=0, cache=True
+        ),
         tools=manager_tools,
         prompt=dated_prompt,
         output_mode="full_history",

@@ -62,7 +62,9 @@ def build_tax_worker(
 
     tools = make_read_tools(ledger_svc, tax_svc) if tools is None else tools
     return create_react_agent(
-        model=chat_model(api_key=api_key, model=model or CONVERSATION_MODEL, temperature=0),
+        model=chat_model(
+            api_key=api_key, model=model or CONVERSATION_MODEL, temperature=0, cache=True
+        ),
         tools=tools,
         name="tax_specialist",
         prompt=dated_prompt,

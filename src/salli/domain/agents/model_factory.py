@@ -50,8 +50,38 @@ def reveal(api_key: Any) -> str:
     return str(revealed)
 
 
-def chat_model(*, api_key: Any, model: str = CONVERSATION_MODEL, **kwargs: Any) -> Any:
-    """Build a ChatAnthropic bound to exactly this key."""
+def chat_model(
+    *, api_key: Any, model: str = CONVERSATION_MODEL, cache: bool = False, **kwargs: Any
+) -> Any:
+    """Build a ChatAnthropic bound to exactly this key.
+
+    `cache` turns on Anthropic's automatic prompt caching by putting a
+    top-level `cache_control` on the request, which caches the longest stable
+    prefix it can find: the system prompt and the tool schemas. For the
+    conversational agents that prefix is around 3,600 tokens, resent on every
+    one of the several round trips a single turn makes, so caching it is the
+    largest cost lever the app has. Cache reads bill at about a tenth of input.
+
+    It is opt-in rather than the default because a cache *write* costs 1.25x.
+    That pays for itself the moment the prefix is read again, which inside one
+    agent turn is guaranteed. On a one-shot call with a small prompt it is
+    simply a 25% surcharge on something nobody reads back, so those call sites
+    leave it off until volume makes the five-minute window worth betting on.
+
+    Two things to watch, neither of which can be asserted from here:
+    the minimum cacheable prefix is model dependent (roughly 512 to 4096
+    tokens), so a short prompt may silently never cache; and any volatile byte
+    in the prefix invalidates it. `usage.cache_read_input_tokens` is the only
+    proof it is working. See UNIT_ECONOMICS.md.
+    """
     from langchain_anthropic import ChatAnthropic
+
+    if cache:
+        # Merged, not assigned: a caller may already be passing model_kwargs,
+        # and clobbering it here would drop whatever they set.
+        kwargs["model_kwargs"] = {
+            **kwargs.get("model_kwargs", {}),
+            "cache_control": {"type": "ephemeral"},
+        }
 
     return ChatAnthropic(model=model, api_key=reveal(api_key), **kwargs)

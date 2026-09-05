@@ -49,6 +49,16 @@ jobs:
       PADDLE_PRICE_PRO: ${{ vars.PADDLE_PRICE_PRO }}
       PADDLE_PRICE_PLUS_YEARLY: ${{ vars.PADDLE_PRICE_PLUS_YEARLY }}
       PADDLE_PRICE_PRO_YEARLY: ${{ vars.PADDLE_PRICE_PRO_YEARLY }}
+      # The iOS credit packs. `infra/index.ts` only sets these on the service
+      # when they are non-empty, and `revenuecat.py` drops empty keys from the
+      # product -> credits map, so leaving them unset means the webhook verifies
+      # a real purchase and then grants nothing. Product ids are not secrets;
+      # they are the same strings declared in App Store Connect and mirrored in
+      # RevenueCat, so they live in vars alongside the Paddle price ids.
+      REVENUECAT_PRODUCT_CREDITS_10K: ${{ vars.REVENUECAT_PRODUCT_CREDITS_10K }}
+      REVENUECAT_PRODUCT_CREDITS_25K: ${{ vars.REVENUECAT_PRODUCT_CREDITS_25K }}
+      REVENUECAT_PRODUCT_CREDITS_60K: ${{ vars.REVENUECAT_PRODUCT_CREDITS_60K }}
+      REVENUECAT_WEBHOOK_SECRET: ${{ secrets.REVENUECAT_WEBHOOK_SECRET }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:

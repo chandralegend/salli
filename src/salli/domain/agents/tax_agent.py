@@ -74,7 +74,7 @@ def build_tax_agent(ledger_svc, tax_svc, checkpointer=None, *, api_key):
     from salli.domain.agents.model_factory import chat_model
     from salli.domain.agents.tools import make_tools
 
-    model = chat_model(api_key=api_key, temperature=0)
+    model = chat_model(api_key=api_key, temperature=0, cache=True)
     tools = make_tools(ledger_svc, tax_svc)
 
     if checkpointer is None:

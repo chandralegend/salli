@@ -200,10 +200,21 @@ Review notes are filled on all three, explaining the credit rate, the path to
 the purchase (Settings > Plan), and that no purchase is needed to exercise the
 app.
 
-**Still outstanding: the review Screenshot on each product.** It is the one
-required field left, and it needs an image of the purchase UI, which means a
-capture of Settings > Plan from the simulator. Apple rejects IAPs submitted
-without it.
+Review screenshots are uploaded on all three (`iap-review/billing-credits.png`,
+1320x2868, well over Apple's 640x920 floor), and each was verified by reloading
+the page rather than by trusting the editor's own state.
+
+A caveat on what that screenshot shows. It is the Billing screen, which is
+where the packs appear, not the live purchase sheet. `TopUpCard` renders
+nothing until StoreKit actually returns products:
+
+    if (!purchasesAvailable() || !packs.data?.length) return null;
+
+That is deliberate, and its docstring explains why: "a visible-but-broken buy
+button is worse than no button." StoreKit has nothing to serve while the
+products sit in Prepare for Submission, so the real purchase UI cannot be
+photographed yet. Once they reach Ready to Submit and a sandbox account is
+signed in on the device, replace the image with a true capture of the packs.
 
 Two things App Store Connect says that shape the plan:
 
@@ -296,8 +307,8 @@ larger layout, so it is worth keeping.
 
 ## Pre-submission checklist
 
-- [ ] IAP products created, priced, and attached to the version
-- [ ] Paid Applications Agreement active
+- [x] IAP products created and priced; still to be attached to the version
+- [x] Paid Applications Agreement active (Aug 31 2026 to Aug 10 2027), bank account and W-8BEN both Active
 - [ ] Demo account created with a presentable address, seeded, and verified by
       signing in on a clean device
 - [ ] App Privacy answers entered to match the table above

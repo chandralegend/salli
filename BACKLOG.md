@@ -108,13 +108,6 @@ the model you pick decides how far your credits go". Model choice was removed
 and everything is pinned to Haiku, so this is live marketing copy contradicting
 the shipped app. The earlier copy audit swept `clients/mobile` only.
 
-### Render is on the free plan, which sleeps
-
-`infra/Pulumi.prod.yaml:16` sets `renderPlan: free`. It spins down after
-inactivity and a cold start takes tens of seconds. An App Store reviewer opening
-the app against a sleeping API may reasonably conclude it is broken. Move to
-`starter` before submitting.
-
 ### Pulumi ignores the Render service's environment
 
 `infra/index.ts` carried `ignoreChanges: ["envVars", "maintenanceMode"]` on the
@@ -140,12 +133,6 @@ config does not declare:
 Before pushing: add `REVENUECAT_WEBHOOK_SECRET` to the repo secrets with the
 value currently on the service, then diff Render's environment against the
 variables `apiEnv` declares and close any other gaps.
-
-### Credit pricing does not cover inference cost
-
-A conversation is metered at 10 credits, which the Pro plan prices at about
-$0.0029. It costs roughly $0.02 to serve. See UNIT_ECONOMICS.md for the
-measurements and the recommended fix. Blocks setting IAP prices.
 
 ---
 

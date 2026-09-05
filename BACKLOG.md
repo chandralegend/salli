@@ -115,6 +115,32 @@ inactivity and a cold start takes tens of seconds. An App Store reviewer opening
 the app against a sleeping API may reasonably conclude it is broken. Move to
 `starter` before submitting.
 
+### Pulumi ignores the Render service's environment
+
+`infra/index.ts` carried `ignoreChanges: ["envVars", "maintenanceMode"]` on the
+web service, because a free-tier Render service cannot be updated through that
+provider at all. The consequence was quiet: a variable added to `apiEnv` was
+accepted by `pulumi up` and then dropped on the floor. That is what happened to
+`REVENUECAT_PRODUCT_CREDITS_10K/25K/60K`.
+
+`envVars` is now removed from that list, since the service is on `starter`.
+**This change is committed but deliberately not pushed**, because with Pulumi
+managing the environment again it will delete anything on the service that the
+config does not declare:
+
+- `REVENUECAT_WEBHOOK_SECRET` is declared conditionally, but its value comes
+  from a GitHub secret that does not exist (`gh secret list` shows no
+  `REVENUECAT_*`). Production currently has a working secret set by hand: the
+  webhook answers 400 (bad signature) rather than 503 (unconfigured). Pushing
+  as-is would remove it and take the webhook offline.
+- `OPENAI_API_KEY`, `PADDLE_PRICE_PLUS` and `PADDLE_PRICE_PLUS_YEARLY` are
+  passed by the workflow but never assigned into `apiEnv`, so they would go
+  the same way if they are set on the service.
+
+Before pushing: add `REVENUECAT_WEBHOOK_SECRET` to the repo secrets with the
+value currently on the service, then diff Render's environment against the
+variables `apiEnv` declares and close any other gaps.
+
 ### Credit pricing does not cover inference cost
 
 A conversation is metered at 10 credits, which the Pro plan prices at about

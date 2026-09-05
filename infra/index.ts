@@ -257,11 +257,19 @@ const api = new render.WebService(
   {
     provider: renderProvider,
     dependsOn: [project],
-    // Free-tier services can't be updated via this provider — any update sends a
-    // `maintenance_mode` field the API rejects ("only for non-free tier"). So we
-    // ignore the mutable bits and manage them out-of-band (Render API/dashboard)
-    // while on free. On a paid plan, drop this to let Pulumi manage env directly.
-    ignoreChanges: ["envVars", "maintenanceMode"],
+    // `maintenance_mode` is still ignored: the API rejects that field on some
+    // plans, and we never set it deliberately anyway.
+    //
+    // `envVars` used to be ignored too, because free-tier services cannot be
+    // updated through this provider at all. That made the service's environment
+    // something you had to set by hand in the Render dashboard, and it meant a
+    // variable added to this file was accepted by `pulumi up` and then silently
+    // dropped. REVENUECAT_PRODUCT_CREDITS_10K/25K/60K were added that way and
+    // never reached the service; without them the RevenueCat webhook verifies a
+    // real purchase and grants zero credits, since revenuecat.py drops empty
+    // keys from the product map. Now that the service is on `starter`, Pulumi
+    // manages the environment again and the file is the source of truth.
+    ignoreChanges: ["maintenanceMode"],
   },
 );
 

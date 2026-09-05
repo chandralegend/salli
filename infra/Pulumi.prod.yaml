@@ -13,7 +13,11 @@ config:
   # (GET https://api.render.com/v1/owners). Looks like "tea-xxxxxxxx" or "usr-…".
   salli:renderOwnerId: tea-ctfa2bl2ng1s738hqnu0
   salli:renderRegion: singapore
-  salli:renderPlan: free                      # free (sleeps) | starter | standard …
+  # The service was moved to starter by hand. This has to say so too: index.ts
+  # passes `plan: renderPlan` straight to the WebService, so leaving "free" here
+  # meant the next `pulumi up` would quietly downgrade it back and reintroduce
+  # the cold starts that a reviewer opening the app would hit.
+  salli:renderPlan: starter                   # free (sleeps) | starter | standard …
 
   # ── Public URLs — Vercel assigns <name>-<account-slug>.vercel.app, so set the
   #    real ones explicitly. Swap to the custom domains once DNS is wired. ──────

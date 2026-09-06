@@ -40,46 +40,54 @@ tax,IRD,Sri Lanka,LKR,budget,ledger,double entry,net worth,FIRE,expenses,account
 Most money apps sort your spending into categories and stop there. Salli keeps
 books.
 
-Every entry has two sides. Money leaves one account and arrives in another, and
-Salli records both. That is what double-entry means, and it is why the numbers
-add up: your balance sheet balances, your net worth reconciles, and nothing
-quietly goes missing into a category called "other".
+Built for Sri Lanka, for rupees and the IRD calendar, rather than a global app
+adapted to LKR after the fact.
 
-WHAT YOU GET
+REAL DOUBLE-ENTRY LEDGER
+Every rupee is recorded properly: debits, credits, immutable entries. Money
+leaves one account and arrives in another, and Salli records both sides. That is
+why the numbers add up. Your balance sheet balances, your net worth reconciles,
+and nothing quietly goes missing into a category called "other". Mistakes are
+fixed with a reversing entry, never by editing history. Track cash, bank
+accounts, credit cards and foreign-currency holdings in one place.
 
-A real ledger. Accounts, journal entries, debits and credits. Posted entries are
-never edited. A correction is a reversing entry, so your history stays honest.
+SRI LANKAN TAX, COMPUTED
+A rules engine applies the IRD bands for the year, takes off personal relief,
+and subtracts the tax already withheld from you as APIT and AIT. Foreign service
+income is handled at its own flat rate. Every figure comes from the engine, and
+the workings are shown band by band.
 
-Sri Lankan tax, computed. A rules engine applies the IRD bands for the year,
-takes off personal relief, and subtracts the tax already withheld from you as
-APIT and AIT. Foreign service income is handled at its own flat rate. The
-figures come from the engine, never from a language model.
+YOUR FREEDOM NUMBER
+How much invested capital would cover your spending, what your savings rate and
+debt load are doing to it, and roughly when work becomes optional.
 
-Your Freedom number. How much invested capital would cover your spending, what
-your savings rate and debt load are doing to it, and roughly when work becomes
-optional.
-
-The everyday things too. Budgets, debt payoff plans, a portfolio, insurance
-cover, recurring subscriptions, reminders for filing dates, and statement
-import.
+EVERYTHING ELSE IN ONE APP
+- Budgets with category limits and rollover tracking
+- Debt payoff planning (avalanche or snowball)
+- Portfolio tracking across equities, unit trusts and crypto
+- Insurance coverage gap analysis
+- Recurring subscription tracking
+- Reminders for filing dates, and bank statement import
 
 AN AI THAT HAS READ YOUR BOOKS
-
 Salli AI can see your ledger, your tax position and your goals. Ask why your tax
 bill is what it is, or what you spent most on, and it answers from your actual
-entries rather than from a guess. It explains and drafts. It never computes your
-tax: that is the engine's job, and the two are kept apart on purpose.
+entries rather than from a guess. It explains and it drafts. It never computes
+your tax: that is the engine's job, and the two are kept apart on purpose.
 
-YOUR DATA
+The free plan includes a monthly AI allowance that covers around 150
+conversations. Every other feature, including the full tax engine, is unmetered.
+Buy more credits if you need them, or bring your own API key and pay your
+provider directly.
 
-Export everything as one JSON file, whenever you like. Delete everything, and it
-is gone. Bring your own AI key if you would rather pay your provider directly.
-No ads, no trackers, and nothing sold to anyone.
+PRIVATE BY DEFAULT
+Your financial data is yours. We do not sell it, and we do not use it to train
+AI models. Export everything as one JSON file whenever you like. Delete
+everything, and it is gone.
 
-Built in Sri Lanka, for rupees and the IRD calendar.
-
-Salli gives planning estimates, not financial advice, and is not a substitute
-for a chartered accountant.
+Salli gives planning estimates, not financial advice. It is not a licensed
+financial or investment advisor, and it is not a substitute for a chartered
+accountant.
 ```
 
 **What's New** (4000 max, per release)

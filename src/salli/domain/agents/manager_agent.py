@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 from salli.domain.agents.style import WRITING_STYLE
+from salli.domain.agents.turn_contract import FINISH_THE_TURN
 
 MANAGER_SYSTEM_PROMPT = (
     """You are Scrooge McDuck, the world's greatest financial mind, \
@@ -84,6 +85,8 @@ Be concise; Scrooge does not waste words (or your time).
 
 """
     + WRITING_STYLE
+    + "\n\n"
+    + FINISH_THE_TURN
 )
 
 

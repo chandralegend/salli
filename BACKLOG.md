@@ -10,34 +10,6 @@ Ordered by priority within each section.
 
 ## P1 — Agent behaviour
 
-### The agent ends its first turn on a preamble instead of an answer
-
-Reproduced twice on 2026-09-05, both on the first message of a fresh thread.
-The agent emits a sentence, calls its tools (the UI confirms "Checked 3 things"
-/ "Checked 4 things"), emits a second sentence ending in "Let me check your
-expense accounts…", and then **ends the turn**. The real answer only arrives
-when the user sends another message ("Go on", "Yes please").
-
-Examples, both against the seeded founder account:
-
-- "Why is my tax bill 11.7L?" → "I'd like to pull up your actual tax position
-  so I can show you exactly where that 11.7L is coming from. Let me check your
-  ledger and tax computations." Turn ends.
-- "What did I spend the most on this year?" → ranked list never arrives; ends on
-  "Let me check your expense accounts to see the annual picture."
-
-Impact: this is the *first* thing a new user sees, and it is the exact claim the
-App Store listing makes ("An AI that reads your actual books"). It reads as the
-assistant failing.
-
-Suspected: a recursion/step limit in the LangGraph loop, or the stream closing
-after the first tool round rather than after the final synthesis. Start at
-`src/salli/application/services/agent_service.py` and the graph in
-`src/salli/domain/agents/tax_agent.py`.
-
-Note the model is pinned to Haiku (`domain/ai_models.py`), so check whether the
-behaviour differs by model before assuming it is a graph bug.
-
 ### The agent mis-explains the tax breakdown
 
 Asked to break down a Rs. 11.7L bill, it produced a correct band table

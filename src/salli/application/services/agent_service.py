@@ -94,6 +94,18 @@ def _worker_from_event(event: dict) -> str | None:
     return None
 
 
+#: How many graph steps one turn may take before LangGraph gives up.
+#:
+#: The default is 25, and a supervisor turn spends them fast: the manager's own
+#: call, a handoff, the specialist's call, each of its tool round trips, the
+#: handoff back, and the manager's synthesis. A tax question that consults both
+#: specialists can pass 25 legitimately, and hitting the ceiling truncates the
+#: turn rather than answering it, which looks exactly like the model choosing to
+#: stop. Raised so the limit is a runaway backstop again instead of something a
+#: normal question can reach.
+GRAPH_RECURSION_LIMIT = 60
+
+
 class AgentService:
     def __init__(
         self,
@@ -545,7 +557,10 @@ class AgentService:
         await self._ensure_session(user_id, thread_id, persona=persona)
 
         agent = self._get_agent(persona, api_key, model)
-        config = {"configurable": {"thread_id": f"{user_id}:{thread_id}", "user_id": user_id}}
+        config = {
+            "configurable": {"thread_id": f"{user_id}:{thread_id}", "user_id": user_id},
+            "recursion_limit": GRAPH_RECURSION_LIMIT,
+        }
         input_messages = await self._build_input_messages(user_id, message, file_refs)
 
         async for event in self._stream_events(agent, {"messages": input_messages}, config):
@@ -573,7 +588,10 @@ class AgentService:
         agent = self._get_agent(
             await self._persona_for_thread(user_id, thread_id, persona), api_key, model
         )
-        config = {"configurable": {"thread_id": f"{user_id}:{thread_id}", "user_id": user_id}}
+        config = {
+            "configurable": {"thread_id": f"{user_id}:{thread_id}", "user_id": user_id},
+            "recursion_limit": GRAPH_RECURSION_LIMIT,
+        }
 
         async for event in self._stream_events(agent, Command(resume=decision), config):
             yield event

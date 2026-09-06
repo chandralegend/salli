@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 from salli.domain.agents.style import WRITING_STYLE
+from salli.domain.agents.turn_contract import FINISH_THE_TURN
 
 BUDDY_SYSTEM_PROMPT = (
     """You are Salli, talking to the user in Buddy Mode, a patient, \
@@ -91,6 +92,8 @@ Be warm, but don't ramble. Respect their time even while being patient.
 
 """
     + WRITING_STYLE
+    + "\n\n"
+    + FINISH_THE_TURN
 )
 
 

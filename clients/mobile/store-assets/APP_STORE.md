@@ -128,14 +128,29 @@ thing and a label that claims another is a review question waiting to happen.
 **Do you use data for tracking?** No. There is no advertising SDK, no analytics
 SDK, and no tracking domains.
 
-| Data type | Collected | Linked to user | Tracking | Purpose |
-|---|---|---|---|---|
-| Email address | Yes | Yes | No | App Functionality |
-| User ID | Yes | Yes | No | App Functionality |
-| Other financial info | Yes | Yes | No | App Functionality |
-| Purchase history | Yes | Yes | No | App Functionality |
-| Other user content | Yes | Yes | No | App Functionality |
-| Photos or videos | Yes | Yes | No | App Functionality |
+**Entered and published in App Store Connect (2026-09-07).** All are Linked to
+the user, none used for Tracking, all for App Functionality.
+
+| Data type | In the label | In the binary's manifest |
+|---|---|---|
+| Email address | Yes | Yes |
+| Name | Yes | Yes |
+| User ID | Yes | Yes |
+| Other financial info | Yes | Yes |
+| Purchase history | Yes | Yes |
+| Other user content | Yes | Yes |
+| Photos or videos | Yes | Yes |
+| Product interaction | Yes | no |
+| Performance data | Yes | no |
+| Crash data | Yes | no |
+
+The label already existed and declared 8 types; it disagreed with the manifest in
+both directions. Purchase history and photos or videos were missing from the
+label (added), and Name was missing from the manifest (added, ships in the next
+build). The last three are declared in the label only. They are left alone
+deliberately: no analytics or crash SDK is installed, but usage counters and bug
+reports arguably do produce that data, and over-declaring is the safe direction
+while under-declaring is what gets an app pulled.
 
 Why each one:
 
@@ -156,7 +171,9 @@ advertising identifiers, sensitive info.
 
 ## Age rating
 
-Expected **4+**. The questionnaire answers are None/No throughout: no violence,
+**Already set in App Store Connect: 4+** across 172 countries, with regional
+variants (Brazil AL, Korea ALL, Vietnam 00+). Recorded here for the next time it
+is asked. The questionnaire answers are None/No throughout: no violence,
 no sexual content, no profanity, no horror, no gambling, no contests, no drugs
 or alcohol references, no medical or treatment information.
 

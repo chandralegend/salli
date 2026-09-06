@@ -25,6 +25,10 @@ _OPENING_EQUITY_NAME = "Opening Equity"
 _OPENING_EQUITY_TYPE: AccountType = "equity"
 
 _DEFAULT_DEPOSIT_CODE = "1200"
+#: What postings are measured in. Matches `Settings.base_currency`; declared
+#: here rather than imported so the domain-facing service keeps no dependency
+#: on the settings object.
+_BASE_CURRENCY = "LKR"
 _DEFAULT_DEPOSIT_NAME = "Bank Account"
 
 # Legacy onboarding stored these as free-text agent_documents "memories" (namespace
@@ -56,11 +60,16 @@ class UserProfileService:
         ledger_service: LedgerService,
         fi_service: FiService,
         document_service: DocumentService,
+        fx_service: Any = None,
     ) -> None:
         self._uow_factory = uow_factory
         self._ledger = ledger_service
         self._fi = fi_service
         self._documents = document_service
+        # Optional so existing call sites and tests keep working. Without it a
+        # foreign-currency declaration falls back to a rate of 1, which is
+        # wrong but visible, rather than silently booking dollars as rupees.
+        self._fx = fx_service
 
     # ── Profile ──────────────────────────────────────────────────────────────
 
@@ -229,6 +238,22 @@ class UserProfileService:
             entry_ids.append(entry_id)
         return entry_ids
 
+    async def _income_fx_rate(self, currency: str, on_date: str) -> Decimal:
+        """The rate that converts `currency` into the base currency.
+
+        Both postings of a declared income entry carry the same rate, so the
+        entry balances in base terms whatever the currency. A failure here is
+        deliberately not fatal: onboarding should not dead-end because an
+        exchange-rate service is down, and a rate of 1 is a visibly wrong number
+        the user can correct later rather than a lost entry.
+        """
+        if currency == _BASE_CURRENCY or self._fx is None:
+            return Decimal(1)
+        try:
+            return await self._fx.get_buying_rate(currency, on_date)
+        except Exception:
+            return Decimal(1)
+
     async def declare_income(self, user_id: str, incomes: list[dict[str, Any]]) -> list[str]:
         """incomes: [{"code", "name", "amount", "deposit_account_code"?, "deposit_account_name"?}].
 
@@ -243,6 +268,12 @@ class UserProfileService:
             amount = Decimal(str(item["amount"]))
             if amount == 0:
                 continue
+            # Foreign remittances are the reason this exists. They are the one
+            # source that routinely arrives in something other than rupees, and
+            # booking them at face value as LKR overstated income by roughly the
+            # exchange rate: a $2,000 remittance became Rs. 2,000.
+            currency = str(item.get("currency") or _BASE_CURRENCY).upper()
+            fx_rate = await self._income_fx_rate(currency, today)
             income_id = await self._ensure_account(
                 user_id, cache, item["code"], item["name"], "income"
             )
@@ -257,13 +288,15 @@ class UserProfileService:
                     "account_id": deposit_id,
                     "direction": Direction.DEBIT,
                     "amount": amount,
-                    "currency": "LKR",
+                    "currency": currency,
+                    "fx_rate": fx_rate,
                 },
                 {
                     "account_id": income_id,
                     "direction": Direction.CREDIT,
                     "amount": amount,
-                    "currency": "LKR",
+                    "currency": currency,
+                    "fx_rate": fx_rate,
                 },
             ]
             entry_id = await self._ledger.add_entry(

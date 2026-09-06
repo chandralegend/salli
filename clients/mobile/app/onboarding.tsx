@@ -32,7 +32,7 @@ import {
 import { useIsTablet } from "@/lib/responsive";
 import type { AppMode } from "@/lib/store";
 import { useSalliStore } from "@/lib/store";
-import { useThemeColors } from "@/lib/theme";
+import { useHardShadow, useThemeColors } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const STEP_LABELS = ["Profile", "Income", "Risk", "Goals", "Review", "Mode"];
@@ -51,6 +51,10 @@ const WELCOME_ITEMS = [
   { icon: Target, title: "Financial goals", detail: "FIRE, home, emergency fund, debt-free" },
 ];
 
+/** Tapped through rather than picked from a modal: four options is short
+ *  enough that cycling is faster, and it keeps the row inline. */
+const FOREIGN_CURRENCIES = ["USD", "EUR", "GBP", "AUD"];
+
 const EMPLOYMENT_OPTIONS = ["employed", "self_employed", "student", "retired"] as const;
 
 const EMPLOYMENT_LABELS: Record<(typeof EMPLOYMENT_OPTIONS)[number], string> = {
@@ -61,12 +65,12 @@ const EMPLOYMENT_LABELS: Record<(typeof EMPLOYMENT_OPTIONS)[number], string> = {
 };
 
 const INCOME_SOURCES = [
-  { key: "employment", label: "Employment", hint: "Salary / wages · APIT applies", code: "4100", accountName: "Employment Income" },
-  { key: "interest", label: "Interest Income", hint: "Bank deposits · AIT applies", code: "4400", accountName: "Interest Income" },
-  { key: "freelance", label: "Freelance / Business", hint: "Self-employed income", code: "4200", accountName: "Freelance / Business Income" },
-  { key: "rental", label: "Rental Income", hint: "Property lease", code: "4300", accountName: "Rental Income" },
-  { key: "foreign", label: "Foreign Remittances", hint: "FSI · 15% flat regime", code: "4500", accountName: "Foreign Service Income (FSI)" },
-  { key: "dividends", label: "Dividends", hint: "Share dividends · WHT applies", code: "4600", accountName: "Dividend Income" },
+  { key: "employment", label: "Employment", hint: "Salary / wages · APIT applies", code: "4100", accountName: "Employment Income", multiCurrency: false },
+  { key: "interest", label: "Interest Income", hint: "Bank deposits · AIT applies", code: "4400", accountName: "Interest Income", multiCurrency: false },
+  { key: "freelance", label: "Freelance / Business", hint: "Self-employed income", code: "4200", accountName: "Freelance / Business Income", multiCurrency: false },
+  { key: "rental", label: "Rental Income", hint: "Property lease", code: "4300", accountName: "Rental Income", multiCurrency: false },
+  { key: "foreign", label: "Foreign Remittances", hint: "FSI · 15% flat regime", code: "4500", accountName: "Foreign Service Income (FSI)", multiCurrency: true },
+  { key: "dividends", label: "Dividends", hint: "Share dividends · WHT applies", code: "4600", accountName: "Dividend Income", multiCurrency: false },
 ] as const;
 
 const DRAWDOWN_OPTIONS = [
@@ -104,7 +108,7 @@ function StepHeader({ index, onBack }: { index: number; onBack: () => void }) {
       <View className="flex-row items-center justify-between px-5 pt-2.5">
         <Pressable
           onPress={onBack}
-          className="h-11 w-11 items-center justify-center rounded-full border border-foreground/[0.08] bg-foreground/[0.07]"
+          className="h-11 w-11 items-center justify-center rounded-[11px] border-2 border-foreground bg-card"
         >
           <ChevronLeft size={16} color={colors.foreground} strokeWidth={2} />
         </Pressable>
@@ -121,8 +125,8 @@ function StepHeader({ index, onBack }: { index: number; onBack: () => void }) {
           <View
             key={g}
             className={cn(
-              "h-[3px] flex-1 rounded-pill",
-              g < index + 1 ? "bg-salli-accent opacity-50" : g === index + 1 ? "bg-salli-accent" : "bg-foreground/[0.15]",
+              "h-[6px] flex-1 rounded-pill border border-foreground",
+              g <= index + 1 ? "bg-salli-accent" : "bg-card",
             )}
           />
         ))}
@@ -141,7 +145,9 @@ function StepHeader({ index, onBack }: { index: number; onBack: () => void }) {
 function StepTitle({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <View className="pb-4 pt-4">
-      <Text className="mb-1.5 font-sans-extrabold text-[32px] tracking-tight text-foreground">{title}</Text>
+      <Text style={{ letterSpacing: -0.8 }} className="mb-1.5 font-sans-extrabold text-[29px] text-foreground">
+        {title}
+      </Text>
       <Text className="text-[15px] text-muted-foreground">{subtitle}</Text>
     </View>
   );
@@ -150,6 +156,7 @@ function StepTitle({ title, subtitle }: { title: string; subtitle: string }) {
 export default function OnboardingScreen() {
   const router = useRouter();
   const colors = useThemeColors();
+  const shadow = useHardShadow();
   const insets = useSafeAreaInsets();
   // Comfortable top breathing room even on notchless devices / web preview,
   // where the safe-area inset is 0 and content would otherwise hug the edge.
@@ -177,6 +184,22 @@ export default function OnboardingScreen() {
   // Step 2 — Income
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
   const [incomeAmounts, setIncomeAmounts] = useState<Record<string, string>>({});
+  /**
+   * What each income source is earned in.
+   *
+   * Only foreign remittances offer a choice, and they default to USD because
+   * that is what most remittances into Sri Lanka arrive as. Anything absent is
+   * rupees. Before this existed the amount was booked as LKR whatever the user
+   * meant, so a $2,000 month was recorded as Rs. 2,000.
+   */
+  const [incomeCurrencies, setIncomeCurrencies] = useState<Record<string, string>>({});
+  const currencyFor = (key: string) => incomeCurrencies[key] ?? "USD";
+  const cycleCurrency = (key: string) =>
+    setIncomeCurrencies((prev) => {
+      const current = prev[key] ?? "USD";
+      const next = FOREIGN_CURRENCIES[(FOREIGN_CURRENCIES.indexOf(current) + 1) % FOREIGN_CURRENCIES.length];
+      return { ...prev, [key]: next };
+    });
 
   // Step 3 — Risk
   const [timeHorizon, setTimeHorizon] = useState(10);
@@ -243,6 +266,7 @@ export default function OnboardingScreen() {
         code: s.code,
         name: s.accountName,
         amount: Number(incomeAmounts[s.key] || 0),
+        currency: s.multiCurrency ? currencyFor(s.key) : "LKR",
       }));
       if (incomes.length > 0) {
         await declareIncomeOnboardingIncomePost({ body: { incomes } });
@@ -463,13 +487,14 @@ export default function OnboardingScreen() {
                         return next;
                       })
                     }
-                    className={cn("rounded-card border p-3.5", selected ? "border-salli-accent bg-card" : "border-foreground/[0.08] bg-card")}
+                    className={cn("rounded-card border-2 p-3.5", selected ? "border-foreground bg-card" : "border-foreground/25 bg-card")}
+                    style={selected ? shadow : undefined}
                   >
                     <View className="flex-row items-center gap-3">
                       <View
                         className={cn(
-                          "h-[22px] w-[22px] items-center justify-center rounded-badge border",
-                          selected ? "border-salli-accent bg-salli-accent" : "border-foreground/20",
+                          "h-[22px] w-[22px] items-center justify-center rounded-[6px] border-2 border-foreground",
+                          selected ? "bg-salli-accent" : "bg-card",
                         )}
                       >
                         {selected ? <Check size={14} color="#FFFFFF" strokeWidth={3} /> : null}
@@ -479,15 +504,32 @@ export default function OnboardingScreen() {
                         <Text numberOfLines={1} className="text-[14px] text-muted-foreground">{source.hint}</Text>
                       </View>
                       {selected ? (
-                        <View className="flex-none flex-row items-center gap-1 rounded-card border border-foreground/10 bg-muted px-2.5 py-1.5">
-                          <Text className="text-[15px] font-sans-medium text-muted-foreground">Rs.</Text>
+                        <View className="flex-none flex-row items-center gap-1 rounded-card border-2 border-foreground bg-card px-2 py-1.5">
+                          {source.multiCurrency ? (
+                            /* Only where it is genuinely a question. Every other
+                               source is earned in rupees, and offering a picker
+                               on all of them would imply otherwise. */
+                            <Pressable
+                              onPress={() => cycleCurrency(source.key)}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Currency for ${source.label}, currently ${currencyFor(source.key)}. Tap to change.`}
+                              hitSlop={6}
+                              className="rounded-[6px] border border-foreground bg-salli-accent px-1.5 py-0.5"
+                            >
+                              <Text className="font-sans-bold text-[13px] text-primary-foreground">
+                                {currencyFor(source.key)}
+                              </Text>
+                            </Pressable>
+                          ) : (
+                            <Text className="text-[15px] font-sans-medium text-muted-foreground">Rs.</Text>
+                          )}
                           <TextInput
                             value={incomeAmounts[source.key] ?? ""}
                             onChangeText={(v) => setIncomeAmounts((prev) => ({ ...prev, [source.key]: v }))}
                             keyboardType="numeric"
                             placeholder="0"
                             placeholderTextColor="rgba(128,128,128,0.4)"
-                            style={{ width: 44 }}
+                            style={{ width: 52 }}
                             className="text-right font-sans-semibold text-[15px] text-foreground"
                           />
                           <Text className="text-[14px] text-muted-foreground">/mo</Text>
@@ -542,13 +584,12 @@ export default function OnboardingScreen() {
                         onPress={() => setDrawdown(o.value)}
                         className={cn(
                           "flex-row items-center gap-2.5 rounded-card border px-3.5 py-[11px]",
-                          active ? "border-salli-accent bg-card" : "border-foreground/[0.08] bg-card",
+                          active ? "border-foreground bg-card" : "border-foreground/25 bg-card",
                         )}
                       >
                         <View
                           className={cn(
-                            "h-[18px] w-[18px] items-center justify-center rounded-full border-2",
-                            active ? "border-salli-accent" : "border-foreground/20",
+                            "h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-foreground",
                           )}
                         >
                           {active ? <View className="h-2 w-2 rounded-full bg-salli-accent" /> : null}

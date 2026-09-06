@@ -275,6 +275,11 @@ class IncomeItem(BaseModel):
     code: str
     name: str
     amount: Decimal
+    #: What `amount` is denominated in. Defaults to the base currency, so every
+    #: existing caller keeps its meaning. Foreign remittances are the case that
+    #: needs it: they arrive in USD, EUR or GBP, and booking them at face value
+    #: as rupees overstated income by the exchange rate.
+    currency: str = "LKR"
     deposit_account_code: str | None = None
     deposit_account_name: str | None = None
 

@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   FlatList,
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   Text,
@@ -17,6 +16,7 @@ import { ApprovalGateCard } from "@/components/agent/ApprovalGateCard";
 import { AssistantMarkdown } from "@/components/agent/AssistantMarkdown";
 import { Bloub } from "@/components/agent/Bloub";
 import type { BloubMood } from "@/components/agent/bloub-geometry";
+import { ThinkingIndicator } from "@/components/agent/ThinkingIndicator";
 import { ToolActivityBlock } from "@/components/agent/ToolActivityBlock";
 import { Drawer } from "@/components/ui/drawer";
 import { useSalliSheet } from "@/hooks/useSalliSheet";
@@ -78,19 +78,42 @@ export default function BuddyScreen() {
   // ~34pt of dead space between the composer and the keyboard, and the
   // composer visibly detaches from it. Every polished chat app collapses this;
   // measuring against ChatGPT, its gap is roughly a third of what ours was.
-  const [keyboardUp, setKeyboardUp] = useState(false);
+  //
+  // The height is tracked, not just the fact of it. Salli is presented as an
+  // iOS page sheet, and KeyboardAvoidingView measures its own frame against
+  // the window: inside a sheet those disagree, so `behavior="padding"` lifted
+  // the composer by the wrong amount and the keyboard covered it outright.
+  // Reading `endCoordinates.height` and padding by it is not subject to that
+  // mismatch, because the sheet reaches the bottom of the screen and the
+  // keyboard height is measured from exactly there.
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const keyboardUp = keyboardHeight > 0;
   useEffect(() => {
     // iOS gets the Will* pair so the padding animates with the keyboard rather
     // than snapping after it has finished moving. Android only fires Did*.
     const showEvt = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
     const hideEvt = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-    const show = Keyboard.addListener(showEvt, () => setKeyboardUp(true));
-    const hide = Keyboard.addListener(hideEvt, () => setKeyboardUp(false));
+    const show = Keyboard.addListener(showEvt, (e) =>
+      setKeyboardHeight(e.endCoordinates?.height ?? 0),
+    );
+    const hide = Keyboard.addListener(hideEvt, () => setKeyboardHeight(0));
     return () => {
       show.remove();
       hide.remove();
     };
   }, []);
+
+  // On Android the window itself resizes (adjustResize), so padding by the
+  // keyboard height as well would double-count and leave a gap the size of the
+  // keyboard. Only iOS needs the manual lift.
+  const composerPadBottom =
+    Platform.OS === "ios" && keyboardUp
+      ? // 8pt above the keyboard: enough to read as attached to it rather than
+        // welded on, and roughly what ChatGPT leaves.
+        keyboardHeight + 8
+      : keyboardUp
+        ? 8
+        : insets.bottom + 16;
   const chatColumnStyle = {
     width: "100%" as const,
     maxWidth: isTablet ? TABLET_CHAT_WIDTH : undefined,
@@ -152,6 +175,23 @@ export default function BuddyScreen() {
   const awaitingApproval = messages.some((m) =>
     m.role === "assistant" ? m.parts.some((part) => part.kind === "approval" && !part.resolved) : false,
   );
+  /**
+   * Streaming, with nothing yet to show for it.
+   *
+   * `streaming` alone is true for the whole reply, so keying the indicator off
+   * it would leave "Thinking" pinned under a reply that is already arriving.
+   * The gap worth filling is only the one before the assistant's turn has
+   * produced anything at all: no text, no tool rows.
+   */
+  const lastMessage = messages[messages.length - 1];
+  const awaitingFirstToken =
+    streaming &&
+    (!lastMessage ||
+      lastMessage.role === "user" ||
+      lastMessage.parts.every((part) =>
+        part.kind === "text" ? !part.content.trim() : false,
+      ));
+
   const chatState: ChatState = awaitingApproval
     ? "needsYou"
     : streaming
@@ -231,7 +271,11 @@ export default function BuddyScreen() {
         <View className="w-[104px]" />
       </View>
 
-      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      {/* No KeyboardAvoidingView: the composer lifts itself by the measured
+          keyboard height. Inside a page sheet KAV pads against a frame that
+          does not match the sheet, which is what hid the input in the first
+          place, and leaving it here would fight the manual padding. */}
+      <View className="flex-1">
         {messages.length === 0 ? (
           <View className="flex-1 justify-center px-4 pb-3">
             <Pressable
@@ -265,6 +309,10 @@ export default function BuddyScreen() {
             data={messages}
             keyExtractor={(m) => m.id}
             contentContainerStyle={{ padding: 14, gap: 14, ...chatColumnStyle }}
+            // Only while the reply is still empty. Once the first token or the
+            // first tool row lands, that content is the proof Salli is working
+            // and a second indicator underneath it would be noise.
+            ListFooterComponent={awaitingFirstToken ? <ThinkingIndicator /> : null}
             renderItem={({ item }) =>
               item.role === "user" ? (
                 <View className="flex-row justify-end">
@@ -322,7 +370,7 @@ export default function BuddyScreen() {
           </View>
         ) : null}
 
-        <View className="px-3.5 pt-2" style={{ paddingBottom: keyboardUp ? 8 : insets.bottom + 16 }}>
+        <View className="px-3.5 pt-2" style={{ paddingBottom: composerPadBottom }}>
           <View
             className="flex-row items-center gap-2 rounded-card border-2 border-foreground bg-card py-1.5 pl-2 pr-1.5"
             style={[chatColumnStyle, shadow]}
@@ -365,7 +413,7 @@ export default function BuddyScreen() {
             )}
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </View>
 
       <Drawer visible={sessionsOpen} onClose={() => setSessionsOpen(false)} keyboardAvoiding={false}>
         <View className="flex-row items-center justify-between px-1 pb-3 pt-1">

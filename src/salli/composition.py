@@ -95,13 +95,13 @@ def build_services(settings: Settings, checkpointer=None) -> Services:
     tax = TaxService(uow_factory)
     documents = DocumentService(uow_factory, storage)
     fi = FiService(uow_factory, llm_credentials)
-    profile = UserProfileService(uow_factory, ledger, fi, documents)
     budget = BudgetService(uow_factory)
     debt = DebtService(uow_factory)
     portfolio = PortfolioService(uow_factory)
     subscription = SubscriptionService(uow_factory)
     insurance = InsuranceService(uow_factory)
     fx = CBSLFxRateAdapter()
+    profile = UserProfileService(uow_factory, ledger, fi, documents, fx_service=fx)
     billing = BillingService(
         uow_factory, billing_port=_build_billing(settings), credentials=llm_credentials
     )

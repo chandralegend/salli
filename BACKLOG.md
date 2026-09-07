@@ -8,30 +8,6 @@ Ordered by priority within each section.
 
 ---
 
-## P1 — Agent behaviour
-
-### The agent mis-explains the tax breakdown
-
-Asked to break down a Rs. 11.7L bill, it produced a correct band table
-(subtotal Rs. 937,788) and then said:
-
-> "Wait, that's only 9.4L. The rest comes from credits:"
-
-That is wrong. The gap between the band subtotal and the Rs. 14.9L gross tax is
-the **Rs. 5.5L flat tax on foreign service income**, which sits outside the
-bands. Credits *reduce* the bill; they do not explain a shortfall.
-
-The engine's numbers were right and the final figure matched. Only the narration
-was wrong, which is the failure mode the domain rule is meant to prevent: the
-LLM explains, it does not compute. An explanation that misattributes a figure is
-still a wrong number in the user's head.
-
-Fix likely belongs in the prompt or the tool output: the FSI line is visible on
-the Tax screen ("Plus Rs. 5.5L on Rs. 36.8L of foreign service income, taxed at
-a flat rate outside these bands") but may not be in what the tool returns.
-
----
-
 ## P2 — Correctness and consistency
 
 ### Debt and the balance sheet disagree

@@ -80,7 +80,13 @@ def make_read_tools(ledger_svc: Any, tax_svc: Any) -> list[Any]:
         """
         Return the latest stored tax computation for the given year.
         If none exists, compute it now. Numbers here are authoritative;
-        narrate them — do NOT recompute or adjust them.
+        narrate them, do NOT recompute or adjust them.
+
+        The band table covers taxable_income only. Foreign service income is
+        taxed separately at a flat rate, so the bands will not sum to
+        tax_before_credits whenever fsi_tax is non-zero. Use band_tax, fsi_tax
+        and the how_* fields to explain the total rather than inferring where a
+        difference came from.
         """
         user_id = _current_user.get()
         result = await tax_svc.compute_tax(user_id, year)
@@ -102,16 +108,43 @@ def make_read_tools(ledger_svc: Any, tax_svc: Any) -> list[Any]:
                 "tax": str(bw.tax),
             }
 
+        band_tax = sum((Decimal(_bw(bw)["tax"]) for bw in result.band_workings), Decimal(0))
+
         return {
             "year": result.pack_year,
             "pack_version": result.pack_version,
             "gross_income": str(result.gross_income),
+            # Split out, because the bands only ever apply to `regular_income`.
+            # Without these the band table looks like it should reconcile to
+            # tax_before_credits, it does not, and the gap gets explained away
+            # as something else. That happened: a reply summed the bands to
+            # 9.4L against a 14.9L total and told the user "the rest comes from
+            # credits", which is wrong twice over, since credits reduce a bill
+            # rather than add to it.
+            "regular_income": str(result.regular_income),
+            "foreign_service_income": str(result.foreign_service_income),
             "personal_relief": str(result.personal_relief_applied),
+            "qualifying_payment_deduction": str(result.qp_deduction),
             "taxable_income": str(result.taxable_income),
+            "band_tax": str(band_tax),
+            "fsi_tax": str(result.fsi_tax),
             "tax_before_credits": str(result.tax_before_credits),
+            # Spelled out so the arithmetic never has to be inferred from the
+            # numbers. The model narrates this computation; it does not redo it.
+            "how_tax_before_credits_is_built": (
+                "band_tax + fsi_tax = tax_before_credits. The band table applies "
+                "to taxable_income only, which is regular_income after personal "
+                "relief and qualifying payments. Foreign service income is taxed "
+                "separately at a flat rate and never appears in the bands."
+            ),
             "apit_credit": str(result.apit_credit),
             "ait_credit": str(result.ait_credit),
             "foreign_tax_credit": str(result.foreign_tax_credit),
+            "total_credits": str(result.total_credits),
+            "how_tax_payable_is_built": (
+                "tax_before_credits - total_credits = tax_payable. Credits only "
+                "ever reduce the bill."
+            ),
             "tax_payable": str(result.tax_payable),
             "band_workings": [_bw(bw) for bw in result.band_workings],
         }

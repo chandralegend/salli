@@ -1,29 +1,90 @@
 @import "tailwindcss";
 
+/* ============================================================================
+   Salli marketing site: the neobrutalist system the mobile app already ships.
+   ----------------------------------------------------------------------------
+   The app was rebuilt on a flat, high-contrast system: a warm cream canvas,
+   2px ink borders, hard offset shadows with zero blur, one 12px radius. This
+   file is that system restated for the web, so someone who installs the app
+   after reading the site does not feel handed off to a different product.
+
+   Three rules carry almost all of it:
+
+     1. Every raised surface is `border-2 border-ink` plus a HARD shadow. No
+        blur, no tint, no elevation ramp. A blurred shadow anywhere on this
+        site is a bug, not a variation.
+     2. One radius. `rounded-card` (12px) for every container, `rounded-badge`
+        (6px) for micro-labels, and full-pill only for genuine capsules. The
+        old site had nine radii between 7px and 36px.
+     3. Colour means something. Orange is STATE (progress, what is live now),
+        lavender is AI, green confirms. They are not decoration and they are
+        not interchangeable, which is the mistake the app itself corrected.
+
+   Token names are deliberately unchanged from the previous design (cream,
+   ink, red, ink-40..70) so every page moves to the new palette at once
+   instead of drifting page by page.
+   ========================================================================= */
+
 @theme {
-  --color-cream: #f2efe6;
-  --color-cream-soft: #f5f2ea;
-  --color-ink: #16130f;
-  --color-ink-soft: #221d17;
-  --color-red: #f5310f;
-  --color-red-deep: #c9260a;
+  /* ---- Surfaces ---- */
+  /* Matches the app's light canvas exactly (#F5F3EF) so a dark app screenshot
+     dropped on this page sits flush against an ink panel with no seam. */
+  --color-cream: #f5f3ef;
+  --color-cream-soft: #edeae4;
+  --color-card: #ffffff;
+
+  /* Ink is the app's dark canvas. Used for borders, body text and inverted
+     panels alike — one value, so a border and the panel it sits on can never
+     be a shade apart. Not pure black: #000 kills the hard shadow's edge
+     against dark screenshots. */
+  --color-ink: #0e0e0e;
+  --color-ink-soft: #1c1c1e;
+
+  /* ---- Brand ---- */
+  /* `red` keeps its name from the old palette but is now the app's orange.
+     State only: progress, the active band, the live thing. */
+  --color-red: #f15a32;
+  --color-red-deep: #d64a25;
+  /* Accent for small text on the cream canvas. The bright orange is a fill
+     colour: at 3.03:1 it is unreadable as an 11px label, which is where the
+     old site used it most. This measures 5.07:1 on #F5F3EF. */
+  --color-red-ink: #bc3a12;
+  /* AI, and only AI. In the app this is the "Ask Salli" button and the user's
+     own chat bubble. It was once the same colour as the accent, which made a
+     budget bar and an AI action indistinguishable. */
+  --color-ai: #cbb9ff;
   --color-green: #1b6b47;
 
-  --color-ink-70: #2c2822;
-  --color-ink-60: #4b463d;
-  --color-ink-50: #6b6459;
-  --color-ink-40: #8c877c;
+  /* ---- Text on cream ---- */
+  /* All four clear WCAG AA against the cream canvas, including ink-40, which
+     carries small uppercase mono labels and therefore has the least margin. */
+  --color-ink-70: #2b2926;
+  --color-ink-60: #45423f;
+  --color-ink-50: #5e5a56;
+  --color-ink-40: #63605c;
 
-  --color-cream-80: #d9d3c8;
-  --color-cream-70: #e4e0d6;
-  --color-cream-60: #b7b1a5;
+  /* ---- Text on ink ---- */
+  --color-cream-80: #d8d5cf;
+  --color-cream-70: #c4c0ba;
+  --color-cream-60: #a9a5a0;
+
+  /* ---- Shape ---- */
+  --radius-card: 12px;
+  --radius-badge: 6px;
+
+  /* ---- Hard shadows ----
+     `--brut` is the shadow colour and defaults to ink. An inverted panel sets
+     `--brut: var(--color-cream)` once on its wrapper and every block inside it
+     flips, instead of each block carrying its own hard-coded shadow colour. */
+  --shadow-hard: 4px 4px 0 0 var(--brut, #0e0e0e);
+  --shadow-hard-sm: 2px 2px 0 0 var(--brut, #0e0e0e);
+  --shadow-hard-lg: 7px 7px 0 0 var(--brut, #0e0e0e);
 
   --font-sans: var(--font-archivo), system-ui, sans-serif;
   --font-display: var(--font-bricolage), var(--font-archivo), sans-serif;
   --font-mono: var(--font-jetbrains), monospace;
 }
 
-/* Base element resets — layered so utility classes (text-cream, etc.) still win the cascade. */
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -48,12 +109,69 @@
     color: var(--color-cream);
   }
 
+  /* Keyboard focus has to survive on cream, on ink, and on orange, so it is an
+     offset ring in the accent rather than a colour swap. */
+  :focus-visible {
+    outline: 3px solid var(--color-red);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
   .font-mono {
     font-variant-numeric: tabular-nums;
   }
 }
 
 @layer components {
+  /* ---- The block ----
+     Everything raised on this site is one of these. Composed as a class rather
+     than repeated utilities because the border width, radius and shadow have
+     to move together; when they were utilities the site ended up with fifteen
+     different shadows. */
+  .brut {
+    border: 2px solid var(--brut, var(--color-ink));
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-hard);
+  }
+  .brut-lg {
+    border: 2px solid var(--brut, var(--color-ink));
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-hard-lg);
+  }
+  /* Flat member of the same family: the border without the lift, for blocks
+     that sit inside another block and must not look detached from it. */
+  .brut-flat {
+    border: 2px solid var(--brut, var(--color-ink));
+    border-radius: var(--radius-card);
+  }
+
+  /* ---- Press ----
+     The one interaction this system has. The element travels into its own
+     shadow, so the shadow is not decoration: it is the distance the thing can
+     be pushed. Hover lifts it further, active flattens it completely. */
+  .press {
+    transition:
+      transform 0.12s cubic-bezier(0.2, 0, 0, 1),
+      box-shadow 0.12s cubic-bezier(0.2, 0, 0, 1);
+  }
+  @media (hover: hover) {
+    .press:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 0 var(--brut, var(--color-ink));
+    }
+  }
+  .press:active {
+    transform: translate(4px, 4px);
+    box-shadow: 0 0 0 0 var(--brut, var(--color-ink));
+  }
+
+  /* ---- Inverted panel ----
+     Flips the shadow colour for everything inside, so an ink section reads as
+     the same system in negative rather than as a second design. */
+  .on-ink {
+    --brut: var(--color-cream);
+  }
+
   /* ---- Nav underline ---- */
   .navlink {
     position: relative;
@@ -62,17 +180,41 @@
     content: "";
     position: absolute;
     left: 0;
-    bottom: -5px;
+    bottom: -6px;
     height: 3px;
     width: 100%;
     background: var(--color-red);
     transform: scaleX(0);
     transform-origin: right;
-    transition: transform 0.34s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.28s cubic-bezier(0.2, 0, 0, 1);
   }
-  .navlink:hover::after {
+  .navlink:hover::after,
+  .navlink[data-active="true"]::after {
     transform: scaleX(1);
     transform-origin: left;
+  }
+
+  /* ---- Scroll progress ----
+     CSS scroll-driven animation rather than a scroll listener: no JS on the
+     main thread per frame, and it degrades to a zero-width bar (invisible)
+     where `animation-timeline` is unsupported. */
+  .scrollbar-progress {
+    transform-origin: 0 50%;
+    scale: 0 1;
+  }
+  @supports (animation-timeline: scroll()) {
+    .scrollbar-progress {
+      animation: growProgress linear both;
+      animation-timeline: scroll(root block);
+    }
+  }
+  @keyframes growProgress {
+    from {
+      scale: 0 1;
+    }
+    to {
+      scale: 1 1;
+    }
   }
 
   /* ---- FAQ accordion ---- */
@@ -84,32 +226,22 @@
     display: none;
   }
   details.faq .faqicon {
-    transition: transform 0.32s cubic-bezier(0.34, 1.4, 0.5, 1);
+    transition: transform 0.28s cubic-bezier(0.34, 1.4, 0.5, 1);
     display: inline-block;
   }
   details.faq[open] .faqicon {
     transform: rotate(135deg);
   }
   details.faq[open] .faqa {
-    animation: fadeUp 0.5s ease both;
-  }
-
-  /* ---- Grain overlay ---- */
-  .grain {
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    opacity: 0.5;
-    mix-blend-mode: multiply;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.28'/%3E%3C/svg%3E");
+    animation: fadeUp 0.4s ease both;
   }
 
   /* ---- Long-form article body ---- */
   .article a {
-    color: var(--color-red);
+    color: var(--color-red-ink);
     text-decoration: underline;
-    text-underline-offset: 2px;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 2px;
   }
   .article p {
     font-size: 18px;
@@ -142,7 +274,7 @@
   }
   .article li::before {
     content: "→";
-    color: var(--color-red);
+    color: var(--color-red-ink);
     font-weight: 700;
     flex: none;
   }
@@ -151,12 +283,15 @@
   }
   .article blockquote {
     margin: 40px 0 0;
-    padding: 8px 0 8px 28px;
-    border-left: 4px solid var(--color-red);
+    padding: 20px 24px;
+    border: 2px solid var(--color-ink);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-hard);
+    background: var(--color-card);
   }
   .article blockquote p {
     font-family: var(--font-display);
-    font-size: 24px;
+    font-size: 22px;
     line-height: 1.35;
     letter-spacing: -0.02em;
     font-weight: 700;
@@ -178,14 +313,15 @@
     display: block;
     width: 100%;
     height: auto;
-    border-radius: 18px;
+    border: 2px solid var(--color-ink);
+    border-radius: var(--radius-card);
     margin: 32px 0 0;
   }
   .article figure img {
     margin: 0;
   }
   .article figcaption {
-    margin-top: 10px;
+    margin-top: 12px;
     font-family: var(--font-mono);
     font-size: 12.5px;
     color: var(--color-ink-40);
@@ -205,7 +341,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--color-ink-40);
+    color: var(--color-ink-50);
     text-align: left;
     padding: 10px 14px;
     border-bottom: 2px solid var(--color-ink);
@@ -213,7 +349,7 @@
   }
   .article td {
     padding: 12px 14px;
-    border-bottom: 1px solid rgba(22, 19, 15, 0.1);
+    border-bottom: 1px solid rgba(14, 14, 14, 0.12);
     color: var(--color-ink-70);
     font-variant-numeric: tabular-nums;
   }
@@ -221,18 +357,27 @@
     border-bottom: none;
   }
 
-  /* ---- Reveal-on-scroll ---- */
+  /* ---- Reveal-on-scroll ----
+     Visible by default, hidden only where a script can actually reveal it
+     again. Written the other way round, a failed bundle or a blocked script
+     leaves most of the page at opacity 0 with no way back, and the reader gets
+     a blank cream column instead of the content. Browsers without
+     `scripting` support keep the safe state. */
   .reveal {
-    opacity: 0;
-    transform: translateY(40px);
-    transition:
-      opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1),
-      transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1);
-    will-change: opacity, transform;
-  }
-  .reveal.in-view {
     opacity: 1;
-    transform: none;
+  }
+  @media (scripting: enabled) {
+    .reveal {
+      opacity: 0;
+      transform: translateY(26px);
+      transition:
+        opacity 0.6s cubic-bezier(0.2, 0, 0, 1),
+        transform 0.6s cubic-bezier(0.2, 0, 0, 1);
+    }
+    .reveal.in-view {
+      opacity: 1;
+      transform: none;
+    }
   }
 
   /* ---- Word-up hero animation ---- */
@@ -240,15 +385,11 @@
     display: inline-block;
     overflow: hidden;
     vertical-align: bottom;
-    padding-bottom: 0.04em;
+    padding-bottom: 0.06em;
   }
   .wm > span {
     display: inline-block;
-    animation: wordUp 1s cubic-bezier(0.2, 0.7, 0.12, 1) both;
-  }
-
-  .ctaring {
-    animation: ring 4.8s ease-out infinite;
+    animation: wordUp 0.85s cubic-bezier(0.2, 0.7, 0.12, 1) both;
   }
 }
 
@@ -270,48 +411,45 @@
     transform: translateX(-50%);
   }
 }
-@keyframes floaty {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-12px);
-  }
-}
-@keyframes flowIn {
-  0% {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  14%,
-  74% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  92%,
-  100% {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-}
 @keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-@keyframes ring {
-  0% {
-    transform: translate(-50%, -50%) scale(0.35);
-    opacity: 0.55;
+
+/* Everything above collapses to its resting state. The press interaction is
+   kept as an instant transform because it is feedback, not decoration: without
+   it a button stops acknowledging the click at all. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
-  100% {
-    transform: translate(-50%, -50%) scale(2.6);
-    opacity: 0;
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .wm > span,
+  details.faq[open] .faqa {
+    animation: none;
+  }
+  .press {
+    transition: none;
+  }
+  .press:hover {
+    transform: none;
+    box-shadow: var(--shadow-hard);
+  }
+  .scrollbar-progress {
+    animation: none;
+    scale: 0 1;
+  }
+  [data-marquee] {
+    animation: none !important;
   }
 }

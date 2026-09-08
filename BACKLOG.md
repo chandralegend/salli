@@ -63,14 +63,6 @@ month-by-month bug above.
 
 ---
 
-### The pricing page describes an app that no longer exists
-
-`clients/site/src/app/pricing/page.tsx` tells users they get "every AI model"
-and that "a conversation costs from 10 credits on Haiku up to 100 on Fable, so
-the model you pick decides how far your credits go". Model choice was removed
-and everything is pinned to Haiku, so this is live marketing copy contradicting
-the shipped app. The earlier copy audit swept `clients/mobile` only.
-
 ### Pulumi ignores the Render service's environment
 
 `infra/index.ts` sets `ignoreChanges: ["envVars", "maintenanceMode"]` on the web

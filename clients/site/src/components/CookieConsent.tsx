@@ -42,7 +42,7 @@ export function CookieConsent() {
         opacity: mounted ? 1 : 0,
       }}
     >
-      <div className="rounded-2xl bg-ink p-5 text-cream shadow-[0_24px_64px_-24px_rgba(0,0,0,0.7)]">
+      <div className="rounded-card bg-ink p-5 text-cream shadow-hard">
         <p className="font-mono text-[12.5px] leading-relaxed text-cream-60">
           We use essential cookies to keep you signed in, plus optional analytics to improve
           Salli. No ad trackers, ever.{" "}
@@ -53,13 +53,13 @@ export function CookieConsent() {
         <div className="mt-4 flex items-center gap-2">
           <button
             onClick={() => choose("accepted")}
-            className="h-10 flex-1 rounded-full bg-red text-[13px] font-bold text-cream transition-transform active:scale-[0.98]"
+            className="h-10 flex-1 rounded-full bg-red text-[13px] font-bold text-ink transition-transform active:scale-[0.98]"
           >
             Accept all
           </button>
           <button
             onClick={() => choose("rejected")}
-            className="h-10 flex-1 rounded-full border border-cream/20 text-[13px] font-semibold text-cream transition-colors hover:border-cream/40"
+            className="h-10 flex-1 rounded-full border-2 border-cream text-[13px] font-semibold text-cream transition-colors hover:border-cream/40"
           >
             Essential only
           </button>

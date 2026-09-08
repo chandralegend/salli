@@ -33,7 +33,7 @@ export const TIERS: Tier[] = [
     tagline: "The honest ledger, forever free.",
     monthlyPrice: 0,
     annualPrice: 0,
-    cta: "Start free",
+    cta: "Get started free",
     features: [
       "Immutable double-entry ledger",
       "Full Sri Lanka tax engine",

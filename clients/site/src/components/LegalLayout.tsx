@@ -16,7 +16,7 @@ export function LegalLayout({
     <div className="relative">
       <Header />
       <article className="mx-auto max-w-[720px] px-6 pt-16 pb-25 sm:px-10">
-        <div className="font-mono text-xs font-semibold uppercase tracking-[.14em] text-red">Legal</div>
+        <div className="font-mono text-xs font-semibold uppercase tracking-[.14em] text-red-ink">Legal</div>
         <h1 className="mt-4 font-display text-[clamp(34px,4.6vw,56px)] font-extrabold leading-[1.0] tracking-[-0.04em]">
           {title}
         </h1>

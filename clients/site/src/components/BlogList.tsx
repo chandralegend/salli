@@ -52,7 +52,7 @@ export function BlogList({ featured, posts }: { featured: Post; posts: Post[] })
       <section className="relative z-2 mx-auto max-w-[1320px] px-6 pt-7.5 pb-10 sm:px-10">
         <Link
           href={`/blog/${featured.slug}`}
-          className="grid overflow-hidden rounded-[28px] bg-ink text-cream shadow-[0_34px_70px_-34px_rgba(22,19,15,.5)] transition-transform hover:-translate-y-1 md:grid-cols-[1.1fr_1fr]"
+          className="grid overflow-hidden rounded-card bg-ink text-cream shadow-hard press md:grid-cols-[1.1fr_1fr]"
         >
           <div className="flex flex-col justify-center p-8 sm:p-13">
             <div className="font-mono text-[11px] uppercase tracking-[.1em] text-red">
@@ -62,12 +62,12 @@ export function BlogList({ featured, posts }: { featured: Post; posts: Post[] })
               {featured.title}
             </h2>
             <p className="mt-4 max-w-[440px] text-[15.5px] leading-[1.6] text-cream-60">{featured.excerpt}</p>
-            <div className="mt-6 flex items-center gap-3.5 font-mono text-xs text-ink-40">
+            <div className="mt-6 flex items-center gap-3.5 font-mono text-xs text-cream-60">
               <span>{formatDate(featured.publishedDate)}</span>
               <span className="opacity-40">/</span>
               <span>{featured.readTime}</span>
             </div>
-            <div className="mt-5.5 inline-block w-fit rounded-full bg-red px-6 py-3.25 text-sm font-bold text-cream">
+            <div className="mt-5.5 inline-block w-fit rounded-full bg-red px-6 py-3.25 text-sm font-bold text-ink">
               Read article →
             </div>
           </div>
@@ -97,7 +97,7 @@ export function BlogList({ featured, posts }: { featured: Post; posts: Post[] })
             <Reveal key={p.slug} delay={0.04 * (i % 3)}>
               <Link
                 href={`/blog/${p.slug}`}
-                className="flex h-full flex-col overflow-hidden rounded-[22px] border border-ink/7 bg-white shadow-[0_20px_50px_-36px_rgba(22,19,15,.35)] transition-transform hover:-translate-y-1.5"
+                className="flex h-full flex-col overflow-hidden rounded-card border-2 border-ink bg-card shadow-hard press"
               >
                 <div className={clsx("relative flex aspect-16/10 items-end overflow-hidden p-4.5", COVER_STYLE_CLASS[p.coverStyle as CoverStyle])}>
                   {p.coverImage && (
@@ -106,11 +106,12 @@ export function BlogList({ featured, posts }: { featured: Post; posts: Post[] })
                   {!p.coverImage && (
                     <div className={clsx("absolute inset-0 opacity-55", COVER_STYLE_CLASS[p.coverStyle as CoverStyle])} />
                   )}
-                  <span className="relative z-10 rounded-full bg-cream/90 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[.06em] text-ink">
-                    {p.category}
-                  </span>
+
                 </div>
                 <div className="flex flex-1 flex-col p-6">
+                  <div className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[.06em] text-red-ink">
+                    {p.category}
+                  </div>
                   <h3 className="font-display text-[21px] font-bold leading-[1.1] tracking-[-0.02em]">{p.title}</h3>
                   <p className="mt-2.5 flex-1 text-sm leading-[1.55] text-ink-50">{p.excerpt}</p>
                   <div className="mt-4.5 flex items-center gap-3 font-mono text-[11.5px] text-ink-40">

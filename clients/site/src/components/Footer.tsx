@@ -41,7 +41,7 @@ export function Footer() {
           />
         </div>
       </div>
-      <div className="border-t border-ink/12">
+      <div className="border-t-2 border-ink">
         <div className="mx-auto flex max-w-[1320px] flex-wrap justify-between gap-2 px-6 py-5 font-mono text-[11.5px] tracking-[.02em] text-ink-40 sm:px-10">
           <span>© 2026 Salli. All rights reserved.</span>
           <span>Not a licensed financial or investment advisor.</span>

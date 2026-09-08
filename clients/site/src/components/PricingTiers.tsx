@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { clsx } from "clsx";
-import { MagneticButton } from "@/components/MagneticButton";
+import { Btn } from "@/components/Btn";
 import { Reveal } from "@/components/Reveal";
 import { APP_LOGIN_URL } from "@/lib/config";
 import { MAX_ANNUAL_SAVING, TIERS, type Tier } from "@/lib/plans";
@@ -11,15 +11,15 @@ import { MAX_ANNUAL_SAVING, TIERS, type Tier } from "@/lib/plans";
 // the actual product: the backend gates no feature by plan.
 //
 // The previous version of this table claimed web search and MCP clients were
-// paid-only. They never were — plans.py has had every feature on every tier
-// since the BYOK work — so this page was advertising a restriction the product
+// paid-only. They never were. plans.py has had every feature on every tier
+// since the BYOK work. so this page was advertising a restriction the product
 // did not implement.
 const COMPARE = [
   { label: "Immutable double-entry ledger", free: "✓", pro: "✓" },
   { label: "Sri Lanka tax engine & payable", free: "✓", pro: "✓" },
   { label: "Debt payoff & FIRE planning", free: "✓", pro: "✓" },
   { label: "AI credits / month", free: "6,000", pro: "100,000" },
-  { label: "Choose your model (Haiku → Fable)", free: "✓", pro: "✓" },
+  { label: "Claude Haiku 4.5 on every plan", free: "✓", pro: "✓" },
   { label: "Buy extra credits any time", free: "✓", pro: "✓" },
   { label: "Statement reading & quick-add", free: "✓", pro: "✓" },
   { label: "Daily wealth advisor", free: "✓", pro: "✓" },
@@ -56,7 +56,7 @@ export function PricingTiers() {
 
   return (
     <>
-      <div className="mt-8.5 inline-flex items-center gap-1.5 rounded-full border border-ink/10 bg-white p-1.5">
+      <div className="mt-8.5 inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-card p-1.5">
         <button
           type="button"
           onClick={() => setAnnual(false)}
@@ -87,16 +87,16 @@ export function PricingTiers() {
           {TIERS.map((t) => (
             <Reveal key={t.name} className="relative">
               {t.popular && (
-                <div className="absolute -top-3.25 left-1/2 z-1 -translate-x-1/2 rounded-full bg-red px-3.5 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[.08em] text-cream">
+                <div className="absolute -top-3.25 left-1/2 z-1 -translate-x-1/2 rounded-full bg-red px-3.5 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[.08em] text-ink">
                   Most popular
                 </div>
               )}
               <div
                 className={clsx(
-                  "flex h-full flex-col rounded-[28px] border-2 p-9",
+                  "flex h-full flex-col rounded-card border-2 p-9",
                   t.dark
-                    ? "border-red bg-ink text-cream shadow-[0_34px_70px_-30px_rgba(22,19,15,.6)]"
-                    : "border-ink/8 bg-white text-ink shadow-[0_20px_50px_-34px_rgba(22,19,15,.3)]",
+                    ? "border-red bg-ink text-cream shadow-hard"
+                    : "border-ink/8 bg-card text-ink shadow-hard",
                 )}
               >
                 <div className="font-display text-[22px] font-extrabold tracking-[-0.02em]">{t.name}</div>
@@ -117,15 +117,15 @@ export function PricingTiers() {
                       ? `$${t.annualPrice.toLocaleString("en-US")} billed annually`
                       : "Billed monthly"}
                 </div>
-                <MagneticButton
+                <Btn
                   href={hrefFor(t, annual)}
                   className={clsx(
                     "mt-6.5 rounded-full py-3.75 text-center text-[15px] font-bold",
-                    t.dark ? "bg-red text-cream" : "bg-ink text-cream",
+                    t.dark ? "bg-red text-ink" : "bg-ink text-cream",
                   )}
                 >
                   {t.cta}
-                </MagneticButton>
+                </Btn>
                 <div className={clsx("my-6.5 h-px", t.dark ? "bg-cream/16" : "bg-ink/10")} />
                 <div className="flex flex-col gap-3">
                   {t.features.map((f) => (
@@ -152,10 +152,10 @@ export function PricingTiers() {
         </h2>
         <div className="border-t-2 border-ink">
           {COMPARE.map((row) => (
-            <div key={row.label} className="grid grid-cols-[1.6fr_1fr_1fr] items-center gap-4 border-b border-ink/12 py-4.5">
+            <div key={row.label} className="grid grid-cols-[1.6fr_1fr_1fr] items-center gap-4 border-b-2 border-ink py-4.5">
               <div className="text-[15px] font-semibold">{row.label}</div>
               <div className="text-center font-mono text-sm text-ink-60">{row.free}</div>
-              <div className="text-center font-mono text-sm font-semibold text-red">{row.pro}</div>
+              <div className="text-center font-mono text-sm font-semibold text-red-ink">{row.pro}</div>
             </div>
           ))}
         </div>

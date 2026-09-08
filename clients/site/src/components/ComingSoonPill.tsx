@@ -20,11 +20,11 @@ export function ComingSoonPill({
   className?: string;
 }) {
   const toneClass =
-    tone === "light" ? "border-ink/25 text-ink-40" : "border-cream/30 text-cream/50";
+    tone === "light" ? "border-ink/60 text-ink" : "border-cream/50 text-cream";
   return (
     <span
       aria-disabled="true"
-      className={`inline-flex cursor-not-allowed items-center gap-2.5 rounded-full border-2 border-dashed px-6 py-3.5 text-[15px] font-bold ${toneClass} ${className}`}
+      className={`inline-flex cursor-not-allowed items-center gap-2.5 rounded-card border-2 border-dashed px-6 py-3.5 text-[15px] font-bold ${toneClass} ${className}`}
     >
       {icon}
       {children}

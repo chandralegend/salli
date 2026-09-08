@@ -21,7 +21,7 @@ export default async function BlogPage() {
       <Header active="/blog" />
 
       <section className="relative z-2 mx-auto max-w-[1320px] px-6 pt-20 pb-5 sm:px-10">
-        <div className="font-mono text-xs font-semibold uppercase tracking-[.14em] text-red">
+        <div className="font-mono text-xs font-semibold uppercase tracking-[.14em] text-red-ink">
           The Salli Ledger · Blog
         </div>
         <h1 className="mt-5.5 max-w-[1000px] font-display text-[clamp(46px,7.6vw,108px)] font-extrabold leading-[0.9] tracking-[-0.05em]">
@@ -37,11 +37,11 @@ export default async function BlogPage() {
       {featured && <BlogList featured={featured} posts={rest} />}
 
       <section className="relative z-2 mx-auto max-w-[1320px] px-6 pt-5 pb-25 sm:px-10">
-        <div className="rounded-[36px] bg-red px-6 py-[clamp(48px,6vw,84px)] text-center text-cream">
+        <div className="rounded-card bg-red px-6 py-[clamp(48px,6vw,84px)] text-center text-ink">
           <h2 className="font-display text-[clamp(32px,5vw,64px)] font-extrabold leading-[0.96] tracking-[-0.04em]">
             Get the ledger, monthly.
           </h2>
-          <p className="mx-auto mt-4 max-w-[460px] text-[16.5px] text-cream/90">
+          <p className="mx-auto mt-4 max-w-[460px] text-[16.5px] text-ink/85">
             One clear email a month on Sri Lankan money and tax. No spam, no hype, and unsubscribe
             anytime.
           </p>

@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Reveal } from "@/components/Reveal";
-import { MagneticButton } from "@/components/MagneticButton";
+import { Btn } from "@/components/Btn";
 import { Highlight } from "@/components/Highlight";
 import { WordUp } from "@/components/WordUp";
 
@@ -33,7 +33,7 @@ export default function AboutPage() {
       <Header active="/about" />
 
       <section className="relative z-2 mx-auto max-w-[1320px] px-6 pt-20 pb-10 sm:px-10">
-        <div className="font-mono text-xs font-semibold uppercase tracking-[.14em] text-red">About Salli</div>
+        <div className="font-mono text-xs font-semibold uppercase tracking-[.14em] text-red-ink">About Salli</div>
         <h1 className="mt-5.5 max-w-[1000px] font-display text-[clamp(46px,7.6vw,108px)] font-extrabold leading-[0.9] tracking-[-0.05em]">
           <WordUp delay={0.05}>Built</WordUp> <WordUp delay={0.13}>in</WordUp> <WordUp delay={0.2}>Colombo,</WordUp>
           <br />
@@ -47,7 +47,7 @@ export default function AboutPage() {
       </section>
 
       <section className="relative z-2 mx-auto max-w-[1320px] px-6 pt-17.5 pb-10 sm:px-10">
-        <Reveal className="rounded-[32px] bg-ink px-6 py-12 text-cream sm:px-21">
+        <Reveal className="on-ink brut-lg rounded-card bg-ink px-6 py-12 text-cream sm:px-21">
           <div className="font-mono text-xs uppercase tracking-[.14em] text-red">Our mission</div>
           <p className="mt-5 max-w-[920px] font-display text-[clamp(26px,3.4vw,44px)] font-bold leading-[1.18] tracking-[-0.03em]">
             To give every Sri Lankan a number they can <span className="text-red">defend</span>: a
@@ -62,8 +62,8 @@ export default function AboutPage() {
         </h2>
         <div className="mt-11 grid grid-cols-2 gap-4.5 md:grid-cols-4">
           {PRINCIPLES.map((p) => (
-            <Reveal key={p.n} className="rounded-[22px] border border-ink/7 bg-white p-7.5 transition-transform hover:-translate-y-1.5 hover:border-red">
-              <div className="font-display text-[30px] font-extrabold tracking-[-0.03em] text-red">{p.n}</div>
+            <Reveal key={p.n} className="rounded-card border-2 border-ink bg-card p-7.5 press">
+              <div className="font-display text-[30px] font-extrabold tracking-[-0.03em] text-red-ink">{p.n}</div>
               <div className="mt-3.5 font-display text-[21px] font-bold tracking-[-0.02em]">{p.t}</div>
               <p className="mt-2.5 text-sm leading-[1.6] text-ink-50">{p.b}</p>
             </Reveal>
@@ -71,32 +71,38 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="relative z-2 mt-17.5 overflow-hidden text-cream">
-        <Image
-          src="https://images.unsplash.com/photo-1742277295191-9e0349f77ea2?q=80&w=1900&auto=format&fit=crop"
-          alt="Colombo, Sri Lanka"
-          fill
-          className="object-cover object-[center_30%]"
-        />
-        <div className="absolute inset-0 bg-linear-to-b from-ink/72 via-ink/82 to-ink/94" />
-        <div className="relative mx-auto max-w-[1320px] px-6 py-25 sm:px-10">
-          <h2 className="max-w-[640px] font-display text-[clamp(34px,5vw,66px)] font-extrabold leading-[0.94] tracking-[-0.045em]">
-            Local by design.
-            <br />
-            From Colombo out.
-          </h2>
-          <div className="mt-13 grid grid-cols-2 gap-5.5 md:grid-cols-4">
-            {[
-              ["2025/26", "IRD tax pack, versioned"],
-              ["LKR", "Native currency & local banks"],
-              ["100%", "Deterministic tax math"],
-              ["CA", "Chartered-accountant reviewed"],
-            ].map(([big, label]) => (
-              <div key={label} className="border-t-3 border-red pt-5">
-                <div className="font-mono font-display text-[clamp(30px,3.4vw,46px)] font-extrabold tracking-[-0.02em]">{big}</div>
-                <div className="mt-1.5 text-[13.5px] text-cream-80">{label}</div>
-              </div>
-            ))}
+      <section className="relative z-2 mx-auto max-w-[1320px] px-6 pt-22.5 sm:px-10">
+        <div className="grid gap-12 lg:grid-cols-[1fr_0.9fr] lg:items-center">
+          <div>
+            <h2 className="font-display text-[clamp(34px,5vw,66px)] font-extrabold leading-[0.94] tracking-[-0.045em]">
+              Local by design.
+              <br />
+              From Colombo out.
+            </h2>
+            <div className="mt-11 grid grid-cols-2 gap-4">
+              {[
+                ["2025/26", "IRD tax pack, versioned"],
+                ["LKR", "Native currency and local banks"],
+                ["100%", "Deterministic tax math"],
+                ["CA", "Chartered-accountant reviewed"],
+              ].map(([big, label]) => (
+                <div key={label} className="brut bg-card p-5">
+                  <div className="font-display text-[clamp(24px,2.6vw,34px)] font-extrabold tracking-[-0.02em]">
+                    {big}
+                  </div>
+                  <div className="mt-1.5 text-[13.5px] leading-[1.4] text-ink-60">{label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="brut relative aspect-4/5 overflow-hidden bg-ink">
+            <Image
+              src="https://images.unsplash.com/photo-1742277295191-9e0349f77ea2?q=80&w=1400&auto=format&fit=crop"
+              alt="The Lotus Tower rising over Colombo, Sri Lanka"
+              fill
+              sizes="(max-width: 1024px) 100vw, 560px"
+              className="object-cover object-[center_35%]"
+            />
           </div>
         </div>
       </section>
@@ -108,7 +114,7 @@ export default function AboutPage() {
         <div>
           {STORY.map((s) => (
             <Reveal key={s.year + s.t} className="grid grid-cols-[100px_1fr] gap-6 border-l-2 border-ink py-0 pb-10 pl-7 sm:grid-cols-[120px_1fr]">
-              <div className="font-mono text-sm font-bold text-red">{s.year}</div>
+              <div className="font-mono text-sm font-bold text-red-ink">{s.year}</div>
               <div>
                 <div className="font-display text-[22px] font-bold tracking-[-0.02em]">{s.t}</div>
                 <p className="mt-2 text-[15px] leading-[1.6] text-ink-60">{s.b}</p>
@@ -119,21 +125,21 @@ export default function AboutPage() {
       </section>
 
       <section className="relative z-2 mx-auto max-w-[1320px] px-6 pt-15 pb-25 sm:px-10">
-        <div className="rounded-[36px] bg-red px-6 py-[clamp(56px,8vw,104px)] text-center text-cream">
+        <div className="rounded-card bg-red px-6 py-[clamp(56px,8vw,104px)] text-center text-ink">
           <h2 className="font-display text-[clamp(40px,7vw,96px)] font-extrabold leading-[0.92] tracking-[-0.05em]">
             Join us.
           </h2>
-          <p className="mx-auto mt-4 max-w-[440px] text-[17px] text-cream/90">
+          <p className="mx-auto mt-4 max-w-[440px] text-[17px] text-ink/85">
             Start with the honest ledger, and help us build the money app Sri Lanka actually
             needed.
           </p>
           <div className="mt-9 flex flex-wrap justify-center gap-3.5">
-            <MagneticButton href="/pricing" className="rounded-full bg-cream px-8.5 py-4.5 text-[17px] font-bold text-ink">
+            <Btn href="/pricing" variant="ghost" size="lg">
               Get started free
-            </MagneticButton>
-            <MagneticButton href="/blog" className="rounded-full border-2 border-cream/60 px-8 py-4 text-[17px] font-bold hover:bg-cream/14">
+            </Btn>
+            <Btn href="/blog" variant="primary" size="lg">
               Read the blog
-            </MagneticButton>
+            </Btn>
           </div>
         </div>
       </section>

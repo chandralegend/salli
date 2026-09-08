@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Archivo, Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { CookieConsent } from "@/components/CookieConsent";
-import { GrainOverlay } from "@/components/GrainOverlay";
 import { SITE_URL } from "@/lib/config";
 
 const archivo = Archivo({
@@ -50,7 +49,7 @@ export const metadata: Metadata = {
     url: SITE_URL,
     siteName: "Salli",
     locale: "en_LK",
-    images: [{ url: "/screens/site-preview.png", width: 1672, height: 941, alt: "Salli's Overview, Freedom, and Tax screens showing net worth, tax payable, and Freedom Score" }],
+    images: [{ url: "/screens/site-preview.png", width: 1200, height: 630, alt: "Salli: a real ledger, a deterministic Sri Lankan tax engine, and an AI advisor, shown on the Tax and Home screens" }],
   },
   twitter: {
     card: "summary_large_image",
@@ -76,7 +75,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${archivo.variable} ${bricolage.variable} ${jetbrainsMono.variable}`}>
       <body>
-        <GrainOverlay />
         {children}
         <CookieConsent />
         <script

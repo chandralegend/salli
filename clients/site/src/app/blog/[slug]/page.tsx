@@ -7,7 +7,7 @@ import React from "react";
 import { clsx } from "clsx";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { MagneticButton } from "@/components/MagneticButton";
+import { Btn } from "@/components/Btn";
 import { SITE_URL as BASE_URL } from "@/lib/config";
 import { getAllPosts, getAllSlugs, getPost } from "@/lib/posts";
 import { COVER_STYLE_CLASS, type CoverStyle } from "@/lib/blog-styles";
@@ -130,7 +130,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       <section className="relative z-2 mx-auto max-w-[1000px] px-6 pt-8.5 sm:px-10">
         <div
           className={clsx(
-            "relative flex aspect-16/7 items-center justify-center overflow-hidden rounded-3xl",
+            "relative flex aspect-16/7 items-center justify-center overflow-hidden rounded-card",
             COVER_STYLE_CLASS[post.coverStyle as CoverStyle],
           )}
         >
@@ -156,7 +156,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       <section className="relative z-2 mx-auto max-w-[720px] px-6 pt-5 pb-10 sm:px-10">
         <div className="article">{Markdoc.renderers.react(renderable, React)}</div>
 
-        <div className="mt-12 flex items-center gap-4 rounded-[22px] border border-ink/8 bg-white p-7">
+        <div className="mt-12 flex items-center gap-4 rounded-card border-2 border-ink bg-card p-7">
           <div className="flex size-13 flex-none items-center justify-center rounded-full bg-ink font-display text-xl font-extrabold text-cream">
             S
           </div>
@@ -176,7 +176,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             <h2 className="font-display text-[clamp(26px,3.4vw,42px)] font-extrabold leading-[1.0] tracking-[-0.03em]">
               Keep reading.
             </h2>
-            <Link href="/blog" className="navlink font-mono text-[13px] font-semibold text-red">
+            <Link href="/blog" className="navlink font-mono text-[13px] font-semibold text-red-ink">
               All articles →
             </Link>
           </div>
@@ -185,7 +185,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               <Link
                 key={p.slug}
                 href={`/blog/${p.slug}`}
-                className="flex flex-col overflow-hidden rounded-[22px] border border-ink/7 bg-white shadow-[0_20px_50px_-36px_rgba(22,19,15,.35)] transition-transform hover:-translate-y-1.5"
+                className="flex flex-col overflow-hidden rounded-card border-2 border-ink bg-card shadow-hard press"
               >
                 <div className={clsx("relative flex aspect-16/10 items-end overflow-hidden p-4.5", COVER_STYLE_CLASS[p.coverStyle as CoverStyle])}>
                   {p.coverImage && (
@@ -213,21 +213,21 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       )}
 
       <section className="relative z-2 mx-auto max-w-[1320px] px-6 pt-15 pb-25 sm:px-10">
-        <div className="rounded-[36px] bg-red px-6 py-[clamp(56px,8vw,104px)] text-center text-cream">
+        <div className="rounded-card bg-red px-6 py-[clamp(56px,8vw,104px)] text-center text-ink">
           <h2 className="font-display text-[clamp(38px,6vw,84px)] font-extrabold leading-[0.94] tracking-[-0.05em]">
             Know your number.
           </h2>
-          <p className="mx-auto mt-4 max-w-[440px] text-[17px] text-cream/90">
+          <p className="mx-auto mt-4 max-w-[440px] text-[17px] text-ink/85">
             Let Salli&apos;s engine compute your 2025/26 tax from your real numbers, and explain
             every rule behind it.
           </p>
           <div className="mt-9 flex flex-wrap justify-center gap-3.5">
-            <MagneticButton href="/pricing" className="rounded-full bg-cream px-8.5 py-4.5 text-[17px] font-bold text-ink">
+            <Btn href="/pricing" variant="ghost" size="lg">
               Get started free
-            </MagneticButton>
-            <MagneticButton href="/features" className="rounded-full border-2 border-cream/60 px-8 py-4 text-[17px] font-bold hover:bg-cream/14">
+            </Btn>
+            <Btn href="/features" variant="primary" size="lg">
               Explore features
-            </MagneticButton>
+            </Btn>
           </div>
         </div>
       </section>

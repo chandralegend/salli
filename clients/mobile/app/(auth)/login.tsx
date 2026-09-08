@@ -23,8 +23,11 @@ export default function LoginScreen() {
     setError(null);
     setLoading(true);
     try {
+      // No navigation here: the group's layout redirects as soon as the token
+      // lands in the store. Replacing to "/" on this line raced that, and it
+      // was also the reason the social buttons looked like they were the only
+      // path that had to be wired up.
       await signInWithPassword(email.trim(), password);
-      router.replace("/");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Sign in failed.");
     } finally {
@@ -36,7 +39,6 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await devLogin(email.trim() || "dev-user");
-      router.replace("/");
     } finally {
       setLoading(false);
     }

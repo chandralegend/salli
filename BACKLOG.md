@@ -31,6 +31,21 @@ produces a column of identical "Sep 2026 · +Rs. 0" rows.
 
 In the mobile Reports screen, Net worth tab.
 
+### An expiring session leaves the user on a screen that cannot load
+
+`app/(auth)/_layout.tsx` now sends a signed-in user out of the auth group, but
+there is no guard in the other direction: nothing outside that group watches the
+token. Sign-out works only because the Settings screen navigates by hand after
+calling `logout()`.
+
+So if a refresh fails while the app is open, the token goes null and the user
+stays on `/(tabs)` or `/mode-choice` watching every request 401. Verified while
+fixing the Apple sign-in redirect: clearing the token from `/mode-choice` left
+the screen exactly where it was.
+
+The symmetric fix is a guard in the authenticated layouts, which would also make
+the explicit `router.replace("/(auth)/login")` calls in Settings redundant.
+
 ### The mobile app cannot set or see an account's `tax_role`
 
 The API now accepts and returns `tax_role` on accounts (`29a4ae9`), but no

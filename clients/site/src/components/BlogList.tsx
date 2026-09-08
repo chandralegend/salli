@@ -82,7 +82,7 @@ export function BlogList({ featured, posts }: { featured: Post; posts: Post[] })
             )}
             {/* The brand wash existed to unify mismatched stock photography.
                 The covers are now generated in the site palette, so tinting
-                them only muddies the cream and reads as inconsistent — one card
+                them only muddies the cream and reads as inconsistent: one card
                 pink, the next grey. Kept for imageless posts. */}
             {!featured.coverImage && (
               <div className={clsx("absolute inset-0 opacity-55", COVER_STYLE_CLASS[featured.coverStyle as CoverStyle])} />

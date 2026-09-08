@@ -7,7 +7,7 @@ export const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL ?? "https://app.salli.leafmonkey.org";
 export const APP_LOGIN_URL = `${APP_URL}/login`;
 
-// This site's own canonical origin — the one that goes into sitemap.xml,
+// This site's own canonical origin: the one that goes into sitemap.xml,
 // robots.txt, metadataBase and JSON-LD. Absolute and no trailing slash, because
 // crawlers need fully-qualified URLs. Override with NEXT_PUBLIC_SITE_URL to
 // point a preview deploy at itself; unset falls back to production.
@@ -22,7 +22,7 @@ export const SITE_URL = (
  * non-interactive "Coming soon" state and the copy talks about mobile in the
  * future tense.
  *
- * TO RESTORE THE FULL EXPERIENCE ON RELEASE — no markup changes needed:
+ * TO RESTORE THE FULL EXPERIENCE ON RELEASE: no markup changes needed:
  *   1. set MOBILE_APP_LIVE = true
  *   2. fill in APP_STORE_URL and PLAY_STORE_URL below
  * Every component branches on this flag, so that is the whole revert.

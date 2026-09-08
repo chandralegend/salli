@@ -1,6 +1,6 @@
 // Plan pricing for the marketing site, in one place.
 //
-// Must be kept in sync with src/salli/domain/billing/plans.py — and note that
+// Must be kept in sync with src/salli/domain/billing/plans.py, and note that
 // neither is the real authority: Paddle charges the card, using the price IDs in
 // PADDLE_PRICE_*. This file only describes what we advertise, so a mismatch here
 // means quoting a price we don't charge.

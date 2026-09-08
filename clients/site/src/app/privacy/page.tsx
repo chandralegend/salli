@@ -34,7 +34,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Bug reports and diagnostics you choose to send us</strong>: when you report a
-          problem, we receive your description of it along with a technical snapshot — the page you
+          problem, we receive your description of it along with a technical snapshot: the page you
           were on, your browser, device and locale details, recent failed requests and any error
           message behind them, and any screenshot you attach. This snapshot deliberately excludes
           your balances, amounts, account names and entry descriptions, and you can review exactly
@@ -101,7 +101,7 @@ export default function PrivacyPage() {
         fixed. That ticket is a record about the product rather than about you: it carries a
         pseudonymous account identifier, never your name or email address. Because other people are
         usually affected by the same bug, these tickets and their diagnostics are kept for
-        engineering purposes even after an account is closed — while the copy of the report held
+        engineering purposes even after an account is closed, while the copy of the report held
         inside Salli, including your email address if you asked us to follow up, is deleted with the
         rest of your data.
       </p>

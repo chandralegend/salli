@@ -69,7 +69,7 @@ export function Header({ active }: { active?: string }) {
             <Link href={APP_LOGIN_URL} className="text-[14.5px] font-semibold hover:text-red-ink">
               Log in
             </Link>
-            <Btn href={APP_LOGIN_URL} size="sm">
+            <Btn href={APP_LOGIN_URL} variant="ai" size="sm">
               Get started free
             </Btn>
           </div>

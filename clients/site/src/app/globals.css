@@ -34,7 +34,7 @@
   --color-card: #ffffff;
 
   /* Ink is the app's dark canvas. Used for borders, body text and inverted
-     panels alike — one value, so a border and the panel it sits on can never
+     panels alike: one value, so a border and the panel it sits on can never
      be a shade apart. Not pure black: #000 kills the hard shadow's edge
      against dark screenshots. */
   --color-ink: #0e0e0e;
@@ -54,6 +54,9 @@
      budget bar and an AI action indistinguishable. */
   --color-ai: #cbb9ff;
   --color-green: #1b6b47;
+  /* A third fill, for the sticker layer. Ink on yellow is 12.6:1; yellow on
+     cream is 1.34:1, so this is a surface colour only and never type. */
+  --color-yellow: #f7d046;
 
   /* ---- Text on cream ---- */
   /* All four clear WCAG AA against the cream canvas, including ink-40, which
@@ -71,6 +74,8 @@
   /* ---- Shape ---- */
   --radius-card: 12px;
   --radius-badge: 6px;
+  /* Genuine capsules only: the label pill in the hero. */
+  --radius-pill: 50px;
 
   /* ---- Hard shadows ----
      `--brut` is the shadow colour and defaults to ink. An inverted panel sets
@@ -79,10 +84,15 @@
   --shadow-hard: 4px 4px 0 0 var(--brut, #0e0e0e);
   --shadow-hard-sm: 2px 2px 0 0 var(--brut, #0e0e0e);
   --shadow-hard-lg: 7px 7px 0 0 var(--brut, #0e0e0e);
+  /* Poster scale. Used on the hero headline block, the sticker cards and the
+     closing panel: the pieces that are meant to read as physical objects sitting
+     on the page rather than as surfaces raised slightly off it. */
+  --shadow-slab: 10px 10px 0 0 var(--brut, #0e0e0e);
 
   --font-sans: var(--font-archivo), system-ui, sans-serif;
   --font-display: var(--font-bricolage), var(--font-archivo), sans-serif;
   --font-mono: var(--font-jetbrains), monospace;
+  --font-marker: var(--font-caveat), "Comic Sans MS", cursive;
 }
 
 @layer base {
@@ -133,6 +143,27 @@
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-hard);
   }
+  /* Extruded. A stepped stack rather than one large offset, so the edge reads
+     as a solid side face instead of a shadow that drifted too far from its
+     object. */
+  .slab {
+    border: 3px solid var(--brut, var(--color-ink));
+    border-radius: var(--radius-card);
+    box-shadow:
+      3px 3px 0 0 var(--brut, var(--color-ink)),
+      6px 6px 0 0 var(--brut, var(--color-ink)),
+      9px 9px 0 0 var(--brut, var(--color-ink));
+  }
+
+  /* Sticker: a note dropped onto the page at an angle. The rotation lives here
+     so every sticker leans by a related amount instead of each one inventing
+     its own. */
+  .sticker {
+    border: 2px solid var(--color-ink);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-hard-lg);
+  }
+
   .brut-lg {
     border: 2px solid var(--brut, var(--color-ink));
     border-radius: var(--radius-card);
@@ -380,6 +411,15 @@
     }
   }
 
+  /* ---- Hero asset entrance ----
+     Plays on load rather than on an observer, because it is above the fold and
+     there is nothing to wait for. Paired with the headline's word reveal so
+     the two halves of the hero arrive together instead of the type landing
+     first and the screenshot appearing later. */
+  .hero-rise {
+    animation: heroRise 0.9s cubic-bezier(0.2, 0.7, 0.12, 1) 0.18s both;
+  }
+
   /* ---- Word-up hero animation ---- */
   .wm {
     display: inline-block;
@@ -393,6 +433,16 @@
   }
 }
 
+@keyframes heroRise {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
 @keyframes wordUp {
   from {
     opacity: 0;
@@ -435,6 +485,7 @@
     transition: none;
   }
   .wm > span,
+  .hero-rise,
   details.faq[open] .faqa {
     animation: none;
   }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Archivo, Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
+import { Archivo, Bricolage_Grotesque, Caveat, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { CookieConsent } from "@/components/CookieConsent";
 import { SITE_URL } from "@/lib/config";
@@ -13,6 +13,11 @@ const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
   subsets: ["latin"],
   weight: ["400", "600", "700", "800"],
+});
+const caveat = Caveat({
+  variable: "--font-caveat",
+  subsets: ["latin"],
+  weight: ["600", "700"],
 });
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains",
@@ -73,7 +78,7 @@ const JSON_LD = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${archivo.variable} ${bricolage.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${archivo.variable} ${bricolage.variable} ${caveat.variable} ${jetbrainsMono.variable}`}>
       <body>
         {children}
         <CookieConsent />

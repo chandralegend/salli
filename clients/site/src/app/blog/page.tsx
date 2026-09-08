@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Header } from "@/components/Header";
+import { Slab } from "@/components/Slab";
 import { Footer } from "@/components/Footer";
 import { WordUp } from "@/components/WordUp";
-import { Highlight } from "@/components/Highlight";
 import { BlogList } from "@/components/BlogList";
 import { getAllPosts } from "@/lib/posts";
 
@@ -26,7 +26,7 @@ export default async function BlogPage() {
         </div>
         <h1 className="mt-5.5 max-w-[1000px] font-display text-[clamp(46px,7.6vw,108px)] font-extrabold leading-[0.9] tracking-[-0.05em]">
           <WordUp delay={0.05}>Money,</WordUp> <WordUp delay={0.13}>tax</WordUp> <WordUp delay={0.2}>&amp;</WordUp>{" "}
-          <WordUp delay={0.28}>clarity</WordUp> <WordUp delay={0.38}><Highlight>plainly.</Highlight></WordUp>
+          <WordUp delay={0.28}>clarity</WordUp> <WordUp delay={0.38}><Slab>plainly.</Slab></WordUp>
         </h1>
         <p className="mt-6.5 max-w-[520px] text-[clamp(17px,1.5vw,20px)] leading-[1.5] text-ink-60">
           Straight-talking guides on Sri Lankan tax, everyday money, and building wealth, no

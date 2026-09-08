@@ -4,7 +4,7 @@
  * it stays out of the tab order and announces itself as disabled rather than
  * inviting a click that goes nowhere.
  *
- * Rendered wherever `MOBILE_APP_LIVE` is false — see src/lib/config.ts for the
+ * Rendered wherever `MOBILE_APP_LIVE` is false: see src/lib/config.ts for the
  * one-flag revert on release.
  */
 export function ComingSoonPill({

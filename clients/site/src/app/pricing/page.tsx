@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Header } from "@/components/Header";
+import { Slab } from "@/components/Slab";
 import { Footer } from "@/components/Footer";
 import { Btn } from "@/components/Btn";
-import { Highlight } from "@/components/Highlight";
 import { WordUp } from "@/components/WordUp";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { PricingTiers } from "@/components/PricingTiers";
@@ -49,7 +49,7 @@ export default function PricingPage() {
         </div>
         <h1 className="mx-auto mt-5.5 max-w-[900px] font-display text-[clamp(48px,8vw,112px)] font-extrabold leading-[0.9] tracking-[-0.05em]">
           <WordUp delay={0.05}>Clarity</WordUp> <WordUp delay={0.14}>has</WordUp> <WordUp delay={0.22}>a</WordUp>{" "}
-          <WordUp delay={0.32}><Highlight>fair price.</Highlight></WordUp>
+          <WordUp delay={0.32}><Slab>fair price.</Slab></WordUp>
         </h1>
         <p className="mx-auto mt-6.5 max-w-[520px] text-[clamp(17px,1.5vw,20px)] leading-[1.5] text-ink-60">
           Free forever: every feature and the full tax engine included. Upgrade only for more
@@ -74,7 +74,7 @@ export default function PricingPage() {
             No card required. Upgrade only when Salli is saving you real money.
           </p>
           <div className="mt-9 flex flex-wrap justify-center gap-3.5">
-            <Btn href={APP_LOGIN_URL} variant="ghost" size="lg">
+            <Btn href={APP_LOGIN_URL} variant="ai" size="lg" className="slab px-8">
               Get started free
             </Btn>
             <Btn href="/features" variant="primary" size="lg">

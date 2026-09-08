@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Header } from "@/components/Header";
+import { Slab } from "@/components/Slab";
 import { Footer } from "@/components/Footer";
 import { Reveal } from "@/components/Reveal";
 import { Btn } from "@/components/Btn";
@@ -8,6 +9,21 @@ import { WordUp } from "@/components/WordUp";
 import { FeatureDeepDive } from "@/components/FeatureDeepDive";
 import { CountUp } from "@/components/CountUp";
 import { AppShot } from "@/components/AppShot";
+import { BandBars } from "@/components/BandBars";
+import {
+  BellRing,
+  BookOpen,
+  Calculator,
+  Compass,
+  Download,
+  FileText,
+  Layers,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Features",
@@ -17,29 +33,29 @@ export const metadata: Metadata = {
 
 const PILLARS = [
   {
-    n: "01",
+    icon: BookOpen,
     tag: "Double-entry",
     title: "A real ledger",
     body: "Proper double-entry accounting under the hood: immutable, auditable, and honest to the rupee.",
     points: ["Every account, card, loan and investment in one place", "Append-only history you can audit", "Balances that always reconcile"],
   },
   {
-    n: "02",
+    icon: Calculator,
     tag: "Deterministic",
     title: "A Sri Lankan tax engine",
     body: "Relief, rate bands, the 15% foreign-service final tax, and credits, all computed against versioned packs, tested against the IRD's published rate bands.",
     points: ["APIT, AIT and foreign tax credits applied", "Versioned 2025/26 IRD tax pack", "Every rule recorded and reproducible"],
   },
   {
-    n: "03",
+    icon: Sparkles,
     tag: "Grounded",
     title: "An AI advisor",
     body: "Reads your statements, explains your tax, and drafts guidance, powered by the ledger and engine, never guesswork.",
     points: ["Explains results in plain language", "Never invents a number", "Cites the rule behind every figure"],
   },
   {
-    n: "04",
-    tag: "Budgets · Freedom",
+    icon: Compass,
+    tag: "Budgets and Freedom",
     title: "A full money toolkit",
     body: "Budgets, debt payoff, portfolio, insurance, reports and FI projections, all on the same trustworthy ledger.",
     points: ["Debt payoff & goal planning", "Net worth & Freedom projections", "Exportable reports"],
@@ -47,14 +63,14 @@ const PILLARS = [
 ];
 
 const CAPS = [
-  { k: "01", t: "Budgets", b: "Envelope or flexible budgets that stay live with your ledger." },
-  { k: "02", t: "Portfolio", b: "Track holdings, cost basis and returns in LKR." },
-  { k: "03", t: "Insurance", b: "Keep policies, premiums and renewals in one view." },
-  { k: "04", t: "Reports", b: "Exportable statements ready for review or filing." },
-  { k: "05", t: "Goals", b: "Set targets and watch progress against real numbers." },
-  { k: "06", t: "Multi-account", b: "Local banks, cards, wallets and cash together." },
-  { k: "07", t: "Reminders", b: "Never miss a due date, premium or filing deadline." },
-  { k: "08", t: "Exports", b: "CSV and PDF exports whenever you need them." },
+  { icon: Wallet, t: "Budgets", b: "Envelope or flexible budgets that stay live with your ledger." },
+  { icon: TrendingUp, t: "Portfolio", b: "Track holdings, cost basis and returns in LKR." },
+  { icon: ShieldCheck, t: "Insurance", b: "Keep policies, premiums and renewals in one view." },
+  { icon: FileText, t: "Reports", b: "Exportable statements ready for review or filing." },
+  { icon: Target, t: "Goals", b: "Set targets and watch progress against real numbers." },
+  { icon: Layers, t: "Multi-account", b: "Local banks, cards, wallets and cash together." },
+  { icon: BellRing, t: "Reminders", b: "Never miss a due date, premium or filing deadline." },
+  { icon: Download, t: "Exports", b: "CSV and PDF exports whenever you need them." },
 ];
 
 export default function FeaturesPage() {
@@ -69,7 +85,7 @@ export default function FeaturesPage() {
         <h1 className="mt-5.5 max-w-[1000px] font-display text-[clamp(48px,8vw,116px)] font-extrabold leading-[0.9] tracking-[-0.05em]">
           <WordUp delay={0.05}>Everything,</WordUp> <WordUp delay={0.14}>on</WordUp> <WordUp delay={0.22}>one</WordUp>
           <br />
-          <WordUp delay={0.32}>honest</WordUp> <WordUp delay={0.42}><Highlight>ledger.</Highlight></WordUp>
+          <WordUp delay={0.32}>honest</WordUp> <WordUp delay={0.42}><Slab>ledger.</Slab></WordUp>
         </h1>
         <p className="mt-7.5 max-w-[520px] text-[clamp(17px,1.5vw,21px)] leading-[1.5] text-ink-60">
           Accounting, tax, and AI guidance that all read from the same source of truth. No
@@ -88,10 +104,12 @@ export default function FeaturesPage() {
       <section className="relative z-2 mx-auto max-w-[1320px] px-6 pt-22.5 pb-10 sm:px-10">
         <div className="grid gap-6 md:grid-cols-2">
           {PILLARS.map((p) => (
-            <Reveal key={p.n} className="rounded-card border-2 border-ink bg-card p-10 shadow-hard press">
-              <div className="flex items-baseline justify-between">
-                <div className="font-display text-[38px] font-extrabold tracking-[-0.03em] text-red">{p.n}</div>
-                <div className="font-mono text-[11px] uppercase tracking-[.08em] text-ink-40">{p.tag}</div>
+            <Reveal key={p.title} className="rounded-card border-2 border-ink bg-card p-10 shadow-hard press">
+              <div className="flex items-center justify-between">
+                <div className="brut-flat inline-flex size-12 items-center justify-center bg-red">
+                  <p.icon size={22} strokeWidth={2} aria-hidden="true" />
+                </div>
+                <div className="font-mono text-[11px] uppercase tracking-[.08em] text-ink-50">{p.tag}</div>
               </div>
               <div className="mt-4 font-display text-[30px] font-bold tracking-[-0.025em]">{p.title}</div>
               <p className="mt-3 text-[15.5px] leading-[1.6] text-ink-60">{p.body}</p>
@@ -120,6 +138,11 @@ export default function FeaturesPage() {
         />
         <FeatureDeepDive
           reverse
+          extra={
+            <div className="mt-8 max-w-[420px]">
+              <BandBars />
+            </div>
+          }
           title="See exactly what you owe."
           body="Payable, deductions, bands and credits laid out clearly, then a guided return with a human-review checkpoint before you file."
           visual={
@@ -158,13 +181,15 @@ export default function FeaturesPage() {
         <h2 className="max-w-[640px] font-display text-[clamp(30px,4vw,52px)] font-extrabold leading-[1.0] tracking-[-0.04em]">
           And the everyday things,
           <br />
-          done <span className="text-red">properly.</span>
+          done <Highlight>properly.</Highlight>
         </h2>
         <div className="mt-11 grid grid-cols-2 gap-4 md:grid-cols-4">
           {CAPS.map((c) => (
-            <Reveal key={c.k} className="rounded-card border-2 border-ink bg-card p-6 press">
-              <div className="font-mono text-[11px] font-semibold text-red-ink">{c.k}</div>
-              <div className="mt-2.5 font-display text-[19px] font-bold tracking-[-0.015em]">{c.t}</div>
+            <Reveal key={c.t} className="rounded-card border-2 border-ink bg-card p-6 press">
+              <div className="brut-flat inline-flex size-10 items-center justify-center bg-cream-soft">
+                <c.icon size={19} strokeWidth={2} aria-hidden="true" />
+              </div>
+              <div className="mt-3.5 font-display text-[19px] font-bold tracking-[-0.015em]">{c.t}</div>
               <p className="mt-2 text-[13.5px] leading-[1.5] text-ink-50">{c.b}</p>
             </Reveal>
           ))}
@@ -179,7 +204,7 @@ export default function FeaturesPage() {
             Start knowing.
           </h2>
           <div className="mt-10 flex flex-wrap justify-center gap-3.5">
-            <Btn href="/pricing" variant="ghost" size="lg">
+            <Btn href="/pricing" variant="ai" size="lg" className="slab px-8">
               Get started free
             </Btn>
             <Btn href="/" variant="primary" size="lg">

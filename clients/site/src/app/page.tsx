@@ -1,14 +1,33 @@
 import Image from "next/image";
+import {
+  ArrowRight,
+  Calculator,
+  ChevronRight,
+  LineChart,
+  Mic,
+  Sparkles,
+  GitBranch,
+  History,
+  Lock,
+  ShieldCheck,
+  UserCheck,
+} from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Marquee, MarqueeItem } from "@/components/Marquee";
 import { Reveal } from "@/components/Reveal";
 import { Btn } from "@/components/Btn";
 import { Highlight } from "@/components/Highlight";
+import { Slab } from "@/components/Slab";
+import { StickerNote } from "@/components/StickerNote";
+import { HeroComposition } from "@/components/HeroComposition";
 import { WordUp } from "@/components/WordUp";
 import { CountUp } from "@/components/CountUp";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { AppShot } from "@/components/AppShot";
+import { FreedomChart } from "@/components/FreedomChart";
+import { ScoreDial } from "@/components/ScoreDial";
+import { BandBars } from "@/components/BandBars";
 import { AppleLogo, GooglePlayLogo } from "@/components/StoreIcons";
 import {
   APP_LOGIN_URL,
@@ -40,26 +59,83 @@ const PROBLEMS = [
 ];
 
 const STEPS = [
-  { n: "01", title: "Enter your money", body: "Type, speak, or upload statements. Salli drafts; you approve." },
-  { n: "02", title: "See your true picture", body: "A live ledger, net worth, and a defensible tax figure." },
-  { n: "03", title: "Act with AI guidance", body: "Plan payoffs and goals, and prep your return, grounded in your numbers." },
+  {
+    n: "01",
+    tone: "bg-red",
+    icon: Mic,
+    title: "Enter your money",
+    body: "Type, speak, or upload statements. Salli drafts; you approve.",
+  },
+  {
+    n: "02",
+    tone: "bg-yellow",
+    icon: LineChart,
+    title: "See your true picture",
+    body: "A live ledger, net worth, and a defensible tax figure.",
+  },
+  {
+    n: "03",
+    tone: "bg-ai",
+    icon: Sparkles,
+    title: "Act with AI guidance",
+    body: "Plan payoffs and goals, and prep your return, grounded in your numbers.",
+  },
 ];
 
 const TRUST = [
-  { title: "Deterministic math", body: "Every figure computed by the engine, never AI-generated." },
-  { title: "Immutable ledger", body: "Double-entry, auditable, append-only. Nothing quietly changes." },
-  { title: "Versioned, tested packs", body: "Every rule tested against the IRD's published rate bands and the 2025 Amendment Act." },
-  { title: "Reproducible returns", body: "Recompute a past return years later, even after rates change." },
-  { title: "Human checkpoint", body: "A human-review step before any return is finalized." },
-  { title: "Your data, private", body: "Everything Salli reads is kept for you, under your control." },
+  {
+    icon: Calculator,
+    title: "Deterministic math",
+    body: "Every figure computed by the engine, never AI-generated.",
+  },
+  {
+    icon: Lock,
+    title: "Immutable ledger",
+    body: "Double-entry, auditable, append-only. Nothing quietly changes.",
+  },
+  {
+    icon: GitBranch,
+    title: "Versioned, tested packs",
+    body: "Every rule tested against the IRD's published rate bands and the 2025 Amendment Act.",
+  },
+  {
+    icon: History,
+    title: "Reproducible returns",
+    body: "Recompute a past return years later, even after rates change.",
+  },
+  {
+    icon: UserCheck,
+    title: "Human checkpoint",
+    body: "A human-review step before any return is finalized.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Your data, private",
+    body: "Everything Salli reads is kept for you, under your control.",
+  },
 ];
 
 const FAQS = [
-  { q: "Is Salli's tax figure accurate?", a: "Every figure is produced by a deterministic engine running versioned, chartered-accountant-reviewed tax packs, not by AI. It applies relief, rate bands, foreign-income rules and credits, and records exactly which rules produced the number." },
-  { q: "Does the AI calculate my tax?", a: "No. The AI reads documents, explains results, and drafts guidance, but it never computes your money or your tax. The math stays auditable and reproducible in the engine." },
-  { q: "Is this financial or investment advice?", a: "No. Salli is not a licensed financial or investment advisor. It gives you tools, clarity, and tax computation, but never personalized investment advice or promised returns." },
-  { q: "Which tax year and country does it cover?", a: "Salli launches with the Sri Lanka 2025/26 tax pack, aligned to Inland Revenue rules. Packs are versioned, so past returns stay reproducible even after rates change." },
-  { q: "Is my data safe?", a: "Your ledger is immutable and auditable, and everything Salli reads is kept for you, under your control. A human-review checkpoint sits before any return is finalized." },
+  {
+    q: "Is Salli's tax figure accurate?",
+    a: "Every figure is produced by a deterministic engine running versioned, chartered-accountant-reviewed tax packs, not by AI. It applies relief, rate bands, foreign-income rules and credits, and records exactly which rules produced the number.",
+  },
+  {
+    q: "Does the AI calculate my tax?",
+    a: "No. The AI reads documents, explains results, and drafts guidance, but it never computes your money or your tax. The math stays auditable and reproducible in the engine.",
+  },
+  {
+    q: "Is this financial or investment advice?",
+    a: "No. Salli is not a licensed financial or investment advisor. It gives you tools, clarity, and tax computation, but never personalized investment advice or promised returns.",
+  },
+  {
+    q: "Which tax year and country does it cover?",
+    a: "Salli launches with the Sri Lanka 2025/26 tax pack, aligned to Inland Revenue rules. Packs are versioned, so past returns stay reproducible even after rates change.",
+  },
+  {
+    q: "Is my data safe?",
+    a: "Your ledger is immutable and auditable, and everything Salli reads is kept for you, under your control. A human-review checkpoint sits before any return is finalized.",
+  },
 ];
 
 const FAQ_JSON_LD = {
@@ -77,7 +153,13 @@ const FAQ_JSON_LD = {
  * Rationed on purpose: four on the whole page, one per major movement. The
  * previous version put one above every section, which made nine sections read
  * as nine instances of the same template. */
-function Eyebrow({ children, tone = "accent" }: { children: React.ReactNode; tone?: "accent" | "muted" }) {
+function Eyebrow({
+  children,
+  tone = "accent",
+}: {
+  children: React.ReactNode;
+  tone?: "accent" | "muted";
+}) {
   return (
     <div
       className={`font-mono text-[11.5px] font-semibold uppercase tracking-[.14em] ${
@@ -99,30 +181,40 @@ export default function HomePage() {
       <Header active="/" />
 
       {/* ── HERO ─────────────────────────────────────────────────────────────
-          Asymmetric split. Four text elements and no more: eyebrow, headline,
-          subtext, buttons. The old hero also carried a four-item mono strip
-          under the CTAs, which pushed the buttons toward the fold on a laptop.
-          That content is now the marquee directly below. */}
-      <section id="top" className="relative">
-        <div className="mx-auto max-w-[1320px] px-5 pt-14 pb-16 sm:px-8 lg:pt-20">
-          <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+          Poster, not a two-column landing block. The headline is the object on
+          the page and the second line sits on an extruded orange slab, which is
+          the one place the site allows itself real depth. Still four text
+          elements: the label row, the headline, the subtext and one button. */}
+      <section id="top" className="relative overflow-hidden">
+        <div className="mx-auto max-w-[1320px] px-5 pt-8 pb-16 sm:px-8 lg:pt-12">
+          <div className="mb-8 flex flex-wrap items-center justify-start gap-3 lg:justify-end">
+            <span className="font-mono text-[12px] font-semibold uppercase tracking-[.16em] text-ink-50">
+              Sri Lanka 2025/26
+            </span>
+            <span className="brut-flat rounded-pill px-4 py-2 font-mono text-[12px] font-bold uppercase tracking-[.14em]">
+              Personal finance &amp; tax
+            </span>
+          </div>
+
+          <div className="grid items-center gap-14 lg:grid-cols-[1.04fr_0.96fr] lg:gap-10">
             <div>
-              <Eyebrow>Personal finance &amp; tax · 2025/26</Eyebrow>
-              <h1 className="mt-5 font-display text-[clamp(40px,5.4vw,76px)] font-extrabold leading-[0.94] tracking-[-0.05em]">
+              <h1 className="font-display text-[clamp(44px,6.6vw,84px)] font-extrabold leading-[0.94] tracking-[-0.05em]">
                 <WordUp delay={0.05}>Stop</WordUp> <WordUp delay={0.13}>guessing.</WordUp>
                 <br />
-                <WordUp delay={0.24}>Start</WordUp>{" "}
-                <WordUp delay={0.34}>
-                  <Highlight>knowing.</Highlight>
+                <WordUp delay={0.26}>
+                  <Slab>Start knowing.</Slab>
                 </WordUp>
               </h1>
-              <p className="mt-7 max-w-[480px] text-[clamp(17px,1.4vw,20px)] leading-[1.5] text-ink-60">
-                A real ledger, a deterministic Sri Lankan tax engine, and an AI advisor that works
+
+              <p className="mt-8 max-w-[500px] text-[clamp(17px,1.5vw,21px)] leading-[1.45] text-ink-70">
+                A real ledger. A deterministic Sri Lankan tax engine. An AI advisor that works
                 only from your actual numbers.
               </p>
-              <div className="mt-9 flex flex-wrap gap-4">
-                <Btn href={APP_LOGIN_URL} variant="accent" size="lg">
+
+              <div className="mt-10 flex flex-wrap items-center gap-4">
+                <Btn href={APP_LOGIN_URL} variant="ai" size="lg" className="slab gap-3 px-8">
                   Get started free
+                  <ArrowRight size={19} strokeWidth={2.5} aria-hidden="true" />
                 </Btn>
                 {MOBILE_APP_LIVE ? (
                   <Btn href="#download" variant="ghost" size="lg">
@@ -134,7 +226,7 @@ export default function HomePage() {
                   </Btn>
                 ) : (
                   <ComingSoonPill
-                    className="px-7 py-4 text-[17px]"
+                    className="px-6 py-4 text-[16px]"
                     icon={
                       <span className="flex items-center gap-1.5">
                         <AppleLogo className="size-4" />
@@ -146,34 +238,15 @@ export default function HomePage() {
                   </ComingSoonPill>
                 )}
               </div>
+
+              <div className="mt-12 font-mono text-[12px] font-semibold uppercase tracking-[.16em] text-ink-50">
+                Simple <span className="px-1.5 text-red-ink">·</span> Local{" "}
+                <span className="px-1.5 text-red-ink">·</span> Built for real life
+              </div>
             </div>
 
-            {/* The real Tax screen, because it is the screen that carries the
-                claim the headline makes. `priority` since this is the LCP
-                element on most viewports. */}
-            <div className="relative mx-auto w-fit lg:mr-0 lg:ml-auto">
-              <div className="absolute -left-5 top-10 z-10 hidden sm:block">
-                <div
-                  className="brut bg-ai px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[.08em]"
-                  style={{ transform: "rotate(-5deg)" }}
-                >
-                  Explained by AI
-                </div>
-              </div>
-              <div className="absolute -right-4 bottom-12 z-10 hidden sm:block">
-                <div
-                  className="brut bg-red px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[.08em]"
-                  style={{ transform: "rotate(4deg)" }}
-                >
-                  Computed by the engine
-                </div>
-              </div>
-              <AppShot
-                src="/screens/app/04-tax.png"
-                alt="Salli's Tax screen: Rs. 11.7L payable for assessment year 2025/26, with the 6, 18, 24, 30 and 36 percent rate bands and the credits applied"
-                width={296}
-                priority
-              />
+            <div className="hero-rise">
+              <HeroComposition />
             </div>
           </div>
         </div>
@@ -208,10 +281,14 @@ export default function HomePage() {
                   <div className="font-display text-[clamp(21px,2.1vw,27px)] font-bold tracking-[-0.02em]">
                     {p.bad}
                   </div>
-                  <div className="mt-1.5 text-[14.5px] leading-[1.5] text-ink-50">{p.badsub}</div>
+                  <div className="mt-1.5 text-[14.5px] leading-[1.5] text-ink-50">
+                    {p.badsub}
+                  </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="font-display text-[28px] font-extrabold text-red-ink">→</span>
+                  <span className="font-display text-[28px] font-extrabold text-red-ink">
+                    →
+                  </span>
                   <div className="font-display text-[clamp(19px,1.9vw,23px)] font-bold tracking-[-0.01em]">
                     {p.good}
                   </div>
@@ -226,7 +303,10 @@ export default function HomePage() {
           The one place the whole argument lives, so it gets the page's only
           full-bleed inverted panel. `on-ink` flips every hard shadow inside it
           to cream, so it reads as the same system in negative. */}
-      <section id="engine" className="on-ink relative mt-24 border-y-2 border-ink bg-ink text-cream">
+      <section
+        id="engine"
+        className="on-ink relative mt-24 border-y-2 border-ink bg-ink text-cream"
+      >
         <div className="mx-auto max-w-[1320px] px-5 py-24 sm:px-8">
           <div className="max-w-[900px]">
             <h2 className="font-display text-[clamp(38px,5.8vw,80px)] font-extrabold leading-[0.94] tracking-[-0.045em]">
@@ -235,8 +315,9 @@ export default function HomePage() {
               your numbers.
             </h2>
             <p className="mt-6 max-w-[540px] text-[17px] leading-[1.55] text-cream-70">
-              Documents go in, a deterministic engine does the arithmetic, and the AI explains what
-              the engine produced. It never does the sum itself.
+              Documents go in, a deterministic engine does the arithmetic, and
+              the AI explains what the engine produced. It never does the sum
+              itself.
             </p>
           </div>
 
@@ -246,7 +327,11 @@ export default function HomePage() {
                 Your documents
               </div>
               <div className="flex flex-1 flex-col gap-3">
-                {["Bank statement.pdf", "Payslip · APIT", "FD interest · AIT"].map((line) => (
+                {[
+                  "Bank statement.pdf",
+                  "Payslip · APIT",
+                  "FD interest · AIT",
+                ].map((line) => (
                   <div
                     key={line}
                     className="brut-flat bg-ink-soft px-4 py-3.5 font-mono text-[13px]"
@@ -260,25 +345,18 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="brut bg-cream p-7 text-ink" style={{ ["--brut" as string]: "var(--color-cream)" }}>
+            <div
+              className="brut bg-cream p-7 text-ink"
+              style={{ ["--brut" as string]: "var(--color-cream)" }}
+            >
               <div className="font-mono text-[11px] font-semibold uppercase tracking-[.1em] text-red-ink">
                 Deterministic engine
               </div>
               <div className="mt-2 font-display text-[25px] font-extrabold tracking-[-0.02em]">
                 Sri Lankan tax engine
               </div>
-              <div className="mt-5 flex flex-col gap-2.5 font-mono text-[12.5px] text-ink-60">
-                {[
-                  ["Personal relief", "applied"],
-                  ["Rate bands 6/18/24/30/36%", "applied"],
-                  ["Foreign service 15%", "final"],
-                  ["APIT, AIT and FTC", "credited"],
-                ].map(([label, val]) => (
-                  <div key={label} className="flex justify-between gap-4">
-                    <span>{label}</span>
-                    <span className="font-semibold text-green">{val}</span>
-                  </div>
-                ))}
+              <div className="mt-5">
+                <BandBars />
               </div>
               <div className="mt-6 border-t-2 border-ink pt-4">
                 <div className="font-display text-[clamp(30px,3.4vw,40px)] font-extrabold tracking-[-0.02em]">
@@ -291,19 +369,22 @@ export default function HomePage() {
             </div>
 
             <div className="flex flex-col">
-              <div className="mb-4 font-mono text-[11px] uppercase tracking-[.1em] text-cream-60">
+              <div className="mb-4 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[.1em] text-cream-60">
+                <ArrowRight size={13} strokeWidth={2.5} aria-hidden="true" />
                 Explained by AI
               </div>
               {/* Lavender, because in the app lavender is what the AI says. */}
               <div className="brut bg-ai p-5 text-ink">
                 <div className="text-[15px] leading-[1.55]">
-                  &ldquo;Your foreign fees hit the 15% final tax; APIT already covered most of it.
-                  You over-withheld by{" "}
-                  <span className="font-mono font-bold">LKR 74,000</span>.&rdquo;
+                  &ldquo;Your foreign fees hit the 15% final tax; APIT already
+                  covered most of it. You over-withheld by{" "}
+                  <span className="font-mono font-bold">LKR 74,000</span>
+                  .&rdquo;
                 </div>
               </div>
               <div className="mt-auto pt-4 text-[13.5px] text-cream-70">
-                A number you can defend: every rule recorded, reproducible years later.
+                A number you can defend: every rule recorded, reproducible years
+                later.
               </div>
             </div>
           </div>
@@ -313,7 +394,10 @@ export default function HomePage() {
       {/* ── WHAT IS INSIDE ─────────────────────────────────────────────────
           A four-cell bento with four items in it. Each cell carries a
           different surface so the grid is not four white text boxes. */}
-      <section id="pillars" className="mx-auto max-w-[1320px] px-5 pt-24 sm:px-8">
+      <section
+        id="pillars"
+        className="mx-auto max-w-[1320px] px-5 pt-24 sm:px-8"
+      >
         <h2 className="max-w-[620px] font-display text-[clamp(32px,4.2vw,56px)] font-extrabold leading-[1.02] tracking-[-0.04em]">
           Four pillars, one trustworthy ledger.
         </h2>
@@ -326,16 +410,22 @@ export default function HomePage() {
                   A real ledger
                 </div>
                 <p className="mt-3 max-w-[460px] text-[16px] leading-[1.55] text-ink-60">
-                  Proper double-entry accounting under the hood. Immutable, auditable. Every rupee
-                  accounted for, and a posted entry is never edited away.
+                  Proper double-entry accounting under the hood. Immutable,
+                  auditable. Every rupee accounted for, and a posted entry is
+                  never edited away.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2.5 font-mono text-[12px]">
-                {["Debit", "Credit", "Reversing entries", "Multi-currency"].map((t) => (
-                  <span key={t} className="brut-flat bg-cream-soft px-3 py-1.5">
-                    {t}
-                  </span>
-                ))}
+                {["Debit", "Credit", "Reversing entries", "Multi-currency"].map(
+                  (t) => (
+                    <span
+                      key={t}
+                      className="brut-flat bg-cream-soft px-3 py-1.5"
+                    >
+                      {t}
+                    </span>
+                  ),
+                )}
               </div>
             </div>
           </Reveal>
@@ -349,8 +439,8 @@ export default function HomePage() {
               </div>
               <div>
                 <p className="mt-4 text-[15px] leading-[1.5]">
-                  Relief, rate bands, the 15% foreign-service final tax and credits, applied
-                  against versioned packs.
+                  Relief, rate bands, the 15% foreign-service final tax and
+                  credits, applied against versioned packs.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2 font-mono text-[12px]">
                   <span className="brut-flat px-3 py-1.5">Deterministic</span>
@@ -369,8 +459,8 @@ export default function HomePage() {
               </div>
               <div>
                 <p className="mt-4 text-[15px] leading-[1.5]">
-                  Reads your statements, explains your tax, and drafts guidance, powered by the
-                  ledger and engine.
+                  Reads your statements, explains your tax, and drafts guidance,
+                  powered by the ledger and engine.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2 font-mono text-[12px]">
                   <span className="brut-flat px-3 py-1.5">Grounded</span>
@@ -387,8 +477,8 @@ export default function HomePage() {
                   A full money toolkit
                 </div>
                 <p className="mt-3 max-w-[380px] text-[16px] leading-[1.55] text-cream-70">
-                  Budgets, debt payoff, portfolio, insurance, reports and FI projections, all on the
-                  same ledger.
+                  Budgets, debt payoff, portfolio, insurance, reports and FI
+                  projections, all on the same ledger.
                 </p>
               </div>
               <AppShot
@@ -416,8 +506,8 @@ export default function HomePage() {
               Salli books it.
             </h3>
             <p className="mt-5 max-w-[420px] text-[17px] leading-[1.55] text-ink-60">
-              Type or speak a transaction, and Salli drafts the correct double-entry for you to
-              approve. No accounting degree required.
+              Type or speak a transaction, and Salli drafts the correct
+              double-entry for you to approve. No accounting degree required.
             </p>
             <div className="mt-8 flex flex-wrap gap-3 font-mono text-[12.5px]">
               {["Type it", "Speak it", "Upload a statement"].map((t) => (
@@ -454,46 +544,65 @@ export default function HomePage() {
               about your money.
             </h3>
             <p className="mt-5 max-w-[420px] text-[17px] leading-[1.55] text-ink-60">
-              Salli reads your own ledger before it answers, so the figures in the reply are the
-              figures in your accounts.
+              Salli reads your own ledger before it answers, so the figures in
+              the reply are the figures in your accounts.
             </p>
             <div className="brut mt-8 max-w-[420px] bg-ai p-5 text-[15px] leading-[1.5]">
-              &ldquo;You&rsquo;ve spent 88,700 LKR against a 155,000 LKR limit, leaving 66,300 LKR
-              unspent this month.&rdquo;
+              &ldquo;You&rsquo;ve spent 88,700 LKR against a 155,000 LKR limit,
+              leaving 66,300 LKR unspent this month.&rdquo;
             </div>
           </div>
         </Reveal>
       </section>
 
       {/* ── PLAN AHEAD ─────────────────────────────────────────────────────
-          Pattern break: a stat band rather than a third split row. */}
+          Pattern break: a projection, drawn. This was three tiles printing the
+          outputs of a calculation; the shape that produces them is the actual
+          argument, so the shape is what the section shows now. */}
       <section className="mx-auto max-w-[1320px] px-5 pt-24 sm:px-8">
-        <div className="brut-lg bg-card px-6 py-12 sm:px-12">
-          <h3 className="max-w-[620px] font-display text-[clamp(30px,3.8vw,48px)] font-extrabold leading-[1.02] tracking-[-0.04em]">
-            Plan the next ten years, not just this month.
-          </h3>
-          <p className="mt-5 max-w-[480px] text-[17px] leading-[1.55] text-ink-60">
-            Avalanche against snowball, years to financial independence, and exportable reports, all
-            on the same trustworthy ledger.
-          </p>
-          <div className="mt-11 grid gap-5 sm:grid-cols-3">
-            {[
-              // The orange tile needs full ink on its label: ink-60 measures
-              // 2.97:1 against the accent, against 8.1:1 on the muted tiles.
-              { big: "Nov 2029", label: "Debt-free date", tone: "bg-cream-soft", label_c: "text-ink-60" },
-              { big: "14.2 yrs", label: "Years to freedom", tone: "bg-red", label_c: "text-ink" },
-              { big: "61/100", label: "Freedom score", tone: "bg-cream-soft", label_c: "text-ink-60" },
-            ].map((s) => (
-              <div key={s.label} className={`brut-flat ${s.tone} p-6`}>
-                <div className="font-display text-[clamp(28px,3vw,38px)] font-extrabold tracking-[-0.03em]">
-                  {s.big}
+        <div className="slab bg-cream-soft px-5 py-10 sm:px-10 sm:py-12">
+          <div className="grid gap-10 lg:grid-cols-[1fr_0.62fr] lg:items-end">
+            <div>
+              <h3 className="max-w-[560px] font-display text-[clamp(30px,3.8vw,48px)] font-extrabold leading-[1.02] tracking-[-0.04em]">
+                Plan the next ten years, not just this month.
+              </h3>
+              <p className="mt-5 max-w-[460px] text-[17px] leading-[1.55] text-ink-60">
+                Avalanche against snowball, years to financial independence, and
+                exportable reports, all on the same trustworthy ledger.
+              </p>
+            </div>
+            <div className="flex gap-4 lg:justify-end">
+              <div className="brut flex-1 bg-yellow p-5 lg:flex-none lg:w-[186px]">
+                <div className="font-display text-[clamp(24px,2.4vw,30px)] font-extrabold tracking-[-0.03em] whitespace-nowrap">
+                  Nov 2029
                 </div>
-                <div className={`mt-2 font-mono text-[11px] font-semibold uppercase tracking-[.08em] ${s.label_c}`}>
-                  {s.label}
+                <div className="mt-2 font-mono text-[11px] font-semibold uppercase tracking-[.08em] text-ink-60">
+                  Debt-free date
                 </div>
               </div>
-            ))}
+              <div className="brut flex-1 bg-red p-5 lg:flex-none lg:w-[186px]">
+                <div className="font-display text-[clamp(24px,2.6vw,32px)] font-extrabold tracking-[-0.03em]">
+                  <CountUp target={14.2} decimals={1} suffix=" yrs" />
+                </div>
+                {/* Full ink: ink-60 measures 2.97:1 against the accent. */}
+                <div className="mt-2 font-mono text-[11px] font-semibold uppercase tracking-[.08em] text-ink">
+                  Years to freedom
+                </div>
+              </div>
+            </div>
           </div>
+
+          <div className="mt-9 grid gap-5 lg:grid-cols-[1fr_0.42fr] lg:items-stretch">
+            <FreedomChart />
+            <div className="brut flex flex-col items-center justify-center bg-card px-5 py-8">
+              <ScoreDial score={61} />
+              <p className="mt-5 max-w-[240px] text-center text-[14px] leading-[1.5] text-ink-60">
+                Savings rate, debt load and runway, scored together so you can
+                see which one is holding the date back.
+              </p>
+            </div>
+          </div>
+
           <p className="mt-6 font-mono text-[11.5px] leading-[1.6] text-ink-50">
             Example figures from a demo ledger, not a projection of your own.
           </p>
@@ -513,8 +622,8 @@ export default function HomePage() {
               From Colombo out.
             </h2>
             <p className="mt-5 max-w-[460px] text-[17px] leading-[1.55] text-ink-60">
-              Built around IRD rules for 2025/26. LKR-native, aligned to local banks, and tested
-              against the IRD&rsquo;s published rate bands.
+              Built around IRD rules for 2025/26. LKR-native, aligned to local
+              banks, and tested against the IRD&rsquo;s published rate bands.
             </p>
             <div className="mt-10 grid grid-cols-2 gap-4">
               {[
@@ -527,7 +636,9 @@ export default function HomePage() {
                   <div className="font-display text-[clamp(24px,2.6vw,34px)] font-extrabold tracking-[-0.02em]">
                     {big}
                   </div>
-                  <div className="mt-1.5 text-[13.5px] leading-[1.4] text-ink-60">{label}</div>
+                  <div className="mt-1.5 text-[13.5px] leading-[1.4] text-ink-60">
+                    {label}
+                  </div>
                 </div>
               ))}
             </div>
@@ -546,20 +657,51 @@ export default function HomePage() {
 
       {/* ── HOW IT WORKS ───────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-[1320px] px-5 pt-24 sm:px-8">
-        <h2 className="font-display text-[clamp(32px,4.2vw,56px)] font-extrabold leading-[1.02] tracking-[-0.04em]">
-          Three steps to <Highlight>knowing.</Highlight>
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          <h2 className="font-display text-[clamp(32px,4.2vw,56px)] font-extrabold leading-[1.02] tracking-[-0.04em]">
+            Three steps to <Highlight>knowing.</Highlight>
+          </h2>
+          <StickerNote tone="ai" tilt={-5} className="hidden md:block">
+            No accounting degree needed
+          </StickerNote>
+        </div>
         <div className="mt-14 grid gap-5 md:grid-cols-3">
           {STEPS.map((s, i) => (
             <Reveal key={s.n} delay={i * 0.06}>
               <div className="brut press h-full bg-card p-7">
-                <div className="brut-flat inline-flex size-12 items-center justify-center bg-red font-display text-[20px] font-extrabold">
-                  {s.n}
+                <div className="flex items-center gap-3">
+                  <div className={`brut-flat inline-flex size-12 items-center justify-center ${s.tone} font-display text-[20px] font-extrabold`}>
+                    {s.n}
+                  </div>
+                  {/* The chevron carries the sequence across the three cards.
+                      Hidden on the last one and on mobile, where the cards
+                      stack and the order is already unambiguous. */}
+                  {i < STEPS.length - 1 ? (
+                    <span
+                      aria-hidden="true"
+                      className="hidden flex-1 items-center gap-1.5 md:flex"
+                    >
+                      <span className="h-0.5 flex-1 bg-ink/15" />
+                      <ChevronRight
+                        size={16}
+                        strokeWidth={3}
+                        className="text-ink/30"
+                      />
+                    </span>
+                  ) : null}
+                  <s.icon
+                    size={20}
+                    strokeWidth={2}
+                    className="ml-auto text-ink-50"
+                    aria-hidden="true"
+                  />
                 </div>
                 <div className="mt-5 font-display text-[24px] font-bold tracking-[-0.02em]">
                   {s.title}
                 </div>
-                <p className="mt-2.5 text-[15px] leading-[1.55] text-ink-60">{s.body}</p>
+                <p className="mt-2.5 text-[15px] leading-[1.55] text-ink-60">
+                  {s.body}
+                </p>
               </div>
             </Reveal>
           ))}
@@ -567,24 +709,41 @@ export default function HomePage() {
       </section>
 
       {/* ── TRUST ──────────────────────────────────────────────────────────── */}
-      <section id="security" className="mx-auto max-w-[1320px] px-5 pt-24 sm:px-8">
-        <div className="on-ink brut-lg bg-ink px-6 py-14 text-cream sm:px-12 sm:py-16">
+      <section
+        id="security"
+        className="mx-auto max-w-[1320px] px-5 pt-24 sm:px-8"
+      >
+        <div className="on-ink slab bg-ink px-6 py-14 text-cream sm:px-12 sm:py-16">
           <h2 className="max-w-[700px] font-display text-[clamp(32px,4.4vw,58px)] font-extrabold leading-[1.0] tracking-[-0.04em]">
             Numbers you can defend, years later.
           </h2>
           <div className="mt-12 grid gap-5 md:grid-cols-3">
-            {TRUST.map((t) => (
-              <div key={t.title} className="brut-flat bg-ink-soft p-6">
-                <div className="font-display text-[18px] font-bold">{t.title}</div>
-                <p className="mt-2.5 text-[14.5px] leading-[1.55] text-cream-70">{t.body}</p>
-              </div>
+            {TRUST.map((t, i) => (
+              <Reveal key={t.title} delay={i * 0.05}>
+                <div className="brut-flat h-full bg-ink-soft p-6">
+                  {/* The icon is the only thing that differentiates six blocks of
+                    the same shape at a glance. One family, one stroke weight. */}
+                  <div className="brut-flat mb-4 inline-flex size-11 items-center justify-center bg-ink">
+                    <t.icon size={21} strokeWidth={2} aria-hidden="true" />
+                  </div>
+                  <div className="font-display text-[18px] font-bold">
+                    {t.title}
+                  </div>
+                  <p className="mt-2.5 text-[14.5px] leading-[1.55] text-cream-70">
+                    {t.body}
+                  </p>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
       {/* ── PLATFORMS ──────────────────────────────────────────────────────── */}
-      <section id="download" className="mx-auto max-w-[1320px] px-5 pt-24 sm:px-8">
+      <section
+        id="download"
+        className="mx-auto max-w-[1320px] px-5 pt-24 sm:px-8"
+      >
         <div className="grid items-center gap-14 md:grid-cols-[0.9fr_1.1fr]">
           <div>
             <h2 className="font-display text-[clamp(32px,4.4vw,58px)] font-extrabold leading-[1.0] tracking-[-0.04em]">
@@ -611,7 +770,9 @@ export default function HomePage() {
                 </>
               ) : (
                 <>
-                  <ComingSoonPill icon={<AppleLogo className="size-4.5" />}>App Store</ComingSoonPill>
+                  <ComingSoonPill icon={<AppleLogo className="size-4.5" />}>
+                    App Store
+                  </ComingSoonPill>
                   <ComingSoonPill icon={<GooglePlayLogo className="size-4" />}>
                     Google Play
                   </ComingSoonPill>
@@ -650,17 +811,21 @@ export default function HomePage() {
         </h2>
         <FaqAccordion faqs={FAQS} />
         <p className="mt-7 font-mono text-[11.5px] leading-[1.7] tracking-[.02em] text-ink-50">
-          Salli is not a licensed financial or investment advisor. Tools, clarity, and tax
-          computation: not personalized investment advice or promised returns.
+          Salli is not a licensed financial or investment advisor. Tools,
+          clarity, and tax computation: not personalized investment advice or
+          promised returns.
         </p>
       </section>
 
       {/* ── CTA ────────────────────────────────────────────────────────────── */}
-      <section id="cta" className="mx-auto max-w-[1320px] px-5 pt-20 pb-24 sm:px-8">
-        <div className="brut-lg relative overflow-hidden bg-red px-6 py-[clamp(56px,8vw,104px)] text-center">
+      <section
+        id="cta"
+        className="mx-auto max-w-[1320px] px-5 pt-20 pb-24 sm:px-8"
+      >
+        <div className="slab relative overflow-hidden bg-red px-6 py-[clamp(56px,8vw,104px)] text-center">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-[-14%] left-1/2 hidden -translate-x-1/2 font-display text-[clamp(140px,26vw,400px)] font-extrabold leading-none tracking-[-0.06em] whitespace-nowrap text-ink/8 lg:block"
+            className="pointer-events-none absolute bottom-[-14%] left-1/2 hidden -translate-x-1/2 font-display text-[clamp(140px,26vw,400px)] font-extrabold leading-none tracking-[-0.06em] whitespace-nowrap text-ink/6 lg:block"
           >
             Salli
           </div>
@@ -670,15 +835,18 @@ export default function HomePage() {
             Start knowing.
           </h2>
           <div className="relative z-1 mt-10 flex flex-wrap justify-center gap-4">
-            <Btn href={APP_LOGIN_URL} size="lg">
+            <Btn href={APP_LOGIN_URL} variant="ai" size="lg" className="slab gap-3 px-8">
               Get started free
+              <ArrowRight size={19} strokeWidth={2.5} aria-hidden="true" />
             </Btn>
             {MOBILE_APP_LIVE ? (
               <Btn href="#download" variant="ghost" size="lg">
                 Download the app
               </Btn>
             ) : (
-              <ComingSoonPill className="px-7 py-4 text-[17px]">Mobile app</ComingSoonPill>
+              <ComingSoonPill className="px-7 py-4 text-[17px]">
+                Mobile app
+              </ComingSoonPill>
             )}
           </div>
         </div>

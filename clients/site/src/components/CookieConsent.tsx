@@ -14,7 +14,7 @@ export function CookieConsent() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Reads an external system (localStorage) to decide first-mount visibility —
+    // Reads an external system (localStorage) to decide first-mount visibility -
     // can't be computed as lazy initial state since this also prerenders at
     // build time, where localStorage doesn't exist.
     if (!localStorage.getItem(STORAGE_KEY)) {

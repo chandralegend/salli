@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Header } from "@/components/Header";
+import { Slab } from "@/components/Slab";
 import { Footer } from "@/components/Footer";
 import { Reveal } from "@/components/Reveal";
 import { Btn } from "@/components/Btn";
-import { Highlight } from "@/components/Highlight";
 import { WordUp } from "@/components/WordUp";
 
 export const metadata: Metadata = {
@@ -37,7 +37,7 @@ export default function AboutPage() {
         <h1 className="mt-5.5 max-w-[1000px] font-display text-[clamp(46px,7.6vw,108px)] font-extrabold leading-[0.9] tracking-[-0.05em]">
           <WordUp delay={0.05}>Built</WordUp> <WordUp delay={0.13}>in</WordUp> <WordUp delay={0.2}>Colombo,</WordUp>
           <br />
-          <WordUp delay={0.3}>for</WordUp> <WordUp delay={0.4}><Highlight>Sri Lanka.</Highlight></WordUp>
+          <WordUp delay={0.3}>for</WordUp> <WordUp delay={0.4}><Slab>Sri Lanka.</Slab></WordUp>
         </h1>
         <p className="mt-8 max-w-[640px] text-[clamp(18px,1.8vw,24px)] leading-[1.5] text-ink-60">
           Most money apps are built somewhere else and bent to fit. We started from the opposite
@@ -134,7 +134,7 @@ export default function AboutPage() {
             needed.
           </p>
           <div className="mt-9 flex flex-wrap justify-center gap-3.5">
-            <Btn href="/pricing" variant="ghost" size="lg">
+            <Btn href="/pricing" variant="ai" size="lg" className="slab px-8">
               Get started free
             </Btn>
             <Btn href="/blog" variant="primary" size="lg">

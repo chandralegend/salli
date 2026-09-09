@@ -1,13 +1,13 @@
 import Link from "next/link";
 
+import { Wordmark } from "@/components/Mark";
+
 export function Footer() {
   return (
     <footer className="relative z-2 border-t-2 border-ink">
       <div className="mx-auto flex max-w-[1320px] flex-wrap items-start justify-between gap-9 px-6 py-13 sm:px-10">
         <div className="max-w-[300px]">
-          <div className="font-display text-2xl font-extrabold tracking-[-0.04em]">
-            Salli<span className="text-red">.</span>
-          </div>
+          <Wordmark size={24} />
           <p className="mt-3.5 text-[13.5px] leading-relaxed text-ink-50">
             Personal finance and tax, built for Sri Lanka. Numbers you can defend.
           </p>

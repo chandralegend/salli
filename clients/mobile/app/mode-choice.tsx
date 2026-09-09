@@ -41,7 +41,7 @@ export default function ModeChoiceScreen() {
         }}
       >
         <View className="mb-6 items-center pt-4">
-          <Logo size={32} className="text-foreground" />
+          <Logo size={32} />
           <Text className="mb-1.5 mt-3 text-center font-sans-bold text-[28px] tracking-tight text-foreground">
             Pick your starting point
           </Text>

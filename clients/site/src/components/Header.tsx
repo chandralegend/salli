@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Btn } from "@/components/Btn";
+import { Wordmark } from "@/components/Mark";
 import { APP_LOGIN_URL } from "@/lib/config";
 
 const NAV = [
@@ -48,8 +49,8 @@ export function Header({ active }: { active?: string }) {
         <div className="scrollbar-progress absolute inset-x-0 bottom-[-3px] h-[3px] bg-red" />
 
         <nav className="mx-auto flex h-[68px] max-w-[1320px] items-center gap-8 px-5 sm:px-8">
-          <Link href="/" className="font-display text-[26px] font-extrabold tracking-[-0.04em]">
-            Salli<span className="text-red">.</span>
+          <Link href="/" aria-label="Salli home">
+            <Wordmark size={25} />
           </Link>
 
           <div className="ml-1 hidden gap-7 font-mono text-[12px] font-medium uppercase tracking-[.06em] text-ink-50 md:flex">

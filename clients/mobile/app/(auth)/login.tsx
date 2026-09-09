@@ -47,7 +47,7 @@ export default function LoginScreen() {
   return (
     <AuthShell>
       <View className="items-center pb-9">
-        <Logo size={52} className="text-foreground" />
+        <Logo size={52} />
         <Text className="mt-4 text-center text-[16px] leading-5 text-muted-foreground">
           AI-powered personal finance{"\n"}Built for Sri Lanka
         </Text>

@@ -34,7 +34,7 @@ export default function ForgotPasswordScreen() {
   return (
     <AuthShell>
       <View className="items-center pb-9">
-        <Logo size={44} className="text-foreground" />
+        <Logo size={44} />
         <Text className="mt-[22px] font-sans-bold text-[30px] tracking-tight text-foreground">
           Forgot password?
         </Text>

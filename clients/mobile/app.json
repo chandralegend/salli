@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "backgroundColor": "#000000",
+    "backgroundColor": "#0E0E0E",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
@@ -100,7 +100,7 @@
     "android": {
       "package": "lk.salli.app",
       "adaptiveIcon": {
-        "backgroundColor": "#000000",
+        "backgroundColor": "#0E0E0E",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
